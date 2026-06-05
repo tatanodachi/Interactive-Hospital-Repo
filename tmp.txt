@@ -1,0 +1,43 @@
+145:  return (
+598:      return (
+1592:  return (
+2105:  return (
+2135:  return (
+2176:    return (
+2213:  return (
+2228:    return (
+2543:    return (
+2557:          return (
+2579:  return (
+2624:    return (
+2701:  return (
+2789:    return (
+2839:                      return (
+2918:  return (
+3050:  return (
+4092:  if (val >= 1000000) return (val / 1000000).toFixed(1) + "M";
+4093:  if (val >= 1000) return (val / 1000).toFixed(0) + "k";
+4225:    return () => {
+4724:    return () => {
+4835:  return (
+5214:                  return (
+5336:                            return (
+5860:  return (
+7919:    return (
+9508:    return (
+9981:  return (
+10007:  return (
+10033:  return (
+10231:    return () => document.removeEventListener("mousedown", handleClickOutside);
+10575:    return (
+10641:            return (
+10687:  return (
+10766:              return (
+10794:                        return (
+10915:                    return (
+10954:                    return (
+10982:                  return (
+11025:                          return (
+11503:                      return (
+11851:    return () => {
+12016:  return (
