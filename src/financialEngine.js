@@ -767,6 +767,9 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
   const allTasks = (groups || []).flatMap(g => g.tasks || []);
   const hasTimeline = allTasks.length > 0;
 
+  const commOpeningTask = allTasks.find(t => t.id === "t13" || t.name.toLowerCase().includes("commercial opening"));
+  const totalDevMonths = hasTimeline && commOpeningTask ? Math.max(1, commOpeningTask.start - 1) : (assumptions.devDurationMonths || 24);
+
   const getTaskTimingDistribution = (matchStrs) => {
     const monthly = new Array(projYears * 12).fill(0);
     const tasks = allTasks.filter(t => matchStrs.some(str => t.name.toLowerCase().includes(str.toLowerCase())));
@@ -851,7 +854,7 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
   const vatCost = upfrontVatCost + deferredVatCost;
 
   const carCost = buildCost * ((assumptions.devCarPct || 0) / 100);
-  const totalDevMonths = assumptions.devDurationMonths || 24;
+  // totalDevMonths is pre-calculated based on the timeline above
   const devGaTotalCost = (assumptions.devGaMonthly || 0) * totalDevMonths;
 
   const upfrontContingencyBase = upfrontLicenseCost + upfrontConsultantCost + buildCost + ffeCost + infraCost + sharingDevCost + upfrontVatCost + upfrontMedEq;
@@ -936,7 +939,7 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
 
   const devYears = Math.max(
     1,
-    Math.ceil((assumptions.devDurationMonths || 12) / 12),
+    Math.ceil(totalDevMonths / 12),
   );
 
   let outstandingDebt = 0,
@@ -1106,7 +1109,7 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
   for (let i = 1; i <= devYears; i++) {
     const monthsThisYear = Math.min(
       12,
-      Math.max(0, (assumptions.devDurationMonths || 24) - (i - 1) * 12),
+      Math.max(0, totalDevMonths - (i - 1) * 12),
     );
     const ga_year = devGaMonthly.slice((i - 1) * 12, i * 12).reduce((a, b) => a + b, 0);
     const car_year = devCarMonthly.slice((i - 1) * 12, i * 12).reduce((a, b) => a + b, 0);

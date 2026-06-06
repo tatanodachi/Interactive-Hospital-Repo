@@ -273,13 +273,13 @@ const INITIAL_GROUPS = [
       {
         id: "c4",
         name: "Hospital FF&E Setup",
-        start: 16,
-        duration: 9,
+        start: 21,
+        duration: 4,
         progress: 0,
-        dependencies: [],
+        dependencies: ["t7"],
         owner: "Procurement",
         cost: 12.0,
-        desc: "Furniture, Fixtures & Equipment fit-out for both clinical and admin zones.",
+        desc: "Furniture, Fixtures & Equipment fit-out for clinical and admin zones, scheduled sequentially post-Interior Fit-Out.",
         critical: false,
       },
       {
@@ -305,6 +305,30 @@ const INITIAL_GROUPS = [
         cost: 8.5,
         desc: "Software systems and R&D cost sharing for multi-tenant integrated apps.",
         critical: false,
+      },
+      {
+        id: "c7",
+        name: "Hospital Construction",
+        start: 1,
+        duration: 20,
+        progress: 0,
+        dependencies: ["c2"],
+        owner: "EPC Contractor",
+        cost: 87.0,
+        desc: "Main building structural construction, piling, and core envelope setup.",
+        critical: true,
+      },
+      {
+        id: "c8",
+        name: "Medical Equipment Setup",
+        start: 61,
+        duration: 3,
+        progress: 0,
+        dependencies: ["c7"],
+        owner: "Procurement",
+        cost: 45.0,
+        desc: "Procurement, rigging, and installation of major medical and oncology equipment.",
+        critical: true,
       },
     ],
   },
@@ -393,8 +417,8 @@ const INITIAL_GROUPS = [
       {
         id: "t6",
         name: "Main Structure & Core",
-        start: 10,
-        duration: 8,
+        start: 1,
+        duration: 20,
         progress: 0,
         owner: "EPC Contractor",
         cost: 87.0,
@@ -425,7 +449,7 @@ const INITIAL_GROUPS = [
       {
         id: "t10",
         name: "Oncology Asset Lease",
-        start: 16,
+        start: 61,
         duration: 3,
         progress: 0,
         owner: "Procurement Board",
@@ -12129,7 +12153,7 @@ export default function App() {
         label: "3. Collaboration Model",
       },
       {
-        group: "context",
+        group: "financials",
         tab: "timeline",
         company: "opco",
         label: "4. Master Timeline",
@@ -12159,7 +12183,9 @@ export default function App() {
   const currentSlideIndex = presentationSteps.findIndex(
     (s) =>
       s.group === activeGroup &&
-      (activeGroup === "context"
+      (s.tab === "timeline"
+        ? activeTab === "timeline"
+        : activeGroup === "context"
         ? s.tab === activeTab
         : s.company === activeCompany && s.tab === "dashboard"),
   );
@@ -12276,6 +12302,130 @@ export default function App() {
       runConsolidatedEngine(opCoModelData, propCoModelData, opCoAssumptions),
     [opCoModelData, propCoModelData, opCoAssumptions],
   );
+
+  // Sync Timeline tasks with PropCo Model Data to ensure parity
+  useEffect(() => {
+    if (!propCoModelData || !propCoModelData.capexDetails) return;
+    
+    setGroups((prevGroups) => {
+      let changed = false;
+
+      // Find the Commercial Opening task to calculate dev duration dynamically
+      const commOpeningTask = prevGroups
+        .flatMap((g) => g.tasks)
+        .find((t) => t.id === "t13" || t.name.toLowerCase().includes("commercial opening"));
+      const devDuration = commOpeningTask ? Math.max(1, commOpeningTask.start - 1) : (propCoAssumptions.devDurationMonths || 24);
+
+      const isLease = propCoAssumptions.medEqProcurement === "lease";
+      const purchaseYear = propCoAssumptions.medEqPurchaseOpYear || 4;
+
+      const targetMedEqStart = isLease
+        ? devDuration + (purchaseYear - 1) * 12 + 1
+        : 16;
+      const targetMedEqDuration = 3;
+
+      let constrStart = 1;
+      let constrDuration = 20;
+
+      const c7Task = prevGroups.flatMap((g) => g.tasks).find((t) => t.id === "c7");
+      const t6Task = prevGroups.flatMap((g) => g.tasks).find((t) => t.id === "t6");
+      if (c7Task && t6Task) {
+        if (c7Task.start !== t6Task.start || c7Task.duration !== t6Task.duration) {
+          if (t6Task.start === 10 && t6Task.duration === 8) {
+            constrStart = c7Task.start;
+            constrDuration = c7Task.duration;
+          } else {
+            constrStart = t6Task.start;
+            constrDuration = t6Task.duration;
+          }
+        } else {
+          constrStart = c7Task.start;
+          constrDuration = c7Task.duration;
+        }
+      }
+
+      const nextGroups = prevGroups.map((group) => {
+        const nextTasks = group.tasks.map((task) => {
+          let updatedTask = { ...task };
+          let taskChanged = false;
+
+          if (task.id === "c7" || task.name === "Hospital Construction") {
+            const newCost = Math.round(propCoModelData.capexDetails.buildCost * 10) / 10;
+            if (task.cost !== newCost) {
+              updatedTask.cost = newCost;
+              taskChanged = true;
+            }
+            if (task.start !== constrStart) {
+              updatedTask.start = constrStart;
+              taskChanged = true;
+            }
+            if (task.duration !== constrDuration) {
+              updatedTask.duration = constrDuration;
+              taskChanged = true;
+            }
+          }
+
+          if (task.id === "t6" || task.name === "Main Structure & Core") {
+            const newCost = Math.round(propCoModelData.capexDetails.buildCost * 10) / 10;
+            if (task.cost !== newCost) {
+              updatedTask.cost = newCost;
+              taskChanged = true;
+            }
+            if (task.start !== constrStart) {
+              updatedTask.start = constrStart;
+              taskChanged = true;
+            }
+            if (task.duration !== constrDuration) {
+              updatedTask.duration = constrDuration;
+              taskChanged = true;
+            }
+          }
+
+          if (task.id === "c8" || task.name === "Medical Equipment Setup") {
+            const newCost = Math.round(propCoModelData.capexDetails.medEqCost * 10) / 10;
+            if (task.cost !== newCost) {
+              updatedTask.cost = newCost;
+              taskChanged = true;
+            }
+            if (task.start !== targetMedEqStart) {
+              updatedTask.start = targetMedEqStart;
+              taskChanged = true;
+            }
+            if (task.duration !== targetMedEqDuration) {
+              updatedTask.duration = targetMedEqDuration;
+              taskChanged = true;
+            }
+          }
+
+          if (task.id === "t10" || task.name === "Oncology Asset Lease") {
+            const newCost = Math.round(propCoModelData.capexDetails.medEqCost * 10) / 10;
+            if (task.cost !== newCost) {
+              updatedTask.cost = newCost;
+              taskChanged = true;
+            }
+            if (task.start !== targetMedEqStart) {
+              updatedTask.start = targetMedEqStart;
+              taskChanged = true;
+            }
+            if (task.duration !== targetMedEqDuration) {
+              updatedTask.duration = targetMedEqDuration;
+              taskChanged = true;
+            }
+          }
+
+          if (taskChanged) {
+            changed = true;
+            return updatedTask;
+          }
+          return task;
+        });
+
+        return { ...group, tasks: nextTasks };
+      });
+
+      return changed ? nextGroups : prevGroups;
+    });
+  }, [propCoModelData, propCoAssumptions.medEqProcurement, propCoAssumptions.medEqPurchaseOpYear, propCoAssumptions.devDurationMonths]);
 
   // Compute Presentation Wrapper
   const containerClass = isPresenting
@@ -12738,12 +12888,6 @@ export default function App() {
                     icon={<Network size={14} />}
                     label="Collaboration Strategy"
                   />
-                  <NavButton
-                    active={activeTab === "timeline"}
-                    onClick={() => setActiveTab("timeline")}
-                    icon={<Calendar size={14} />}
-                    label="Timeline"
-                  />
                 </>
               ) : (
                 <>
@@ -12816,8 +12960,16 @@ export default function App() {
             </button>
             <div className="w-px h-6 bg-[#D8D8D8] mx-1 self-center"></div>
             <button
+              onClick={() => setActiveTab("timeline")}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-[14px] text-xs font-bold transition-all whitespace-nowrap ${activeTab === "timeline" ? "bg-[#1C6048] text-white shadow-md" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#EFEBE7]/50"}`}
+              id="subnav-timeline"
+            >
+              <Calendar size={16} /> Timeline
+            </button>
+            <button
               onClick={() => setActiveTab("ai")}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-[14px] text-xs font-bold transition-all whitespace-nowrap ${activeTab === "ai" ? "bg-[#4C4A4B] text-white shadow-md" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#EFEBE7]/50"}`}
+              id="subnav-aiaudit"
             >
               <AIMicroscopeIcon size={16} /> AI Audit
             </button>
