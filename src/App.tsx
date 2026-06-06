@@ -12153,7 +12153,7 @@ export default function App() {
         label: "3. Collaboration Model",
       },
       {
-        group: "context",
+        group: "financials",
         tab: "timeline",
         company: "opco",
         label: "4. Master Timeline",
@@ -12183,7 +12183,9 @@ export default function App() {
   const currentSlideIndex = presentationSteps.findIndex(
     (s) =>
       s.group === activeGroup &&
-      (activeGroup === "context"
+      (s.tab === "timeline"
+        ? activeTab === "timeline"
+        : activeGroup === "context"
         ? s.tab === activeTab
         : s.company === activeCompany && s.tab === "dashboard"),
   );
@@ -12886,12 +12888,6 @@ export default function App() {
                     icon={<Network size={14} />}
                     label="Collaboration Strategy"
                   />
-                  <NavButton
-                    active={activeTab === "timeline"}
-                    onClick={() => setActiveTab("timeline")}
-                    icon={<Calendar size={14} />}
-                    label="Timeline"
-                  />
                 </>
               ) : (
                 <>
@@ -12964,8 +12960,16 @@ export default function App() {
             </button>
             <div className="w-px h-6 bg-[#D8D8D8] mx-1 self-center"></div>
             <button
+              onClick={() => setActiveTab("timeline")}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-[14px] text-xs font-bold transition-all whitespace-nowrap ${activeTab === "timeline" ? "bg-[#1C6048] text-white shadow-md" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#EFEBE7]/50"}`}
+              id="subnav-timeline"
+            >
+              <Calendar size={16} /> Timeline
+            </button>
+            <button
               onClick={() => setActiveTab("ai")}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-[14px] text-xs font-bold transition-all whitespace-nowrap ${activeTab === "ai" ? "bg-[#4C4A4B] text-white shadow-md" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#EFEBE7]/50"}`}
+              id="subnav-aiaudit"
             >
               <AIMicroscopeIcon size={16} /> AI Audit
             </button>
