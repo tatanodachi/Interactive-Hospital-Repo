@@ -3296,7 +3296,7 @@ const mapLocations = [
     id: "new_vasanta",
     name: "Serpong",
     group: "Vasanta",
-    desc: "Latitude -6.24, Longitude 106.64",
+    desc: "Tangerang node",
     lat: -6.247432407754837,
     lon: 106.64868860550507,
     color: "#1E3A8A",
@@ -3770,14 +3770,38 @@ const InteractiveDemographicMap = memo(() => {
       });
 
       try {
-        // Fetch the REAL jagged polygon boundaries from OpenStreetMap
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(region.query)}&polygon_geojson=1&format=json`,
-        );
-        if (!response.ok) throw new Error("API Error");
-        const text = await response.text();
-        let data;
-        try { data = JSON.parse(text); } catch(e) { throw new Error("API Limit Reached"); }
+        const cacheKey = `nominatim_${encodeURIComponent(region.query)}`;
+        const cached = sessionStorage.getItem(cacheKey);
+        let data = null;
+        
+        if (cached) {
+          try { data = JSON.parse(cached); } catch(e) { sessionStorage.removeItem(cacheKey); }
+        }
+
+        if (!data) {
+          const endpoints = [
+            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(region.query)}&polygon_geojson=1&format=json`,
+            `https://nominatim.kumi.systems/search?q=${encodeURIComponent(region.query)}&polygon_geojson=1&format=json`
+          ];
+          
+          for (const url of endpoints) {
+            try {
+              const response = await fetch(url);
+              if (!response.ok) continue;
+              const text = await response.text();
+              const parsed = JSON.parse(text);
+              if (parsed) {
+                data = parsed;
+                try { sessionStorage.setItem(cacheKey, JSON.stringify(data)); } catch(e) {}
+                break;
+              }
+            } catch (err) {
+              console.warn(`[Nominatim] Failed endpoint ${url}`, err);
+            }
+          }
+        }
+        
+        if (!data) throw new Error("API Error");
 
         let geojsonData;
         if (data && data.length > 0 && data[0].geojson) {
@@ -3904,13 +3928,38 @@ const InteractiveDemographicMap = memo(() => {
       // Draw dynamic boundaries if a query is defined in the location snippet
       if (loc.query) {
         try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(loc.query)}&polygon_geojson=1&format=json`,
-          );
-          if (!response.ok) throw new Error("API Error");
-          const text = await response.text();
-          let data;
-          try { data = JSON.parse(text); } catch(e) { throw new Error("API Limit Reached"); }
+          const cacheKey = `nominatim_poi_${encodeURIComponent(loc.query)}`;
+          const cached = sessionStorage.getItem(cacheKey);
+          let data = null;
+          
+          if (cached) {
+            try { data = JSON.parse(cached); } catch(e) { sessionStorage.removeItem(cacheKey); }
+          }
+          
+          if (!data) {
+            const endpoints = [
+              `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(loc.query)}&polygon_geojson=1&format=json`,
+              `https://nominatim.kumi.systems/search?q=${encodeURIComponent(loc.query)}&polygon_geojson=1&format=json`
+            ];
+            
+            for (const url of endpoints) {
+              try {
+                const response = await fetch(url);
+                if (!response.ok) continue;
+                const text = await response.text();
+                const parsed = JSON.parse(text);
+                if (parsed) {
+                  data = parsed;
+                  try { sessionStorage.setItem(cacheKey, JSON.stringify(data)); } catch(e) {}
+                  break;
+                }
+              } catch (err) {
+                console.warn(`[Nominatim POI] Failed endpoint ${url}`, err);
+              }
+            }
+          }
+          
+          if (!data) throw new Error("API Error");
 
           let geojsonData;
           if (data && data.length > 0 && data[0].geojson) {

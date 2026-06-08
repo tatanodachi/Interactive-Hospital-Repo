@@ -158,7 +158,7 @@ export const ExecutiveSummaryView = memo(({ isPresenting }: { isPresenting: bool
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="w-full space-y-6">
         
         {/* Top Header Card */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#D8D8D8] flex flex-col md:flex-row md:items-center justify-between gap-4">

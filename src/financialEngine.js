@@ -246,8 +246,14 @@ const runOpCoEngine = (assumptions, config) => {
   for (let m = 1; m <= 24; m++) {
     const isY1 = m <= 12;
     const split = isY1 ? (assumptions.equitySplitY1 / 100) : ((100 - assumptions.equitySplitY1) / 100);
-    const opexKey = isY1 ? "jvaOpex" : "commOpex";
-    const net_month = -assumptions[opexKey] / 12;
+    
+    // jvaOpex occurs 100% in Month 1, commOpex occurs across Months 19-24 (6 months) pro-rata
+    let net_month = 0;
+    if (isY1) {
+      net_month = (m === 1 ? -assumptions.jvaOpex : 0);
+    } else {
+      net_month = (m >= 19 && m <= 24 ? -assumptions.commOpex / 6 : 0);
+    }
 
     cumulativeNetIncome += net_month;
     const m_pA_Outlay = -assumptions.partnerAEquity * split / 12;
@@ -275,23 +281,91 @@ const runOpCoEngine = (assumptions, config) => {
     const pA_Outlay = -assumptions.partnerAEquity * p.split;
     const pB_Outlay = -assumptions.partnerBEquity * p.split;
 
-    let monthly = {};
-    const keys = ["ebitda", "netIncome", "cumNI", "cumulativeRetainedEarnings", "pA_Outlay", "pA_Net", "pA_Cum", "pB_Outlay", "pB_Net", "pB_Cum", "fcf"];
-    keys.forEach(k => monthly[k] = new Array(12).fill(0));
+    let monthly = {
+      ipRev: [], opRev: [], totalRev: [], totalMedSupp: [], totalDocFee: [],
+      grossProfit: [], staffCost: [], recurringOpex: [], ebitdar: [],
+      rent: [], ebitda: [], tax: [], netIncome: [], cumNI: [], distributableProfit: [],
+      retainedThisYear: [], cumulativeRetainedEarnings: [], shareA: [], shareB: [], opCoExit: [], pA_Exit: [], pB_Exit: [], ev: [],
+      pA_Div: [], pA_Net: [], pA_Outlay: [], pA_Cum: [], pB_Div: [], pB_Net: [], pB_Outlay: [], pB_Cum: [], fcf: [], bor: [], pA_Yield: [], pB_Yield: [], ipCases: [], opVisits: []
+    };
 
     for (let m = 0; m < 12; m++) {
-      const globalM = idx * 12 + m;
-      monthly.ebitda[m] = net / 12;
-      monthly.netIncome[m] = net / 12;
-      monthly.cumNI[m] = (net * idx) + (net / 12) * (m + 1);
-      monthly.cumulativeRetainedEarnings[m] = 0;
-      monthly.pA_Outlay[m] = pA_Outlay / 12;
-      monthly.pA_Net[m] = pA_Outlay / 12;
-      monthly.pA_Cum[m] = (pA_Outlay * idx) + (pA_Outlay / 12) * (m + 1);
-      monthly.pB_Outlay[m] = pB_Outlay / 12;
-      monthly.pB_Net[m] = pB_Outlay / 12;
-      monthly.pB_Cum[m] = (pB_Outlay * idx) + (pB_Outlay / 12) * (m + 1);
-      monthly.fcf[m] = (pA_Outlay + pB_Outlay) / 12;
+      monthly.ipRev.push(0);
+      monthly.opRev.push(0);
+      monthly.totalRev.push(0);
+      monthly.totalMedSupp.push(0);
+      monthly.totalDocFee.push(0);
+      monthly.grossProfit.push(0);
+      monthly.staffCost.push(0);
+
+      let m_recOpex, m_ebitdar, m_ebitda, m_netInc;
+      if (p.k === "jvaOpex") {
+        m_recOpex = (m === 0) ? assumptions.jvaOpex : 0;
+        m_ebitdar = -m_recOpex;
+        m_ebitda = -m_recOpex;
+        m_netInc = -m_recOpex;
+      } else {
+        // commOpex occurs across Months 19-24 (indices 6 to 11 of Year 2, which is m >= 6)
+        m_recOpex = (m >= 6) ? (assumptions.commOpex / 6) : 0;
+        m_ebitdar = -m_recOpex;
+        m_ebitda = -m_recOpex;
+        m_netInc = -m_recOpex;
+      }
+
+      monthly.recurringOpex.push(m_recOpex);
+      monthly.ebitdar.push(m_ebitdar);
+      monthly.rent.push(0);
+      monthly.ebitda.push(m_ebitda);
+      monthly.tax.push(0);
+      monthly.netIncome.push(m_netInc);
+
+      // Cumulative Net Income chain
+      let cum_net_up_to_month = 0;
+      if (p.k === "jvaOpex") {
+        cum_net_up_to_month = -assumptions.jvaOpex;
+      } else {
+        const commOpexExpensed = (m >= 6) ? (m - 5) * (assumptions.commOpex / 6) : 0;
+        cum_net_up_to_month = -assumptions.jvaOpex - commOpexExpensed;
+      }
+      monthly.cumNI.push(cum_net_up_to_month);
+
+      monthly.distributableProfit.push(0);
+      monthly.retainedThisYear.push(0);
+      monthly.cumulativeRetainedEarnings.push(0);
+      monthly.shareA.push(0);
+      monthly.shareB.push(0);
+      monthly.opCoExit.push(0);
+      monthly.pA_Exit.push(0);
+      monthly.pB_Exit.push(0);
+      monthly.ev.push(0);
+      monthly.pA_Div.push(0);
+
+      // Cumulative Outlays
+      let pA_CumVal = 0;
+      let pB_CumVal = 0;
+      if (p.k === "jvaOpex") {
+        pA_CumVal = (pA_Outlay / 12) * (m + 1);
+        pB_CumVal = (pB_Outlay / 12) * (m + 1);
+      } else {
+        const pA_Yr1_total = -assumptions.partnerAEquity * (assumptions.equitySplitY1 / 100);
+        const pB_Yr1_total = -assumptions.partnerBEquity * (assumptions.equitySplitY1 / 100);
+        pA_CumVal = pA_Yr1_total + (pA_Outlay / 12) * (m + 1);
+        pB_CumVal = pB_Yr1_total + (pB_Outlay / 12) * (m + 1);
+      }
+
+      monthly.pA_Net.push(pA_Outlay / 12);
+      monthly.pA_Outlay.push(pA_Outlay / 12);
+      monthly.pA_Cum.push(pA_CumVal);
+      monthly.pB_Div.push(0);
+      monthly.pB_Net.push(pB_Outlay / 12);
+      monthly.pB_Outlay.push(pB_Outlay / 12);
+      monthly.pB_Cum.push(pB_CumVal);
+      monthly.fcf.push((pA_Outlay + pB_Outlay) / 12);
+      monthly.bor.push(0);
+      monthly.pA_Yield.push(0);
+      monthly.pB_Yield.push(0);
+      monthly.ipCases.push(0);
+      monthly.opVisits.push(0);
     }
 
     annualData.push({
@@ -304,13 +378,13 @@ const runOpCoEngine = (assumptions, config) => {
       totalDocFee: 0,
       grossProfit: 0,
       staffCost: 0,
-      recurringOpex: 0,
-      ebitdar: 0,
+      recurringOpex: assumptions[p.k],
+      ebitdar: -assumptions[p.k],
       rent: 0,
       ebitda: net,
       tax: 0,
       netIncome: net,
-      cumNI: net * (idx + 1),
+      cumNI: idx === 0 ? -assumptions.jvaOpex : -assumptions.jvaOpex - assumptions.commOpex,
       distributableProfit: 0,
       retainedThisYear: 0,
       cumulativeRetainedEarnings: 0,
@@ -319,12 +393,12 @@ const runOpCoEngine = (assumptions, config) => {
       pA_Outlay,
       pA_Div: 0,
       pA_Net: pA_Outlay,
-      pA_Cum: pA_Outlay * (idx + 1),
+      pA_Cum: idx === 0 ? pA_Outlay : pA_Outlay + (-assumptions.partnerAEquity * (assumptions.equitySplitY1 / 100)),
       pA_Yield: 0,
       pB_Outlay,
       pB_Div: 0,
       pB_Net: pB_Outlay,
-      pB_Cum: pB_Outlay * (idx + 1),
+      pB_Cum: idx === 0 ? pB_Outlay : pB_Outlay + (-assumptions.partnerBEquity * (assumptions.equitySplitY1 / 100)),
       pB_Yield: 0,
       fcf: pA_Outlay + pB_Outlay,
       ebitdaMargin: 0,
