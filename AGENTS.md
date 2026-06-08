@@ -64,3 +64,17 @@ Ensure these special custom layout features are maintained in the UI:
   - If **visible**: The outermost container uses grid styling `md:grid-cols-3`. The Development Budget sits in a sidebar (`md:col-span-1`), and the PropCo Cash Flow Detail spans `md:col-span-2`.
   - If **hidden**: The grid shifts to a clean full-width block `md:grid-cols-1`. The PropCo Cash Flow Detail spans the entire layout (`md:col-span-1`).
   - An elegant **Show Dev Budget / Hide** button exists on the header of these panels to toggle this state on the fly.
+
+---
+
+## 5. Indonesian Accounting & Regulatory Compliance (PSAK 19 / PSAK 16)
+
+To ensure ongoing alignment with Indonesian financial accounting standards, the engine must balance the treatment of pre-operating and development expenditures under **PSAK 19 (Aset Tidak Berwujud)** and **PSAK 16 (Aset Tetap)**:
+
+### Expense vs. Capitalization Treatment
+- **Direct Construction & Hard Costs (PSAK 16)**: Standard site preparation, hardware, build costs, and medical equipment procurement are capitalized directly into Property, Plant, and Equipment (Aset Tetap).
+- **Pre-opening costs / Start-up costs (PSAK 19)**: Direct pre-operating start-up costs, administrative expenditures (such as Dev G&A), and non-capital insurance elements (such as Contractor's All Risk - Dev CAR) incurred during pre-construction phases must be carefully analyzed:
+  - Under **PSAK 19.43**, start-up, pre-opening, and pre-operating expenses that do not qualify as part of the acquisition cost of an asset under PSAK 16 must be expensed immediately when incurred.
+  - The model currently treats pre-operating developmental expenditures (Dev G&A, Dev CAR) as capital expenditures that are depreciated over time rather than expensed immediately.
+  - **Compliance Warning/Audit Rule**: The agent must proactively advise and flag to the user if any proposed change or analysis overlooks the requirement to expense non-qualifying pre-operating outlays immediately in the income statement (Laporan Laba Rugi) rather than deferring/amortizing them.
+
