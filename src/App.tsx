@@ -3290,7 +3290,7 @@ const mapLocations = [
     desc: "South Jakarta node",
     lat: -6.2932,
     lon: 106.8189,
-    color: "#9B8B70",
+    color: "#1E3A8A",
   },
   {
     id: "new_vasanta",
@@ -3299,7 +3299,7 @@ const mapLocations = [
     desc: "Latitude -6.24, Longitude 106.64",
     lat: -6.247432407754837,
     lon: 106.64868860550507,
-    color: "#9B8B70",
+    color: "#1E3A8A",
   },
   {
     id: "pik",
@@ -3632,22 +3632,54 @@ const InteractiveDemographicMap = memo(() => {
         };
 
         // Request overpass data for motorways in the region
-        const query = `[out:json];(way["highway"="motorway"](-6.4,106.5,-6.0,107.0);way["highway"="motorway_link"](-6.4,106.5,-6.0,107.0););out geom;`;
-        fetch("https://overpass-api.de/api/interpreter", {
-          method: "POST",
-          body: "data=" + encodeURIComponent(query),
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded"
-          }
-        })
-          .then(r => r.text())
-          .then(text => {
+        const query = `[out:json][timeout:25];(way["highway"="motorway"](-6.4,106.5,-6.0,107.0);way["highway"="motorway_link"](-6.4,106.5,-6.0,107.0););out geom;`;
+        
+        const fetchTollRoadsWithFallback = async () => {
+          const cacheKey = "cached_toll_roads_jakarta";
+          const cached = sessionStorage.getItem(cacheKey);
+          if (cached) {
             try {
-              return JSON.parse(text);
+              return JSON.parse(cached);
             } catch (e) {
-              throw new Error("API rate limited or returned invalid JSON.");
+              sessionStorage.removeItem(cacheKey);
             }
-          })
+          }
+
+          const endpoints = [
+            "https://overpass-api.de/api/interpreter",
+            "https://lz4.overpass-api.de/api/interpreter",
+            "https://overpass.kumi.systems/api/interpreter",
+            "https://overpass.osm.ch/api/interpreter"
+          ];
+
+          for (const url of endpoints) {
+            try {
+              const res = await fetch(url, {
+                method: "POST",
+                body: "data=" + encodeURIComponent(query),
+                headers: {
+                  "Content-Type": "application/x-www-form-urlencoded"
+                }
+              });
+              if (!res.ok) continue;
+              const text = await res.text();
+              const data = JSON.parse(text);
+              if (data && data.elements) {
+                try {
+                  sessionStorage.setItem(cacheKey, JSON.stringify(data));
+                } catch(e) {
+                  // Ignore quota exceeded errors
+                }
+                return data;
+              }
+            } catch (err) {
+              console.warn(`[Overpass] Failed endpoint ${url}:`, err);
+            }
+          }
+          throw new Error("All Overpass API endpoints failed or timed out.");
+        };
+
+        fetchTollRoadsWithFallback()
           .then(data => {
             if (!mapRef.current) return;
             const lines = [];
@@ -3658,50 +3690,10 @@ const InteractiveDemographicMap = memo(() => {
             });
             renderTollRoads(lines, false);
           }).catch(e => {
-            console.warn("Failed to load toll roads via Overpass, using rich local fallback.", e);
+            console.error("Failed to load toll roads via Overpass.", e);
             if (!mapRef.current) return;
-
-            // local toll road fallbacks representing the main highways (JORR, Jakarta-Tangerang, etc.)
-            const fallbackLines = [
-              // JORR W1 Route
-              [
-                [-6.110, 106.735],
-                [-6.120, 106.732],
-                [-6.135, 106.730],
-                [-6.145, 106.728],
-                [-6.152, 106.727], // Rawa Buaya
-                [-6.165, 106.725],
-                [-6.180, 106.722],
-                [-6.195, 106.724],
-                [-6.210, 106.728]
-              ],
-              // Jakarta-Tangerang Toll Road
-              [
-                [-6.180, 106.650],
-                [-6.182, 106.690],
-                [-6.185, 106.722], // Interchange
-                [-6.184, 106.750],
-                [-6.180, 106.790],
-                [-6.176, 106.820]
-              ],
-              // Daan Mogot area connections/main ways
-              [
-                [-6.155, 106.660],
-                [-6.153, 106.700],
-                [-6.152, 106.727],
-                [-6.150, 106.760],
-                [-6.148, 106.800]
-              ],
-              // Inner Ring Road / Northern Link
-              [
-                [-6.120, 106.680],
-                [-6.122, 106.720],
-                [-6.123, 106.750],
-                [-6.125, 106.790]
-              ]
-            ];
-
-            renderTollRoads(fallbackLines, true);
+            // Hardcoded fallback removed to prevent random straight lines
+            setLoadingStatus({ active: false, text: "", isError: false });
           });
       } else {
         mapRef.current.addLayer(tollRoadLayerRef.current);
@@ -4813,14 +4805,21 @@ const InteractiveDemographicMap = memo(() => {
                         >
                           <input
                             type="checkbox"
-                            checked={groupLocs.every((l) =>
-                              activePOIs.includes(l.id),
-                            )}
+                            checked={
+                              groupName === "Infrastructure"
+                                ? groupLocs.every((l) => activePOIs.includes(l.id)) && showTollRoads
+                                : groupLocs.every((l) => activePOIs.includes(l.id))
+                            }
                             onChange={() => {
                               const ids = groupLocs.map((l) => l.id);
-                              const allActive = ids.every((id) =>
-                                activePOIs.includes(id),
-                              );
+                              const allActive = groupName === "Infrastructure"
+                                ? ids.every((id) => activePOIs.includes(id)) && showTollRoads
+                                : ids.every((id) => activePOIs.includes(id));
+                                
+                              if (groupName === "Infrastructure") {
+                                setShowTollRoads(!allActive);
+                              }
+                              
                               setActivePOIs((prev) =>
                                 allActive
                                   ? prev.filter((id) => !ids.includes(id))
