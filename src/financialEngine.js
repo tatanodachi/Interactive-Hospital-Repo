@@ -788,13 +788,13 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
     return monthly;
   };
 
-  const constrTiming = getTaskTimingDistribution(["structure", "fit-out", "construction"]);
+  const constrTiming = getTaskTimingDistribution(["structure", "construction", "piling", "foundation", "mep", "civil", "bunker"]);
   const eqTiming = getTaskTimingDistribution(["asset lease", "equipment", "medical equip"]);
   const infraTiming = getTaskTimingDistribution(["infrastructure"]);
-  const ffeTiming = getTaskTimingDistribution(["ff&e"]);
+  const ffeTiming = getTaskTimingDistribution(["ff&e", "interior", "fit-out", "furniture"]);
   const sharingTiming = getTaskTimingDistribution(["sharing"]);
-  const consultantTiming = getTaskTimingDistribution(["consultant"]);
-  const licenseTiming = getTaskTimingDistribution(["licens", "permit"]);
+  const consultantTiming = getTaskTimingDistribution(["consultant", "feasibility", "architectural", "layouts"]);
+  const licenseTiming = getTaskTimingDistribution(["licens", "permit", "clearance"]);
   const landTiming = getTaskTimingDistribution(["land"]);
 
   let exitYear = null;

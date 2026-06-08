@@ -252,7 +252,7 @@ const INITIAL_GROUPS = [
         id: "c2",
         name: "Licensing & Permits",
         start: 1,
-        duration: 1,
+        duration: 12,
         progress: 0,
         dependencies: [],
         owner: "Legal / Ops",
@@ -278,9 +278,9 @@ const INITIAL_GROUPS = [
         start: 21,
         duration: 4,
         progress: 0,
-        dependencies: ["t7"],
+        dependencies: ["t7_1"],
         owner: "Procurement",
-        cost: 12.0,
+        cost: 26.0,
         desc: "Furniture, Fixtures & Equipment fit-out for clinical and admin zones, scheduled sequentially post-Interior Fit-Out.",
         critical: false,
       },
@@ -292,7 +292,7 @@ const INITIAL_GROUPS = [
         progress: 0,
         dependencies: [],
         owner: "IT / Facilities",
-        cost: 15.0,
+        cost: 5.8,
         desc: "Network backbone, server rooms, and primary medical data clustering setup.",
         critical: false,
       },
@@ -304,7 +304,7 @@ const INITIAL_GROUPS = [
         progress: 0,
         dependencies: [],
         owner: "Tech Team",
-        cost: 8.5,
+        cost: 4.3,
         desc: "Software systems and R&D cost sharing for multi-tenant integrated apps.",
         critical: false,
       },
@@ -316,7 +316,7 @@ const INITIAL_GROUPS = [
         progress: 0,
         dependencies: ["c2"],
         owner: "EPC Contractor",
-        cost: 87.0,
+        cost: 149.5,
         desc: "Main building structural construction, piling, and core envelope setup.",
         critical: true,
       },
@@ -404,7 +404,7 @@ const INITIAL_GROUPS = [
         progress: 0,
         owner: "Nuclear Physicist / Legal",
         cost: 3.5,
-        desc: "Critical-path approval for heavy particle bunker construction and nuclear medicine operations. The primary competitive moat.",
+        desc: "Critical-path approval for heavy particle bunker construction and nuclear medicine operations.",
         critical: true,
         dependencies: ["t3"],
       },
@@ -417,28 +417,76 @@ const INITIAL_GROUPS = [
     bgLight: "bg-[#1E2F31]/5",
     tasks: [
       {
-        id: "t6",
-        name: "Main Structure & Core",
+        id: "t6_1",
+        name: "Piling, Excavation & Foundation",
         start: 1,
-        duration: 20,
+        duration: 4,
         progress: 0,
         owner: "EPC Contractor",
-        cost: 87.0,
-        desc: "Site prep, foundation piling, structure skeleton core, and pouring high-density barytes concrete shielding for the LINAC/PET-CT bunkers.",
+        cost: 22.4,
+        desc: "Civil site preparation, drilling, setting foundation piles, and mass excavation.",
         critical: true,
         dependencies: ["t4"],
       },
       {
-        id: "t7",
-        name: "Interior Fit-Out & MEP",
-        start: 16,
-        duration: 5,
+        id: "t6_2",
+        name: "Main Structural Superstructure",
+        start: 5,
+        duration: 10,
         progress: 0,
-        owner: "Fit-Out Lead",
-        cost: 38.0,
-        desc: "Deploying hospital-grade HEPA HVAC filtration, medical gas piping, private suites, and specialized interior diagnostic shielding panels.",
+        owner: "EPC Contractor",
+        cost: 59.8,
+        desc: "Reinforced concrete structural skeleton, pillars, floors, and slabs work.",
+        critical: true,
+        dependencies: ["t6_1"],
+      },
+      {
+        id: "t6_3",
+        name: "Heavy Concrete Shielding Bunkers",
+        start: 9,
+        duration: 4,
+        progress: 0,
+        owner: "Bunker Specialist",
+        cost: 22.4,
+        desc: "Pouring high-density barytes concrete shielding for oncology linac bunkers.",
+        critical: true,
+        dependencies: ["t6_2"],
+      },
+      {
+        id: "t6_4",
+        name: "HVAC & Hospital MEP Setup",
+        start: 12,
+        duration: 8,
+        progress: 0,
+        owner: "MEP Subcontractor",
+        cost: 44.9,
+        desc: "Deploying hospital-grade HEPA HVAC filtration, central plant and primary electrical conduits.",
+        critical: true,
+        dependencies: ["t6_2"],
+      },
+      {
+        id: "t7_1",
+        name: "Interior Fit-Out & Finishes",
+        start: 18,
+        duration: 4,
+        progress: 0,
+        owner: "Interior Designer",
+        cost: 13.0,
+        desc: "Hanging hygienic drywall, antibacterial coatings, ceiling treatment, and specialized lighting panels.",
         critical: false,
-        dependencies: ["t6"],
+        dependencies: ["t6_2"],
+      },
+      {
+        id: "t7_2",
+        name: "Clinical Furniture Integration",
+        start: 21,
+        duration: 4,
+        progress: 0,
+        owner: "Procurement Lead",
+        cost: 13.0,
+        desc: "Installation of nurse desks, clinical counters, patient lockers, and back-office furniture.",
+        critical: false,
+        dependencies: ["t7_1"],
       },
     ],
   },
@@ -470,7 +518,7 @@ const INITIAL_GROUPS = [
         cost: 8.0,
         desc: "Physical transport, crane-rigging, and mounting of medical assets into BAPETEN-approved bunkers.",
         critical: true,
-        dependencies: ["t6", "t10"],
+        dependencies: ["t6_3", "t10"],
       },
       {
         id: "t12",
@@ -482,7 +530,7 @@ const INITIAL_GROUPS = [
         cost: 4.5,
         desc: "Calibration of high-energy photon beams, safety sweeps, mock patient cycles, and emergency simulations.",
         critical: true,
-        dependencies: ["t7", "t11"],
+        dependencies: ["t11", "t7_1"],
       },
       {
         id: "t13",
@@ -495,6 +543,38 @@ const INITIAL_GROUPS = [
         desc: "Grand public ribbon-cutting, commercial patient onboarding, and grand-opening marketing sweeps.",
         critical: true,
         dependencies: ["t12"],
+      },
+    ],
+  },
+  {
+    id: "infrastructure",
+    name: "5. Infrastructure",
+    color: "from-[#2C5E4E] to-[#1E2F31]",
+    bgLight: "bg-[#2C5E4E]/5",
+    tasks: [
+      {
+        id: "t8",
+        name: "Cluster Infrastructure",
+        start: 1,
+        duration: 12,
+        progress: 0,
+        owner: "IT / Facilities",
+        cost: 5.8,
+        desc: "Physical setup of server hardware, clinical networks, and local area connectivity within the hospital facility.",
+        critical: false,
+        dependencies: [],
+      },
+      {
+        id: "t9",
+        name: "Sharing Development",
+        start: 1,
+        duration: 12,
+        progress: 0,
+        owner: "Tech Team",
+        cost: 4.3,
+        desc: "Software integrations, patient portal configurations, and collaborative platform development.",
+        critical: false,
+        dependencies: [],
       },
     ],
   },
@@ -10547,6 +10627,7 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(5);
   const [highlightCritical, setHighlightCritical] = useState(true);
   const [timelineSearch, setTimelineSearch] = useState("");
+  const [showDetailPanel, setShowDetailPanel] = useState(false);
 
   const [endYear, setEndYear] = useState(DEFAULT_END_YEAR);
 
@@ -10598,10 +10679,12 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
   }, [uniqueYears]);
 
   const [expandedGroups, setExpandedGroups] = useState({
-    design: true,
-    licensing: true,
+    capex: false,
+    design: false,
+    licensing: false,
     construction: false,
     equipment: false,
+    infrastructure: false,
   });
   const [selectedTaskId, setSelectedTaskId] = useState("t5");
 
@@ -10761,17 +10844,21 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
   const toggleAllGroups = () => {
     if (allGroupsCollapsed)
       setExpandedGroups({
+        capex: true,
         design: true,
         licensing: true,
         construction: true,
         equipment: true,
+        infrastructure: true,
       });
     else
       setExpandedGroups({
+        capex: false,
         design: false,
         licensing: false,
         construction: false,
         equipment: false,
+        infrastructure: false,
       });
   };
 
@@ -10985,22 +11072,22 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
         }
 
         // 2. Additional construction sequence feasibility checks
-        if (t.id === "t7") {
-          const t6 = allTasksMap["t6"];
-          if (t6) {
-            const t6End = (parseInt(t6.start) || 1) + (parseInt(t6.duration) || 1) - 1;
-            if (tStart <= t6End) {
-              warnings.push("Civil sequence constraint: Interior fit-outs (T7) cannot realistically start until the main concrete shielding core structure (T6) is completely poured.");
+        if (t.id === "t7_1" || t.id === "t7_2") {
+          const t6_2 = allTasksMap["t6_2"];
+          if (t6_2) {
+            const t6_2End = (parseInt(t6_2.start) || 1) + (parseInt(t6_2.duration) || 1) - 1;
+            if (tStart <= t6_2End) {
+              warnings.push("Civil sequence constraint: Interior fit-outs cannot realistically start until the main structural superstructure (T6_2) is complete.");
             }
           }
         }
 
         if (t.id === "t12") {
-          const t6 = allTasksMap["t6"];
-          if (t6) {
-            const t6End = (parseInt(t6.start) || 1) + (parseInt(t6.duration) || 1) - 1;
-            if (tStart <= t6End) {
-              warnings.push("Drills safety warning: Emergency drills (T12) and high-energy calibrations cannot proceed inside unsafe, incomplete concrete vault shielding core (T6).");
+          const t6_3 = allTasksMap["t6_3"];
+          if (t6_3) {
+            const t6_3End = (parseInt(t6_3.start) || 1) + (parseInt(t6_3.duration) || 1) - 1;
+            if (tStart <= t6_3End) {
+              warnings.push("Drills safety warning: Emergency drills (T12) and high-energy calibrations cannot proceed inside incomplete concrete vault shielding core (T6_3).");
             }
           }
         }
@@ -11189,15 +11276,6 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
 
   return (
     <div className="w-full text-[#1E2F31] flex flex-col gap-6 relative animate-in fade-in duration-500 pb-12">
-      {/* Diagonal Watermark Overlay */}
-      <div className="absolute top-12 left-0 right-0 z-[100] flex justify-center pointer-events-none overflow-hidden h-64">
-        <div className="transform -rotate-[8deg] w-[160%] shrink-0 whitespace-nowrap text-center pt-8">
-          <p className="text-lg sm:text-xl md:text-3xl lg:text-5xl font-black text-red-600/15 uppercase tracking-[0.4em] select-none">
-            Date and items have not been filled out or updated yet • Project Timeline Draft • Date and items have not been filled out or updated yet
-          </p>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center relative z-10 bg-white p-4 rounded-2xl border border-[#D8D8D8] shadow-sm">
         <div className="md:col-span-8 flex flex-wrap items-center gap-4">
           <div className="relative w-full max-w-xs">
@@ -11351,7 +11429,7 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
           </div>
         </div>
 
-        <div className="xl:col-span-6 bg-white border border-[#D8D8D8] rounded-[24px] overflow-hidden shadow-sm flex flex-col justify-between">
+        <div className={`bg-white border border-[#D8D8D8] rounded-[24px] overflow-hidden shadow-sm flex flex-col justify-between transition-all duration-300 ${showDetailPanel ? "xl:col-span-6" : "xl:col-span-9"}`}>
           <div className="p-5 border-b border-[#D8D8D8] flex flex-wrap justify-between items-center bg-[#F9F8F6]/30 gap-4">
             <div className="flex items-center gap-2.5">
               <Layers size={18} className="text-[#1C6048]" />
@@ -11377,8 +11455,16 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
                 Commissioning
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-[#4C4A4B] font-bold bg-[#EFEBE7] px-2 py-0.5 rounded border border-[#D8D8D8]">
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => setShowDetailPanel(!showDetailPanel)}
+                className="px-3 py-1 bg-white hover:bg-[#EFEBE7] border border-[#D8D8D8] rounded-[10px] text-[9px] font-black uppercase text-[#1E2F31] flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+              >
+                {showDetailPanel ? <EyeOff size={11} className="text-[#9B8B70]" /> : <Eye size={11} className="text-[#1C6048]" />}
+                {showDetailPanel ? "Hide Details" : "Show Details"}
+              </button>
+              <span className="text-[10px] text-[#4C4A4B] font-bold bg-[#EFEBE7] px-2 py-1 rounded-[10px] border border-[#D8D8D8]">
                 Active Range Focus
               </span>
             </div>
@@ -11540,6 +11626,7 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
                               onClick={() => {
                                 setSelectedTaskId(task.id);
                                 setIsCreatingTask(false);
+                                setShowDetailPanel(true);
                               }}
                               className={`flex items-center transition-all cursor-pointer border-b border-[#EFEBE7]/30 last:border-0 ${isSelected ? "bg-[#EFEBE7]/80" : "hover:bg-[#F9F8F6]"}`}
                             >
@@ -11627,6 +11714,7 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
                 onClick={() => {
                   setIsCreatingTask(true);
                   setSelectedTaskId(null);
+                  setShowDetailPanel(true);
                 }}
                 className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase flex items-center gap-1.5 transition-all bg-[#1C6048] hover:bg-opacity-95 text-white border border-[#1C6048] shadow-sm shrink-0"
               >
@@ -11636,7 +11724,8 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
           </div>
         </div>
 
-        <div className="xl:col-span-3 flex flex-col gap-6">
+        {showDetailPanel && (
+          <div className="xl:col-span-3 flex flex-col gap-6">
           {isCreatingTask ? (
             <form
               onSubmit={handleTaskCreate}
@@ -12118,6 +12207,7 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
             </p>
           </div>
         </div>
+      )}
       </div>
     </div>
   );
@@ -12509,12 +12599,81 @@ export default function App() {
     setGroups((prevGroups) => {
       let changed = false;
 
-      // Find the Commercial Opening task to calculate dev duration dynamically
-      const commOpeningTask = prevGroups
-        .flatMap((g) => g.tasks)
-        .find((t) => t.id === "t13" || t.name.toLowerCase().includes("commercial opening"));
-      const devDuration = commOpeningTask ? Math.max(1, commOpeningTask.start - 1) : (propCoAssumptions.devDurationMonths || 24);
+      // Extract details from capexDetails
+      const {
+        landCost = 0,
+        buildCost = 0,
+        medEqCost = 0,
+        ffeCost = 0,
+        infraCost = 0,
+        sharingDevCost = 0,
+        consultantCost = 0,
+        licenseCost = 0,
+      } = propCoModelData.capexDetails;
 
+      const formatCost = (val) => Math.round(val * 10) / 10;
+
+      // Find specific child tasks to compute rollup timings
+      const allFlatTasks = prevGroups.flatMap((g) => g.tasks);
+      const findTask = (id) => allFlatTasks.find((t) => t.id === id);
+
+      // 1. Consultant subtasks
+      const t1 = findTask("t1");
+      const t2 = findTask("t2");
+      const t3 = findTask("t3");
+      const consultantRollup = { start: 2, end: 7 };
+      if (t1 && t2 && t3) {
+        const starts = [t1.start, t2.start, t3.start].map(Number);
+        const ends = [t1.start + t1.duration - 1, t2.start + t2.duration - 1, t3.start + t3.duration - 1].map(Number);
+        consultantRollup.start = Math.min(...starts);
+        consultantRollup.end = Math.max(...ends);
+      }
+
+      // 2. Licensing subtasks
+      const t4 = findTask("t4");
+      const t5 = findTask("t5");
+      const licensingRollup = { start: 1, end: 15 };
+      if (t4 && t5) {
+        const starts = [t4.start, t5.start].map(Number);
+        const ends = [t4.start + t4.duration - 1, t5.start + t5.duration - 1].map(Number);
+        licensingRollup.start = Math.min(...starts);
+        licensingRollup.end = Math.max(...ends);
+      }
+
+      // 3. Construction subtasks
+      const t6_1 = findTask("t6_1");
+      const t6_2 = findTask("t6_2");
+      const t6_3 = findTask("t6_3");
+      const t6_4 = findTask("t6_4");
+      const constructionRollup = { start: 1, end: 20 };
+      if (t6_1 && t6_2 && t6_3 && t6_4) {
+        const starts = [t6_1.start, t6_2.start, t6_3.start, t6_4.start].map(Number);
+        const ends = [
+          t6_1.start + t6_1.duration - 1,
+          t6_2.start + t6_2.duration - 1,
+          t6_3.start + t6_3.duration - 1,
+          t6_4.start + t6_4.duration - 1,
+        ].map(Number);
+        constructionRollup.start = Math.min(...starts);
+        constructionRollup.end = Math.max(...ends);
+      }
+
+      // 4. FF&E subtasks
+      const t7_1 = findTask("t7_1");
+      const t7_2 = findTask("t7_2");
+      const ffeRollup = { start: 18, end: 24 };
+      if (t7_1 && t7_2) {
+        const starts = [t7_1.start, t7_2.start].map(Number);
+        const ends = [t7_1.start + t7_1.duration - 1, t7_2.start + t7_2.duration - 1].map(Number);
+        ffeRollup.start = Math.min(...starts);
+        ffeRollup.end = Math.max(...ends);
+      }
+
+      // 5. Medical equipment timing logic
+      const t8 = findTask("t8");
+      const t9 = findTask("t9");
+      const commOpeningTask = findTask("t13");
+      const devDuration = commOpeningTask ? Math.max(1, commOpeningTask.start - 1) : (propCoAssumptions.devDurationMonths || 24);
       const isLease = propCoAssumptions.medEqProcurement === "lease";
       const purchaseYear = propCoAssumptions.medEqPurchaseOpYear || 4;
 
@@ -12523,93 +12682,126 @@ export default function App() {
         : 16;
       const targetMedEqDuration = 3;
 
-      let constrStart = 1;
-      let constrDuration = 20;
-
-      const c7Task = prevGroups.flatMap((g) => g.tasks).find((t) => t.id === "c7");
-      const t6Task = prevGroups.flatMap((g) => g.tasks).find((t) => t.id === "t6");
-      if (c7Task && t6Task) {
-        if (c7Task.start !== t6Task.start || c7Task.duration !== t6Task.duration) {
-          if (t6Task.start === 10 && t6Task.duration === 8) {
-            constrStart = c7Task.start;
-            constrDuration = c7Task.duration;
-          } else {
-            constrStart = t6Task.start;
-            constrDuration = t6Task.duration;
-          }
-        } else {
-          constrStart = c7Task.start;
-          constrDuration = c7Task.duration;
-        }
-      }
-
       const nextGroups = prevGroups.map((group) => {
         const nextTasks = group.tasks.map((task) => {
           let updatedTask = { ...task };
           let taskChanged = false;
+          let targetCost = task.cost;
+          let targetStart = task.start;
+          let targetDuration = task.duration;
 
-          if (task.id === "c7" || task.name === "Hospital Construction") {
-            const newCost = Math.round(propCoModelData.capexDetails.buildCost * 10) / 10;
-            if (task.cost !== newCost) {
-              updatedTask.cost = newCost;
-              taskChanged = true;
-            }
-            if (task.start !== constrStart) {
-              updatedTask.start = constrStart;
-              taskChanged = true;
-            }
-            if (task.duration !== constrDuration) {
-              updatedTask.duration = constrDuration;
-              taskChanged = true;
-            }
+          // Deriving COSTS dynamically for each task
+          switch (task.id) {
+            // Group 0 Rollups: Core Capex Totals
+            case "c1":
+              targetCost = formatCost(landCost);
+              break;
+            case "c2":
+              targetCost = formatCost(licenseCost);
+              targetStart = licensingRollup.start;
+              targetDuration = licensingRollup.end - licensingRollup.start + 1;
+              break;
+            case "c3":
+              targetCost = formatCost(consultantCost);
+              targetStart = consultantRollup.start;
+              targetDuration = consultantRollup.end - consultantRollup.start + 1;
+              break;
+            case "c4":
+              targetCost = formatCost(ffeCost);
+              targetStart = ffeRollup.start;
+              targetDuration = ffeRollup.end - ffeRollup.start + 1;
+              break;
+            case "c5":
+              targetCost = formatCost(infraCost);
+              if (t8) {
+                targetStart = t8.start;
+                targetDuration = t8.duration;
+              }
+              break;
+            case "c6":
+              targetCost = formatCost(sharingDevCost);
+              if (t9) {
+                targetStart = t9.start;
+                targetDuration = t9.duration;
+              }
+              break;
+            case "c7":
+              targetCost = formatCost(buildCost);
+              targetStart = constructionRollup.start;
+              targetDuration = constructionRollup.end - constructionRollup.start + 1;
+              break;
+            case "c8":
+              targetCost = formatCost(medEqCost);
+              targetStart = targetMedEqStart;
+              targetDuration = targetMedEqDuration;
+              break;
+
+            // Group 1: Design & Planning Consultant cost splits
+            case "t1":
+              targetCost = formatCost(consultantCost * 0.20);
+              break;
+            case "t2":
+              targetCost = formatCost(consultantCost * 0.50);
+              break;
+            case "t3":
+              targetCost = formatCost(consultantCost * 0.30);
+              break;
+
+            // Group 2: Licensing & Permits cost splits
+            case "t4":
+              targetCost = formatCost(licenseCost * 0.60);
+              break;
+            case "t5":
+              targetCost = formatCost(licenseCost * 0.40);
+              break;
+
+            // Group 3: Civil, Construction & Interior components
+            case "t6_1":
+              targetCost = formatCost(buildCost * 0.15);
+              break;
+            case "t6_2":
+              targetCost = formatCost(buildCost * 0.40);
+              break;
+            case "t6_3":
+              targetCost = formatCost(buildCost * 0.15);
+              break;
+            case "t6_4":
+              targetCost = formatCost(buildCost * 0.30);
+              break;
+            case "t7_1":
+              targetCost = formatCost(ffeCost * 0.50);
+              break;
+            case "t7_2":
+              targetCost = formatCost(ffeCost * 0.50);
+              break;
+
+            // Group 4: Equipment setup
+            case "t10":
+              targetCost = formatCost(medEqCost);
+              targetStart = targetMedEqStart;
+              targetDuration = targetMedEqDuration;
+              break;
+
+            // Group 5: Infrastructure
+            case "t8":
+              targetCost = formatCost(infraCost);
+              break;
+            case "t9":
+              targetCost = formatCost(sharingDevCost);
+              break;
           }
 
-          if (task.id === "t6" || task.name === "Main Structure & Core") {
-            const newCost = Math.round(propCoModelData.capexDetails.buildCost * 10) / 10;
-            if (task.cost !== newCost) {
-              updatedTask.cost = newCost;
-              taskChanged = true;
-            }
-            if (task.start !== constrStart) {
-              updatedTask.start = constrStart;
-              taskChanged = true;
-            }
-            if (task.duration !== constrDuration) {
-              updatedTask.duration = constrDuration;
-              taskChanged = true;
-            }
+          if (task.cost !== targetCost) {
+            updatedTask.cost = targetCost;
+            taskChanged = true;
           }
-
-          if (task.id === "c8" || task.name === "Medical Equipment Setup") {
-            const newCost = Math.round(propCoModelData.capexDetails.medEqCost * 10) / 10;
-            if (task.cost !== newCost) {
-              updatedTask.cost = newCost;
-              taskChanged = true;
-            }
-            if (task.start !== targetMedEqStart) {
-              updatedTask.start = targetMedEqStart;
-              taskChanged = true;
-            }
-            if (task.duration !== targetMedEqDuration) {
-              updatedTask.duration = targetMedEqDuration;
-              taskChanged = true;
-            }
+          if (task.start !== targetStart) {
+            updatedTask.start = targetStart;
+            taskChanged = true;
           }
-
-          if (task.id === "t10" || task.name === "Oncology Asset Lease") {
-            const newCost = Math.round(propCoModelData.capexDetails.medEqCost * 10) / 10;
-            if (task.cost !== newCost) {
-              updatedTask.cost = newCost;
-              taskChanged = true;
-            }
-            if (task.start !== targetMedEqStart) {
-              updatedTask.start = targetMedEqStart;
-              taskChanged = true;
-            }
-            if (task.duration !== targetMedEqDuration) {
-              updatedTask.duration = targetMedEqDuration;
-              taskChanged = true;
-            }
+          if (task.duration !== targetDuration) {
+            updatedTask.duration = targetDuration;
+            taskChanged = true;
           }
 
           if (taskChanged) {
