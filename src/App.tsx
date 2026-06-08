@@ -3286,10 +3286,19 @@ const mapLocations = [
   {
     id: "tb",
     name: "TB Simatupang",
-    group: "General",
+    group: "Vasanta",
     desc: "South Jakarta node",
     lat: -6.2932,
     lon: 106.8189,
+    color: "#9B8B70",
+  },
+  {
+    id: "new_vasanta",
+    name: "Serpong",
+    group: "Vasanta",
+    desc: "Latitude -6.24, Longitude 106.64",
+    lat: -6.247432407754837,
+    lon: 106.64868860550507,
     color: "#9B8B70",
   },
   {
@@ -3566,6 +3575,62 @@ const InteractiveDemographicMap = memo(() => {
     if (showTollRoads) {
       if (!tollRoadLayerRef.current) {
         setLoadingStatus({ active: true, text: "Loading Toll Roads...", isError: false });
+        
+        const renderTollRoads = (lines, isFallback = false) => {
+          if (!mapRef.current) return;
+          const L = window.L;
+          const tollGroup = L.layerGroup();
+          
+          L.polyline(lines, {
+            color: "#1E3A8A",
+            weight: 3,
+            opacity: 0.6,
+            dashArray: "5, 5",
+            pane: "ringsPane"
+          }).addTo(tollGroup);
+
+          // Add nearest toll gate to Vasanta Hospital marker
+          const tollIconHtml = `
+            <div style="width: 15px; height: 15px; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0px 1px 2px rgba(0,0,0,0.3));">
+              <svg viewBox="0 0 100 90" width="100%" height="100%">
+                <!-- Hexagon border and background -->
+                <polygon points="25,2 75,2 98,45 75,88 25,88 2,45" fill="white" stroke="black" stroke-width="4" stroke-linejoin="round"/>
+                <!-- Red header -->
+                <polygon points="23,4 77,4 83,18 17,18" fill="red" />
+                <line x1="17" y1="18" x2="83" y2="18" stroke="black" stroke-width="4"/>
+                <!-- Text -->
+                <text x="50" y="14" fill="white" font-size="11" font-family="sans-serif" font-weight="900" text-anchor="middle" letter-spacing="0.5">TOL</text>
+                <text x="50" y="70" fill="black" font-size="52" font-family="sans-serif" font-weight="900" text-anchor="middle">1</text>
+              </svg>
+            </div>
+          `;
+          const customIcon = L.divIcon({
+            html: tollIconHtml,
+            className: "",
+            iconSize: [15, 15],
+            iconAnchor: [7.5, 7.5]
+          });
+          const marker = L.marker([-6.152, 106.727], {
+             pane: "labelsPane",
+             icon: customIcon
+          });
+          
+          marker.bindTooltip(`
+              <div style="background: white; border: 1px solid #EFEBE7; padding: 6px 8px; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); font-family: sans-serif; font-size: 10px; line-height: 1.3;">
+                  <div style="font-weight: bold; color: #1E2F31; margin-bottom: 2px;">Rawa Buaya Toll Gate ${isFallback ? "(Offline Mode)" : ""}</div>
+                  <div style="color: #4C4A4B;">JORR W1 KM4</div>
+              </div>
+          `, {
+             direction: "top",
+             offset: [0, -8],
+             className: "custom-poi-tooltip"
+          });
+          marker.addTo(tollGroup);
+          
+          tollRoadLayerRef.current = tollGroup.addTo(mapRef.current);
+          setLoadingStatus({ active: false, text: "", isError: false });
+        };
+
         // Request overpass data for motorways in the region
         const query = `[out:json];(way["highway"="motorway"](-6.4,106.5,-6.0,107.0);way["highway"="motorway_link"](-6.4,106.5,-6.0,107.0););out geom;`;
         fetch("https://overpass-api.de/api/interpreter", {
@@ -3591,62 +3656,52 @@ const InteractiveDemographicMap = memo(() => {
                 lines.push(element.geometry.map(p => [p.lat, p.lon]));
               }
             });
-            const L = window.L;
-            const tollGroup = L.layerGroup();
-            
-            L.polyline(lines, {
-              color: "#1E3A8A",
-              weight: 3,
-              opacity: 0.6,
-              dashArray: "5, 5",
-              pane: "ringsPane"
-            }).addTo(tollGroup);
-
-            // Add nearest toll gate to Vasanta Hospital marker
-            const tollIconHtml = `
-              <div style="width: 15px; height: 15px; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0px 1px 2px rgba(0,0,0,0.3));">
-                <svg viewBox="0 0 100 90" width="100%" height="100%">
-                  <!-- Hexagon border and background -->
-                  <polygon points="25,2 75,2 98,45 75,88 25,88 2,45" fill="white" stroke="black" stroke-width="4" stroke-linejoin="round"/>
-                  <!-- Red header -->
-                  <polygon points="23,4 77,4 83,18 17,18" fill="red" />
-                  <line x1="17" y1="18" x2="83" y2="18" stroke="black" stroke-width="4"/>
-                  <!-- Text -->
-                  <text x="50" y="14" fill="white" font-size="11" font-family="sans-serif" font-weight="900" text-anchor="middle" letter-spacing="0.5">TOL</text>
-                  <text x="50" y="70" fill="black" font-size="52" font-family="sans-serif" font-weight="900" text-anchor="middle">1</text>
-                </svg>
-              </div>
-            `;
-            const customIcon = L.divIcon({
-              html: tollIconHtml,
-              className: "",
-              iconSize: [15, 15],
-              iconAnchor: [7.5, 7.5]
-            });
-            const marker = L.marker([-6.152, 106.727], {
-               pane: "labelsPane",
-               icon: customIcon
-            });
-            
-            marker.bindTooltip(`
-                <div style="background: white; border: 1px solid #EFEBE7; padding: 6px 8px; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); font-family: sans-serif; font-size: 10px; line-height: 1.3;">
-                    <div style="font-weight: bold; color: #1E2F31; margin-bottom: 2px;">Rawa Buaya Toll Gate</div>
-                    <div style="color: #4C4A4B;">JORR W1 KM4</div>
-                </div>
-            `, {
-               direction: "top",
-               offset: [0, -8],
-               className: "custom-poi-tooltip"
-            });
-            marker.addTo(tollGroup);
-            
-            tollRoadLayerRef.current = tollGroup.addTo(mapRef.current);
-            setLoadingStatus({ active: false, text: "", isError: false });
+            renderTollRoads(lines, false);
           }).catch(e => {
-            console.error("Failed to load toll roads", e);
+            console.warn("Failed to load toll roads via Overpass, using rich local fallback.", e);
             if (!mapRef.current) return;
-            setLoadingStatus({ active: false, text: "Failed to load toll roads (rate limited).", isError: false });
-            setTimeout(() => setLoadingStatus({ active: false, text: "", isError: false }), 3000);
+
+            // local toll road fallbacks representing the main highways (JORR, Jakarta-Tangerang, etc.)
+            const fallbackLines = [
+              // JORR W1 Route
+              [
+                [-6.110, 106.735],
+                [-6.120, 106.732],
+                [-6.135, 106.730],
+                [-6.145, 106.728],
+                [-6.152, 106.727], // Rawa Buaya
+                [-6.165, 106.725],
+                [-6.180, 106.722],
+                [-6.195, 106.724],
+                [-6.210, 106.728]
+              ],
+              // Jakarta-Tangerang Toll Road
+              [
+                [-6.180, 106.650],
+                [-6.182, 106.690],
+                [-6.185, 106.722], // Interchange
+                [-6.184, 106.750],
+                [-6.180, 106.790],
+                [-6.176, 106.820]
+              ],
+              // Daan Mogot area connections/main ways
+              [
+                [-6.155, 106.660],
+                [-6.153, 106.700],
+                [-6.152, 106.727],
+                [-6.150, 106.760],
+                [-6.148, 106.800]
+              ],
+              // Inner Ring Road / Northern Link
+              [
+                [-6.120, 106.680],
+                [-6.122, 106.720],
+                [-6.123, 106.750],
+                [-6.125, 106.790]
+              ]
+            ];
+
+            renderTollRoads(fallbackLines, true);
           });
       } else {
         mapRef.current.addLayer(tollRoadLayerRef.current);
@@ -4781,7 +4836,7 @@ const InteractiveDemographicMap = memo(() => {
                         <div className="flex flex-col">
                           {/* Anchor / Base Locations (No SubGroup) */}
                           {groupLocs
-                            .filter((l) => !l.subGroup)
+                            .filter((l) => !l.subGroup && (groupName !== "Vasanta" || (l.id !== "tb" && l.id !== "new_vasanta")))
                             .map((loc, index) => (
                               <div
                                 key={loc.id}
@@ -5214,6 +5269,63 @@ const InteractiveDemographicMap = memo(() => {
                               </div>
                             );
                           })}
+
+                          {/* Render TB Simatupang and additional anchors as top-level anchor items positioned after the radius sub-groups */}
+                          {groupName === "Vasanta" &&
+                            groupLocs
+                              .filter((l) => l.id === "tb" || l.id === "new_vasanta")
+                              .map((loc, index) => (
+                                <div
+                                  key={loc.id}
+                                  className="location-list-item flex justify-between items-center py-1.5 pl-7 pr-2 text-[10px] font-medium hover:bg-[#EFEBE7] rounded cursor-pointer transition-colors"
+                                  onClick={() =>
+                                    handlePoiClick(
+                                      loc.lat !== undefined
+                                        ? loc.lat
+                                        : loc.fallbackLat,
+                                      loc.lon !== undefined
+                                        ? loc.lon
+                                        : loc.fallbackLon,
+                                      loc.id
+                                    )
+                                  }
+                                  onMouseEnter={() =>
+                                    handlePoiHover?.(loc.id, true)
+                                  }
+                                  onMouseLeave={() =>
+                                    handlePoiHover?.(loc.id, false)
+                                  }
+                                >
+                                  <div className="truncate flex-1 min-w-0 pr-3">
+                                    <span className="text-[#9B8B70] mr-1.5 font-bold">
+                                      {index + 2}.
+                                    </span>
+                                    <span className="font-bold text-[#1E2F31]">
+                                      {loc.name}
+                                    </span>
+                                    <span className="hidden text-[9px] text-[#9B8B70] ml-1.5">
+                                      — {loc.desc}
+                                    </span>
+                                  </div>
+                                  <label
+                                    className="switch item"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={activePOIs.includes(loc.id)}
+                                      onChange={() =>
+                                        setActivePOIs((prev) =>
+                                          prev.includes(loc.id)
+                                            ? prev.filter((i) => i !== loc.id)
+                                            : [...prev, loc.id],
+                                        )
+                                      }
+                                    />
+                                    <span className="slider"></span>
+                                  </label>
+                                </div>
+                              ))}
 
                           {/* Toll Roads Toggle specifically for Infrastructure Group */}
                           {groupName === "Infrastructure" && (
