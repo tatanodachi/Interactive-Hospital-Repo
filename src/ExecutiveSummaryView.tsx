@@ -327,7 +327,7 @@ export const ExecutiveSummaryView = memo(({ isPresenting }: { isPresenting: bool
                 <div className="p-4 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/80 flex items-center justify-between hover:border-[#2A4750]/30 transition-colors">
                   <div className="space-y-1">
                     <span className="text-[10px] uppercase font-black tracking-wider text-[#2A4750] block">Specialist Bed Scale</span>
-                    <span className="text-lg font-bold text-[#1E2F31] font-mono font-sans">120 Capacity Beds</span>
+                    <span className="text-lg font-bold text-[#1E2F31] font-mono">120 Capacity Beds</span>
                   </div>
                   <div className="w-10 h-10 bg-white rounded-lg border border-[#D8D8D8] flex items-center justify-center text-[#2A4750] shadow-xs shrink-0">
                      <Building2 size={18} />
@@ -343,7 +343,7 @@ export const ExecutiveSummaryView = memo(({ isPresenting }: { isPresenting: bool
               </div>
               <h4 className="font-bold text-sm text-white uppercase tracking-widest mb-1">EBITDA Sharing Benchmark</h4>
               <p className="text-xs text-[#EFEBE7] opacity-90 leading-relaxed">
-                OpCo EBITDA sharing operates on a floor-and-ceiling covenant logic, offering strong downside defense to PropCo bondholders while capturing target operational upside during years 3-8 macro health ramp.
+                OpCo lease payments and rental streams are calculated dynamically using flexible structures (flat % EBITDAR rate, revenue & profit splits, or revenue-per-active-bed tiered rates), offering strong downside defense while capturing operational upside during years 3-8 clinical ramp.
               </p>
             </div>
 
