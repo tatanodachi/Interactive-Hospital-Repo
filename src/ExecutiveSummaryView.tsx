@@ -21,34 +21,52 @@ export const ExecutiveSummaryView = memo(({ isPresenting }: { isPresenting: bool
 
   const narrativeSteps = [
     {
-      title: "1. Strategic Location & Market Catapult",
-      subtitle: "West Jakarta Catchment Area Focus",
-      icon: <MapPin className="text-[#1C6048]" size={18} />,
+      title: "1. The Ask (Capital Requirements)",
+      subtitle: "Capital Structure Allocation & JV Capitalization",
+      icon: <Building2 className="text-[#1C6048]" size={18} />,
       content: (
         <div className="space-y-3">
           <p className="text-sm text-[#4C4A4B] leading-relaxed">
-            The project leverages a premium <strong>1.2 Ha Land site</strong> on Daan Mogot Road KM. 13. This location directly addresses a massive deficit in high-end, specialized hospital beds (Class A) for the West Jakarta population, bridging the gap between basic BPJS services and luxury private healthcare.
+            The funding request is strategically organized to align with distinct institutional investment mandates across two specialized corporate entities:
           </p>
-          <div className="flex flex-wrap gap-2 pt-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider bg-[#1C6048]/10 text-[#1C6048] px-2 py-1 rounded">
-               K1 Zoning Permitted
-            </span>
-            <span className="text-[10px] font-bold uppercase tracking-wider bg-[#9B8B70]/10 text-[#9B8B70] px-2 py-1 rounded">
-               13,000 Sqm GFA
-            </span>
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <div className="p-3.5 bg-white rounded-lg border border-[#D8D8D8]/60">
+              <span className="text-[9px] uppercase font-black text-[#1E2F31] block mb-1">PropCo Development Ask</span>
+              <p className="text-sm font-bold text-[#1E2F31] font-mono">IDR 406.6 Billion</p>
+              <p className="text-[10px] text-[#8A8175] mt-1">Excludes land purchase cost; funded by construction debt & target JV equity.</p>
+            </div>
+            <div className="p-3.5 bg-white rounded-lg border border-[#D8D8D8]/60">
+              <span className="text-[9px] uppercase font-black text-[#1C6048] block mb-1">OpCo Setup Ask</span>
+              <p className="text-sm font-bold text-[#1C6048] font-mono">IDR 82.10 Billion</p>
+              <p className="text-[10px] text-[#8A8175] mt-1">Establishes JVA (PMA setup), pre-operating costs, and primary 6-month clinical cash buffer.</p>
+            </div>
           </div>
         </div>
       )
     },
     {
-      title: "2. Clean PropCo-OpCo Synergy Structure",
-      subtitle: "EBITDA-Linked Real Estate Returns",
-      icon: <Users className="text-[#2A4750]" size={18} />,
+      title: "2. The Investment Thesis",
+      subtitle: "Unlocking Premium Clinical Deficits & Isolated Real Estate Synergy",
+      icon: <Sparkles className="text-[#1C6048]" size={18} />,
       content: (
         <div className="space-y-4">
+          {/* Market Conditions Catch Point */}
+          <div className="p-3.5 bg-[#1C6048]/5 rounded-xl border border-[#1C6048]/15 space-y-2">
+            <span className="text-[9px] uppercase font-black tracking-wider text-[#1C6048] block">Market Conditions & Demand Catalyst</span>
+            <div className="grid grid-cols-2 gap-3 text-[11px] text-[#4C4A4B]">
+              <div className="space-y-1">
+                <span className="font-bold text-[#1E2F31] block">🏥 Bed Supply Gap</span>
+                <p className="leading-snug">Severe local deficit of high-end specialized secondary care beds in West Jakarta’s dense catchment corridor.</p>
+              </div>
+              <div className="space-y-1">
+                <span className="font-bold text-[#1E2F31] block">📍 Demographic Magnet</span>
+                <p className="leading-snug">1.2 Ha site on Daan Mogot KM. 13 intercepts high-growth neighborhoods, stopping patient outflows to central districts.</p>
+              </div>
+            </div>
+          </div>
+
           <p className="text-sm text-[#4C4A4B] leading-relaxed">
-             We have structured the transaction to fully isolate operating volatility from the underlying real estate asset. 
-             Strategic Partners &amp; VG OpCo inject capital and expertise directly into the operational entity, ensuring institutional grade governance.
+            By severing physical real estate from clinical operations, the joint transaction structure insulates property equity while securing robust operational yields:
           </p>
 
           {/* Clean Flow Diagram */}
@@ -90,56 +108,58 @@ export const ExecutiveSummaryView = memo(({ isPresenting }: { isPresenting: bool
                 <div className="text-[8px] opacity-90 uppercase tracking-wider font-bold mt-1">Asset Owner</div>
               </div>
             </div>
-            <div className="text-[10px] text-[#4C4A4B] leading-snug italic text-center opacity-95">
-              💡 OpCo shares a specified percentage of EBITDA back to PropCo, aligning incentives perfectly while insulating structural real estate value from early-stage hospital risks.
+            <div className="text-[10px] text-[#4C4A4B] leading-snug italic text-center opacity-95 text-xs">
+              💡 OpCo rents physical premises at a targeted EBITDA-linked rent structure, insulating real estate asset backing while rewarding PropCo stakeholders with strong asset yields.
             </div>
           </div>
         </div>
       )
     },
     {
-      title: "3. Targeted Clinical Positioning & Care Pathway",
-      subtitle: "High-Yield Clinical Programming & Specialized Services",
-      icon: <Activity className="text-[#1C6048]" size={18} />,
+      title: "3. Financial Profile & Key Metrics",
+      subtitle: "Robust Cash Flow Trajectories & Healthy Debt Headrooms",
+      icon: <TrendingUp className="text-[#1C6048]" size={18} />,
       content: (
         <div className="space-y-3">
           <p className="text-sm text-[#4C4A4B] leading-relaxed">
-            Positioning Vasanta Hospital as a high-margin specialist facility focusing on oncology, cardiology, and advanced ob-gyn. This dual-track strategy optimizes both high-volume healthcare coverage and premium private care yield.
+            Conservative clinical modeling and stress tests (varying patient volumes, ramp speed, and medical supply inflation) guarantee a resilient operational yield:
           </p>
           <div className="grid grid-cols-2 gap-3 pt-1">
-            <div className="p-2 bg-white rounded-lg border border-[#D8D8D8]/60">
-              <span className="text-[9px] uppercase font-black text-[#1C6048] block">Dual-care framework</span>
-              <p className="text-[11px] text-[#4C4A4B]">Efficient outpatient flow coupled with premier private hospital care lanes.</p>
+            <div className="p-3 bg-white rounded-lg border border-[#D8D8D8]/60">
+              <span className="text-[9px] uppercase font-black text-[#1C6048] block mb-1">Projected Base IRR</span>
+              <p className="text-sm font-bold text-[#1E2F31] font-mono">18.4% - 22.1%</p>
+              <p className="text-[10px] text-[#4C4A4B] mt-0.5">Yield expands rapidly starting Year 3 post clinical stabilization and occupancy ramp.</p>
             </div>
-            <div className="p-2 bg-white rounded-lg border border-[#D8D8D8]/60">
-              <span className="text-[9px] uppercase font-black text-[#9B8B70] block">Specialist Radiotherapy</span>
-              <p className="text-[11px] text-[#4C4A4B]">Advanced cancer pathway equipped with top-tier diagnostics driving outpatient margins.</p>
+            <div className="p-3 bg-white rounded-lg border border-[#D8D8D8]/60">
+              <span className="text-[9px] uppercase font-black text-[#9B8B70] block mb-1">Standard DSCR Covenants</span>
+              <p className="text-sm font-bold text-[#1E2F31] font-mono">&gt; 1.25x minimum</p>
+              <p className="text-[10px] text-[#4C4A4B] mt-0.5">Ensures robust structural debt-servicing headroom even under conservative downside curves.</p>
             </div>
           </div>
         </div>
       )
     },
     {
-      title: "4. Strategic Execution Plan & Immediate Ask",
-      subtitle: "Phased Roadmap & JV Formation",
-      icon: <Compass className="text-[#9B8B70]" size={18} />,
+      title: "4. Exit Strategy & Value Realization",
+      subtitle: "Bifurcated Monetization and Multiple Liquidity Gateways",
+      icon: <Compass className="text-[#1C6048]" size={18} />,
       content: (
         <div className="space-y-3">
           <p className="text-sm text-[#4C4A4B] leading-relaxed">
-            The next priority phase secures the definitive joint-venture entity setup and unlocks initial architectural design tranches.
+            The dual-entity corporate architecture guarantees clear and distinct monetization paths to maximize terminal asset valuations:
           </p>
           <ul className="space-y-2 text-xs text-[#4C4A4B]">
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#1C6048]"></span>
-              <span>Binding MoU with key management team & target operating partners.</span>
+            <li className="flex items-start gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#1C6048] mt-1.5 shrink-0"></span>
+              <span><strong>REIT Liquidation (DIRE)</strong>: PropCo's mature rental streams can be bundled and listed as an Indonesian or Singaporean REIT, attracting yield-seeking income funds.</span>
             </li>
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#1C6048]"></span>
-              <span>Forming structural PropCo agreements and land transfer covenants.</span>
+            <li className="flex items-start gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#1C6048] mt-1.5 shrink-0"></span>
+              <span><strong>OpCo Buyout or Floatation (IPO)</strong>: The highly profitable clinical operating company can pursue strategic M&A with major national healthcare networks, or float independently on IDX.</span>
             </li>
-            <li className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#1C6048]"></span>
-              <span>Final environmental impact checks matching trade & zoning parameters.</span>
+            <li className="flex items-start gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#1C6048] mt-1.5 shrink-0"></span>
+              <span><strong>Infrastructure Recapitalization</strong>: Opportunity to refinance early-stage capital with lower cost, long-term private placement debt when operational cash flows stabilize.</span>
             </li>
           </ul>
         </div>
@@ -159,9 +179,9 @@ export const ExecutiveSummaryView = memo(({ isPresenting }: { isPresenting: bool
                 <Sparkles size={22} />
              </div>
              <div>
-                 <h2 className="text-xl font-bold text-[#1E2F31]">Executive Summary Dashboard</h2>
+                 <h2 className="text-xl font-bold text-[#1E2F31]">Executive Summary</h2>
                  <p className="text-sm font-medium text-[#4C4A4B] opacity-80">
-                   Interactive brainstorming canvas combining linear narrative storyboard with high-level financial drivers.
+                   Feasibility summary, key operational milestones, transaction structures, and high-level financial drivers.
                  </p>
              </div>
           </div>
@@ -179,8 +199,7 @@ export const ExecutiveSummaryView = memo(({ isPresenting }: { isPresenting: bool
           <div className="lg:col-span-7 bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-[#D8D8D8] space-y-6">
             <div className="flex items-center justify-between border-b border-[#EFEBE7] pb-4">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[#1C6048] bg-[#1C6048]/10 px-2 py-0.5 rounded">Narrative Flow</span>
-                <h3 className="text-lg font-bold text-[#1E2F31] mt-1">Transaction Storyboard</h3>
+                <h3 className="text-lg font-bold text-[#1E2F31]">Strategic Narrative & Phased Roadmap</h3>
               </div>
               <div className="text-xs text-[#4C4A4B] font-medium font-mono">
                 Step {activeNarrativeStep + 1} of {narrativeSteps.length}
@@ -204,7 +223,7 @@ export const ExecutiveSummaryView = memo(({ isPresenting }: { isPresenting: bool
                     <span className={`w-2 h-2 rounded-full ${activeNarrativeStep === idx ? "bg-[#1C6048]" : "bg-transparent"}`}></span>
                   </div>
                   <span className="font-bold text-[#1E2F31] truncate block w-full mt-2">
-                    {idx === 0 ? "Location" : idx === 1 ? "Structure" : idx === 2 ? "Clinical" : "The Ask"}
+                    {idx === 0 ? "The Ask" : idx === 1 ? "Thesis" : idx === 2 ? "Financials" : "Exit"}
                   </span>
                 </button>
               ))}
@@ -308,7 +327,7 @@ export const ExecutiveSummaryView = memo(({ isPresenting }: { isPresenting: bool
                 <div className="p-4 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/80 flex items-center justify-between hover:border-[#2A4750]/30 transition-colors">
                   <div className="space-y-1">
                     <span className="text-[10px] uppercase font-black tracking-wider text-[#2A4750] block">Specialist Bed Scale</span>
-                    <span className="text-lg font-bold text-[#1E2F31] font-mono font-sans">250 Capacity Beds</span>
+                    <span className="text-lg font-bold text-[#1E2F31] font-mono font-sans">120 Capacity Beds</span>
                   </div>
                   <div className="w-10 h-10 bg-white rounded-lg border border-[#D8D8D8] flex items-center justify-center text-[#2A4750] shadow-xs shrink-0">
                      <Building2 size={18} />
