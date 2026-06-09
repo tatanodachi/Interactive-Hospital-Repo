@@ -12664,23 +12664,23 @@ export default function App() {
   );
   const safeSlideIndex = Math.max(0, currentSlideIndex);
 
-  const goToNextSlide = () => {
+  const goToNextSlide = useCallback(() => {
     if (safeSlideIndex < presentationSteps.length - 1) {
       const next = presentationSteps[safeSlideIndex + 1];
       setActiveGroup(next.group);
       setActiveTab(next.tab);
       setActiveCompany(next.company);
     }
-  };
+  }, [safeSlideIndex, presentationSteps]);
 
-  const goToPrevSlide = () => {
+  const goToPrevSlide = useCallback(() => {
     if (safeSlideIndex > 0) {
       const prev = presentationSteps[safeSlideIndex - 1];
       setActiveGroup(prev.group);
       setActiveTab(prev.tab);
       setActiveCompany(prev.company);
     }
-  };
+  }, [safeSlideIndex, presentationSteps]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -12737,7 +12737,7 @@ export default function App() {
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isPresenting, isBlanked, safeSlideIndex, presentationSteps.length]);
+  }, [isPresenting, isBlanked, goToNextSlide, goToPrevSlide]);
 
   const projConfig = useMemo(() => {
     if (holdCoScenario === "manual")
