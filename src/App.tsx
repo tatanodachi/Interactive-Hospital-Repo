@@ -12526,7 +12526,14 @@ export default function App() {
   const [isLockedOpCo, setIsLockedOpCo] = useState(true);
   const [isLockedPropCo, setIsLockedPropCo] = useState(true);
   const [isPresenting, setIsPresenting] = useState(false);
+  const [isBlanked, setIsBlanked] = useState(false);
   const [hubPosition, setHubPosition] = useState("center"); // 'center', 'left', 'right', 'minimized'
+
+  useEffect(() => {
+    if (!isPresenting) {
+      setIsBlanked(false);
+    }
+  }, [isPresenting]);
 
   // Cloud Sync State
   const [isCloudSync, setIsCloudSync] = useState(false);
@@ -12598,46 +12605,52 @@ export default function App() {
   const presentationSteps = useMemo(
     () => [
       {
+        group: "summary",
+        tab: "executive",
+        company: "opco",
+        label: "1. Executive Summary",
+      },
+      {
         group: "context",
         tab: "overview",
         company: "opco",
-        label: "1. Project Context",
+        label: "2. Project Context",
       },
       {
         group: "context",
         tab: "study",
         company: "opco",
-        label: "2. Feasibility Study",
+        label: "3. Feasibility Study",
       },
       {
         group: "context",
         tab: "collab",
         company: "opco",
-        label: "3. Collaboration Model",
+        label: "4. Collaboration Model",
       },
       {
         group: "financials",
         tab: "timeline",
         company: "opco",
-        label: "4. Master Timeline",
+        label: "5. Master Timeline",
       },
       {
         group: "financials",
         tab: "dashboard",
         company: "opco",
-        label: "5. OpCo Financials",
+        label: "6. OpCo Financials",
       },
       {
         group: "financials",
         tab: "dashboard",
         company: "propco",
-        label: "6. PropCo Financials",
+        label: "7. PropCo Financials",
       },
       {
         group: "financials",
         tab: "dashboard",
         company: "consolidated",
-        label: "7. HoldCo (Consolidated)",
+        label: "8. HoldCo (Consolidated)",
       },
     ],
     [],
@@ -12646,11 +12659,8 @@ export default function App() {
   const currentSlideIndex = presentationSteps.findIndex(
     (s) =>
       s.group === activeGroup &&
-      (s.tab === "timeline"
-        ? activeTab === "timeline"
-        : activeGroup === "context"
-        ? s.tab === activeTab
-        : s.company === activeCompany && s.tab === "dashboard"),
+      s.tab === activeTab &&
+      (s.group !== "financials" || s.tab === "timeline" || s.company === activeCompany),
   );
   const safeSlideIndex = Math.max(0, currentSlideIndex);
 
@@ -12678,20 +12688,46 @@ export default function App() {
       const tag = (e.target || e.srcElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
-      if (e.key === 'F5') {
+      if (e.key === 'F5' || e.key === 'f5') {
         e.preventDefault();
-        if (!isPresenting) {
-          setIsPresenting(true);
-        }
+        setIsPresenting(prev => !prev);
         return;
       }
 
       if (!isPresenting) return;
 
-      if (e.key === 'PageDown' || e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'AudioVolumeDown' || e.key === 'VolumeDown') {
+      // Blank screen toggle (Logitech and other wireless clickers send '.' or 'b' / 'B')
+      if (e.key === '.' || e.key === 'b' || e.key === 'B') {
+        e.preventDefault();
+        setIsBlanked(prev => !prev);
+        return;
+      }
+
+      // Any other slide navigation or key clears blackout mode
+      if (isBlanked) {
+        setIsBlanked(false);
+      }
+
+      if (
+        e.key === 'PageDown' || 
+        e.key === 'ArrowRight' || 
+        e.key === 'ArrowDown' || 
+        e.key === 'AudioVolumeDown' || 
+        e.key === 'VolumeDown' || 
+        e.key === ' ' || 
+        e.key === 'Spacebar' || 
+        e.key === 'Enter'
+      ) {
         e.preventDefault();
         goToNextSlide();
-      } else if (e.key === 'PageUp' || e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'AudioVolumeUp' || e.key === 'VolumeUp') {
+      } else if (
+        e.key === 'PageUp' || 
+        e.key === 'ArrowLeft' || 
+        e.key === 'ArrowUp' || 
+        e.key === 'AudioVolumeUp' || 
+        e.key === 'VolumeUp' || 
+        e.key === 'Backspace'
+      ) {
         e.preventDefault();
         goToPrevSlide();
       } else if (e.key === 'Escape') {
@@ -12701,7 +12737,7 @@ export default function App() {
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isPresenting, safeSlideIndex, presentationSteps.length]);
+  }, [isPresenting, isBlanked, safeSlideIndex, presentationSteps.length]);
 
   const projConfig = useMemo(() => {
     if (holdCoScenario === "manual")
@@ -13971,6 +14007,20 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Absolute Blackout Screen for Presentations */}
+      {isPresenting && isBlanked && (
+        <div 
+          onClick={() => setIsBlanked(false)}
+          className="fixed inset-0 bg-[#0E1516] z-[9999] flex flex-col items-center justify-center cursor-pointer animate-in fade-in duration-300"
+        >
+          <div className="text-zinc-650 text-xs font-mono select-none text-center space-y-2 pointer-events-none p-6">
+            <p className="tracking-widest uppercase text-stone-600 font-bold text-sm">Screen Blackout Mode Active</p>
+            <p className="text-[11px] text-stone-700 opacity-60">Click anywhere or press B/'.' on the presenter to resume</p>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
