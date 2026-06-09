@@ -123,12 +123,12 @@ export const ExecutiveSummaryView = memo(({
   const currentPaybackText = rawPayback !== undefined ? `${rawPayback.toFixed(2)} Years` : "5.86 Years";
 
   const rawBeds = opCoData?.opsMetrics?.beds;
-  const currentBedsText = rawBeds !== undefined ? `${rawBeds} Capacity Beds` : "120 Capacity Beds";
+  const currentBedsText = rawBeds !== undefined ? `${rawBeds}-bed Capacity` : "120-bed Capacity";
 
   const narrativeSteps = [
     {
       title: "1. Financial Information",
-      subtitle: "Underwriting Benchmarks, Project IRRs & Debt-Servicing Headrooms",
+      subtitle: "Project IRR and Financial Benchmark",
       icon: <TrendingUp className="text-[#1C6048]" size={18} />,
       content: (
         <div className="space-y-3">
@@ -142,9 +142,9 @@ export const ExecutiveSummaryView = memo(({
               <p className="text-[10px] text-[#4C4A4B] mt-0.5">Blended portfolio equity yield post occupancy stabilization.</p>
             </div>
             <div className="p-3 bg-white rounded-lg border border-[#D8D8D8]/60">
-              <span className="text-[9px] uppercase font-black text-[#9B8B70] block mb-1">DSCR Covenants</span>
-              <p className="text-sm font-bold text-[#1E2F31] font-mono">&gt; 1.25x minimum</p>
-              <p className="text-[10px] text-[#4C4A4B] mt-0.5">Structured safety margins against commercial debt obligations.</p>
+              <span className="text-[9px] uppercase font-black text-[#9B8B70] block mb-1">Payback Period</span>
+              <p className="text-sm font-bold text-[#1E2F31] font-mono">{currentPaybackText}</p>
+              <p className="text-[10px] text-[#4C4A4B] mt-0.5">Estimated time to recover the initial project investment capital.</p>
             </div>
             <div className="p-3 bg-white rounded-lg border border-[#D8D8D8]/60">
               <span className="text-[9px] uppercase font-black text-[#1E2F31] block mb-1">Exit Multiple</span>
@@ -182,24 +182,119 @@ export const ExecutiveSummaryView = memo(({
       )
     },
     {
-      title: "3. Capital Information",
+      title: "3. Budget Information",
       subtitle: "Direct PropCo Development Budgets & Clinical OpCo Startup Capital",
       icon: <Building2 className="text-[#1C6048]" size={18} />,
       content: (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <p className="text-sm text-[#4C4A4B] leading-relaxed">
             Capital requirements are segregated to match institutional developer criteria (PropCo Property assets) and clinical operator models (OpCo Startup capital):
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-            <div className="p-3.5 bg-white rounded-lg border border-[#D8D8D8]/60">
-              <span className="text-[9px] uppercase font-black text-[#1E2F31] block mb-1">PropCo Development CapEx</span>
-              <p className="text-sm font-bold text-[#1E2F31] font-mono">{currentPropCoCapexText}</p>
-              <p className="text-[10px] text-[#8A8175] mt-1">Excludes land acquisition; capitalized and funded by construction debt & target JV equity.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+            {/* PropCo Column */}
+            <div className="p-4 bg-white rounded-xl border border-[#D8D8D8] flex flex-col justify-between h-full">
+              <div className="flex-1">
+                <span className="text-[9px] uppercase font-black text-[#1E2F31] block mb-0.5">PropCo Development CapEx</span>
+                <p className="text-lg font-bold text-[#1E2F31] font-mono">{currentPropCoCapexText}</p>
+                <p className="text-[10px] text-[#8A8175] mt-1 mb-2.5 leading-normal">Excludes land acquisition; capitalized and funded by construction debt & target JV equity.</p>
+                
+                {/* PropCo Breakdown List */}
+                <div className="border-t border-[#EFEBE7] pt-2 space-y-0.5 text-[10.5px] text-[#4C4A4B]">
+                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] p-1 rounded font-bold text-[#1E2F31]">
+                    <span>Land Cost</span>
+                    <span className="text-right">{propCoData?.capexDetails?.landCost !== undefined ? propCoData.capexDetails.landCost.toFixed(1) : "50.0"}</span>
+                  </div>
+
+                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] p-1 rounded font-bold text-[#1E2F31] border-t border-[#EFEBE7]/50 pt-1 mt-1">
+                    <span>Total Hard Costs</span>
+                    <span className="text-right">{propCoData?.capexDetails?.totalHardCosts !== undefined ? propCoData.capexDetails.totalHardCosts.toFixed(1) : "265.0"}</span>
+                  </div>
+                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
+                    <span>• Construction</span>
+                    <span className="text-right">{propCoData?.capexDetails?.buildCost !== undefined ? propCoData.capexDetails.buildCost.toFixed(1) : "120.0"}</span>
+                  </div>
+                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
+                    <span>• Medical Equip.</span>
+                    <span className="text-right">{propCoData?.capexDetails?.medEqCost !== undefined ? propCoData.capexDetails.medEqCost.toFixed(1) : "105.0"}</span>
+                  </div>
+                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
+                    <span>• Infrastructure</span>
+                    <span className="text-right">{propCoData?.capexDetails?.infraCost !== undefined ? propCoData.capexDetails.infraCost.toFixed(1) : "25.0"}</span>
+                  </div>
+                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
+                    <span>• FF&E</span>
+                    <span className="text-right">{propCoData?.capexDetails?.ffeCost !== undefined ? propCoData.capexDetails.ffeCost.toFixed(1) : "10.0"}</span>
+                  </div>
+                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
+                    <span>• Sharing Dev.</span>
+                    <span className="text-right">{propCoData?.capexDetails?.sharingDevCost !== undefined ? propCoData.capexDetails.sharingDevCost.toFixed(1) : "5.0"}</span>
+                  </div>
+
+                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] p-1 rounded font-bold text-[#1E2F31] border-t border-[#EFEBE7]/50 pt-1 mt-1">
+                    <span>Total Soft Costs</span>
+                    <span className="text-right">{propCoData?.capexDetails?.totalSoftCosts !== undefined ? propCoData.capexDetails.totalSoftCosts.toFixed(1) : "80.0"}</span>
+                  </div>
+                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
+                    <span>• Consultant</span>
+                    <span className="text-right">{propCoData?.capexDetails?.consultantCost !== undefined ? propCoData.capexDetails.consultantCost.toFixed(1) : "15.0"}</span>
+                  </div>
+                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
+                    <span>• License</span>
+                    <span className="text-right">{propCoData?.capexDetails?.licenseCost !== undefined ? propCoData.capexDetails.licenseCost.toFixed(1) : "5.0"}</span>
+                  </div>
+                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
+                    <span>• VAT</span>
+                    <span className="text-right">{propCoData?.capexDetails?.vatCost !== undefined ? propCoData.capexDetails.vatCost.toFixed(1) : "30.0"}</span>
+                  </div>
+                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
+                    <span>• Contingency</span>
+                    <span className="text-right">{propCoData?.capexDetails?.contingencyCost !== undefined ? propCoData.capexDetails.contingencyCost.toFixed(1) : "15.0"}</span>
+                  </div>
+                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
+                    <span>• Dev. G&A</span>
+                    <span className="text-right">{propCoData?.capexDetails?.devGaCost !== undefined ? propCoData.capexDetails.devGaCost.toFixed(1) : "10.0"}</span>
+                  </div>
+                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
+                    <span>• Dev. CAR</span>
+                    <span className="text-right">{propCoData?.capexDetails?.devCarCost !== undefined ? propCoData.capexDetails.devCarCost.toFixed(1) : "5.0"}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex justify-between font-mono hover:bg-[#1E2F31]/5 p-1 rounded border-t border-[#1E2F31]/20 pt-1.5 mt-3 text-[#1E2F31] font-black uppercase text-[10px]">
+                <span>TOTAL PROPCO INVESTMENT (IDR B)</span>
+                <span className="text-right">{propCoData?.metrics?.totalCapex !== undefined ? propCoData.metrics.totalCapex.toFixed(1) : "395.0"}</span>
+              </div>
             </div>
-            <div className="p-3.5 bg-white rounded-lg border border-[#D8D8D8]/60">
-              <span className="text-[9px] uppercase font-black text-[#1C6048] block mb-1">OpCo Startup Capital</span>
-              <p className="text-sm font-bold text-[#1C6048] font-mono">{currentOpCoEquityText}</p>
-              <p className="text-[10px] text-[#8A8175] mt-1">Covers licensing, clinical equipment prep, and critical pre-operating cash buffers.</p>
+
+            {/* OpCo Column */}
+            <div className="p-4 bg-white rounded-xl border border-[#D8D8D8] flex flex-col justify-between h-full">
+              <div className="flex-1">
+                <span className="text-[9px] uppercase font-black text-[#1C6048] block mb-0.5">OpCo Startup Capital</span>
+                <p className="text-lg font-bold text-[#1C6048] font-mono">{currentOpCoEquityText}</p>
+                <p className="text-[10px] text-[#8A8175] mt-1 mb-2.5 leading-normal">Covers JVA legal infrastructure setup, clinical licensing, and initial operational buffers.</p>
+                
+                {/* OpCo Breakdown List */}
+                <div className="border-t border-[#EFEBE7] pt-2 space-y-1.5 text-[11px] text-[#4C4A4B]">
+                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] p-1 rounded">
+                    <span className="font-semibold text-[#1E2F31]">1. JVA Setup</span>
+                    <span className="font-bold text-[#1C6048] text-right">{opCoData?.setupDetails?.jvaOpex !== undefined ? opCoData.setupDetails.jvaOpex.toFixed(2) : "2.50"}</span>
+                  </div>
+                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] p-1 rounded">
+                    <span className="font-semibold text-[#1E2F31]">2. Pre-operating</span>
+                    <span className="font-bold text-[#1C6048] text-right">{opCoData?.setupDetails?.commOpex !== undefined ? opCoData.setupDetails.commOpex.toFixed(2) : "15.00"}</span>
+                  </div>
+                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] p-1 rounded">
+                    <span className="font-semibold text-[#1E2F31]">3. Clinical Working Capital</span>
+                    <span className="font-bold text-[#1C6048] text-right">{opCoData?.setupDetails?.workingCapitalOpex !== undefined ? opCoData.setupDetails.workingCapitalOpex.toFixed(2) : "64.60"}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-between font-mono hover:bg-[#1C6048]/5 p-1 rounded border-t border-[#1C6048]/20 pt-1.5 mt-3 text-[#1C6048] font-black uppercase text-[10px]">
+                <span>TOTAL OPCO INVESTMENT (IDR B)</span>
+                <span className="text-right">{rawOpCoEquity !== undefined ? rawOpCoEquity.toFixed(2) : "82.10"}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -286,13 +381,8 @@ export const ExecutiveSummaryView = memo(({
           
           {/* LEFT COLUMN: Option 2 Structured Story / Stepper Narrative (7 Columns) */}
           <div className="lg:col-span-7 bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-[#D8D8D8] space-y-6">
-            <div className="flex items-center justify-between border-b border-[#EFEBE7] pb-4">
-              <div>
-                <h3 className="text-lg font-bold text-[#1E2F31]">Strategic Narrative & Phased Roadmap</h3>
-              </div>
-              <div className="text-xs text-[#4C4A4B] font-medium font-mono">
-                Step {activeNarrativeStep + 1} of {narrativeSteps.length}
-              </div>
+            <div className="border-b border-[#EFEBE7] pb-4">
+              <h3 className="text-lg font-bold text-[#1E2F31]">Strategic Narrative & Phased Roadmap</h3>
             </div>
 
             {/* Stepper Steps / Tab Controls */}
@@ -312,7 +402,7 @@ export const ExecutiveSummaryView = memo(({
                     <span className={`w-2 h-2 rounded-full ${activeNarrativeStep === idx ? "bg-[#1C6048]" : "bg-transparent"}`}></span>
                   </div>
                   <span className="font-bold text-[#1E2F31] truncate block w-full mt-2">
-                    {idx === 0 ? "Financial" : idx === 1 ? "Market" : idx === 2 ? "Capital" : "Asset"}
+                    {idx === 0 ? "Financial" : idx === 1 ? "Market" : idx === 2 ? "Budget" : "Asset"}
                   </span>
                 </button>
               ))}

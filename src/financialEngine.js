@@ -784,6 +784,11 @@ const runOpCoEngine = (assumptions, config) => {
         100,
       beds: assumptions.beds,
     },
+    setupDetails: {
+      jvaOpex: assumptions.jvaOpex ?? 2.5,
+      commOpex: assumptions.commOpex ?? 15.0,
+      workingCapitalOpex: assumptions.workingCapitalOpex ?? 64.6,
+    },
     totalEquity,
     projectIRR: calculateIRR(projectCfsMonthly, 'monthly'),
     projectNPV: calculateNPV(projectCfsMonthly, assumptions.discountRate, 'monthly'),
