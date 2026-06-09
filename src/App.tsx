@@ -13710,7 +13710,12 @@ export default function App() {
         )}
 
         {activeTab === "executive" && (
-          <ExecutiveSummaryView isPresenting={isPresenting} />
+          <ExecutiveSummaryView 
+            isPresenting={isPresenting} 
+            opCoData={opCoModelData}
+            propCoData={propCoModelData}
+            consolidatedData={consolidatedModelData}
+          />
         )}
         {activeTab === "overview" && (
           <ProjectOverviewView

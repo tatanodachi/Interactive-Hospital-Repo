@@ -1,4 +1,4 @@
-import React, { memo, useState } from "react";
+import React, { memo, useState, useEffect, useRef } from "react";
 import { 
   Sparkles, 
   ArrowRight, 
@@ -13,11 +13,117 @@ import {
   Activity,
   DollarSign,
   Building2,
-  Users
+  Users,
+  Info
 } from "lucide-react";
 
-export const ExecutiveSummaryView = memo(({ isPresenting }: { isPresenting: boolean }) => {
+interface ExecutiveSummaryViewProps {
+  isPresenting: boolean;
+  opCoData?: any;
+  propCoData?: any;
+  consolidatedData?: any;
+}
+
+export const ExecutiveSummaryView = memo(({ 
+  isPresenting,
+  opCoData,
+  propCoData,
+  consolidatedData 
+}: ExecutiveSummaryViewProps) => {
   const [activeNarrativeStep, setActiveNarrativeStep] = useState<number>(0);
+  const [showPropCoBreakdown, setShowPropCoBreakdown] = useState<boolean>(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
+  const [caretStyle, setCaretStyle] = useState<React.CSSProperties>({});
+
+  useEffect(() => {
+    if (!showPropCoBreakdown) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setShowPropCoBreakdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showPropCoBreakdown]);
+
+  useEffect(() => {
+    const updatePosition = () => {
+      if (showPropCoBreakdown && containerRef.current && buttonRef.current) {
+        const cardRect = containerRef.current.getBoundingClientRect();
+        const buttonRect = buttonRef.current.getBoundingClientRect();
+        
+        // Horizontal center of the ⓘ button relative to the card's left boundary
+        const buttonCenterRelative = (buttonRect.left + buttonRect.width / 2) - cardRect.left;
+        
+        // Exact vertical bottom of the button relative to the card's top edge
+        const buttonBottomRelative = buttonRect.bottom - cardRect.top;
+        
+        // Define safety margins
+        const padding = 12;
+        
+        // Dynamically compute size to never exceed card boundary on tiny devices
+        const tooltipWidth = Math.min(310, cardRect.width - padding * 2);
+        
+        // Ideal left offset to center the tooltip horizontally relative to the ⓘ button
+        const idealLeft = buttonCenterRelative - tooltipWidth / 2;
+        
+        // Clamp tooltip left boundary strictly inside the parent card
+        const minLeft = padding;
+        const maxLeft = cardRect.width - tooltipWidth - padding;
+        const finalLeft = Math.max(minLeft, Math.min(idealLeft, maxLeft));
+        
+        // Calculate the pointing caret's horizontal offset in the tooltip coord space
+        let caretRelative = buttonCenterRelative - finalLeft;
+        
+        // Keep the caret from sliding into the rounded corners of the tooltip frame
+        caretRelative = Math.max(16, Math.min(caretRelative, tooltipWidth - 16));
+        
+        setTooltipStyle({
+          position: "absolute",
+          left: `${finalLeft}px`,
+          width: `${tooltipWidth}px`,
+          top: `${buttonBottomRelative + 8}px`,
+        });
+        
+        setCaretStyle({
+          left: `${caretRelative}px`,
+        });
+      }
+    };
+
+    if (showPropCoBreakdown) {
+      updatePosition();
+      // Polling handles delayed layout rendering perfectly
+      const timer = setTimeout(updatePosition, 50);
+      window.addEventListener("resize", updatePosition);
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener("resize", updatePosition);
+      };
+    }
+  }, [showPropCoBreakdown]);
+
+  // Derive dynamic real-time values from the active interactive model calculations:
+  const rawIrr = consolidatedData?.metrics?.irr;
+  const currentBlendedIrr = rawIrr !== undefined ? `${(rawIrr * 100).toFixed(2)}%` : "18.58%";
+
+  const rawPropCoCapex = propCoData?.metrics?.totalCapex;
+  const currentPropCoCapexText = rawPropCoCapex !== undefined ? `IDR ${rawPropCoCapex.toFixed(1)} Billion` : "IDR 406.6 Billion";
+
+  const rawOpCoEquity = opCoData?.totalEquity;
+  const currentOpCoEquityText = rawOpCoEquity !== undefined ? `IDR ${rawOpCoEquity.toFixed(2)} Billion` : "IDR 82.10 Billion";
+
+  const rawPayback = consolidatedData?.metrics?.payback;
+  const currentPaybackText = rawPayback !== undefined ? `${rawPayback.toFixed(2)} Years` : "5.86 Years";
+
+  const rawBeds = opCoData?.opsMetrics?.beds;
+  const currentBedsText = rawBeds !== undefined ? `${rawBeds} Capacity Beds` : "120 Capacity Beds";
 
   const narrativeSteps = [
     {
@@ -32,12 +138,12 @@ export const ExecutiveSummaryView = memo(({ isPresenting }: { isPresenting: bool
           <div className="grid grid-cols-2 gap-3 pt-1">
             <div className="p-3.5 bg-white rounded-lg border border-[#D8D8D8]/60">
               <span className="text-[9px] uppercase font-black text-[#1E2F31] block mb-1">PropCo Development Ask</span>
-              <p className="text-sm font-bold text-[#1E2F31] font-mono">IDR 406.6 Billion</p>
+              <p className="text-sm font-bold text-[#1E2F31] font-mono">{currentPropCoCapexText}</p>
               <p className="text-[10px] text-[#8A8175] mt-1">Excludes land purchase cost; funded by construction debt & target JV equity.</p>
             </div>
             <div className="p-3.5 bg-white rounded-lg border border-[#D8D8D8]/60">
               <span className="text-[9px] uppercase font-black text-[#1C6048] block mb-1">OpCo Setup Ask</span>
-              <p className="text-sm font-bold text-[#1C6048] font-mono">IDR 82.10 Billion</p>
+              <p className="text-sm font-bold text-[#1C6048] font-mono">{currentOpCoEquityText}</p>
               <p className="text-[10px] text-[#8A8175] mt-1">Establishes JVA (PMA setup), pre-operating costs, and primary 6-month clinical cash buffer.</p>
             </div>
           </div>
@@ -127,7 +233,7 @@ export const ExecutiveSummaryView = memo(({ isPresenting }: { isPresenting: bool
           <div className="grid grid-cols-2 gap-3 pt-1">
             <div className="p-3 bg-white rounded-lg border border-[#D8D8D8]/60">
               <span className="text-[9px] uppercase font-black text-[#1C6048] block mb-1">Projected Base IRR</span>
-              <p className="text-sm font-bold text-[#1E2F31] font-mono">18.4% - 22.1%</p>
+              <p className="text-sm font-bold text-[#1E2F31] font-mono">{currentBlendedIrr}</p>
               <p className="text-[10px] text-[#4C4A4B] mt-0.5">Yield expands rapidly starting Year 3 post clinical stabilization and occupancy ramp.</p>
             </div>
             <div className="p-3 bg-white rounded-lg border border-[#D8D8D8]/60">
@@ -278,23 +384,122 @@ export const ExecutiveSummaryView = memo(({ isPresenting }: { isPresenting: bool
               </div>
 
               <div className="grid grid-cols-1 gap-3">
-                {/* Metric Item: PropCo CapEx */}
-                <div className="p-4 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/80 flex items-center justify-between hover:border-[#1E2F31]/30 transition-colors">
-                  <div className="space-y-1">
-                    <span className="text-[10px] uppercase font-black tracking-wider text-[#4C4A4B] block">PropCo Investment (Property & Development)</span>
-                    <span className="text-lg font-bold text-[#1E2F31] font-mono">406.6 Billion IDR</span>
-                    <span className="text-[9px] text-[#8A8175] block">Excludes land purchase cost</span>
+                {/* Metric Item: PropCo CapEx with clean interactive layout */}
+                <div 
+                  ref={containerRef}
+                  className="relative p-4 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/80 flex items-center justify-between hover:border-[#1E2F31]/30 transition-all duration-200"
+                >
+                  <div className="space-y-1 pr-6 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] uppercase font-black tracking-wider text-[#4C4A4B] block">PropCo Investment (Property & Development)</span>
+                      <button 
+                        ref={buttonRef}
+                        className="text-[#9B8B70] hover:text-[#1E2F31] transition-colors p-1 -m-1 rounded-full focus:outline-none"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowPropCoBreakdown(prev => !prev);
+                        }}
+                        title="Show Breakdown"
+                        aria-label="Show Breakdown"
+                      >
+                        <Info size={14} className="inline opacity-90" />
+                      </button>
+                    </div>
+                    <span className="text-lg font-bold text-[#1E2F31] font-mono">{currentPropCoCapexText}</span>
+                    <span className="text-[9px] text-[#8A8175] block">Active calculated development cost (Click ⓘ to expand)</span>
                   </div>
                   <div className="w-10 h-10 bg-white rounded-lg border border-[#D8D8D8] flex items-center justify-center text-[#1E2F31] shadow-xs shrink-0 font-bold text-xs font-mono">
                     Prop
                   </div>
+
+                  {/* Absolute Breakdown Tooltip dynamically positioned relative to the Info button */}
+                  {showPropCoBreakdown && (
+                    <div 
+                      style={tooltipStyle}
+                      className="z-50 bg-[#1E2F31] text-white p-4 rounded-xl shadow-2xl border border-white/10 text-xs text-left animate-in fade-in zoom-in-95 duration-200"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {/* Dynamic Visual Caret pointing directly to ⓘ icon anchor */}
+                      <div 
+                        style={caretStyle}
+                        className="absolute w-2.5 h-2.5 bg-[#1E2F31] border-t border-l border-white/10 rotate-45 top-[-5px]" 
+                      />
+
+                      <div className="border-b border-[#EFEBE7]/20 pb-2 mb-2 flex justify-between items-center relative z-10">
+                        <div>
+                          <h5 className="font-bold text-[#C4DFD2] uppercase tracking-wider text-[10px] font-display">PropCo Capital Breakdown</h5>
+                          <p className="text-[9px] text-[#EFEBE7]/70 font-mono">Detailed property asset development allocations in Billions</p>
+                        </div>
+                        <button 
+                          className="text-[#C4DFD2] hover:text-white font-bold p-1 text-[11px] focus:outline-none" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowPropCoBreakdown(false);
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      <div className="space-y-2.5 relative z-10">
+                        {/* Hard Costs section */}
+                        <div>
+                          <div className="flex justify-between text-[10px] font-bold text-[#C4DFD2] uppercase tracking-wider mb-1">
+                            <span>Hard Costs (Capitalized Assets)</span>
+                            <span className="font-mono text-[#C4DFD2]">{propCoData?.capexDetails?.totalHardCosts ? `IDR ${propCoData?.capexDetails?.totalHardCosts.toFixed(1)}B` : "N/A"}</span>
+                          </div>
+                          <div className="pl-2 mt-0.5 space-y-1 text-[11px] text-[#EFEBE7]/80 font-mono">
+                            <div className="flex justify-between hover:text-white transition-colors">
+                              <span>• Construction (Civils/Build)</span>
+                              <span>{propCoData?.capexDetails?.buildCost ? `${propCoData?.capexDetails?.buildCost.toFixed(1)} B` : "0.0 B"}</span>
+                            </div>
+                            <div className="flex justify-between hover:text-white transition-colors">
+                              <span>• Medical Equipment Package</span>
+                              <span>{propCoData?.capexDetails?.medEqCost ? `${propCoData?.capexDetails?.medEqCost.toFixed(1)} B` : "0.0 B"}</span>
+                            </div>
+                            <div className="flex justify-between hover:text-white transition-colors">
+                              <span>• Mechanical & Infrastructure</span>
+                              <span>{propCoData?.capexDetails?.infraCost ? `${propCoData?.capexDetails?.infraCost.toFixed(1)} B` : "0.0 B"}</span>
+                            </div>
+                            <div className="flex justify-between hover:text-white transition-colors">
+                              <span>• FF&E Core Allocation</span>
+                              <span>{propCoData?.capexDetails?.ffeCost ? `${propCoData?.capexDetails?.ffeCost.toFixed(1)} B` : "0.0 B"}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Soft Costs Section */}
+                        <div className="pt-1.5 border-t border-[#EFEBE7]/15">
+                          <div className="flex justify-between text-[10px] font-bold text-[#C4DFD2] uppercase tracking-wider mb-1">
+                            <span>Soft Costs (Direct Setup Fees)</span>
+                            <span className="font-mono text-[#C4DFD2]">{propCoData?.capexDetails?.totalSoftCosts ? `IDR ${propCoData?.capexDetails?.totalSoftCosts.toFixed(1)}B` : "N/A"}</span>
+                          </div>
+                          <p className="text-[9.5px] text-[#EFEBE7]/70 pl-2 leading-normal">
+                            Includes VAT {propCoData?.capexDetails?.vatCost ? `(${propCoData?.capexDetails?.vatCost.toFixed(1)} B)` : ""}, municipal licenses, startup G&A, localized builder insurance (Dev CAR), consultant fees {propCoData?.capexDetails?.consultantCost ? `(${propCoData?.capexDetails?.consultantCost.toFixed(1)} B)` : ""}, and pre-operating contingency pools.
+                          </p>
+                        </div>
+
+                        {/* Land Assets Section */}
+                        <div className="pt-1.5 border-t border-[#EFEBE7]/15 flex justify-between text-[10px] font-bold text-[#C4DFD2] uppercase tracking-wider">
+                          <span>Land Allocation (Separate Asset)</span>
+                          <span className="font-mono text-[#C4DFD2]">{propCoData?.capexDetails?.landCost ? `IDR ${propCoData?.capexDetails?.landCost.toFixed(1)}B` : "0.0 B"}</span>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 pt-2 border-t border-[#EFEBE7]/20 flex items-center justify-between text-[9px] text-[#EFEBE7]/60 relative z-10">
+                        <span>Total calculated Development Ask:</span>
+                        <strong className="text-white font-mono">{currentPropCoCapexText}</strong>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Metric Item: OpCo Setup Costs */}
                 <div className="p-4 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/80 flex items-center justify-between hover:border-[#1C6048]/30 transition-colors">
                   <div className="space-y-1">
                     <span className="text-[10px] uppercase font-black tracking-wider text-[#1C6048] block">OpCo Investment (Setup & Working Capital)</span>
-                    <span className="text-lg font-bold text-[#1C6048] font-mono">82.10 Billion IDR</span>
+                    <span className="text-lg font-bold text-[#1C6048] font-mono">{currentOpCoEquityText}</span>
+                    <span className="text-[9px] text-[#8A8175] block">Active required clinical setup funding</span>
                   </div>
                   <div className="w-10 h-10 bg-white rounded-lg border border-[#D8D8D8] flex items-center justify-center text-[#1C6048] shadow-xs shrink-0 font-bold text-xs font-mono">
                     OpCo
@@ -304,8 +509,9 @@ export const ExecutiveSummaryView = memo(({ isPresenting }: { isPresenting: bool
                 {/* Metric Item: Base Case IRR */}
                 <div className="p-4 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/80 flex items-center justify-between hover:border-[#1C6048]/30 transition-colors">
                   <div className="space-y-1">
-                    <span className="text-[10px] uppercase font-black tracking-wider text-[#1C6048] block">Projected Base IRR</span>
-                    <span className="text-lg font-bold text-[#1C6048] font-mono">18.4% - 22.1%</span>
+                    <span className="text-[10px] uppercase font-black tracking-wider text-[#1C6048] block">Projected Base IRR (Blended Equity)</span>
+                    <span className="text-lg font-bold text-[#1C6048] font-mono">{currentBlendedIrr}</span>
+                    <span className="text-[9px] text-[#8A8175] block">Stabilized macro clinical yield</span>
                   </div>
                   <div className="w-10 h-10 bg-white rounded-lg border border-[#D8D8D8] flex items-center justify-center text-[#1C6048] shadow-xs shrink-0">
                     <TrendingUp size={18} />
@@ -316,7 +522,8 @@ export const ExecutiveSummaryView = memo(({ isPresenting }: { isPresenting: bool
                 <div className="p-4 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/80 flex items-center justify-between hover:border-[#9B8B70]/30 transition-colors">
                   <div className="space-y-1">
                     <span className="text-[10px] uppercase font-black tracking-wider text-[#9B8B70] block">Equity Payback Period</span>
-                    <span className="text-lg font-bold text-[#4C4A4B] font-mono">5.8 - 6.4 Years</span>
+                    <span className="text-lg font-bold text-[#4C4A4B] font-mono">{currentPaybackText}</span>
+                    <span className="text-[9px] text-[#8A8175] block">Cumulative cash flow break-even</span>
                   </div>
                   <div className="w-10 h-10 bg-white rounded-lg border border-[#D8D8D8] flex items-center justify-center text-[#9B8B70] shadow-xs shrink-0">
                     <Zap size={18} />
@@ -327,7 +534,8 @@ export const ExecutiveSummaryView = memo(({ isPresenting }: { isPresenting: bool
                 <div className="p-4 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/80 flex items-center justify-between hover:border-[#2A4750]/30 transition-colors">
                   <div className="space-y-1">
                     <span className="text-[10px] uppercase font-black tracking-wider text-[#2A4750] block">Specialist Bed Scale</span>
-                    <span className="text-lg font-bold text-[#1E2F31] font-mono">120 Capacity Beds</span>
+                    <span className="text-lg font-bold text-[#1E2F31] font-mono">{currentBedsText}</span>
+                    <span className="text-[9px] text-[#8A8175] block">Active clinical design capacity</span>
                   </div>
                   <div className="w-10 h-10 bg-white rounded-lg border border-[#D8D8D8] flex items-center justify-center text-[#2A4750] shadow-xs shrink-0">
                      <Building2 size={18} />
