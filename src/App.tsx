@@ -505,8 +505,40 @@ const INITIAL_GROUPS = [
     ],
   },
   {
+    id: "infrastructure",
+    name: "4. Infrastructure",
+    color: "from-[#2C5E4E] to-[#1E2F31]",
+    bgLight: "bg-[#2C5E4E]/5",
+    tasks: [
+      {
+        id: "t8",
+        name: "Cluster Infrastructure",
+        start: 1,
+        duration: 12,
+        progress: 0,
+        owner: "IT / Facilities",
+        cost: 5.8,
+        desc: "Physical setup of server hardware, clinical networks, and local area connectivity within the hospital facility.",
+        critical: false,
+        dependencies: [],
+      },
+      {
+        id: "t9",
+        name: "Sharing Development",
+        start: 1,
+        duration: 12,
+        progress: 0,
+        owner: "Tech Team",
+        cost: 4.3,
+        desc: "Software integrations, patient portal configurations, and collaborative platform development.",
+        critical: false,
+        dependencies: [],
+      },
+    ],
+  },
+  {
     id: "equipment",
-    name: "4. Equipment & Launch",
+    name: "5. Equipment & Launch",
     color: "from-[#99B6AA] to-[#B3CFC3]",
     bgLight: "bg-[#99B6AA]/10",
     tasks: [
@@ -557,38 +589,6 @@ const INITIAL_GROUPS = [
         desc: "Grand public ribbon-cutting, commercial patient onboarding, and grand-opening marketing sweeps.",
         critical: true,
         dependencies: ["t12"],
-      },
-    ],
-  },
-  {
-    id: "infrastructure",
-    name: "5. Infrastructure",
-    color: "from-[#2C5E4E] to-[#1E2F31]",
-    bgLight: "bg-[#2C5E4E]/5",
-    tasks: [
-      {
-        id: "t8",
-        name: "Cluster Infrastructure",
-        start: 1,
-        duration: 12,
-        progress: 0,
-        owner: "IT / Facilities",
-        cost: 5.8,
-        desc: "Physical setup of server hardware, clinical networks, and local area connectivity within the hospital facility.",
-        critical: false,
-        dependencies: [],
-      },
-      {
-        id: "t9",
-        name: "Sharing Development",
-        start: 1,
-        duration: 12,
-        progress: 0,
-        owner: "Tech Team",
-        cost: 4.3,
-        desc: "Software integrations, patient portal configurations, and collaborative platform development.",
-        critical: false,
-        dependencies: [],
       },
     ],
   },
@@ -12021,7 +12021,8 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
                   <option value="design">1. Design & Planning</option>
                   <option value="licensing">2. Licensing & Regulatory</option>
                   <option value="construction">3. Civil & Construction</option>
-                  <option value="equipment">4. Equipment & Launch</option>
+                  <option value="infrastructure">4. Infrastructure</option>
+                  <option value="equipment">5. Equipment & Launch</option>
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -12664,27 +12665,27 @@ export default function App() {
       },
       {
         group: "financials",
-        tab: "timeline",
-        company: "opco",
-        label: "5. Master Timeline",
-      },
-      {
-        group: "financials",
         tab: "dashboard",
         company: "opco",
-        label: "6. OpCo Financials",
+        label: "5. OpCo Financials",
       },
       {
         group: "financials",
         tab: "dashboard",
         company: "propco",
-        label: "7. PropCo Financials",
+        label: "6. PropCo Financials",
       },
       {
         group: "financials",
         tab: "dashboard",
         company: "consolidated",
-        label: "8. HoldCo (Consolidated)",
+        label: "7. HoldCo (Consolidated)",
+      },
+      {
+        group: "financials",
+        tab: "timeline",
+        company: "opco",
+        label: "8. Master Timeline",
       },
     ],
     [],
