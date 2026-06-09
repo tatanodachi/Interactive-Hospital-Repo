@@ -12499,52 +12499,7 @@ style.textContent = `
 document.head.appendChild(style);
 
 const SettingsPasswordGate = ({ children }) => {
-  const [isUnlocked, setIsUnlocked] = useState(false);
-  const [passwordAttempt, setPasswordAttempt] = useState("");
-  const [error, setError] = useState(false);
-  
-  if (isUnlocked) return children;
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (passwordAttempt === "admin") {
-      setIsUnlocked(true);
-      setError(false);
-    } else {
-      setError(true);
-    }
-  };
-
-  return (
-    <div className="flex flex-col items-center justify-center py-20 animate-in fade-in zoom-in-95 duration-300">
-      <div className="bg-white p-8 rounded-[24px] border border-[#D8D8D8] shadow-sm max-w-sm w-full text-center">
-        <div className="w-16 h-16 bg-[#EFEBE7] rounded-full flex items-center justify-center mx-auto mb-6 text-[#1E2F31]">
-          <Lock size={32} />
-        </div>
-        <h2 className="text-xl font-bold text-[#1E2F31] mb-2 tracking-tight">Restricted Area</h2>
-        <p className="text-[13px] text-[#4C4A4B] mb-6">Please enter the administrator password to view and modify assumptions.</p>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <input
-              type="password"
-              placeholder="Enter password..."
-              value={passwordAttempt}
-              onChange={(e) => { setPasswordAttempt(e.target.value); setError(false); }}
-              className={`w-full px-4 py-3 rounded-xl border ${error ? "border-red-500 focus:ring-red-500/20" : "border-[#D8D8D8] focus:border-[#1E2F31] focus:ring-[#1E2F31]/10"} bg-[#F8F6F4] text-[#1E2F31] placeholder-[#9B8B70] focus:outline-none focus:ring-4 text-sm transition-all`}
-            />
-            {error && <p className="text-red-500 text-xs mt-2 font-bold flex items-center justify-center gap-1"><AlertTriangle size={12}/> Incorrect password</p>}
-          </div>
-          <button
-            type="submit"
-            className="w-full bg-[#1C6048] text-white font-bold py-3 px-4 rounded-xl hover:bg-[#1E2F31] transition-colors text-sm shadow-md"
-          >
-            Unlock Settings
-          </button>
-        </form>
-      </div>
-    </div>
-  );
+  return <>{children}</>;
 };
 
 export const useMonthlyColumns = (annualData, viewResolution = 'annual') => {
