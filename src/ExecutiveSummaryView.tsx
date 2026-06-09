@@ -1,4 +1,5 @@
 import React, { memo, useState, useEffect, useRef } from "react";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { 
   Sparkles, 
   ArrowRight, 
@@ -14,7 +15,8 @@ import {
   DollarSign,
   Building2,
   Users,
-  Info
+  Info,
+  Flag
 } from "lucide-react";
 
 interface ExecutiveSummaryViewProps {
@@ -138,17 +140,17 @@ export const ExecutiveSummaryView = memo(({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
             <div className="p-3 bg-white rounded-lg border border-[#D8D8D8]/60">
               <span className="text-[9px] uppercase font-black text-[#1C6048] block mb-1">Projected Base IRR</span>
-              <p className="text-sm font-bold text-[#1E2F31] font-mono">{currentBlendedIrr}</p>
+              <p className="text-sm font-bold text-[#1E2F31] font-display">{currentBlendedIrr}</p>
               <p className="text-[10px] text-[#4C4A4B] mt-0.5">Blended portfolio equity yield post occupancy stabilization.</p>
             </div>
             <div className="p-3 bg-white rounded-lg border border-[#D8D8D8]/60">
               <span className="text-[9px] uppercase font-black text-[#9B8B70] block mb-1">Payback Period</span>
-              <p className="text-sm font-bold text-[#1E2F31] font-mono">{currentPaybackText}</p>
+              <p className="text-sm font-bold text-[#1E2F31] font-display">{currentPaybackText}</p>
               <p className="text-[10px] text-[#4C4A4B] mt-0.5">Estimated time to recover the initial project investment capital.</p>
             </div>
             <div className="p-3 bg-white rounded-lg border border-[#D8D8D8]/60">
               <span className="text-[9px] uppercase font-black text-[#1E2F31] block mb-1">Exit Multiple</span>
-              <p className="text-sm font-bold text-[#1E2F31] font-mono">15x EBITDA</p>
+              <p className="text-sm font-bold text-[#1E2F31] font-display">15x EBITDA</p>
               <p className="text-[10px] text-[#4C4A4B] mt-0.5">Target sector multiple applied for terminal asset valuation.</p>
             </div>
           </div>
@@ -195,73 +197,73 @@ export const ExecutiveSummaryView = memo(({
             <div className="p-4 bg-white rounded-xl border border-[#D8D8D8] flex flex-col justify-between h-full">
               <div className="flex-1">
                 <span className="text-[9px] uppercase font-black text-[#1E2F31] block mb-0.5">PropCo Development CapEx</span>
-                <p className="text-lg font-bold text-[#1E2F31] font-mono">{currentPropCoCapexText}</p>
+                <p className="text-lg font-bold text-[#1E2F31] font-display">{currentPropCoCapexText}</p>
                 <p className="text-[10px] text-[#8A8175] mt-1 mb-2.5 leading-normal">Excludes land acquisition; capitalized and funded by construction debt & target JV equity.</p>
                 
                 {/* PropCo Breakdown List */}
                 <div className="border-t border-[#EFEBE7] pt-2 space-y-0.5 text-[10.5px] text-[#4C4A4B]">
-                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] p-1 rounded font-bold text-[#1E2F31]">
+                  <div className="flex justify-between font-display hover:bg-[#F9F8F6] p-1 rounded font-bold text-[#1E2F31]">
                     <span>Land Cost</span>
                     <span className="text-right">{propCoData?.capexDetails?.landCost !== undefined ? propCoData.capexDetails.landCost.toFixed(1) : "50.0"}</span>
                   </div>
 
-                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] p-1 rounded font-bold text-[#1E2F31] border-t border-[#EFEBE7]/50 pt-1 mt-1">
+                  <div className="flex justify-between font-display hover:bg-[#F9F8F6] p-1 rounded font-bold text-[#1E2F31] border-t border-[#EFEBE7]/50 pt-1 mt-1">
                     <span>Total Hard Costs</span>
                     <span className="text-right">{propCoData?.capexDetails?.totalHardCosts !== undefined ? propCoData.capexDetails.totalHardCosts.toFixed(1) : "265.0"}</span>
                   </div>
-                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
+                  <div className="flex justify-between font-display hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
                     <span>• Construction</span>
                     <span className="text-right">{propCoData?.capexDetails?.buildCost !== undefined ? propCoData.capexDetails.buildCost.toFixed(1) : "120.0"}</span>
                   </div>
-                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
+                  <div className="flex justify-between font-display hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
                     <span>• Medical Equip.</span>
                     <span className="text-right">{propCoData?.capexDetails?.medEqCost !== undefined ? propCoData.capexDetails.medEqCost.toFixed(1) : "105.0"}</span>
                   </div>
-                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
+                  <div className="flex justify-between font-display hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
                     <span>• Infrastructure</span>
                     <span className="text-right">{propCoData?.capexDetails?.infraCost !== undefined ? propCoData.capexDetails.infraCost.toFixed(1) : "25.0"}</span>
                   </div>
-                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
+                  <div className="flex justify-between font-display hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
                     <span>• FF&E</span>
                     <span className="text-right">{propCoData?.capexDetails?.ffeCost !== undefined ? propCoData.capexDetails.ffeCost.toFixed(1) : "10.0"}</span>
                   </div>
-                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
+                  <div className="flex justify-between font-display hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
                     <span>• Sharing Dev.</span>
                     <span className="text-right">{propCoData?.capexDetails?.sharingDevCost !== undefined ? propCoData.capexDetails.sharingDevCost.toFixed(1) : "5.0"}</span>
                   </div>
 
-                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] p-1 rounded font-bold text-[#1E2F31] border-t border-[#EFEBE7]/50 pt-1 mt-1">
+                  <div className="flex justify-between font-display hover:bg-[#F9F8F6] p-1 rounded font-bold text-[#1E2F31] border-t border-[#EFEBE7]/50 pt-1 mt-1">
                     <span>Total Soft Costs</span>
                     <span className="text-right">{propCoData?.capexDetails?.totalSoftCosts !== undefined ? propCoData.capexDetails.totalSoftCosts.toFixed(1) : "80.0"}</span>
                   </div>
-                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
+                  <div className="flex justify-between font-display hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
                     <span>• Consultant</span>
                     <span className="text-right">{propCoData?.capexDetails?.consultantCost !== undefined ? propCoData.capexDetails.consultantCost.toFixed(1) : "15.0"}</span>
                   </div>
-                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
+                  <div className="flex justify-between font-display hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
                     <span>• License</span>
                     <span className="text-right">{propCoData?.capexDetails?.licenseCost !== undefined ? propCoData.capexDetails.licenseCost.toFixed(1) : "5.0"}</span>
                   </div>
-                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
+                  <div className="flex justify-between font-display hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
                     <span>• VAT</span>
                     <span className="text-right">{propCoData?.capexDetails?.vatCost !== undefined ? propCoData.capexDetails.vatCost.toFixed(1) : "30.0"}</span>
                   </div>
-                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
+                  <div className="flex justify-between font-display hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
                     <span>• Contingency</span>
                     <span className="text-right">{propCoData?.capexDetails?.contingencyCost !== undefined ? propCoData.capexDetails.contingencyCost.toFixed(1) : "15.0"}</span>
                   </div>
-                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
+                  <div className="flex justify-between font-display hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
                     <span>• Dev. G&A</span>
                     <span className="text-right">{propCoData?.capexDetails?.devGaCost !== undefined ? propCoData.capexDetails.devGaCost.toFixed(1) : "10.0"}</span>
                   </div>
-                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
+                  <div className="flex justify-between font-display hover:bg-[#F9F8F6] py-0.5 px-2 rounded text-[#6E6C6D]">
                     <span>• Dev. CAR</span>
                     <span className="text-right">{propCoData?.capexDetails?.devCarCost !== undefined ? propCoData.capexDetails.devCarCost.toFixed(1) : "5.0"}</span>
                   </div>
                 </div>
               </div>
               
-              <div className="flex justify-between font-mono hover:bg-[#1E2F31]/5 p-1 rounded border-t border-[#1E2F31]/20 pt-1.5 mt-3 text-[#1E2F31] font-black uppercase text-[10px]">
+              <div className="flex justify-between font-display hover:bg-[#1E2F31]/5 p-1 rounded border-t border-[#1E2F31]/20 pt-1.5 mt-3 text-[#1E2F31] font-black uppercase text-[10px]">
                 <span>TOTAL PROPCO INVESTMENT (IDR B)</span>
                 <span className="text-right">{propCoData?.metrics?.totalCapex !== undefined ? propCoData.metrics.totalCapex.toFixed(1) : "395.0"}</span>
               </div>
@@ -271,27 +273,27 @@ export const ExecutiveSummaryView = memo(({
             <div className="p-4 bg-white rounded-xl border border-[#D8D8D8] flex flex-col justify-between h-full">
               <div className="flex-1">
                 <span className="text-[9px] uppercase font-black text-[#1C6048] block mb-0.5">OpCo Startup Capital</span>
-                <p className="text-lg font-bold text-[#1C6048] font-mono">{currentOpCoEquityText}</p>
+                <p className="text-lg font-bold text-[#1C6048] font-display">{currentOpCoEquityText}</p>
                 <p className="text-[10px] text-[#8A8175] mt-1 mb-2.5 leading-normal">Covers JVA legal infrastructure setup, clinical licensing, and initial operational buffers.</p>
                 
                 {/* OpCo Breakdown List */}
                 <div className="border-t border-[#EFEBE7] pt-2 space-y-1.5 text-[11px] text-[#4C4A4B]">
-                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] p-1 rounded">
+                  <div className="flex justify-between font-display hover:bg-[#F9F8F6] p-1 rounded">
                     <span className="font-semibold text-[#1E2F31]">1. JVA Setup</span>
                     <span className="font-bold text-[#1C6048] text-right">{opCoData?.setupDetails?.jvaOpex !== undefined ? opCoData.setupDetails.jvaOpex.toFixed(2) : "2.50"}</span>
                   </div>
-                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] p-1 rounded">
+                  <div className="flex justify-between font-display hover:bg-[#F9F8F6] p-1 rounded">
                     <span className="font-semibold text-[#1E2F31]">2. Pre-operating</span>
                     <span className="font-bold text-[#1C6048] text-right">{opCoData?.setupDetails?.commOpex !== undefined ? opCoData.setupDetails.commOpex.toFixed(2) : "15.00"}</span>
                   </div>
-                  <div className="flex justify-between font-mono hover:bg-[#F9F8F6] p-1 rounded">
+                  <div className="flex justify-between font-display hover:bg-[#F9F8F6] p-1 rounded">
                     <span className="font-semibold text-[#1E2F31]">3. Clinical Working Capital</span>
                     <span className="font-bold text-[#1C6048] text-right">{opCoData?.setupDetails?.workingCapitalOpex !== undefined ? opCoData.setupDetails.workingCapitalOpex.toFixed(2) : "64.60"}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex justify-between font-mono hover:bg-[#1C6048]/5 p-1 rounded border-t border-[#1C6048]/20 pt-1.5 mt-3 text-[#1C6048] font-black uppercase text-[10px]">
+              <div className="flex justify-between font-display hover:bg-[#1C6048]/5 p-1 rounded border-t border-[#1C6048]/20 pt-1.5 mt-3 text-[#1C6048] font-black uppercase text-[10px]">
                 <span>TOTAL OPCO INVESTMENT (IDR B)</span>
                 <span className="text-right">{rawOpCoEquity !== undefined ? rawOpCoEquity.toFixed(2) : "82.10"}</span>
               </div>
@@ -398,7 +400,7 @@ export const ExecutiveSummaryView = memo(({
                   }`}
                 >
                   <div className="flex items-center justify-between w-full">
-                    <span className="font-bold text-[#1E2F31] font-mono">0{idx + 1}</span>
+                    <span className="font-bold text-[#1E2F31] font-display">0{idx + 1}</span>
                     <span className={`w-2 h-2 rounded-full ${activeNarrativeStep === idx ? "bg-[#1C6048]" : "bg-transparent"}`}></span>
                   </div>
                   <span className="font-bold text-[#1E2F31] truncate block w-full mt-2">
@@ -444,6 +446,62 @@ export const ExecutiveSummaryView = memo(({
                </div>
             </div>
 
+            {/* Persistent Key Milestones Panel */}
+            <div className="bg-[#F9F8F6] p-5 rounded-2xl border border-[#D8D8D8] shadow-sm mt-6">
+              <h4 className="text-sm font-bold text-[#1E2F31] font-display flex items-center gap-2 mb-4">
+                <Flag size={16} className="text-[#1C6048]" />
+                Key Strategic Milestones & Operational Ramp
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <div className="p-4 bg-white border border-[#D8D8D8]/60 rounded-xl relative overflow-hidden group hover:border-[#1C6048]/30 transition-colors">
+                    <div className="absolute top-0 right-0 w-16 h-16 bg-[#1E2F31]/5 rounded-bl-full -z-0"></div>
+                    <span className="text-[10px] text-[#8A8175] font-black uppercase tracking-wider block relative z-10">Hospital Development</span>
+                    <strong className="text-2xl text-[#1E2F31] font-display block mt-1 relative z-10">2 Years</strong>
+                    <span className="text-xs text-[#4C4A4B] mt-0.5 block relative z-10">Estimated construction & setup phase</span>
+                  </div>
+                  <div className="p-4 bg-white border border-[#D8D8D8]/60 rounded-xl relative overflow-hidden group hover:border-[#1C6048]/30 transition-colors">
+                    <div className="absolute top-0 right-0 w-16 h-16 bg-[#1C6048]/5 rounded-bl-full -z-0"></div>
+                    <span className="text-[10px] text-[#8A8175] font-black uppercase tracking-wider block relative z-10">Start Operational</span>
+                    <strong className="text-2xl text-[#1E2F31] font-display block mt-1 relative z-10">Q3 2028</strong>
+                    <span className="text-xs text-[#4C4A4B] mt-0.5 block relative z-10">Target operational readiness</span>
+                  </div>
+                </div>
+                
+                <div className="p-4 bg-white border border-[#D8D8D8]/60 rounded-xl flex flex-col justify-between group hover:border-[#1C6048]/30 transition-colors">
+                  <div className="mb-2 flex items-start justify-between">
+                    <span className="text-[10px] text-[#8A8175] font-black uppercase tracking-wider block max-w-[140px]">Bed Occupancy Rate (BOR) Target Ramp</span>
+                    <span className="text-[10px] font-bold text-[#1C6048] bg-[#1C6048]/10 px-2 py-0.5 rounded-md">Y1 - Y5+</span>
+                  </div>
+                  <div className="h-[100px] w-full relative mb-1 mt-1">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={[
+                        { name: "Y1", val: 45 },
+                        { name: "Y2", val: 50 },
+                        { name: "Y3", val: 55 },
+                        { name: "Y4", val: 60 },
+                        { name: "Y5+", val: 65 },
+                      ]} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EFEBE7" />
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#8A8175', fontWeight: 600 }} dy={5} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#8A8175' }} ticks={[40, 50, 60, 70]} domain={[40, 70]} tickFormatter={(val) => val+"%"} />
+                        <Tooltip 
+                          contentStyle={{ fontSize: '11px', borderRadius: '8px', border: '1px solid #D8D8D8', padding: '4px 8px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }} 
+                          cursor={{ stroke: '#EFEBE7', strokeWidth: 1.5 }}
+                          formatter={(val: number) => [`${val}%`, 'BOR']} 
+                          labelStyle={{ color: '#8A8175', fontWeight: 600, fontSize: '10px' }}
+                        />
+                        <Line type="monotone" dataKey="val" stroke="#1C6048" strokeWidth={2.5} dot={{ r: 3, strokeWidth: 2, fill: '#fff', stroke: '#1C6048' }} activeDot={{ r: 5, fill: '#1C6048', stroke: '#fff', strokeWidth: 2 }} animationDuration={1000} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <p className="text-[10.5px] text-[#4C4A4B] leading-relaxed pt-2 border-t border-[#EFEBE7]/60">
+                    Starts at <strong className="text-[#1E2F31]">45%</strong> with steady <strong className="text-[#1C6048]">+5%</strong> annual accretion, stabilizing at <strong className="text-[#1E2F31]">65%</strong> structural limit.
+                  </p>
+                </div>
+              </div>
+            </div>
+
           </div>
 
           {/* RIGHT COLUMN: Option 3 Financial / KPIs Dashboard (5 Columns) */}
@@ -478,10 +536,10 @@ export const ExecutiveSummaryView = memo(({
                         <Info size={14} className="inline opacity-90" />
                       </button>
                     </div>
-                    <span className="text-lg font-bold text-[#1E2F31] font-mono">{currentPropCoCapexText}</span>
+                    <span className="text-lg font-bold text-[#1E2F31] font-display">{currentPropCoCapexText}</span>
                     <span className="text-[9px] text-[#8A8175] block">Active calculated development cost (Click ⓘ to expand)</span>
                   </div>
-                  <div className="w-10 h-10 bg-white rounded-lg border border-[#D8D8D8] flex items-center justify-center text-[#1E2F31] shadow-xs shrink-0 font-bold text-xs font-mono">
+                  <div className="w-10 h-10 bg-white rounded-lg border border-[#D8D8D8] flex items-center justify-center text-[#1E2F31] shadow-xs shrink-0 font-bold text-xs font-display">
                     Prop
                   </div>
 
@@ -501,7 +559,7 @@ export const ExecutiveSummaryView = memo(({
                       <div className="border-b border-[#EFEBE7]/20 pb-2 mb-2 flex justify-between items-center relative z-10">
                         <div>
                           <h5 className="font-bold text-[#C4DFD2] uppercase tracking-wider text-[10px] font-display">PropCo Capital Breakdown</h5>
-                          <p className="text-[9px] text-[#EFEBE7]/70 font-mono">Detailed property asset development allocations in Billions</p>
+                          <p className="text-[9px] text-[#EFEBE7]/70 font-display">Detailed property asset development allocations in Billions</p>
                         </div>
                         <button 
                           className="text-[#C4DFD2] hover:text-white font-bold p-1 text-[11px] focus:outline-none" 
@@ -519,9 +577,9 @@ export const ExecutiveSummaryView = memo(({
                         <div>
                           <div className="flex justify-between text-[10px] font-bold text-[#C4DFD2] uppercase tracking-wider mb-1">
                             <span>Hard Costs (Capitalized Assets)</span>
-                            <span className="font-mono text-[#C4DFD2]">{propCoData?.capexDetails?.totalHardCosts ? `IDR ${propCoData?.capexDetails?.totalHardCosts.toFixed(1)}B` : "N/A"}</span>
+                            <span className="font-display text-[#C4DFD2]">{propCoData?.capexDetails?.totalHardCosts ? `IDR ${propCoData?.capexDetails?.totalHardCosts.toFixed(1)}B` : "N/A"}</span>
                           </div>
-                          <div className="pl-2 mt-0.5 space-y-1 text-[11px] text-[#EFEBE7]/80 font-mono">
+                          <div className="pl-2 mt-0.5 space-y-1 text-[11px] text-[#EFEBE7]/80 font-display">
                             <div className="flex justify-between hover:text-white transition-colors">
                               <span>• Construction (Civils/Build)</span>
                               <span>{propCoData?.capexDetails?.buildCost ? `${propCoData?.capexDetails?.buildCost.toFixed(1)} B` : "0.0 B"}</span>
@@ -545,7 +603,7 @@ export const ExecutiveSummaryView = memo(({
                         <div className="pt-1.5 border-t border-[#EFEBE7]/15">
                           <div className="flex justify-between text-[10px] font-bold text-[#C4DFD2] uppercase tracking-wider mb-1">
                             <span>Soft Costs (Direct Setup Fees)</span>
-                            <span className="font-mono text-[#C4DFD2]">{propCoData?.capexDetails?.totalSoftCosts ? `IDR ${propCoData?.capexDetails?.totalSoftCosts.toFixed(1)}B` : "N/A"}</span>
+                            <span className="font-display text-[#C4DFD2]">{propCoData?.capexDetails?.totalSoftCosts ? `IDR ${propCoData?.capexDetails?.totalSoftCosts.toFixed(1)}B` : "N/A"}</span>
                           </div>
                           <p className="text-[9.5px] text-[#EFEBE7]/70 pl-2 leading-normal">
                             Includes VAT {propCoData?.capexDetails?.vatCost ? `(${propCoData?.capexDetails?.vatCost.toFixed(1)} B)` : ""}, municipal licenses, startup G&A, localized builder insurance (Dev CAR), consultant fees {propCoData?.capexDetails?.consultantCost ? `(${propCoData?.capexDetails?.consultantCost.toFixed(1)} B)` : ""}, and pre-operating contingency pools.
@@ -555,13 +613,13 @@ export const ExecutiveSummaryView = memo(({
                         {/* Land Assets Section */}
                         <div className="pt-1.5 border-t border-[#EFEBE7]/15 flex justify-between text-[10px] font-bold text-[#C4DFD2] uppercase tracking-wider">
                           <span>Land Allocation (Separate Asset)</span>
-                          <span className="font-mono text-[#C4DFD2]">{propCoData?.capexDetails?.landCost ? `IDR ${propCoData?.capexDetails?.landCost.toFixed(1)}B` : "0.0 B"}</span>
+                          <span className="font-display text-[#C4DFD2]">{propCoData?.capexDetails?.landCost ? `IDR ${propCoData?.capexDetails?.landCost.toFixed(1)}B` : "0.0 B"}</span>
                         </div>
                       </div>
 
                       <div className="mt-3 pt-2 border-t border-[#EFEBE7]/20 flex items-center justify-between text-[9px] text-[#EFEBE7]/60 relative z-10">
                         <span>Total Development Funding:</span>
-                        <strong className="text-white font-mono">{currentPropCoCapexText}</strong>
+                        <strong className="text-white font-display">{currentPropCoCapexText}</strong>
                       </div>
                     </div>
                   )}
@@ -571,10 +629,10 @@ export const ExecutiveSummaryView = memo(({
                 <div className="p-4 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/80 flex items-center justify-between hover:border-[#1C6048]/30 transition-colors">
                   <div className="space-y-1">
                     <span className="text-[10px] uppercase font-black tracking-wider text-[#1C6048] block">OpCo Investment (Setup & Working Capital)</span>
-                    <span className="text-lg font-bold text-[#1C6048] font-mono">{currentOpCoEquityText}</span>
+                    <span className="text-lg font-bold text-[#1C6048] font-display">{currentOpCoEquityText}</span>
                     <span className="text-[9px] text-[#8A8175] block">Active required clinical setup funding</span>
                   </div>
-                  <div className="w-10 h-10 bg-white rounded-lg border border-[#D8D8D8] flex items-center justify-center text-[#1C6048] shadow-xs shrink-0 font-bold text-xs font-mono">
+                  <div className="w-10 h-10 bg-white rounded-lg border border-[#D8D8D8] flex items-center justify-center text-[#1C6048] shadow-xs shrink-0 font-bold text-xs font-display">
                     OpCo
                   </div>
                 </div>
@@ -583,7 +641,7 @@ export const ExecutiveSummaryView = memo(({
                 <div className="p-4 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/80 flex items-center justify-between hover:border-[#1C6048]/30 transition-colors">
                   <div className="space-y-1">
                     <span className="text-[10px] uppercase font-black tracking-wider text-[#1C6048] block">Projected Base IRR (Blended Equity)</span>
-                    <span className="text-lg font-bold text-[#1C6048] font-mono">{currentBlendedIrr}</span>
+                    <span className="text-lg font-bold text-[#1C6048] font-display">{currentBlendedIrr}</span>
                     <span className="text-[9px] text-[#8A8175] block">Stabilized macro clinical yield</span>
                   </div>
                   <div className="w-10 h-10 bg-white rounded-lg border border-[#D8D8D8] flex items-center justify-center text-[#1C6048] shadow-xs shrink-0">
@@ -595,7 +653,7 @@ export const ExecutiveSummaryView = memo(({
                 <div className="p-4 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/80 flex items-center justify-between hover:border-[#9B8B70]/30 transition-colors">
                   <div className="space-y-1">
                     <span className="text-[10px] uppercase font-black tracking-wider text-[#9B8B70] block">Equity Payback Period</span>
-                    <span className="text-lg font-bold text-[#4C4A4B] font-mono">{currentPaybackText}</span>
+                    <span className="text-lg font-bold text-[#4C4A4B] font-display">{currentPaybackText}</span>
                     <span className="text-[9px] text-[#8A8175] block">Cumulative cash flow break-even</span>
                   </div>
                   <div className="w-10 h-10 bg-white rounded-lg border border-[#D8D8D8] flex items-center justify-center text-[#9B8B70] shadow-xs shrink-0">
@@ -607,7 +665,7 @@ export const ExecutiveSummaryView = memo(({
                 <div className="p-4 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/80 flex items-center justify-between hover:border-[#9B8B70]/30 transition-colors">
                   <div className="space-y-1">
                     <span className="text-[10px] uppercase font-black tracking-wider text-[#9B8B70] block">Exit Valuation Multiple</span>
-                    <span className="text-lg font-bold text-[#1E2F31] font-mono">15x EBITDA</span>
+                    <span className="text-lg font-bold text-[#1E2F31] font-display">15x EBITDA</span>
                     <span className="text-[9px] text-[#8A8175] block">EBITDA multiple applied at investment exit</span>
                   </div>
                   <div className="w-10 h-10 bg-white rounded-lg border border-[#D8D8D8] flex items-center justify-center text-[#9B8B70] shadow-xs shrink-0">
@@ -619,7 +677,7 @@ export const ExecutiveSummaryView = memo(({
                 <div className="p-4 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/80 flex items-center justify-between hover:border-[#2A4750]/30 transition-colors">
                   <div className="space-y-1">
                     <span className="text-[10px] uppercase font-black tracking-wider text-[#2A4750] block">Specialist Bed Scale</span>
-                    <span className="text-lg font-bold text-[#1E2F31] font-mono">{currentBedsText}</span>
+                    <span className="text-lg font-bold text-[#1E2F31] font-display">{currentBedsText}</span>
                     <span className="text-[9px] text-[#8A8175] block">Active clinical design capacity</span>
                   </div>
                   <div className="w-10 h-10 bg-white rounded-lg border border-[#D8D8D8] flex items-center justify-center text-[#2A4750] shadow-xs shrink-0">
