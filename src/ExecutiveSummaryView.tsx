@@ -223,51 +223,30 @@ export const ExecutiveSummaryView = memo(({
     },
     {
       title: "3. Financial Profile & Key Metrics",
-      subtitle: "Robust Cash Flow Trajectories & Healthy Debt Headrooms",
+      subtitle: "Robust Cash Flow Trajectories, Healthy Debt Headrooms & Exit Multiple",
       icon: <TrendingUp className="text-[#1C6048]" size={18} />,
       content: (
         <div className="space-y-3">
           <p className="text-sm text-[#4C4A4B] leading-relaxed">
-            Conservative clinical modeling and stress tests (varying patient volumes, ramp speed, and medical supply inflation) guarantee a resilient operational yield:
+            Conservative clinical modeling and stress tests (varying patient volumes, ramp speed, and medical supply inflation) guarantee a resilient operational yield and robust exit values:
           </p>
-          <div className="grid grid-cols-2 gap-3 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
             <div className="p-3 bg-white rounded-lg border border-[#D8D8D8]/60">
               <span className="text-[9px] uppercase font-black text-[#1C6048] block mb-1">Projected Base IRR</span>
               <p className="text-sm font-bold text-[#1E2F31] font-mono">{currentBlendedIrr}</p>
-              <p className="text-[10px] text-[#4C4A4B] mt-0.5">Yield expands rapidly starting Year 3 post clinical stabilization and occupancy ramp.</p>
+              <p className="text-[10px] text-[#4C4A4B] mt-0.5">Yield expands rapidly starting Year 3 post occupancy ramp.</p>
             </div>
             <div className="p-3 bg-white rounded-lg border border-[#D8D8D8]/60">
-              <span className="text-[9px] uppercase font-black text-[#9B8B70] block mb-1">Standard DSCR Covenants</span>
+              <span className="text-[9px] uppercase font-black text-[#9B8B70] block mb-1">DSCR Covenants</span>
               <p className="text-sm font-bold text-[#1E2F31] font-mono">&gt; 1.25x minimum</p>
-              <p className="text-[10px] text-[#4C4A4B] mt-0.5">Ensures robust structural debt-servicing headroom even under conservative downside curves.</p>
+              <p className="text-[10px] text-[#4C4A4B] mt-0.5">Ensures robust structural debt-servicing headroom.</p>
+            </div>
+            <div className="p-3 bg-white rounded-lg border border-[#D8D8D8]/60">
+              <span className="text-[9px] uppercase font-black text-[#1E2F31] block mb-1">EBITDA Exit Multiple</span>
+              <p className="text-sm font-bold text-[#1E2F31] font-mono">15.0x Target</p>
+              <p className="text-[10px] text-[#4C4A4B] mt-0.5">Regional healthcare sector multiple applied for terminal asset valuation and liquidity.</p>
             </div>
           </div>
-        </div>
-      )
-    },
-    {
-      title: "4. Exit Strategy & Value Realization",
-      subtitle: "Bifurcated Monetization and Multiple Liquidity Gateways",
-      icon: <Compass className="text-[#1C6048]" size={18} />,
-      content: (
-        <div className="space-y-3">
-          <p className="text-sm text-[#4C4A4B] leading-relaxed">
-            The dual-entity corporate architecture guarantees clear and distinct monetization paths to maximize terminal asset valuations:
-          </p>
-          <ul className="space-y-2 text-xs text-[#4C4A4B]">
-            <li className="flex items-start gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#1C6048] mt-1.5 shrink-0"></span>
-              <span><strong>REIT Liquidation (DIRE)</strong>: PropCo's mature rental streams can be bundled and listed as an Indonesian or Singaporean REIT, attracting yield-seeking income funds.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#1C6048] mt-1.5 shrink-0"></span>
-              <span><strong>OpCo Buyout or Floatation (IPO)</strong>: The highly profitable clinical operating company can pursue strategic M&A with major national healthcare networks, or float independently on IDX.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#1C6048] mt-1.5 shrink-0"></span>
-              <span><strong>Infrastructure Recapitalization</strong>: Opportunity to refinance early-stage capital with lower cost, long-term private placement debt when operational cash flows stabilize.</span>
-            </li>
-          </ul>
         </div>
       )
     }
@@ -313,7 +292,7 @@ export const ExecutiveSummaryView = memo(({
             </div>
 
             {/* Stepper Steps / Tab Controls */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {narrativeSteps.map((step, idx) => (
                 <button
                   key={idx}
@@ -329,7 +308,7 @@ export const ExecutiveSummaryView = memo(({
                     <span className={`w-2 h-2 rounded-full ${activeNarrativeStep === idx ? "bg-[#1C6048]" : "bg-transparent"}`}></span>
                   </div>
                   <span className="font-bold text-[#1E2F31] truncate block w-full mt-2">
-                    {idx === 0 ? "Capital" : idx === 1 ? "Thesis" : idx === 2 ? "Financials" : "Exit"}
+                    {idx === 0 ? "Capital" : idx === 1 ? "Thesis" : "Financials"}
                   </span>
                 </button>
               ))}
@@ -527,6 +506,18 @@ export const ExecutiveSummaryView = memo(({
                   </div>
                   <div className="w-10 h-10 bg-white rounded-lg border border-[#D8D8D8] flex items-center justify-center text-[#9B8B70] shadow-xs shrink-0">
                     <Zap size={18} />
+                  </div>
+                </div>
+
+                {/* Metric Item: Exit EBITDA Multiple */}
+                <div className="p-4 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/80 flex items-center justify-between hover:border-[#9B8B70]/30 transition-colors">
+                  <div className="space-y-1">
+                    <span className="text-[10px] uppercase font-black tracking-wider text-[#9B8B70] block">Exit Valuation Multiple</span>
+                    <span className="text-lg font-bold text-[#1E2F31] font-mono">15x EBITDA</span>
+                    <span className="text-[9px] text-[#8A8175] block">EBITDA multiple applied at investment exit</span>
+                  </div>
+                  <div className="w-10 h-10 bg-white rounded-lg border border-[#D8D8D8] flex items-center justify-center text-[#9B8B70] shadow-xs shrink-0">
+                    <Compass size={18} />
                   </div>
                 </div>
 
