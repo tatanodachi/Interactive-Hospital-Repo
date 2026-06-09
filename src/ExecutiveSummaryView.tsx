@@ -259,14 +259,26 @@ export const ExecutiveSummaryView = memo(({ isPresenting }: { isPresenting: bool
               </div>
 
               <div className="grid grid-cols-1 gap-3">
-                {/* Metric Item: Total CapEx */}
+                {/* Metric Item: PropCo CapEx */}
                 <div className="p-4 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/80 flex items-center justify-between hover:border-[#1E2F31]/30 transition-colors">
                   <div className="space-y-1">
-                    <span className="text-[10px] uppercase font-black tracking-wider text-[#4C4A4B] block">Total Estimated Investment</span>
-                    <span className="text-lg font-bold text-[#1E2F31] font-mono">1.25 Trillion IDR</span>
+                    <span className="text-[10px] uppercase font-black tracking-wider text-[#4C4A4B] block">PropCo Investment (Property & Development)</span>
+                    <span className="text-lg font-bold text-[#1E2F31] font-mono">406.6 Billion IDR</span>
+                    <span className="text-[9px] text-[#8A8175] block">Excludes land purchase cost</span>
                   </div>
-                  <div className="w-10 h-10 bg-white rounded-lg border border-[#D8D8D8] flex items-center justify-center text-[#1E2F31] shadow-xs shrink-0">
-                    <DollarSign size={18} />
+                  <div className="w-10 h-10 bg-white rounded-lg border border-[#D8D8D8] flex items-center justify-center text-[#1E2F31] shadow-xs shrink-0 font-bold text-xs font-mono">
+                    Prop
+                  </div>
+                </div>
+
+                {/* Metric Item: OpCo Setup Costs */}
+                <div className="p-4 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/80 flex items-center justify-between hover:border-[#1C6048]/30 transition-colors">
+                  <div className="space-y-1">
+                    <span className="text-[10px] uppercase font-black tracking-wider text-[#1C6048] block">OpCo Investment (Setup & Working Capital)</span>
+                    <span className="text-lg font-bold text-[#1C6048] font-mono">82.10 Billion IDR</span>
+                  </div>
+                  <div className="w-10 h-10 bg-white rounded-lg border border-[#D8D8D8] flex items-center justify-center text-[#1C6048] shadow-xs shrink-0 font-bold text-xs font-mono">
+                    OpCo
                   </div>
                 </div>
 

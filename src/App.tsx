@@ -7559,155 +7559,233 @@ const OpCoDashboardView = memo(
 const OpCoCascadeView = memo(({ data, assumptions, viewResolution, setViewResolution }) => {
   const { columns, expandedYears, toggleYear } = useMonthlyColumns(data.annualData, viewResolution);
   const scrollRef = useRef(null);
+  const [showSetupBudget, setShowSetupBudget] = useState(true);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [viewMode, setViewMode] = useState("all"); // 'all' | 'pl' | 'cf'
   
+  const overallSetup = (assumptions?.jvaOpex ?? 2.5) + (assumptions?.commOpex ?? 15.0) + (assumptions?.workingCapitalOpex ?? 64.6);
+
   return (
-  <div className={`${isFullScreen ? 'fixed inset-0 z-[150] bg-[#F9F8F6] p-4 lg:p-6' : ''}`}>
-    <div className={`bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden flex flex-col ${isFullScreen ? 'h-full' : 'h-[calc(100vh-320px)]'}`}>
-      <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
-        <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
-          <List size={14} /> OpCo P&L & Cash Flow
-        </h3>
-        <div className="flex items-center gap-2">
-          <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
-            <button onClick={() => setViewMode("all")} className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === 'all' ? 'bg-[#9B8B70] text-white shadow-sm' : 'text-[#4C4A4B] hover:text-[#1E2F31]'}`}>All</button>
-            <button onClick={() => setViewMode("pl")} className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === 'pl' ? 'bg-[#9B8B70] text-white shadow-sm' : 'text-[#4C4A4B] hover:text-[#1E2F31]'}`}>P&L</button>
-            <button onClick={() => setViewMode("cf")} className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === 'cf' ? 'bg-[#9B8B70] text-white shadow-sm' : 'text-[#4C4A4B] hover:text-[#1E2F31]'}`}>CF</button>
+  <div className={`space-y-6 ${isFullScreen ? 'fixed inset-0 z-[150] bg-[#F9F8F6] p-4 lg:p-6 overflow-hidden flex flex-col' : ''}`}>
+    <div className={`grid grid-cols-1 gap-6 animate-in slide-in-from-bottom-4 duration-500 ${isFullScreen ? 'flex-1 overflow-hidden' : ''} ${showSetupBudget && !isFullScreen ? 'md:grid-cols-3' : 'md:grid-cols-1'}`}>
+      {showSetupBudget && !isFullScreen && (
+        <div className="md:col-span-1 bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8] h-[calc(100vh-320px)] overflow-y-auto custom-scrollbar flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold text-[#1E2F31] flex items-center gap-2">
+              <Briefcase size={18} className="text-[#1C6048]" /> OpCo Setup Budget
+            </h3>
+            <button 
+              onClick={() => setShowSetupBudget(false)} 
+              className="text-[#8A8175] hover:text-[#1E2F31] text-[10px] uppercase font-bold tracking-wider"
+            >
+              Hide
+            </button>
           </div>
-          <button
-            onClick={() => setIsFullScreen(!isFullScreen)}
-            className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6] transition-colors"
-            title={isFullScreen ? "Minimize" : "Maximize"}
-          >
-            {isFullScreen ? <Minimize2 size={13} strokeWidth={2.5} /> : <Maximize2 size={13} strokeWidth={2.5} />}
-          </button>
-          <div className="flex items-center bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
-          <button
-            onClick={() => setViewResolution('annual')}
-            className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${viewResolution === 'annual' ? 'bg-[#1C6048] text-white' : 'text-[#8A8175] hover:text-[#1E2F31] hover:bg-[#F9F8F6]'}`}
-          >
-            Annual
-          </button>
-          <button
-            onClick={() => setViewResolution('monthly')}
-            className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${viewResolution === 'monthly' ? 'bg-[#9B8B70] text-white' : 'text-[#8A8175] hover:text-[#1E2F31] hover:bg-[#F9F8F6]'}`}
-          >
-            Monthly
-          </button>
+          <div className="overflow-x-auto">
+            <table className="w-full text-[11px] text-left border-collapse">
+              <thead>
+                <tr className="bg-[#EFEBE7]">
+                  <th className="px-4 py-2 border border-[#D8D8D8] text-[#1E2F31] font-bold rounded-tl">
+                    Component
+                  </th>
+                  <th className="px-4 py-2 border border-[#D8D8D8] text-[#1E2F31] font-bold text-right">
+                    Cost (B)
+                  </th>
+                  <th className="px-4 py-2 border border-[#D8D8D8] text-[#1E2F31] font-bold text-right rounded-tr">
+                    %
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <CapexRow
+                  label="1. JVA Setup"
+                  amount={assumptions?.jvaOpex ?? 2.5}
+                  total={overallSetup}
+                  isIndent
+                />
+                <CapexRow
+                  label="2. Pre-operating"
+                  amount={assumptions?.commOpex ?? 15.0}
+                  total={overallSetup}
+                  isIndent
+                />
+                <CapexRow
+                  label="3. Clinical Working Capital"
+                  amount={assumptions?.workingCapitalOpex ?? 64.6}
+                  total={overallSetup}
+                  isIndent
+                />
+                <CapexRow
+                  label="TOTAL OPCO INVESTMENT"
+                  amount={overallSetup}
+                  total={overallSetup}
+                  isSubtotal
+                />
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-1.5 p-2 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8] shrink-0">
+            <div className="text-[8.5px] text-[#4C4A4B] leading-relaxed space-y-1">
+              <p><strong>JVA Setup</strong>: Represents the cost of establishing the Foreign Investment Company (PMA).</p>
+              <p><strong>Pre-operating</strong>: Incurred during the 6-month period preceding the Commercial Opening.</p>
+              <p><strong>Clinical Working Capital</strong>: Establishes a 6-month operational buffer during the Year 1 opening phase.</p>
+            </div>
+          </div>
         </div>
-        <button onClick={() => scrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })} className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6]">
-          <ChevronLeft size={13} strokeWidth={2.5} />
-        </button>
-        <button onClick={() => scrollRef.current?.scrollBy({ left: 300, behavior: 'smooth' })} className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6]">
-          <ChevronRight size={13} strokeWidth={2.5} />
-        </button>
-        <span className="text-[10px] bg-white text-[#4C4A4B] border border-[#D8D8D8] px-2 py-1 rounded font-bold uppercase shadow-sm">
-          IDR Billions
-        </span>
-      </div>
-    </div>
-    <div ref={scrollRef} className="overflow-auto min-h-0 flex-1">
-      <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
-        <thead className="bg-white font-bold sticky top-0 z-[50] shadow-md">
-          <tr>
-            <th className="px-4 py-3 border-b-2 border-r border-[#D8D8D8] sticky left-0 top-0 bg-white z-[60] w-[260px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-[#1E2F31]">
-              Line Item
-            </th>
-            {columns.map((col, i) => (
-              <th
-                key={i}
-                onClick={col.colType === 'year' ? () => toggleYear(col.defaultLabel) : undefined}
-                className={`px-3 py-3 text-right border-b-2 border-r border-[#D8D8D8] ${
-                  col.colType === 'year' ? 'cursor-pointer hover:bg-[#EFEBE7] font-black underline decoration-dashed underline-offset-4 ' : 'font-medium text-[10px] '
-                } ${!col.isOperating ? "bg-[#F9F8F6] text-[#9B8B70]" : "bg-white text-[#1E2F31]"} ${col.isMonth ? 'min-w-[65px] whitespace-nowrap' : 'min-w-[90px]'}`}
+      )}
+
+      <div className={`${showSetupBudget && !isFullScreen ? 'md:col-span-2' : 'md:col-span-1'} bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden ${isFullScreen ? 'h-full' : 'h-[calc(100vh-320px)]'} flex flex-col`}>
+        <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
+            <List size={14} /> OpCo P&L & Cash Flow
+            {!showSetupBudget && (
+              <button 
+                onClick={() => setShowSetupBudget(true)}
+                className="ml-2 px-2 py-0.5 border border-[#D8D8D8] bg-white rounded text-[#8A8175] hover:text-[#1E2F31] text-[9px] tracking-wider font-bold shadow-sm leading-tight inline-block flex-shrink-0"
               >
-                {col.colType === 'year' ? (
-                   <div className="flex items-center justify-end gap-1">
-                     {expandedYears[col.defaultLabel] ? "-" : "+"}
-                     {String(col.defaultLabel)}
-                   </div>
-                ) : (
-                   <div className="text-center w-full">{String(col.defaultLabel)}</div>
-                )}
+                Show Setup Budget
+              </button>
+            )}
+          </h3>
+          <div className="flex items-center gap-2">
+            <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
+              <button onClick={() => setViewMode("all")} className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === 'all' ? 'bg-[#9B8B70] text-white shadow-sm' : 'text-[#4C4A4B] hover:text-[#1E2F31]'}`}>All</button>
+              <button onClick={() => setViewMode("pl")} className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === 'pl' ? 'bg-[#9B8B70] text-white shadow-sm' : 'text-[#4C4A4B] hover:text-[#1E2F31]'}`}>P&L</button>
+              <button onClick={() => setViewMode("cf")} className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === 'cf' ? 'bg-[#9B8B70] text-white shadow-sm' : 'text-[#4C4A4B] hover:text-[#1E2F31]'}`}>CF</button>
+            </div>
+            <button
+              onClick={() => setIsFullScreen(!isFullScreen)}
+              className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6] transition-colors"
+              title={isFullScreen ? "Minimize" : "Maximize"}
+            >
+              {isFullScreen ? <Minimize2 size={13} strokeWidth={2.5} /> : <Maximize2 size={13} strokeWidth={2.5} />}
+            </button>
+            <div className="flex items-center bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
+            <button
+              onClick={() => setViewResolution('annual')}
+              className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${viewResolution === 'annual' ? 'bg-[#1C6048] text-white' : 'text-[#8A8175] hover:text-[#1E2F31] hover:bg-[#F9F8F6]'}`}
+            >
+              Annual
+            </button>
+            <button
+              onClick={() => setViewResolution('monthly')}
+              className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${viewResolution === 'monthly' ? 'bg-[#9B8B70] text-white' : 'text-[#8A8175] hover:text-[#1E2F31] hover:bg-[#F9F8F6]'}`}
+            >
+              Monthly
+            </button>
+          </div>
+          <button onClick={() => scrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })} className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6]">
+            <ChevronLeft size={13} strokeWidth={2.5} />
+          </button>
+          <button onClick={() => scrollRef.current?.scrollBy({ left: 300, behavior: 'smooth' })} className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6]">
+            <ChevronRight size={13} strokeWidth={2.5} />
+          </button>
+          <span className="text-[10px] bg-white text-[#4C4A4B] border border-[#D8D8D8] px-2 py-1 rounded font-bold uppercase shadow-sm">
+            IDR Billions
+          </span>
+        </div>
+      </div>
+      <div ref={scrollRef} className="overflow-auto min-h-0 flex-1">
+        <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
+          <thead className="bg-white font-bold sticky top-0 z-[50] shadow-md">
+            <tr>
+              <th className="px-4 py-3 border-b-2 border-r border-[#D8D8D8] sticky left-0 top-0 bg-white z-[60] w-[260px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-[#1E2F31]">
+                Line Item
               </th>
-            ))}
-            <th className="px-4 py-3 text-right bg-[#EFEBE7] text-[#1E2F31] sticky right-0 top-0 z-[60] border-l border-b-2 border-[#D8D8D8] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">
-              Total
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {(viewMode === "all" || viewMode === "pl") && (
-            <>
-              <TableSection
-                title="A. Operating Volume"
-                colSpan={columns.length + 2}
-              />
-              <TableRow
-                label="Bed Occupancy Rate (BOR)"
-                data={columns}
-                dk="bor"
-                tooltip={OPCO_FORMULAS.bor}
-              />
-              <TableRow
-                label="Inpatient Cases"
-                data={columns}
-                dk="ipCases"
-                tooltip={OPCO_FORMULAS.ipCases}
-              />
-              <TableRow
-                label="Outpatient Visits"
-                data={columns}
-                dk="opVisits"
-                tooltip={OPCO_FORMULAS.opVisits}
-              />
+              {columns.map((col, i) => (
+                <th
+                  key={i}
+                  onClick={col.colType === 'year' ? () => toggleYear(col.defaultLabel) : undefined}
+                  className={`px-3 py-3 text-right border-b-2 border-r border-[#D8D8D8] ${
+                    col.colType === 'year' ? 'cursor-pointer hover:bg-[#EFEBE7] font-black underline decoration-dashed underline-offset-4 ' : 'font-medium text-[10px] '
+                  } ${!col.isOperating ? "bg-[#F9F8F6] text-[#9B8B70]" : "bg-white text-[#1E2F31]"} ${col.isMonth ? 'min-w-[65px] whitespace-nowrap' : 'min-w-[90px]'}`}
+                >
+                  {col.colType === 'year' ? (
+                     <div className="flex items-center justify-end gap-1">
+                       {expandedYears[col.defaultLabel] ? "-" : "+"}
+                       {String(col.defaultLabel)}
+                     </div>
+                  ) : (
+                     <div className="text-center w-full">{String(col.defaultLabel)}</div>
+                  )}
+                </th>
+              ))}
+              <th className="px-4 py-3 text-right bg-[#EFEBE7] text-[#1E2F31] sticky right-0 top-0 z-[60] border-l border-b-2 border-[#D8D8D8] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                Total
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {(viewMode === "all" || viewMode === "pl") && (
+              <>
+                <TableSection
+                  title="A. Operating Volume"
+                  colSpan={columns.length + 2}
+                />
+                <TableRow
+                  label="Bed Occupancy Rate (BOR)"
+                  data={columns}
+                  dk="bor"
+                  tooltip={OPCO_FORMULAS.bor}
+                />
+                <TableRow
+                  label="Inpatient Cases"
+                  data={columns}
+                  dk="ipCases"
+                  tooltip={OPCO_FORMULAS.ipCases}
+                />
+                <TableRow
+                  label="Outpatient Visits"
+                  data={columns}
+                  dk="opVisits"
+                  tooltip={OPCO_FORMULAS.opVisits}
+                />
 
-              <TableSection
-                title="B. Revenue"
-                colSpan={columns.length + 2}
-              />
-              <TableRow
-                label="Inpatient Revenue"
-                data={columns}
-                dk="ipRev"
-                total={data.totals.ipRev}
-                isIndent
-                tooltip={OPCO_FORMULAS.ipRev}
-              />
-              <TableRow
-                label="Outpatient Revenue"
-                data={columns}
-                dk="opRev"
-                total={data.totals.opRev}
-                isIndent
-                tooltip={OPCO_FORMULAS.opRev}
-              />
-              <TableRow
-                label="NET REVENUE"
-                data={columns}
-                dk="totalRev"
-                total={data.totals.totalRev}
-                highlight
-                tooltip={OPCO_FORMULAS.totalRev}
-              />
+                <TableSection
+                  title="B. Revenue"
+                  colSpan={columns.length + 2}
+                />
+                <TableRow
+                  label="Inpatient Revenue"
+                  data={columns}
+                  dk="ipRev"
+                  total={data.totals.ipRev}
+                  isIndent
+                  tooltip={OPCO_FORMULAS.ipRev}
+                />
+                <TableRow
+                  label="Outpatient Revenue"
+                  data={columns}
+                  dk="opRev"
+                  total={data.totals.opRev}
+                  isIndent
+                  tooltip={OPCO_FORMULAS.opRev}
+                />
+                <TableRow
+                  label="NET REVENUE"
+                  data={columns}
+                  dk="totalRev"
+                  total={data.totals.totalRev}
+                  highlight
+                  tooltip={OPCO_FORMULAS.totalRev}
+                />
 
-              <TableSection
-                title="C. Cost of Goods Sold"
-                colSpan={columns.length + 2}
-              />
-              <TableRow
-                label="Medical Supplies"
-                data={columns}
-                dk="totalMedSupp"
-                total={data.totals.totalMedSupp}
-                isIndent
-                tooltip={OPCO_FORMULAS.totalMedSupp}
-              />
-              <TableRow
-                label="Doctor Fees"
-                data={columns}
-                dk="totalDocFee"
+                <TableSection
+                  title="C. Cost of Goods Sold"
+                  colSpan={columns.length + 2}
+                />
+                <TableRow
+                  label="Medical Supplies"
+                  data={columns}
+                  dk="totalMedSupp"
+                  total={data.totals.totalMedSupp}
+                  isIndent
+                  tooltip={OPCO_FORMULAS.totalMedSupp}
+                />
+                <TableRow
+                  label="Doctor Fees"
+                  data={columns}
+                  dk="totalDocFee"
                 total={data.totals.totalDocFee}
                 isIndent
                 tooltip={OPCO_FORMULAS.totalDocFee}
@@ -7882,6 +7960,7 @@ const OpCoCascadeView = memo(({ data, assumptions, viewResolution, setViewResolu
         </tbody>
       </table>
     </div>
+  </div>
   </div>
   </div>
   );
@@ -8429,7 +8508,7 @@ const PropCoCascadeView = memo(({ data, onExport, viewResolution, setViewResolut
               />
 
               <CapexRow
-                label="TOTAL INVESTMENT"
+                label="TOTAL PROPCO INVESTMENT"
                 amount={data.metrics.totalCapex}
                 total={data.metrics.totalCapex}
                 isSubtotal
