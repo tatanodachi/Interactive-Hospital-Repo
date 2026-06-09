@@ -127,22 +127,22 @@ export const ExecutiveSummaryView = memo(({
 
   const narrativeSteps = [
     {
-      title: "1. The Ask (Capital Requirements)",
+      title: "1. Capital Requirements & Structure",
       subtitle: "Capital Structure Allocation & JV Capitalization",
       icon: <Building2 className="text-[#1C6048]" size={18} />,
       content: (
         <div className="space-y-3">
           <p className="text-sm text-[#4C4A4B] leading-relaxed">
-            The funding request is strategically organized to align with distinct institutional investment mandates across two specialized corporate entities:
+            The funding structure is strategically organized to align with distinct institutional investment mandates across two specialized corporate entities:
           </p>
           <div className="grid grid-cols-2 gap-3 pt-1">
             <div className="p-3.5 bg-white rounded-lg border border-[#D8D8D8]/60">
-              <span className="text-[9px] uppercase font-black text-[#1E2F31] block mb-1">PropCo Development Ask</span>
+              <span className="text-[9px] uppercase font-black text-[#1E2F31] block mb-1">PropCo Development CapEx</span>
               <p className="text-sm font-bold text-[#1E2F31] font-mono">{currentPropCoCapexText}</p>
               <p className="text-[10px] text-[#8A8175] mt-1">Excludes land purchase cost; funded by construction debt & target JV equity.</p>
             </div>
             <div className="p-3.5 bg-white rounded-lg border border-[#D8D8D8]/60">
-              <span className="text-[9px] uppercase font-black text-[#1C6048] block mb-1">OpCo Setup Ask</span>
+              <span className="text-[9px] uppercase font-black text-[#1C6048] block mb-1">OpCo Startup Capital</span>
               <p className="text-sm font-bold text-[#1C6048] font-mono">{currentOpCoEquityText}</p>
               <p className="text-[10px] text-[#8A8175] mt-1">Establishes JVA (PMA setup), pre-operating costs, and primary 6-month clinical cash buffer.</p>
             </div>
@@ -329,7 +329,7 @@ export const ExecutiveSummaryView = memo(({
                     <span className={`w-2 h-2 rounded-full ${activeNarrativeStep === idx ? "bg-[#1C6048]" : "bg-transparent"}`}></span>
                   </div>
                   <span className="font-bold text-[#1E2F31] truncate block w-full mt-2">
-                    {idx === 0 ? "The Ask" : idx === 1 ? "Thesis" : idx === 2 ? "Financials" : "Exit"}
+                    {idx === 0 ? "Capital" : idx === 1 ? "Thesis" : idx === 2 ? "Financials" : "Exit"}
                   </span>
                 </button>
               ))}
@@ -487,7 +487,7 @@ export const ExecutiveSummaryView = memo(({
                       </div>
 
                       <div className="mt-3 pt-2 border-t border-[#EFEBE7]/20 flex items-center justify-between text-[9px] text-[#EFEBE7]/60 relative z-10">
-                        <span>Total calculated Development Ask:</span>
+                        <span>Total Development Funding:</span>
                         <strong className="text-white font-mono">{currentPropCoCapexText}</strong>
                       </div>
                     </div>
