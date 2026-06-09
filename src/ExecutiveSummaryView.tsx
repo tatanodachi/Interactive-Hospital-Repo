@@ -127,124 +127,128 @@ export const ExecutiveSummaryView = memo(({
 
   const narrativeSteps = [
     {
-      title: "1. Capital Requirements & Structure",
-      subtitle: "Capital Structure Allocation & JV Capitalization",
-      icon: <Building2 className="text-[#1C6048]" size={18} />,
-      content: (
-        <div className="space-y-3">
-          <p className="text-sm text-[#4C4A4B] leading-relaxed">
-            The funding structure is strategically organized to align with distinct institutional investment mandates across two specialized corporate entities:
-          </p>
-          <div className="grid grid-cols-2 gap-3 pt-1">
-            <div className="p-3.5 bg-white rounded-lg border border-[#D8D8D8]/60">
-              <span className="text-[9px] uppercase font-black text-[#1E2F31] block mb-1">PropCo Development CapEx</span>
-              <p className="text-sm font-bold text-[#1E2F31] font-mono">{currentPropCoCapexText}</p>
-              <p className="text-[10px] text-[#8A8175] mt-1">Excludes land purchase cost; funded by construction debt & target JV equity.</p>
-            </div>
-            <div className="p-3.5 bg-white rounded-lg border border-[#D8D8D8]/60">
-              <span className="text-[9px] uppercase font-black text-[#1C6048] block mb-1">OpCo Startup Capital</span>
-              <p className="text-sm font-bold text-[#1C6048] font-mono">{currentOpCoEquityText}</p>
-              <p className="text-[10px] text-[#8A8175] mt-1">Establishes JVA (PMA setup), pre-operating costs, and primary 6-month clinical cash buffer.</p>
-            </div>
-          </div>
-        </div>
-      )
-    },
-    {
-      title: "2. The Investment Thesis",
-      subtitle: "Unlocking Premium Clinical Deficits & Isolated Real Estate Synergy",
-      icon: <Sparkles className="text-[#1C6048]" size={18} />,
-      content: (
-        <div className="space-y-4">
-          {/* Market Conditions Catch Point */}
-          <div className="p-3.5 bg-[#1C6048]/5 rounded-xl border border-[#1C6048]/15 space-y-2">
-            <span className="text-[9px] uppercase font-black tracking-wider text-[#1C6048] block">Market Conditions & Demand Catalyst</span>
-            <div className="grid grid-cols-2 gap-3 text-[11px] text-[#4C4A4B]">
-              <div className="space-y-1">
-                <span className="font-bold text-[#1E2F31] block">🏥 Bed Supply Gap</span>
-                <p className="leading-snug">Severe local deficit of high-end specialized secondary care beds in West Jakarta’s dense catchment corridor.</p>
-              </div>
-              <div className="space-y-1">
-                <span className="font-bold text-[#1E2F31] block">📍 Demographic Magnet</span>
-                <p className="leading-snug">1.2 Ha site on Daan Mogot KM. 13 intercepts high-growth neighborhoods, stopping patient outflows to central districts.</p>
-              </div>
-            </div>
-          </div>
-
-          <p className="text-sm text-[#4C4A4B] leading-relaxed">
-            By severing physical real estate from clinical operations, the joint transaction structure insulates property equity while securing robust operational yields:
-          </p>
-
-          {/* Clean Flow Diagram */}
-          <div className="bg-[#F9F8F6] p-4 rounded-xl border border-[#D8D8D8] space-y-4">
-            <div className="grid grid-cols-12 gap-1 items-center">
-              {/* Operators Column */}
-              <div className="col-span-3 flex flex-col gap-2">
-                <div className="bg-white p-2 rounded-lg border border-[#D8D8D8] text-center shadow-xs">
-                  <div className="text-[10px] font-black uppercase text-[#4C4A4B] tracking-wider">Partner</div>
-                </div>
-                <div className="bg-white p-2 rounded-lg border border-[#D8D8D8] text-center shadow-xs">
-                  <div className="text-[10px] font-black uppercase text-[#2A4750] tracking-wider">VG OpCo</div>
-                </div>
-              </div>
-
-              {/* Input Arrows */}
-              <div className="col-span-1 flex flex-col justify-around h-16 items-center">
-                <ArrowRight size={14} className="text-[#4C4A4B] opacity-40" />
-                <ArrowRight size={14} className="text-[#2A4750] opacity-40" />
-              </div>
-
-              {/* OpCo Core */}
-              <div className="col-span-3 bg-[#1C6048] text-white p-3 rounded-xl border border-[#1C6048] text-center shadow-sm">
-                <div className="text-xs font-bold leading-tight">OpCo</div>
-                <div className="text-[8px] opacity-90 uppercase tracking-wider font-bold mt-1">Hospital Operation</div>
-              </div>
-
-              {/* Sharing Arrow */}
-              <div className="col-span-2 flex justify-center">
-                <div className="w-full flex flex-col items-center px-1">
-                  <span className="text-[8px] text-[#9B8B70] font-black uppercase tracking-wider text-center whitespace-nowrap mb-1">EBITDA Share</span>
-                  <ArrowRight size={14} className="text-[#9B8B70]" />
-                </div>
-              </div>
-
-              {/* PropCo Core */}
-              <div className="col-span-3 bg-[#1E2F31] text-white p-3 rounded-xl border border-[#1E2F31] text-center shadow-sm">
-                <div className="text-xs font-bold leading-tight">PropCo</div>
-                <div className="text-[8px] opacity-90 uppercase tracking-wider font-bold mt-1">Asset Owner</div>
-              </div>
-            </div>
-            <div className="text-[10px] text-[#4C4A4B] leading-snug italic text-center opacity-95 text-xs">
-              💡 OpCo rents physical premises at a targeted EBITDA-linked rent structure, insulating real estate asset backing while rewarding PropCo stakeholders with strong asset yields.
-            </div>
-          </div>
-        </div>
-      )
-    },
-    {
-      title: "3. Financial Profile & Key Metrics",
-      subtitle: "Robust Cash Flow Trajectories, Healthy Debt Headrooms & Exit Multiple",
+      title: "1. Financial Information",
+      subtitle: "Underwriting Benchmarks, Project IRRs & Debt-Servicing Headrooms",
       icon: <TrendingUp className="text-[#1C6048]" size={18} />,
       content: (
         <div className="space-y-3">
           <p className="text-sm text-[#4C4A4B] leading-relaxed">
-            Conservative clinical modeling and stress tests (varying patient volumes, ramp speed, and medical supply inflation) guarantee a resilient operational yield and robust exit values:
+            Robust clinical operations and defensive underwriting yield attractive base-case returns and durable risk covenants:
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
             <div className="p-3 bg-white rounded-lg border border-[#D8D8D8]/60">
               <span className="text-[9px] uppercase font-black text-[#1C6048] block mb-1">Projected Base IRR</span>
               <p className="text-sm font-bold text-[#1E2F31] font-mono">{currentBlendedIrr}</p>
-              <p className="text-[10px] text-[#4C4A4B] mt-0.5">Yield expands rapidly starting Year 3 post occupancy ramp.</p>
+              <p className="text-[10px] text-[#4C4A4B] mt-0.5">Blended portfolio equity yield post occupancy stabilization.</p>
             </div>
             <div className="p-3 bg-white rounded-lg border border-[#D8D8D8]/60">
               <span className="text-[9px] uppercase font-black text-[#9B8B70] block mb-1">DSCR Covenants</span>
               <p className="text-sm font-bold text-[#1E2F31] font-mono">&gt; 1.25x minimum</p>
-              <p className="text-[10px] text-[#4C4A4B] mt-0.5">Ensures robust structural debt-servicing headroom.</p>
+              <p className="text-[10px] text-[#4C4A4B] mt-0.5">Structured safety margins against commercial debt obligations.</p>
             </div>
             <div className="p-3 bg-white rounded-lg border border-[#D8D8D8]/60">
-              <span className="text-[9px] uppercase font-black text-[#1E2F31] block mb-1">EBITDA Exit Multiple</span>
-              <p className="text-sm font-bold text-[#1E2F31] font-mono">15.0x Target</p>
-              <p className="text-[10px] text-[#4C4A4B] mt-0.5">Regional healthcare sector multiple applied for terminal asset valuation and liquidity.</p>
+              <span className="text-[9px] uppercase font-black text-[#1E2F31] block mb-1">Exit Multiple</span>
+              <p className="text-sm font-bold text-[#1E2F31] font-mono">15x EBITDA</p>
+              <p className="text-[10px] text-[#4C4A4B] mt-0.5">Target sector multiple applied for terminal asset valuation.</p>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      title: "2. Market Information",
+      subtitle: "Capturing Regional Bed Deficits & Demographic Traffic Flow",
+      icon: <Users className="text-[#1C6048]" size={18} />,
+      content: (
+        <div className="space-y-3">
+          <p className="text-sm text-[#4C4A4B] leading-relaxed">
+            Strategic physical positioning intercepts strong specialized primary/secondary outpatient demand and high-yield healthcare deficits in West Jakarta:
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div className="p-3.5 bg-white rounded-lg border border-[#D8D8D8]/60">
+              <span className="text-[9px] uppercase font-black text-[#1C6048] block mb-1">🏥 Local Bed Supply Deficit</span>
+              <p className="text-[11px] text-[#4C4A4B] leading-relaxed mt-1">
+                Acute shortage of high-standard Class B clinical facilities within a 5km radius, leaving an unserved population center vulnerable.
+              </p>
+            </div>
+            <div className="p-3.5 bg-white rounded-lg border border-[#D8D8D8]/60">
+              <span className="text-[9px] uppercase font-black text-[#9B8B70] block mb-1">📍 Demographic Node</span>
+              <p className="text-[11px] text-[#4C4A4B] leading-relaxed mt-1">
+                1.2 Ha site on Daan Mogot KM. 13 intercepts dense traffic streams, eliminating centralized city commute barriers.
+              </p>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      title: "3. Capital Information",
+      subtitle: "Direct PropCo Development Budgets & Clinical OpCo Startup Capital",
+      icon: <Building2 className="text-[#1C6048]" size={18} />,
+      content: (
+        <div className="space-y-3">
+          <p className="text-sm text-[#4C4A4B] leading-relaxed">
+            Capital requirements are segregated to match institutional developer criteria (PropCo Property assets) and clinical operator models (OpCo Startup capital):
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div className="p-3.5 bg-white rounded-lg border border-[#D8D8D8]/60">
+              <span className="text-[9px] uppercase font-black text-[#1E2F31] block mb-1">PropCo Development CapEx</span>
+              <p className="text-sm font-bold text-[#1E2F31] font-mono">{currentPropCoCapexText}</p>
+              <p className="text-[10px] text-[#8A8175] mt-1">Excludes land acquisition; capitalized and funded by construction debt & target JV equity.</p>
+            </div>
+            <div className="p-3.5 bg-white rounded-lg border border-[#D8D8D8]/60">
+              <span className="text-[9px] uppercase font-black text-[#1C6048] block mb-1">OpCo Startup Capital</span>
+              <p className="text-sm font-bold text-[#1C6048] font-mono">{currentOpCoEquityText}</p>
+              <p className="text-[10px] text-[#8A8175] mt-1">Covers licensing, clinical equipment prep, and critical pre-operating cash buffers.</p>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      title: "4. Asset Information",
+      subtitle: "Leasehold Synergy & EBITDA-Linked Rental Allocations",
+      icon: <Compass className="text-[#1C6048]" size={18} />,
+      content: (
+        <div className="space-y-3">
+          <p className="text-sm text-[#4C4A4B] leading-relaxed font-sans">
+            The dual-entity asset lease provides direct yield flow back to real estate investors while protecting the clinical operational balance sheet:
+          </p>
+          <div className="bg-white p-3 rounded-xl border border-[#D8D8D8] space-y-3">
+            <div className="grid grid-cols-12 gap-1 items-center">
+              <div className="col-span-3 flex flex-col gap-1">
+                <div className="bg-[#F9F8F6] p-1 rounded border border-[#D8D8D8] text-center">
+                  <span className="text-[8px] font-black uppercase text-[#4C4A4B] tracking-wider block">JV Partners</span>
+                </div>
+                <div className="bg-[#F9F8F6] p-1 rounded border border-[#D8D8D8] text-center">
+                  <span className="text-[8px] font-black uppercase text-[#2A4750] tracking-wider block">VG OpCo</span>
+                </div>
+              </div>
+
+              <div className="col-span-1 flex flex-col justify-around h-11 items-center">
+                <ArrowRight size={12} className="text-[#4C4A4B] opacity-40" />
+                <ArrowRight size={12} className="text-[#2A4750] opacity-40" />
+              </div>
+
+              <div className="col-span-3 bg-[#1C6048] text-white p-2 ml-1 rounded-lg text-center">
+                <div className="text-xs font-bold leading-tight">VG OpCo</div>
+                <div className="text-[7.5px] opacity-90 uppercase tracking-widest font-black mt-0.5">Clinical Operator</div>
+              </div>
+
+              <div className="col-span-2 flex justify-center">
+                <div className="w-full flex flex-col items-center px-0.5">
+                  <span className="text-[7px] text-[#9B8B70] font-black uppercase tracking-wider text-center whitespace-nowrap mb-0.5">Rent Flow</span>
+                  <ArrowRight size={12} className="text-[#9B8B70]" />
+                </div>
+              </div>
+
+              <div className="col-span-3 bg-[#1E2F31] text-white p-2 rounded-lg text-center">
+                <div className="text-xs font-bold leading-tight">PropCo LLC</div>
+                <div className="text-[7.5px] opacity-90 uppercase tracking-widest font-black mt-0.5">Real Estate Asset</div>
+              </div>
+            </div>
+            <div className="text-[9.5px] text-[#4C4A4B] leading-snug italic text-center opacity-90">
+              💡 PropCo collects stable yields on physical premises, while OpCo focuses purely on scaling primary patient care metrics.
             </div>
           </div>
         </div>
@@ -292,7 +296,7 @@ export const ExecutiveSummaryView = memo(({
             </div>
 
             {/* Stepper Steps / Tab Controls */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {narrativeSteps.map((step, idx) => (
                 <button
                   key={idx}
@@ -308,7 +312,7 @@ export const ExecutiveSummaryView = memo(({
                     <span className={`w-2 h-2 rounded-full ${activeNarrativeStep === idx ? "bg-[#1C6048]" : "bg-transparent"}`}></span>
                   </div>
                   <span className="font-bold text-[#1E2F31] truncate block w-full mt-2">
-                    {idx === 0 ? "Capital" : idx === 1 ? "Thesis" : "Financials"}
+                    {idx === 0 ? "Financial" : idx === 1 ? "Market" : idx === 2 ? "Capital" : "Asset"}
                   </span>
                 </button>
               ))}
