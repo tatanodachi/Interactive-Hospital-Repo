@@ -13483,7 +13483,7 @@ export default function App() {
                   active={activeTab === "executive"}
                   onClick={() => setActiveTab("executive")}
                   icon={<Briefcase size={14} />}
-                  label="Brainstorm Sandbox"
+                  label="Summary"
                 />
               ) : activeGroup === "context" ? (
                 <>
