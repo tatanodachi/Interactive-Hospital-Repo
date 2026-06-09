@@ -729,6 +729,7 @@ const runOpCoEngine = (assumptions, config) => {
     operatingData[0];
 
   return {
+    assumptions,
     annualData,
     operatingData,
     totals: {
@@ -1813,6 +1814,7 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
   const operatingData = annualData.filter((d) => d.isOperating);
 
   return {
+    assumptions,
     annualData,
     operatingData,
     metrics: {

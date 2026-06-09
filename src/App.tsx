@@ -13574,7 +13574,7 @@ export default function App() {
                   <Layers className="text-[#1E2F31]" />
                 )}
                 {activeTab === "executive"
-                  ? "Executive Sandbox"
+                  ? "Executive Summary"
                   : activeTab === "overview"
                   ? "Project Context"
                   : activeTab === "study"
@@ -13592,58 +13592,53 @@ export default function App() {
             </div>
 
             {/* SECONDARY LAYER NAV (Tabs) */}
-            <div className="flex p-1 bg-[#EFEBE7] rounded-lg gap-1 overflow-x-auto border border-[#D8D8D8] max-w-full items-center">
-              {activeGroup === "summary" ? (
-                <NavButton
-                  active={activeTab === "executive"}
-                  onClick={() => setActiveTab("executive")}
-                  icon={<Briefcase size={14} />}
-                  label="Summary"
-                />
-              ) : activeGroup === "context" ? (
-                <>
-                  <NavButton
-                    active={activeTab === "overview"}
-                    onClick={() => setActiveTab("overview")}
-                    icon={<FileText size={14} />}
-                    label="Overview"
-                  />
-                  <NavButton
-                    active={activeTab === "study"}
-                    onClick={() => setActiveTab("study")}
-                    icon={<BookOpen size={14} />}
-                    label="Study"
-                  />
-                  <NavButton
-                    active={activeTab === "collab"}
-                    onClick={() => setActiveTab("collab")}
-                    icon={<Network size={14} />}
-                    label="Collaboration Strategy"
-                  />
-                </>
-              ) : (
-                <>
-                  <NavButton
-                    active={activeCompany === "opco"}
-                    onClick={() => handleCompanyChange("opco")}
-                    icon={<Activity size={14} />}
-                    label="OpCo"
-                  />
-                  <NavButton
-                    active={activeCompany === "propco"}
-                    onClick={() => handleCompanyChange("propco")}
-                    icon={<Building2 size={14} />}
-                    label="PropCo"
-                  />
-                  <NavButton
-                    active={activeCompany === "consolidated"}
-                    onClick={() => handleCompanyChange("consolidated")}
-                    icon={<Layers size={14} />}
-                    label="HoldCo VG"
-                  />
-                </>
-              )}
-            </div>
+            {activeGroup !== "summary" && (
+              <div className="flex p-1 bg-[#EFEBE7] rounded-lg gap-1 overflow-x-auto border border-[#D8D8D8] max-w-full items-center">
+                {activeGroup === "context" ? (
+                  <>
+                    <NavButton
+                      active={activeTab === "overview"}
+                      onClick={() => setActiveTab("overview")}
+                      icon={<FileText size={14} />}
+                      label="Overview"
+                    />
+                    <NavButton
+                      active={activeTab === "study"}
+                      onClick={() => setActiveTab("study")}
+                      icon={<BookOpen size={14} />}
+                      label="Study"
+                    />
+                    <NavButton
+                      active={activeTab === "collab"}
+                      onClick={() => setActiveTab("collab")}
+                      icon={<Network size={14} />}
+                      label="Collaboration Strategy"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <NavButton
+                      active={activeCompany === "opco"}
+                      onClick={() => handleCompanyChange("opco")}
+                      icon={<Activity size={14} />}
+                      label="OpCo"
+                    />
+                    <NavButton
+                      active={activeCompany === "propco"}
+                      onClick={() => handleCompanyChange("propco")}
+                      icon={<Building2 size={14} />}
+                      label="PropCo"
+                    />
+                    <NavButton
+                      active={activeCompany === "consolidated"}
+                      onClick={() => handleCompanyChange("consolidated")}
+                      icon={<Layers size={14} />}
+                      label="HoldCo VG"
+                    />
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </nav>
