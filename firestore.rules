@@ -1,0 +1,98 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net - Default Deny Access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Global Security Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // 3. Validation Blueprints (Anti-Update-Gap & Strong Types)
+    function isValidOpCoConfig(data) {
+      return data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+             data.userEmail is string && data.userEmail.size() > 0 && data.userEmail.size() <= 256 &&
+             data.updatedAt is timestamp &&
+             data.assumptions is map;
+    }
+
+    function isValidPropCoConfig(data) {
+      return data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+             data.userEmail is string && data.userEmail.size() > 0 && data.userEmail.size() <= 256 &&
+             data.updatedAt is timestamp &&
+             data.assumptions is map;
+    }
+
+    // 4. OpCo Configurations Document Rules
+    match /opcoConfigs/{userId} {
+      allow get: if isEmailVerified() && userId == request.auth.uid;
+      
+      allow create: if isEmailVerified() &&
+                       userId == request.auth.uid &&
+                       isValidId(userId) &&
+                       isValidOpCoConfig(incoming()) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().userEmail == request.auth.token.email &&
+                       incoming().updatedAt == request.time &&
+                       incoming().keys().hasAll(['userId', 'userEmail', 'updatedAt', 'assumptions']) &&
+                       incoming().keys().size() == 4;
+
+      allow update: if isEmailVerified() &&
+                       userId == request.auth.uid &&
+                       isValidId(userId) &&
+                       isValidOpCoConfig(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().userEmail == existing().userEmail &&
+                       incoming().updatedAt == request.time &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['updatedAt', 'assumptions']);
+
+      allow delete: if isEmailVerified() && userId == request.auth.uid && isValidId(userId);
+    }
+
+    // 5. PropCo Configurations Document Rules
+    match /propcoConfigs/{userId} {
+      allow get: if isEmailVerified() && userId == request.auth.uid;
+
+      allow create: if isEmailVerified() &&
+                       userId == request.auth.uid &&
+                       isValidId(userId) &&
+                       isValidPropCoConfig(incoming()) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().userEmail == request.auth.token.email &&
+                       incoming().updatedAt == request.time &&
+                       incoming().keys().hasAll(['userId', 'userEmail', 'updatedAt', 'assumptions']) &&
+                       incoming().keys().size() == 4;
+
+      allow update: if isEmailVerified() &&
+                       userId == request.auth.uid &&
+                       isValidId(userId) &&
+                       isValidPropCoConfig(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().userEmail == existing().userEmail &&
+                       incoming().updatedAt == request.time &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['updatedAt', 'assumptions']);
+
+      allow delete: if isEmailVerified() && userId == request.auth.uid && isValidId(userId);
+    }
+  }
+}

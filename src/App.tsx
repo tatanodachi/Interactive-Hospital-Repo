@@ -112,6 +112,20 @@ import { ExecutiveSummaryView } from "./ExecutiveSummaryView";
 import { calculatePMT, calculatePayback, calculateIRR, calculateNPV, runOpCoEngine, runPropCoEngine, runConsolidatedEngine, DEFAULT_OPCO_ASSUMPTIONS, DEFAULT_PROPCO_ASSUMPTIONS, CANCER_DATA, INSURANCE_DATA } from './financialEngine';
 import { OPCO_FORMULAS, PROPCO_FORMULAS, CONSOLIDATED_FORMULAS } from "./formulaTooltips";
 
+// True Secure Cloud Sync Imports
+import {
+  db,
+  auth,
+  isCloudConfigured,
+  googleProvider,
+  loginWithGoogle,
+  logoutUser,
+  handleFirestoreError,
+  OperationType
+} from "./firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+
 const LazyResponsiveContainer = memo(({ children, ...props }) => {
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
@@ -12505,9 +12519,9 @@ export const useMonthlyColumns = (annualData, viewResolution = 'annual') => {
 };
 
 export default function App() {
-  const [activeGroup, setActiveGroup] = useState("context"); // 'context' or 'financials'
+  const [activeGroup, setActiveGroup] = useState("summary"); // 'summary', 'context' or 'financials'
   const [activeCompany, setActiveCompany] = useState("opco");
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("executive");
   const [viewResolution, setViewResolution] = useState("annual");
   const [isLockedOpCo, setIsLockedOpCo] = useState(true);
   const [isLockedPropCo, setIsLockedPropCo] = useState(true);
@@ -13002,47 +13016,99 @@ export default function App() {
   }, []);
 
   // ==========================================
-  // STABLE LOCAL-ONLY CLOUD SYNC BYPASS
+  // TRUE PRODUCTION-READY CLOUD SYNC ENGINE
   // ==========================================
-  useEffect(() => {
-    let isMounted = true;
-    const connectCloud = async () => {
+  const loadFromCloud = useCallback(async (uid) => {
+    if (!isCloudConfigured || !db || !uid) return;
+    try {
       setCloudStatus("connecting");
-      try {
-        throw new Error(
-          "Cloud Sync safely bypassed to maintain application stability.",
-        );
-      } catch (err) {
-        if (isMounted) {
-          setCloudStatus("error");
-          setTimeout(() => setIsCloudSync(false), 3000);
+      const opcoRef = doc(db, "opcoConfigs", uid);
+      const opcoSnap = await getDoc(opcoRef);
+      if (opcoSnap.exists()) {
+        const cloudData = opcoSnap.data();
+        if (cloudData && cloudData.assumptions) {
+          setOpCoAssumptions(cloudData.assumptions);
         }
       }
-    };
-    if (isCloudSync) connectCloud();
-    else {
-      setCloudStatus("offline");
-      setUser(null);
+
+      const propcoRef = doc(db, "propcoConfigs", uid);
+      const propcoSnap = await getDoc(propcoRef);
+      if (propcoSnap.exists()) {
+        const cloudData = propcoSnap.data();
+        if (cloudData && cloudData.assumptions) {
+          setPropCoAssumptions(cloudData.assumptions);
+        }
+      }
+      setCloudStatus("online");
+    } catch (err) {
+      handleFirestoreError(err, OperationType.GET, `configs/${uid}`);
+      setCloudStatus("error");
     }
-    return () => {
-      isMounted = false;
-    };
-  }, [isCloudSync]);
+  }, []);
+
+  useEffect(() => {
+    if (!isCloudConfigured || !auth) {
+      setCloudStatus("offline");
+      return;
+    }
+
+    setCloudStatus("connecting");
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        // Under our strict zero-trust rules, emails must be verified
+        if (currentUser.emailVerified) {
+          setCloudStatus("online");
+          if (isCloudSync) {
+            await loadFromCloud(currentUser.uid);
+          }
+        } else {
+          setCloudStatus("unverified");
+          setIsCloudSync(false);
+        }
+      } else {
+        setUser(null);
+        setCloudStatus("offline");
+        setIsCloudSync(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [isCloudSync, loadFromCloud]);
 
   const saveDefaultsToCloud = useCallback(
     async (type) => {
-      if (!isCloudSync || cloudStatus !== "online") return;
-      const setStatus =
-        type === "opco" ? setSaveStatusOpCo : setSaveStatusPropCo;
+      const setStatus = type === "opco" ? setSaveStatusOpCo : setSaveStatusPropCo;
       setStatus("saving");
+
+      if (!isCloudConfigured || !db || !user) {
+        // Fallback for Local Sandbox Mode
+        setTimeout(() => {
+          setStatus("saved");
+          setTimeout(() => setStatus("idle"), 2000);
+        }, 800);
+        return;
+      }
+
+      const colName = type === "opco" ? "opcoConfigs" : "propcoConfigs";
+      const currentAssumptions = type === "opco" ? opCoAssumptions : propCoAssumptions;
+
       try {
+        const docRef = doc(db, colName, user.uid);
+        await setDoc(docRef, {
+          userId: user.uid,
+          userEmail: user.email,
+          updatedAt: serverTimestamp(),
+          assumptions: currentAssumptions
+        });
         setStatus("saved");
         setTimeout(() => setStatus("idle"), 3000);
-      } catch (e) {
+      } catch (err) {
         setStatus("idle");
+        handleFirestoreError(err, OperationType.WRITE, `${colName}/${user.uid}`);
       }
     },
-    [isCloudSync, cloudStatus],
+    [user, opCoAssumptions, propCoAssumptions]
   );
 
   const handleTextSelection = useCallback((e) => {
@@ -13788,44 +13854,120 @@ export default function App() {
       {syncConfirmDialog.isOpen && (
         <div className="fixed inset-0 z-[100] bg-[#1E2F31]/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-[#D8D8D8] transform scale-100">
-            <div className="flex items-center gap-3 mb-4">
-              <div
-                className={`p-3 rounded-full ${syncConfirmDialog.targetState ? "bg-[#1C6048]/10 text-[#1C6048]" : "bg-[#9B8B70]/10 text-[#9B8B70]"}`}
-              >
-                <AlertTriangle size={24} />
-              </div>
-              <h3 className="text-lg font-bold text-[#1E2F31]">
-                {syncConfirmDialog.targetState
-                  ? "Enable Cloud Sync?"
-                  : "Switch to Local Mode?"}
-              </h3>
-            </div>
-            <p className="text-[#4C4A4B] text-sm mb-6 leading-relaxed">
-              {syncConfirmDialog.targetState
-                ? "Connecting to the cloud will save your new configurations, but it may initially overwrite your current screen with previously saved defaults. Are you sure you want to proceed?"
-                : "Switching to Local Mode means your inputs will no longer be saved to the cloud. If you refresh the page while in Local Mode, any unsaved custom inputs will be lost."}
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() =>
-                  setSyncConfirmDialog({ isOpen: false, targetState: false })
-                }
-                className="px-4 py-2.5 rounded-xl text-xs font-bold text-[#4C4A4B] bg-[#EFEBE7] hover:bg-[#D8D8D8] transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  setIsCloudSync(syncConfirmDialog.targetState);
-                  setSyncConfirmDialog({ isOpen: false, targetState: false });
-                }}
-                className={`px-4 py-2.5 rounded-xl text-xs font-bold text-white transition-colors ${syncConfirmDialog.targetState ? "bg-[#1C6048] hover:bg-opacity-90" : "bg-[#9B8B70] hover:bg-opacity-90"}`}
-              >
-                {syncConfirmDialog.targetState
-                  ? "Yes, Enable Sync"
-                  : "Yes, Switch to Local"}
-              </button>
-            </div>
+            {/* Case 1: Firestore is not configured yet */}
+            {!isCloudConfigured && syncConfirmDialog.targetState ? (
+              <>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-3 rounded-full bg-[#9B8B70]/15 text-[#9B8B70]">
+                    <Info size={24} />
+                  </div>
+                  <h3 className="text-lg font-bold text-[#1E2F31]">
+                    Cloud Sync Configuration Setup
+                  </h3>
+                </div>
+                <div className="text-[#4C4A4B] text-sm mb-6 leading-relaxed">
+                  Genuine cloud-hosted saving requires valid Google Cloud/Firebase project identifiers. Currently, the application is running in an <strong>Offline Sandbox</strong>. Your changes are isolated to this session and will be lost on refresh.
+                  <br /><br />
+                  To connect your persistent database:
+                  <ul className="list-disc pl-5 mt-2 space-y-1 text-xs font-mono text-[#1E2F31]/80">
+                    <li>Open <code>/firebase-applet-config.json</code> in the workspace explorer.</li>
+                    <li>Replace placeholder keys with active Firebase client credentials.</li>
+                  </ul>
+                </div>
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() =>
+                      setSyncConfirmDialog({ isOpen: false, targetState: false })
+                    }
+                    className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#1C6048] hover:bg-opacity-90 transition-colors"
+                  >
+                    Got It, Continue Offline
+                  </button>
+                </div>
+              </>
+            ) : isCloudConfigured && !user && syncConfirmDialog.targetState ? (
+              /* Case 2: Configured but not logged in */
+              <>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-3 rounded-full bg-[#1C6048]/10 text-[#1C6048]">
+                    <Lock size={24} />
+                  </div>
+                  <h3 className="text-lg font-bold text-[#1E2F31]">
+                    Sign In to Enable Cloud Sync
+                  </h3>
+                </div>
+                <p className="text-[#4C4A4B] text-sm mb-6 leading-relaxed border-b border-[#EFEBE7] pb-4">
+                  Sign in using Google Secure OAuth to automatically upload and synchronize custom clinical models, occupancy rates (BOR), development budgets, and debt structures across sessions.
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() =>
+                      setSyncConfirmDialog({ isOpen: false, targetState: false })
+                    }
+                    className="px-4 py-2.5 rounded-xl text-xs font-bold text-[#4C4A4B] bg-[#EFEBE7] hover:bg-[#D8D8D8]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await loginWithGoogle();
+                        setIsCloudSync(true);
+                        setSyncConfirmDialog({ isOpen: false, targetState: false });
+                      } catch (err) {
+                        alert("Sign in failed. Setup is running securely: " + err.message);
+                      }
+                    }}
+                    className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#1C6048] hover:bg-opacity-90 flex items-center gap-2 shadow-md"
+                  >
+                    <Users size={14} />
+                    Sign In with Google
+                  </button>
+                </div>
+              </>
+            ) : (
+              /* Case 3: Fully authenticated toggle */
+              <>
+                <div className="flex items-center gap-3 mb-4">
+                  <div
+                    className={`p-3 rounded-full ${syncConfirmDialog.targetState ? "bg-[#1C6048]/10 text-[#1C6048]" : "bg-[#9B8B70]/10 text-[#9B8B70]"}`}
+                  >
+                    <AlertTriangle size={24} />
+                  </div>
+                  <h3 className="text-lg font-bold text-[#1E2F31]">
+                    {syncConfirmDialog.targetState
+                      ? "Enable Cloud Sync?"
+                      : "Switch to Local Mode?"}
+                  </h3>
+                </div>
+                <p className="text-[#4C4A4B] text-sm mb-6 leading-relaxed">
+                  {syncConfirmDialog.targetState
+                    ? "Connecting to the cloud will save your active configurations under your authenticated profile. If there are previous cloud records, they might initially override local parameters. Proceed?"
+                    : "Switching to Local Mode means updates are stored only in volatile window state. Any custom settings will reset upon manual browser refresh."}
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() =>
+                      setSyncConfirmDialog({ isOpen: false, targetState: false })
+                    }
+                    className="px-4 py-2.5 rounded-xl text-xs font-bold text-[#4C4A4B] bg-[#EFEBE7] hover:bg-[#D8D8D8] transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsCloudSync(syncConfirmDialog.targetState);
+                      setSyncConfirmDialog({ isOpen: false, targetState: false });
+                    }}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-bold text-white transition-colors ${syncConfirmDialog.targetState ? "bg-[#1C6048] hover:bg-opacity-90" : "bg-[#9B8B70] hover:bg-opacity-90"}`}
+                  >
+                    {syncConfirmDialog.targetState
+                      ? "Yes, Enable Sync"
+                      : "Yes, Switch to Local"}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

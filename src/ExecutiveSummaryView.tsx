@@ -149,14 +149,6 @@ export const ExecutiveSummaryView = memo(({ isPresenting }: { isPresenting: bool
 
   return (
     <div className="animate-in fade-in zoom-in-95 duration-500 relative">
-      {/* Diagonal Watermark Overlay */}
-      <div className="absolute top-24 left-0 right-0 z-[100] flex justify-center pointer-events-none overflow-hidden h-64">
-        <div className="transform -rotate-[8deg] w-[160%] shrink-0 whitespace-nowrap text-center pt-8">
-          <p className="text-lg sm:text-xl md:text-3xl lg:text-5xl font-black text-red-600/15 uppercase tracking-[0.4em] select-none">
-            DRAFT ON PROGRESS • DRAFT ON PROGRESS • DRAFT ON PROGRESS • DRAFT ON PROGRESS
-          </p>
-        </div>
-      </div>
 
       <div className="w-full space-y-6">
         

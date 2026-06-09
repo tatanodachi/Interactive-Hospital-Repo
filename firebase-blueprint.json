@@ -1,0 +1,64 @@
+{
+  "entities": {
+    "OpCoConfig": {
+      "title": "OpCo Configuration",
+      "description": "User specific clinical and operational assumptions for the OpCo cascade.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The unique Firebase Auth UID of the user."
+        },
+        "userEmail": {
+          "type": "string",
+          "description": "The email address of the authenticated user."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The Firestore server timestamp of the last save."
+        },
+        "assumptions": {
+          "type": "object",
+          "description": "Key-value map of numerical and boolean operational assumptions."
+        }
+      },
+      "required": ["userId", "userEmail", "updatedAt", "assumptions"]
+    },
+    "PropCoConfig": {
+      "title": "PropCo Configuration",
+      "description": "User specific property, build, and development assumptions for the PropCo cascade.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The unique Firebase Auth UID of the user."
+        },
+        "userEmail": {
+          "type": "string",
+          "description": "The email address of the authenticated user."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The Firestore server timestamp of the last save."
+        },
+        "assumptions": {
+          "type": "object",
+          "description": "Key-value map of property, build, and debt assumptions."
+        }
+      },
+      "required": ["userId", "userEmail", "updatedAt", "assumptions"]
+    }
+  },
+  "firestore": {
+    "/opcoConfigs/{userId}": {
+      "schema": "OpCoConfig",
+      "description": "The user's individual custom configuration for Clinical Operations."
+    },
+    "/propcoConfigs/{userId}": {
+      "schema": "PropCoConfig",
+      "description": "The user's individual custom configuration for physical construction and PropCo financing."
+    }
+  }
+}
