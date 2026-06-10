@@ -402,6 +402,7 @@ const runOpCoEngine = (assumptions, config) => {
       pB_Yield: 0,
       fcf: pA_Outlay + pB_Outlay,
       ebitdaMargin: 0,
+      ebitdarMargin: 0,
       netMargin: 0,
       roe: 0,
       breakEvenBor: 0,
@@ -710,6 +711,7 @@ const runOpCoEngine = (assumptions, config) => {
           : 0,
       fcf: year_netIncome + (i === 1 ? assumptions.workingCapitalOpex : 0) + year_opCoExit,
       ebitdaMargin: year_totalRev > 0 ? (year_ebitda / year_totalRev) * 100 : 0,
+      ebitdarMargin: year_totalRev > 0 ? (year_ebitdar / year_totalRev) * 100 : 0,
       netMargin: year_totalRev > 0 ? (year_netIncome / year_totalRev) * 100 : 0,
       roe: totalEquity > 0 ? (year_netIncome / totalEquity) * 100 : 0,
       breakEvenBor: breakEvenBor * 100,
@@ -766,6 +768,12 @@ const runOpCoEngine = (assumptions, config) => {
       opCoExit: annualData.reduce((acc, d) => acc + (d.opCoExit || 0), 0),
       pA_Exit: annualData.reduce((acc, d) => acc + (d.pA_Exit || 0), 0),
       pB_Exit: annualData.reduce((acc, d) => acc + (d.pB_Exit || 0), 0),
+      ebitdarMargin: annualData.reduce((acc, d) => acc + (d.totalRev || 0), 0) > 0
+        ? (annualData.reduce((acc, d) => acc + (d.ebitdar || 0), 0) / annualData.reduce((acc, d) => acc + (d.totalRev || 0), 0)) * 100
+        : 0,
+      netMargin: annualData.reduce((acc, d) => acc + (d.totalRev || 0), 0) > 0
+        ? (annualData.reduce((acc, d) => acc + (d.netIncome || 0), 0) / annualData.reduce((acc, d) => acc + (d.totalRev || 0), 0)) * 100
+        : 0,
     },
     opsMetrics: {
       stabilizedVolume:

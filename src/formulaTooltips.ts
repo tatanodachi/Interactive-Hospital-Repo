@@ -55,6 +55,10 @@ export const OPCO_FORMULAS: Record<string, TooltipInfo> = {
     desc: "Earnings before Interest, Taxes, Depreciation, Amortization, and rent payments (pre-lease operational yield).",
     formula: "EBITDAR = Gross Profit - Staffing - Other OpEx"
   },
+  ebitdarMargin: {
+    desc: "EBITDAR Margin (%): Represents pre-lease clinical operating profitability relative to total revenues.",
+    formula: "EBITDAR Margin = (EBITDAR / Total Revenue) * 100"
+  },
   rent: {
     desc: "Annual facility building lease rent paid by clinical entity OpCo to PropCo physical developer.",
     formula: "Calculated via lease structures: Fixed Rent escalation % or EBITDA-linked rent formulas."
@@ -70,6 +74,10 @@ export const OPCO_FORMULAS: Record<string, TooltipInfo> = {
   netIncome: {
     desc: "Operating company consolidated net margin available for look-through distributions.",
     formula: "Net Income = EBITDA - Corporate Tax"
+  },
+  netMargin: {
+    desc: "Net Profit Margin: Represents Operating Company's net operating clinical earnings as a percentage of total revenues.",
+    formula: "Net Profit Margin = (Net Income / Total Revenue) * 100"
   },
   cumNI: {
     desc: "Cumulative net operating clinical earnings recorded since inception.",

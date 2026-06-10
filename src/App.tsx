@@ -1787,6 +1787,7 @@ const TableRow = memo(
     crossover,
     isIndent,
     tooltip,
+    isPercent,
   }) => {
     let baseColorClass = "bg-white font-medium text-[#4C4A4B]";
     if (highlight) {
@@ -1818,17 +1819,29 @@ const TableRow = memo(
                 ? "bg-[#E8EFEA]"
                 : "bg-[#EFEBE7]/50"
             : "bg-white group-hover:bg-[#F9F8F6]";
+
+          const formattedVal = formatNumber(val, 1);
+          const displayVal = isPercent && formattedVal !== "0"
+            ? (val < 0 ? `(${formattedVal.replace(/[()]/g, "")}%)` : `${formattedVal}%`)
+            : val === 0 && val >= 0
+              ? (isPercent ? "0.0%" : "-")
+              : formattedVal;
+
           return (
             <td
               key={i}
               className={`px-3 py-2 text-right border-r border-b border-[#D8D8D8] font-mono transition-colors ${cellBg} ${val < 0 ? "text-[#9B8B70]" : highlight ? "text-[#1E2F31] font-bold" : "text-[#4C4A4B]"} ${isCrossover ? "bg-[#9B8B70]/20 ring-1 ring-inset ring-[#9B8B70] text-[#1E2F31] font-bold" : ""}`}
             >
-              {val === 0 && val >= 0 ? "-" : formatNumber(val, 1)}
+              {displayVal}
             </td>
           );
         })}
         {total !== undefined ? (
-          <td className={totalColClass}>{formatNumber(total, 1)}</td>
+          <td className={totalColClass}>
+            {isPercent 
+              ? (total < 0 ? `(${formatNumber(total, 1).replace(/[()]/g, "")}%)` : `${formatNumber(total, 1)}%`)
+              : formatNumber(total, 1)}
+          </td>
         ) : (
           <td className={totalColClass}></td>
         )}
@@ -7234,14 +7247,26 @@ const OpCoDashboardView = memo(
     setShowTeaser,
     teaserContent,
     isPresenting,
-  }) => (
-    <div
-      className={
-        isPresenting
-          ? "grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in"
-          : "space-y-6 animate-in fade-in"
-      }
-    >
+  }) => {
+    const operatingYears = data.annualData.filter(d => (d.totalRev || 0) > 0);
+    const avgEbitdarMargin = operatingYears.length > 0
+      ? operatingYears.reduce((acc, d) => acc + (d.ebitdarMargin || 0), 0) / operatingYears.length
+      : 0;
+    const avgNetMargin = operatingYears.length > 0
+      ? operatingYears.reduce((acc, d) => acc + (d.netMargin || 0), 0) / operatingYears.length
+      : 0;
+
+    const blendedEbitdarMargin = data.totals.ebitdarMargin || 0;
+    const blendedNetMargin = data.totals.netMargin || 0;
+
+    return (
+      <div
+        className={
+          isPresenting
+            ? "grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in"
+            : "space-y-6 animate-in fade-in"
+        }
+      >
       {/* LEFT PANEL: Executive & Returns (Spans 4 columns in Present Mode) */}
       <div className={`space-y-6 ${isPresenting ? "lg:col-span-4" : ""}`}>
         <div className="flex justify-between items-center bg-white p-3 rounded-2xl shadow-sm border border-[#D8D8D8]">
@@ -7361,6 +7386,69 @@ const OpCoDashboardView = memo(
             value={`${formatNumber(data.opsMetrics.fixedCostPct, 1)}%`}
             subtitle="At Stabilization"
           />
+        </div>
+
+        {/* High-Contrast Bento Cards for EBITDAR Margin and Net Profit Margin */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* EBITDAR Margin Bento Card */}
+          <div className="bg-[#1C6048] p-5 rounded-2xl border border-[#164c39] shadow-md relative md:hover:-translate-y-1 transition-transform overflow-hidden group">
+            {/* Ambient Background decoration */}
+            <div className="absolute right-0 bottom-0 translate-x-4 translate-y-4 w-24 h-24 rounded-full bg-white/[0.03] pointer-events-none group-hover:scale-110 transition-transform duration-550" />
+            
+            <div className="flex items-center justify-between mb-3 text-[10px] font-black uppercase tracking-widest text-[#EFEBE7]/80">
+              <div className="flex items-center gap-2">
+                <Activity size={15} className="text-[#99B6AA]" />
+                <span>Operating EBITDAR Margin</span>
+              </div>
+              <span className="text-[8px] bg-white/10 px-2 py-0.5 rounded text-white tracking-normal font-medium">OpCo Metric</span>
+            </div>
+            
+            <div className="flex items-baseline gap-2 mb-2">
+              <span className="text-3xl lg:text-4xl font-black font-sans text-white tracking-tight">
+                {formatNumber(avgEbitdarMargin, 1)}%
+              </span>
+              <span className="text-[10px] font-mono text-[#EFEBE7]/70 font-semibold">Avg Operating Margin</span>
+            </div>
+            
+            <p className="text-[11px] text-[#EFEBE7]/90 leading-relaxed font-medium mb-3">
+              Hospital's pre-lease clinical operating profitability, averaging <span className="font-bold underline decoration-[#99B6AA]">{formatNumber(avgEbitdarMargin, 1)}%</span> across active years (Blended: {formatNumber(blendedEbitdarMargin, 1)}%).
+            </p>
+            
+            <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[9px] text-[#EFEBE7]/60 font-medium font-mono">
+              <span>Overall Project Blended EBITDAR:</span>
+              <span className="font-mono font-bold text-white text-[10px]">{formatNumber(blendedEbitdarMargin, 1)}%</span>
+            </div>
+          </div>
+
+          {/* Net Profit Margin Bento Card */}
+          <div className="bg-[#1E2F31] p-5 rounded-2xl border border-[#162325] shadow-md relative md:hover:-translate-y-1 transition-transform overflow-hidden group">
+            {/* Ambient Background decoration */}
+            <div className="absolute right-0 bottom-0 translate-x-4 translate-y-4 w-24 h-24 rounded-full bg-white/[0.03] pointer-events-none group-hover:scale-110 transition-transform duration-550" />
+            
+            <div className="flex items-center justify-between mb-3 text-[10px] font-black uppercase tracking-widest text-[#EFEBE7]/80">
+              <div className="flex items-center gap-2">
+                <Coins size={15} className="text-[#99B6AA]" />
+                <span>Net Profit Margin (NPM)</span>
+              </div>
+              <span className="text-[8px] bg-white/10 px-2 py-0.5 rounded text-white tracking-normal font-medium">Bottom Line</span>
+            </div>
+            
+            <div className="flex items-baseline gap-2 mb-2">
+              <span className="text-3xl lg:text-4xl font-black font-sans text-white tracking-tight">
+                {formatNumber(avgNetMargin, 1)}%
+              </span>
+              <span className="text-[10px] font-mono text-[#EFEBE7]/70 font-semibold">Avg Net Margin</span>
+            </div>
+            
+            <p className="text-[11px] text-[#EFEBE7]/90 leading-relaxed font-medium mb-3">
+              Operating company bottom-line clinical yield after taxes and rental overlays, averaging <span className="font-bold underline decoration-[#99B6AA]">{formatNumber(avgNetMargin, 1)}%</span> across active years (Blended: {formatNumber(blendedNetMargin, 1)}%).
+            </p>
+            
+            <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[9px] text-[#EFEBE7]/60 font-medium font-mono">
+              <span>Overall Project Blended NPM:</span>
+              <span className="font-mono font-bold text-white text-[10px]">{formatNumber(blendedNetMargin, 1)}%</span>
+            </div>
+          </div>
         </div>
 
         <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8]">
@@ -7553,7 +7641,8 @@ const OpCoDashboardView = memo(
         </div>
       </div>
     </div>
-  ),
+    );
+  }
 );
 
 const OpCoCascadeView = memo(({ data, assumptions, viewResolution, setViewResolution }) => {
@@ -7826,6 +7915,15 @@ const OpCoCascadeView = memo(({ data, assumptions, viewResolution, setViewResolu
                 highlight
                 tooltip={OPCO_FORMULAS.ebitdar}
               />
+              <TableRow
+                label="EBITDAR MARGIN"
+                data={columns}
+                dk="ebitdarMargin"
+                total={data.totals.ebitdarMargin}
+                highlight
+                isPercent
+                tooltip={OPCO_FORMULAS.ebitdarMargin}
+              />
 
               <TableSection
                 title="E. Rent & Taxes"
@@ -7863,6 +7961,16 @@ const OpCoCascadeView = memo(({ data, assumptions, viewResolution, setViewResolu
                 highlight
                 emerald
                 tooltip={OPCO_FORMULAS.netIncome}
+              />
+              <TableRow
+                label="NET PROFIT MARGIN"
+                data={columns}
+                dk="netMargin"
+                total={data.totals.netMargin}
+                highlight
+                emerald
+                isPercent
+                tooltip={OPCO_FORMULAS.netMargin}
               />
             </>
           )}
@@ -12518,7 +12626,7 @@ export const useMonthlyColumns = (annualData, viewResolution = 'annual') => {
           for (let m = 1; m <= 12; m++) {
              let monthLabel = viewResolution === 'monthly' ? `${String(d.year).slice(-2)} M${m}` : `M${m}`;
              let monthData = { ...d, colType: 'month', defaultLabel: monthLabel, isMonth: true, parentYear: d.year };
-             const isRate = ['bor', 'ebitdaMargin', 'netMargin', 'breakEvenBor', 'pA_Yield', 'pB_Yield', 'avgDscr', 'avgYield', 'moic', 'costPerBed', 'costPerSqm', 'yocExLand', 'irr', 'lpIrr', 'gpIrr', 'isOperating', 'year', 'colType', 'defaultLabel', 'isMonth', 'parentYear'];
+             const isRate = ['bor', 'ebitdaMargin', 'ebitdarMargin', 'netMargin', 'breakEvenBor', 'pA_Yield', 'pB_Yield', 'avgDscr', 'avgYield', 'moic', 'costPerBed', 'costPerSqm', 'yocExLand', 'irr', 'lpIrr', 'gpIrr', 'isOperating', 'year', 'colType', 'defaultLabel', 'isMonth', 'parentYear'];
              const isBalance = ['debtBalance', 'debtBalanceExLand'];
              Object.keys(d).forEach(k => {
                 if (d.monthly && d.monthly[k] && Array.isArray(d.monthly[k])) {
