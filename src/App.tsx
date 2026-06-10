@@ -7542,56 +7542,7 @@ const OpCoDashboardView = memo(
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8]">
-            <h3 className="font-bold text-[#1E2F31] mb-6 flex items-center gap-2">
-              <Activity size={18} className="text-[#1E2F31]" /> Cash-on-Cash
-              Trajectory
-            </h3>
-            <div className="h-56">
-              <LazyResponsiveContainer width="100%" height="100%">
-                <LineChart data={data.operatingData}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke="#D8D8D8"
-                  />
-                  <XAxis
-                    dataKey="year"
-                    tick={{ fontSize: 10, fill: "#4C4A4B" }}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 10, fill: "#4C4A4B" }}
-                    axisLine={false}
-                    tickFormatter={(val) => `${val}%`}
-                  />
-                  <Tooltip allowEscapeViewBox={{ x: true, y: true }}
-                    contentStyle={TOOLTIP_STYLE}
-                    formatter={(val) => formatNumber(val, 1) + "%"}
-                  />
-                  <Legend iconType="circle" wrapperStyle={LEGEND_STYLE} />
-                  <Line
-                    type="monotone"
-                    dataKey="pA_Yield"
-                    name="Strategic Ptnr Yield"
-                    stroke="#1C6048"
-                    strokeWidth={3}
-                    dot={{ r: 3, strokeWidth: 2 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="roe"
-                    name="Project ROE"
-                    stroke="#9B8B70"
-                    strokeWidth={3}
-                    dot={{ r: 3, strokeWidth: 2 }}
-                  />
-                </LineChart>
-              </LazyResponsiveContainer>
-            </div>
-          </div>
-
+        <div className="grid grid-cols-1 gap-6">
           <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8]">
             <h3 className="font-bold text-[#1E2F31] mb-6 flex items-center gap-2">
               <Target size={18} className="text-[#99B6AA]" /> Breakeven Audit
@@ -7600,9 +7551,9 @@ const OpCoDashboardView = memo(
               <LazyResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={data.operatingData}>
                   <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke="#D8D8D8"
+                     strokeDasharray="3 3"
+                     vertical={false}
+                     stroke="#D8D8D8"
                   />
                   <XAxis
                     dataKey="year"
