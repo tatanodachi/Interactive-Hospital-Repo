@@ -224,7 +224,7 @@ export const ExecutiveSummaryView = memo(({
       )
     },
     {
-      title: "3. Asset Information",
+      title: "3. Project & Collaboration",
       subtitle: "Leasehold Synergy & EBITDA-Linked Rental Allocations",
       icon: <Compass className="text-[#1C6048]" size={18} />,
       content: (
@@ -471,7 +471,7 @@ export const ExecutiveSummaryView = memo(({
                   <div className="flex items-center gap-2 truncate">
                     <span className={`font-bold font-display ${activeNarrativeStep === idx ? 'text-[#1C6048]' : 'text-[#8A8175]'}`}>0{idx + 1}</span>
                     <span className="font-bold text-[11px] truncate">
-                      {["Financial", "Market", "Asset", "Budget"][idx]}
+                      {["Financial", "Market", "Project & Collaboration", "Budget"][idx]}
                     </span>
                   </div>
                   <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${activeNarrativeStep === idx ? "bg-[#1C6048]" : "bg-transparent"}`}></span>
