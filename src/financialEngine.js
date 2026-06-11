@@ -95,7 +95,7 @@ const DEFAULT_OPCO_ASSUMPTIONS = {
   partnerBEquity: 40.23,
   jvaOpex: 2.5,
   commOpex: 15,
-  workingCapitalOpex: 64.6,
+  workingCapitalOpex: 64.671175,
   sharingPercentA: 51.0,
   equitySplitY1: 100,
   discountRate: 12,
@@ -183,38 +183,28 @@ const INSURANCE_DATA = [
   { year: "2026", value: 27.2 },
 ];
 
-const apiKey = "";
 const callGemini = async (prompt, systemInstruction) => {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-  const payload = {
-    contents: [{ parts: [{ text: prompt }] }],
-    systemInstruction: { parts: [{ text: systemInstruction }] },
-  };
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 3; i++) {
     try {
-      const response = await fetch(url, {
+      const response = await fetch("/api/gemini", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ prompt, systemInstruction }),
       });
       if (!response.ok) {
-        if (
-          response.status >= 400 &&
-          response.status < 500 &&
-          response.status !== 429
-        ) {
-          throw new Error(`Client Error: ${response.status}`); // Don't retry 4xx errors
-        }
-        throw new Error("API Error");
+        let errMsg = "API Error";
+        try {
+          const errJson = await response.json();
+          errMsg = errJson.error || errMsg;
+        } catch (_) {}
+        throw new Error(errMsg);
       }
       const result = await response.json();
-      return (
-        result.candidates?.[0]?.content?.parts?.[0]?.text ||
-        "No response generated."
-      );
+      return result.text || "No response generated.";
     } catch (error) {
-      if (error.message.includes("Client Error") || i === 4) throw error;
-      await new Promise((res) => setTimeout(Math.pow(2, i) * 1000, res));
+      console.error(`Attempt ${i + 1} failed:`, error);
+      if (i === 2) throw error;
+      await new Promise((res) => setTimeout(res, Math.pow(2, i) * 1000));
     }
   }
 };
@@ -286,7 +276,8 @@ const runOpCoEngine = (assumptions, config) => {
       grossProfit: [], staffCost: [], recurringOpex: [], ebitdar: [],
       rent: [], ebitda: [], tax: [], netIncome: [], cumNI: [], distributableProfit: [],
       retainedThisYear: [], cumulativeRetainedEarnings: [], shareA: [], shareB: [], opCoExit: [], pA_Exit: [], pB_Exit: [], ev: [],
-      pA_Div: [], pA_Net: [], pA_Outlay: [], pA_Cum: [], pB_Div: [], pB_Net: [], pB_Outlay: [], pB_Cum: [], fcf: [], bor: [], pA_Yield: [], pB_Yield: [], ipCases: [], opVisits: []
+      pA_Div: [], pA_Net: [], pA_Outlay: [], pA_Cum: [], pB_Div: [], pB_Net: [], pB_Outlay: [], pB_Cum: [], fcf: [], bor: [], pA_Yield: [], pB_Yield: [], ipCases: [], opVisits: [],
+      otherOpex: [], adminOpex: [], utilOpex: [], mktgOpex: [], operatorOpex: [], insOpex: []
     };
 
     for (let m = 0; m < 12; m++) {
@@ -318,6 +309,13 @@ const runOpCoEngine = (assumptions, config) => {
       monthly.ebitda.push(m_ebitda);
       monthly.tax.push(0);
       monthly.netIncome.push(m_netInc);
+
+      monthly.otherOpex.push(m_recOpex);
+      monthly.adminOpex.push(0);
+      monthly.utilOpex.push(0);
+      monthly.mktgOpex.push(0);
+      monthly.operatorOpex.push(0);
+      monthly.insOpex.push(0);
 
       // Cumulative Net Income chain
       let cum_net_up_to_month = 0;
@@ -379,6 +377,12 @@ const runOpCoEngine = (assumptions, config) => {
       grossProfit: 0,
       staffCost: 0,
       recurringOpex: assumptions[p.k],
+      otherOpex: assumptions[p.k],
+      adminOpex: 0,
+      utilOpex: 0,
+      mktgOpex: 0,
+      operatorOpex: 0,
+      insOpex: 0,
       ebitdar: -assumptions[p.k],
       rent: 0,
       ebitda: net,
@@ -498,7 +502,8 @@ const runOpCoEngine = (assumptions, config) => {
       grossProfit: [], staffCost: [], recurringOpex: [], ebitdar: [],
       rent: [], ebitda: [], tax: [], netIncome: [], cumNI: [], distributableProfit: [],
       retainedThisYear: [], cumulativeRetainedEarnings: [], shareA: [], shareB: [], opCoExit: [], pA_Exit: [], pB_Exit: [], ev: [],
-      pA_Div: [], pA_Net: [], pA_Outlay: [], pA_Cum: [], pB_Div: [], pB_Net: [], pB_Outlay: [], pB_Cum: [], fcf: [], bor: [], pA_Yield: [], pB_Yield: [], ipCases: [], opVisits: []
+      pA_Div: [], pA_Net: [], pA_Outlay: [], pA_Cum: [], pB_Div: [], pB_Net: [], pB_Outlay: [], pB_Cum: [], fcf: [], bor: [], pA_Yield: [], pB_Yield: [], ipCases: [], opVisits: [],
+      otherOpex: [], adminOpex: [], utilOpex: [], mktgOpex: [], operatorOpex: [], insOpex: []
     };
 
     let year_ipRev = 0,
@@ -509,6 +514,12 @@ const runOpCoEngine = (assumptions, config) => {
       year_grossProfit = 0,
       year_staffCost = 0,
       year_recurringOpex = 0,
+      year_otherOpex = 0,
+      year_adminOpex = 0,
+      year_utilOpex = 0,
+      year_mktgOpex = 0,
+      year_operatorOpex = 0,
+      year_insOpex = 0,
       year_ebitdar = 0,
       year_rent = 0,
       year_ebitda = 0,
@@ -537,6 +548,14 @@ const runOpCoEngine = (assumptions, config) => {
       let m_grossProfit = grossProfit * (days / daysInYear);
       let m_staffCost = staffCost * (days / daysInYear);
       let m_recurringOpex = recurringOpex * (days / daysInYear);
+
+      let m_adminOpex = ((assumptions.adminExpRate || 0) / 100) * totalRev * (days / daysInYear);
+      let m_utilOpex = ((assumptions.utilExpRate || 0) / 100) * totalRev * (days / daysInYear);
+      let m_mktgOpex = ((assumptions.mktgExpRate || 0) / 100) * totalRev * (days / daysInYear);
+      let m_operatorOpex = ((assumptions.operatorFeeRate || 0) / 100) * totalRev * (days / daysInYear);
+      let m_insOpex = ((assumptions.insuranceMonthly || 0) * 12 / 1000) * (days / daysInYear);
+      let m_otherOpex = m_adminOpex + m_utilOpex + m_mktgOpex + m_operatorOpex + m_insOpex;
+
       let m_ebitdar = ebitdar * (days / daysInYear);
 
       // Distributed monthly:
@@ -598,6 +617,12 @@ const runOpCoEngine = (assumptions, config) => {
       monthly.grossProfit.push(m_grossProfit);
       monthly.staffCost.push(m_staffCost);
       monthly.recurringOpex.push(m_recurringOpex);
+      monthly.otherOpex.push(m_otherOpex);
+      monthly.adminOpex.push(m_adminOpex);
+      monthly.utilOpex.push(m_utilOpex);
+      monthly.mktgOpex.push(m_mktgOpex);
+      monthly.operatorOpex.push(m_operatorOpex);
+      monthly.insOpex.push(m_insOpex);
       monthly.ebitdar.push(m_ebitdar);
       monthly.rent.push(m_rent);
       monthly.ebitda.push(m_ebitda);
@@ -635,6 +660,12 @@ const runOpCoEngine = (assumptions, config) => {
       year_grossProfit += m_grossProfit;
       year_staffCost += m_staffCost;
       year_recurringOpex += m_recurringOpex;
+      year_otherOpex += m_otherOpex;
+      year_adminOpex += m_adminOpex;
+      year_utilOpex += m_utilOpex;
+      year_mktgOpex += m_mktgOpex;
+      year_operatorOpex += m_operatorOpex;
+      year_insOpex += m_insOpex;
       year_ebitdar += m_ebitdar;
       year_rent += m_rent;
       year_ebitda += m_ebitda;
@@ -678,6 +709,12 @@ const runOpCoEngine = (assumptions, config) => {
       grossProfit: year_grossProfit,
       staffCost: year_staffCost,
       recurringOpex: year_recurringOpex,
+      otherOpex: year_otherOpex,
+      adminOpex: year_adminOpex,
+      utilOpex: year_utilOpex,
+      mktgOpex: year_mktgOpex,
+      operatorOpex: year_operatorOpex,
+      insOpex: year_insOpex,
       ebitdar: year_ebitdar,
       rent: year_rent,
       ebitda: year_ebitda,
@@ -748,6 +785,12 @@ const runOpCoEngine = (assumptions, config) => {
         (acc, d) => acc + (d.recurringOpex || 0),
         0,
       ),
+      otherOpex: annualData.reduce((acc, d) => acc + (d.otherOpex || 0), 0),
+      adminOpex: annualData.reduce((acc, d) => acc + (d.adminOpex || 0), 0),
+      utilOpex: annualData.reduce((acc, d) => acc + (d.utilOpex || 0), 0),
+      mktgOpex: annualData.reduce((acc, d) => acc + (d.mktgOpex || 0), 0),
+      operatorOpex: annualData.reduce((acc, d) => acc + (d.operatorOpex || 0), 0),
+      insOpex: annualData.reduce((acc, d) => acc + (d.insOpex || 0), 0),
       ebitdar: annualData.reduce((acc, d) => acc + (d.ebitdar || 0), 0),
       rent: annualData.reduce((acc, d) => acc + (d.rent || 0), 0),
       ebitda: annualData.reduce((acc, d) => acc + (d.ebitda || 0), 0),
@@ -768,6 +811,8 @@ const runOpCoEngine = (assumptions, config) => {
       opCoExit: annualData.reduce((acc, d) => acc + (d.opCoExit || 0), 0),
       pA_Exit: annualData.reduce((acc, d) => acc + (d.pA_Exit || 0), 0),
       pB_Exit: annualData.reduce((acc, d) => acc + (d.pB_Exit || 0), 0),
+      pA_Outlay: annualData.reduce((acc, d) => acc + (d.pA_Outlay || 0), 0),
+      pB_Outlay: annualData.reduce((acc, d) => acc + (d.pB_Outlay || 0), 0),
       ebitdarMargin: annualData.reduce((acc, d) => acc + (d.totalRev || 0), 0) > 0
         ? (annualData.reduce((acc, d) => acc + (d.ebitdar || 0), 0) / annualData.reduce((acc, d) => acc + (d.totalRev || 0), 0)) * 100
         : 0,
@@ -780,11 +825,19 @@ const runOpCoEngine = (assumptions, config) => {
         (stabilizedYear?.ipCases || 0) + (stabilizedYear?.opVisits || 0),
       revPab:
         assumptions.beds > 0
-          ? ((stabilizedYear?.totalRev || 0) * 1000) / assumptions.beds
+          ? (stabilizedYear?.totalRev || 0) / assumptions.beds
+          : 0,
+      startingRevPab:
+        assumptions.beds > 0 && operatingData.length > 0
+          ? (operatingData[0]?.totalRev || 0) / assumptions.beds
+          : 0,
+      averageRevPab:
+        assumptions.beds > 0 && operatingData.length > 0
+          ? (operatingData.reduce((acc, y) => acc + (y.totalRev || 0), 0) / operatingData.length) / assumptions.beds
           : 0,
       ebitdaPerBed:
         assumptions.beds > 0
-          ? ((stabilizedYear?.ebitda || 0) * 1000) / assumptions.beds
+          ? (stabilizedYear?.ebitda || 0) / assumptions.beds
           : 0,
       fixedCostPct:
         ((stabilizedYear?.fixedCosts || 0) /
@@ -796,7 +849,7 @@ const runOpCoEngine = (assumptions, config) => {
     setupDetails: {
       jvaOpex: assumptions.jvaOpex ?? 2.5,
       commOpex: assumptions.commOpex ?? 15.0,
-      workingCapitalOpex: assumptions.workingCapitalOpex ?? 64.6,
+      workingCapitalOpex: assumptions.workingCapitalOpex ?? 64.671175,
     },
     totalEquity,
     projectIRR: calculateIRR(projectCfsMonthly, 'monthly'),
@@ -910,7 +963,7 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
   const medEqFullValue = assumptions.includeMedEq
     ? (assumptions.capexMedEqQty * assumptions.capexMedEqPrice) / 1000
     : 0;
-  const medEqCost = medEqFullValue;
+  const medEqCost = assumptions.medEqProcurement === "lease_operating" ? 0 : medEqFullValue;
   const infraCost =
     (assumptions.capexInfraQty * assumptions.capexInfraPrice) / 1000;
   const ffeCost = assumptions.includeFFE
@@ -920,7 +973,7 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
     (assumptions.capexSharingDevQty * assumptions.capexSharingDevPrice) / 1000;
   const totalHardCosts = buildCost + medEqCost + infraCost + ffeCost + sharingDevCost;
 
-  const upfrontMedEq = assumptions.medEqProcurement !== "lease" ? medEqCost : 0;
+  const upfrontMedEq = (assumptions.medEqProcurement !== "lease" && assumptions.medEqProcurement !== "lease_operating") ? medEqCost : 0;
   const leasedMedEq = medEqCost - upfrontMedEq;
 
   const consultantBase = buildCost + ffeCost + infraCost + medEqFullValue;
@@ -1450,6 +1503,7 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       year_fcfeExLand = 0,
       year_unleveredCf = 0,
       year_opFcfe = 0,
+      year_opFcfeExLand = 0,
       year_exit = 0,
       year_exitExLand = 0;
 
@@ -1467,44 +1521,48 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       let m_deferredCapex = 0;
 
       // Leased equipment monthly calculations
-      if (assumptions.includeMedEq && assumptions.medEqProcurement === "lease") {
-        const purchaseYear = assumptions.medEqPurchaseOpYear || 4;
-        if (i < purchaseYear) {
-          m_medEqLeaseOpex = assumptions.medEqLeaseMonthly || 0.375;
-        } else if (i === purchaseYear) {
-          if (m <= 3) {
-            const m_deferredHard = leasedMedEq / 3;
-            const m_defConsultant = deferredConsultantCost / 3;
-            const m_defLicense = deferredLicenseCost / 3;
-            
-            const m_defMedEqVat = (leasedMedEq * (assumptions.capexVat || 0) / 100) / 3;
-            const m_defConsultantVat = (deferredConsultantCost * (assumptions.capexVat || 0) / 100) / 3;
-            
-            const m_defMedEqContingency = ((leasedMedEq + (leasedMedEq * (assumptions.capexVat || 0) / 100)) * (assumptions.capexContingencyPct || 0) / 100) / 3;
-            const m_defConsultantContingency = ((deferredConsultantCost + (deferredConsultantCost * (assumptions.capexVat || 0) / 100)) * (assumptions.capexContingencyPct || 0) / 100) / 3;
-            const m_defLicenseContingency = (deferredLicenseCost * (assumptions.capexContingencyPct || 0) / 100) / 3;
-            
-            m_deferredCapex = m_deferredHard + m_defConsultant + m_defLicense + m_defMedEqVat + m_defConsultantVat + m_defMedEqContingency + m_defConsultantContingency + m_defLicenseContingency;
-            
-            bvM_base += m_deferredHard;
-            medEqBasis_base += m_deferredHard;
-            bvM_vat += m_defMedEqVat;
-            medEqBasis_vat += m_defMedEqVat;
-            bvM_contingency += m_defMedEqContingency;
-            medEqBasis_contingency += m_defMedEqContingency;
-            
-            bvConsultant_base += m_defConsultant;
-            consultantBasis_base += m_defConsultant;
-            bvConsultant_vat += m_defConsultantVat;
-            consultantBasis_vat += m_defConsultantVat;
-            bvConsultant_contingency += m_defConsultantContingency;
-            consultantBasis_contingency += m_defConsultantContingency;
-            
-            bvLicense_base += m_defLicense;
-            licenseBasis_base += m_defLicense;
-            bvLicense_contingency += m_defLicenseContingency;
-            licenseBasis_contingency += m_defLicenseContingency;
+      if (assumptions.includeMedEq) {
+        if (assumptions.medEqProcurement === "lease") {
+          const purchaseYear = assumptions.medEqPurchaseOpYear || 4;
+          if (i < purchaseYear) {
+            m_medEqLeaseOpex = assumptions.medEqLeaseMonthly || 0.375;
+          } else if (i === purchaseYear) {
+            if (m <= 3) {
+              const m_deferredHard = leasedMedEq / 3;
+              const m_defConsultant = deferredConsultantCost / 3;
+              const m_defLicense = deferredLicenseCost / 3;
+              
+              const m_defMedEqVat = (leasedMedEq * (assumptions.capexVat || 0) / 100) / 3;
+              const m_defConsultantVat = (deferredConsultantCost * (assumptions.capexVat || 0) / 100) / 3;
+              
+              const m_defMedEqContingency = ((leasedMedEq + (leasedMedEq * (assumptions.capexVat || 0) / 100)) * (assumptions.capexContingencyPct || 0) / 100) / 3;
+              const m_defConsultantContingency = ((deferredConsultantCost + (deferredConsultantCost * (assumptions.capexVat || 0) / 100)) * (assumptions.capexContingencyPct || 0) / 100) / 3;
+              const m_defLicenseContingency = (deferredLicenseCost * (assumptions.capexContingencyPct || 0) / 100) / 3;
+              
+              m_deferredCapex = m_deferredHard + m_defConsultant + m_defLicense + m_defMedEqVat + m_defConsultantVat + m_defMedEqContingency + m_defConsultantContingency + m_defLicenseContingency;
+              
+              bvM_base += m_deferredHard;
+              medEqBasis_base += m_deferredHard;
+              bvM_vat += m_defMedEqVat;
+              medEqBasis_vat += m_defMedEqVat;
+              bvM_contingency += m_defMedEqContingency;
+              medEqBasis_contingency += m_defMedEqContingency;
+              
+              bvConsultant_base += m_defConsultant;
+              consultantBasis_base += m_defConsultant;
+              bvConsultant_vat += m_defConsultantVat;
+              consultantBasis_vat += m_defConsultantVat;
+              bvConsultant_contingency += m_defConsultantContingency;
+              consultantBasis_contingency += m_defConsultantContingency;
+              
+              bvLicense_base += m_defLicense;
+              licenseBasis_base += m_defLicense;
+              bvLicense_contingency += m_defLicenseContingency;
+              licenseBasis_contingency += m_defLicenseContingency;
+            }
           }
+        } else if (assumptions.medEqProcurement === "lease_operating") {
+          m_medEqLeaseOpex = assumptions.medEqLeaseMonthly || 0.375;
         }
       }
 
@@ -1747,6 +1805,7 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       year_fcfeExLand += m_fcfeExLand;
       year_unleveredCf += m_unleveredCf;
       year_opFcfe += m_opFcfe;
+      year_opFcfeExLand += m_fcfeExLand - m_exitExLand;
       year_exit += m_exit;
       year_exitExLand += m_exitExLand;
     }
@@ -1783,10 +1842,12 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       corpTax: year_tax,
       netIncome: year_netIncome,
       deferredCapex: year_deferredCapex,
+      opFcfe: year_opFcfe,
       fcfe: year_fcfe,
       cumFcfe: equityCum,
       dscr,
       yield: totalEquity > 0 ? (year_opFcfe / totalEquity) * 100 : 0,
+      opFcfeExLand: year_opFcfeExLand,
       fcfeExLand: year_fcfeExLand,
       cumFcfeExLand: equityCumExLand,
       interestExLand: year_interestExLand,
@@ -1921,6 +1982,7 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       totalSpend: annualData.reduce((acc, d) => acc + (d.totalSpend || 0), 0),
       debtDraw: annualData.reduce((acc, d) => acc + (d.debtDraw || 0), 0),
       fcfe: annualData.reduce((acc, d) => acc + (d.fcfe || 0), 0),
+      opFcfe: annualData.reduce((acc, d) => acc + (d.opFcfe || 0), 0),
       netExitProceeds: annualData.reduce(
         (acc, d) => acc + (d.netExitProceeds || 0),
         0,
@@ -1942,6 +2004,7 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
         (acc, d) => acc + (d.netExitProceedsExLand || 0),
         0,
       ),
+      opFcfeExLand: annualData.reduce((acc, d) => acc + (d.opFcfeExLand || 0), 0),
       fcfeExLand: annualData.reduce((acc, d) => acc + (d.fcfeExLand || 0), 0),
     },
     capexDetails: {
@@ -1989,14 +2052,20 @@ const runConsolidatedEngine = (opCoData, propCoData, opCoAssumptions) => {
     };
 
     // FCFE & pB_Outlay are negative during investment, positive during returns
-    const propCoFlow = pData.fcfe || 0;
-    const opCoOperatingFlow = (oData.pB_Outlay || 0) + (oData.shareB || 0);
+    const propCoInvestmentFlow = !pData.isOperating ? (pData.fcfe || 0) : 0;
+    const propCoExitFlow = pData.isOperating ? (pData.exit || 0) : 0;
+    const propCoOperatingFlow = pData.isOperating ? (pData.fcfe || 0) - propCoExitFlow : 0;
+    
+    const propCoFlow = propCoInvestmentFlow + propCoOperatingFlow + propCoExitFlow;
+    const opCoInvestmentFlow = oData.pB_Outlay || 0;
+    const opCoOperatingDividendFlow = oData.shareB || 0;
     const opCoExitFlow = oData.pB_Exit || 0;
-    const opCoFlow = opCoOperatingFlow + opCoExitFlow;
+    const opCoFlow = opCoInvestmentFlow + opCoOperatingDividendFlow + opCoExitFlow;
     const netFlow = propCoFlow + opCoFlow;
 
     let monthly = {
-      propCoFlow: [], opCoOperatingFlow: [], opCoExitFlow: [], opCoFlow: [],
+      propCoInvestmentFlow: [], propCoOperatingFlow: [], propCoExitFlow: [], propCoFlow: [], 
+      opCoInvestmentFlow: [], opCoOperatingDividendFlow: [], opCoExitFlow: [], opCoFlow: [],
       netFlow: [], cumCf: [], lookThroughRevenue: [], lookThroughEbitda: [],
       lookThroughNetIncome: [], lookThroughMargin: []
     };
@@ -2006,18 +2075,30 @@ const runConsolidatedEngine = (opCoData, propCoData, opCoAssumptions) => {
       const pSnapshot = pData.monthly || {};
       const oSnapshot = oData.monthly || {};
 
-      const m_propCoFlow = (pSnapshot.fcfe || [])[m] || 0;
-      const m_opCoOperatingFlow = ((oSnapshot.pB_Outlay || [])[m] || 0) + ((oSnapshot.shareB || [])[m] || 0);
+      const m_pFcfe = (pSnapshot.fcfe || [])[m] || 0;
+      const m_pExit = (pSnapshot.exit || [])[m] || 0;
+      
+      const m_propCoInvestmentFlow = !pData.isOperating ? m_pFcfe : 0;
+      const m_propCoExitFlow = pData.isOperating ? m_pExit : 0;
+      const m_propCoOperatingFlow = pData.isOperating ? m_pFcfe - m_pExit : 0;
+      const m_propCoFlow = m_propCoInvestmentFlow + m_propCoOperatingFlow + m_propCoExitFlow;
+      
+      const m_opCoInvestmentFlow = (oSnapshot.pB_Outlay || [])[m] || 0;
+      const m_opCoOperatingDividendFlow = (oSnapshot.shareB || [])[m] || 0;
       const m_opCoExitFlow = (oSnapshot.pB_Exit || [])[m] || 0;
-      const m_opCoFlow = m_opCoOperatingFlow + m_opCoExitFlow;
+      const m_opCoFlow = m_opCoInvestmentFlow + m_opCoOperatingDividendFlow + m_opCoExitFlow;
       const m_netFlow = m_propCoFlow + m_opCoFlow;
 
       const m_ltRev = ((pSnapshot.revenue || [])[m] || 0) + ((oSnapshot.totalRev || [])[m] || 0) * sharePct;
       const m_ltEbitda = ((pSnapshot.ebitda || [])[m] || 0) + ((oSnapshot.ebitda || [])[m] || 0) * sharePct;
       const m_ltNi = ((pSnapshot.netIncome || [])[m] || 0) + ((oSnapshot.netIncome || [])[m] || 0) * sharePct;
 
+      monthly.propCoInvestmentFlow.push(m_propCoInvestmentFlow);
+      monthly.propCoOperatingFlow.push(m_propCoOperatingFlow);
+      monthly.propCoExitFlow.push(m_propCoExitFlow);
       monthly.propCoFlow.push(m_propCoFlow);
-      monthly.opCoOperatingFlow.push(m_opCoOperatingFlow);
+      monthly.opCoInvestmentFlow.push(m_opCoInvestmentFlow);
+      monthly.opCoOperatingDividendFlow.push(m_opCoOperatingDividendFlow);
       monthly.opCoExitFlow.push(m_opCoExitFlow);
       monthly.opCoFlow.push(m_opCoFlow);
       monthly.netFlow.push(m_netFlow);
@@ -2047,7 +2128,7 @@ const runConsolidatedEngine = (opCoData, propCoData, opCoAssumptions) => {
     if (pData.isOperating) {
       const ds = (pData.principal || 0) + (pData.interest || 0);
       if (ds > 0) {
-        const cashAvailable = (pData.ebitda || 0) + opCoOperatingFlow;
+        const cashAvailable = (pData.ebitda || 0) + opCoOperatingDividendFlow;
         avgConsolidatedDscr += cashAvailable / ds;
         operatingYearsWithDebt++;
       }
@@ -2056,8 +2137,12 @@ const runConsolidatedEngine = (opCoData, propCoData, opCoAssumptions) => {
     annualData.push({
       year: pData.year,
       isOperating: pData.isOperating,
+      propCoInvestmentFlow,
+      propCoOperatingFlow,
+      propCoExitFlow,
       propCoFlow,
-      opCoOperatingFlow,
+      opCoInvestmentFlow,
+      opCoOperatingDividendFlow,
       opCoExitFlow,
       opCoFlow,
       netFlow,
@@ -2071,9 +2156,13 @@ const runConsolidatedEngine = (opCoData, propCoData, opCoAssumptions) => {
   });
 
   const totals = {
+    propCoInvestmentFlow: annualData.reduce((acc, d) => acc + d.propCoInvestmentFlow, 0),
+    propCoOperatingFlow: annualData.reduce((acc, d) => acc + d.propCoOperatingFlow, 0),
+    propCoExitFlow: annualData.reduce((acc, d) => acc + d.propCoExitFlow, 0),
     propCoFlow: annualData.reduce((acc, d) => acc + d.propCoFlow, 0),
-    opCoOperatingFlow: annualData.reduce(
-      (acc, d) => acc + d.opCoOperatingFlow,
+    opCoInvestmentFlow: annualData.reduce((acc, d) => acc + d.opCoInvestmentFlow, 0),
+    opCoOperatingDividendFlow: annualData.reduce(
+      (acc, d) => acc + d.opCoOperatingDividendFlow,
       0,
     ),
     opCoExitFlow: annualData.reduce((acc, d) => acc + d.opCoExitFlow, 0),
@@ -2145,5 +2234,6 @@ export {
   DEFAULT_OPCO_ASSUMPTIONS,
   DEFAULT_PROPCO_ASSUMPTIONS,
   CANCER_DATA,
-  INSURANCE_DATA
+  INSURANCE_DATA,
+  callGemini
 };

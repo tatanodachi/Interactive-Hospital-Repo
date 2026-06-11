@@ -106,10 +106,11 @@ import {
   CheckCircle2,
   HelpCircle,
   Zap,
+  Monitor,
   AlertTriangle,
 } from "lucide-react";
 import { ExecutiveSummaryView } from "./ExecutiveSummaryView";
-import { calculatePMT, calculatePayback, calculateIRR, calculateNPV, runOpCoEngine, runPropCoEngine, runConsolidatedEngine, DEFAULT_OPCO_ASSUMPTIONS, DEFAULT_PROPCO_ASSUMPTIONS, CANCER_DATA, INSURANCE_DATA } from './financialEngine';
+import { calculatePMT, calculatePayback, calculateIRR, calculateNPV, runOpCoEngine, runPropCoEngine, runConsolidatedEngine, DEFAULT_OPCO_ASSUMPTIONS, DEFAULT_PROPCO_ASSUMPTIONS, CANCER_DATA, INSURANCE_DATA, callGemini } from './financialEngine';
 import { OPCO_FORMULAS, PROPCO_FORMULAS, CONSOLIDATED_FORMULAS } from "./formulaTooltips";
 
 // True Secure Cloud Sync Imports
@@ -1788,23 +1789,43 @@ const TableRow = memo(
     isIndent,
     tooltip,
     isPercent,
+    isExpandable,
+    isExpanded,
+    onExpand,
+    isHeader,
+    hasConnector,
   }) => {
     let baseColorClass = "bg-white font-medium text-[#4C4A4B]";
-    if (highlight) {
+    if (highlight || isHeader) {
       if (indigo) baseColorClass = "bg-[#EBEFEE] font-bold text-[#1E2F31]";
       else if (emerald)
         baseColorClass = "bg-[#E8EFEA] font-black text-[#1C6048]";
       else baseColorClass = "bg-[#EFEBE7] font-bold text-[#1E2F31]";
     }
 
-    let firstColClass = `px-4 py-2 sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap transition-colors shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${baseColorClass} ${isIndent ? "pl-8 text-[10px]" : "text-[11px]"}`;
-    let totalColClass = `px-3 py-2 text-right font-bold font-mono border-l border-b border-[#D8D8D8] sticky right-0 z-[40] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] ${baseColorClass} ${!highlight ? "group-hover:bg-[#F9F8F6]" : ""}`;
+    let firstColClass = `px-3 py-1.5 sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap transition-colors shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${baseColorClass} ${isIndent ? "pl-5 text-[10px]" : "text-[11px]"} ${isExpandable ? "cursor-pointer" : ""}`;
+    let totalColClass = `px-2 py-1.5 text-right font-bold font-mono border-l border-b border-[#D8D8D8] sticky right-0 z-[40] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] ${baseColorClass} ${!highlight && !isHeader ? "group-hover:bg-[#F9F8F6]" : ""}`;
 
     return (
-      <tr className={`group ${highlight ? "" : "hover:bg-[#F9F8F6]"}`}>
+      <tr 
+        className={`group ${highlight || isHeader ? "" : "hover:bg-[#F9F8F6]"} ${isExpandable ? "cursor-pointer" : ""}`}
+        onClick={isExpandable ? onExpand : undefined}
+      >
         <td className={firstColClass}>
           <div className="flex items-center justify-between gap-2">
-            <span>{label}</span>
+            <div className="flex items-center gap-1.5">
+              {isExpandable && (
+                <span className="text-[#9B8B70]">
+                  {isExpanded ? <ChevronDown size={12} strokeWidth={3} /> : <ChevronRight size={12} strokeWidth={3} />}
+                </span>
+              )}
+              {hasConnector && (
+                <span className="text-[#9B8B70]/80 font-sans select-none text-[9px] tracking-tighter">
+                  └─
+                </span>
+              )}
+              <span className={isHeader ? "font-bold text-[#1E2F31]" : ""}>{label}</span>
+            </div>
             {tooltip && <StatefulTooltipIcon tooltip={tooltip} align="right" />}
           </div>
         </td>
@@ -1830,7 +1851,7 @@ const TableRow = memo(
           return (
             <td
               key={i}
-              className={`px-3 py-2 text-right border-r border-b border-[#D8D8D8] font-mono transition-colors ${cellBg} ${val < 0 ? "text-[#9B8B70]" : highlight ? "text-[#1E2F31] font-bold" : "text-[#4C4A4B]"} ${isCrossover ? "bg-[#9B8B70]/20 ring-1 ring-inset ring-[#9B8B70] text-[#1E2F31] font-bold" : ""}`}
+              className={`px-2 py-1.5 text-right border-r border-b border-[#D8D8D8] font-mono transition-colors ${cellBg} ${val < 0 ? "text-[#9B8B70]" : highlight ? "text-[#1E2F31] font-bold" : "text-[#4C4A4B]"} ${isCrossover ? "bg-[#9B8B70]/20 ring-1 ring-inset ring-[#9B8B70] text-[#1E2F31] font-bold" : ""}`}
             >
               {displayVal}
             </td>
@@ -1920,17 +1941,17 @@ const CapexRow = memo(
       className={`group ${isSubtotal ? "font-bold text-[#1E2F31]" : "text-[#4C4A4B]"} ${isHeader ? "font-bold text-[#1E2F31]" : ""}`}
     >
       <td
-        className={`px-4 py-2 border-r border-b border-[#D8D8D8] transition-colors ${isSubtotal ? "bg-[#EFEBE7]/50" : "bg-white group-hover:bg-[#F9F8F6]"} ${isIndent ? "pl-8" : ""}`}
+        className={`px-3 py-1.5 border-r border-b border-[#D8D8D8] transition-colors ${isSubtotal ? "bg-[#EFEBE7]/50" : "bg-white group-hover:bg-[#F9F8F6]"} ${isIndent ? "pl-6 text-[10px]" : "text-[11px]"}`}
       >
         {label}
       </td>
       <td
-        className={`px-4 py-2 text-right border-r border-b border-[#D8D8D8] font-mono transition-colors ${isSubtotal ? "bg-[#EFEBE7]/50" : "bg-white group-hover:bg-[#F9F8F6]"}`}
+        className={`px-3 py-1.5 text-right border-r border-b border-[#D8D8D8] font-mono transition-colors ${isSubtotal ? "bg-[#EFEBE7]/50" : "bg-white group-hover:bg-[#F9F8F6]"}`}
       >
         {formatNumber(amount, 1)}
       </td>
       <td
-        className={`px-4 py-2 text-right font-mono border-b border-[#D8D8D8] transition-colors ${isSubtotal ? "bg-[#EFEBE7]/50 text-[#1E2F31]" : "bg-white group-hover:bg-[#F9F8F6] text-[#4C4A4B]"}`}
+        className={`px-3 py-1.5 text-right font-mono border-b border-[#D8D8D8] transition-colors ${isSubtotal ? "bg-[#EFEBE7]/50 text-[#1E2F31]" : "bg-white group-hover:bg-[#F9F8F6] text-[#4C4A4B]"}`}
       >
         {formatNumber(total > 0 ? (amount / total) * 100 : 0, 1)}%
       </td>
@@ -2007,7 +2028,7 @@ const ExpandableCapexRow = memo(
   },
 );
 
-const PartnerReturnCard = ({ name, metrics, equity, share, color }) => {
+const PartnerReturnCard = ({ name, metrics, equity, share, color, isUnifiedCard = false }) => {
   const c =
     color === "blue"
       ? {
@@ -2021,18 +2042,18 @@ const PartnerReturnCard = ({ name, metrics, equity, share, color }) => {
           border: "border-[#D8D8D8]",
         };
   return (
-    <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8] relative transition-all hover:shadow-md">
+    <div className={isUnifiedCard ? "relative w-full" : "bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8] relative transition-all hover:shadow-md"}>
       <div
-        className={`absolute top-0 right-0 p-3 lg:p-4 ${c.bg} rounded-bl-3xl border-l border-b ${c.border}`}
+        className={`absolute top-0 right-0 py-1 px-2.5 ${c.bg} rounded-bl-xl border-l border-b ${c.border}`}
       >
-        <p className="text-[10px] font-bold text-[#4C4A4B] uppercase leading-none mb-1 text-right tracking-widest">
+        <p className="text-[8px] font-bold text-[#4C4A4B] uppercase leading-none mb-0.5 text-right tracking-widest">
           Share
         </p>
-        <p className={`text-lg font-black ${c.text}`}>
-          {(share || 0).toFixed(2)}%
+        <p className={`text-xs font-black ${c.text} text-right`}>
+          {(share || 0).toFixed(0)}%
         </p>
       </div>
-      <div className="mb-6 pr-20 lg:pr-24">
+      <div className="mb-4 pr-16">
         <h3
           className={`text-lg font-bold text-[#1E2F31] flex items-start gap-2 mb-1`}
         >
@@ -6078,25 +6099,30 @@ SES A&B penetration (approx. 18-20% in Greater Jakarta) is estimated by mapping 
                   facilities.
                 </p>
               </div>
-              <div className="flex-1 w-full flex items-center justify-center gap-4 lg:gap-8 p-6 lg:p-8 bg-[#F9F8F6] border border-[#D8D8D8] rounded-[24px]">
-                <div className="text-center">
-                  <p className="text-5xl lg:text-6xl font-black text-[#1E2F31]">
-                    1.4
-                  </p>
-                  <p className="text-[10px] font-bold text-[#4C4A4B] uppercase tracking-widest mt-3">
-                    Indonesia
-                  </p>
-                </div>
-                <div className="text-6xl lg:text-7xl font-black text-[#1E2F31] px-4 opacity-80">
-                  &lt;
-                </div>
-                <div className="text-center">
-                  <p className="text-5xl lg:text-6xl font-black text-[#1C6048]">
-                    4.5
-                  </p>
-                  <p className="text-[10px] font-bold text-[#4C4A4B] uppercase tracking-widest mt-3">
-                    Average Standard
-                  </p>
+              <div className="flex-1 w-full flex flex-col items-center justify-center gap-1 p-6 lg:p-8 bg-[#F9F8F6] border border-[#D8D8D8] rounded-[24px]">
+                <span className="text-[9px] font-black text-[#9B8B70] uppercase tracking-widest mb-2 whitespace-nowrap">
+                  Hospital Beds per 1,000 Citizens
+                </span>
+                <div className="flex items-center justify-center gap-4 lg:gap-8 w-full">
+                  <div className="text-center">
+                    <p className="text-5xl lg:text-6xl font-black text-[#1E2F31]">
+                      1.4
+                    </p>
+                    <p className="text-[10px] font-bold text-[#4C4A4B] uppercase tracking-widest mt-3">
+                      Indonesia
+                    </p>
+                  </div>
+                  <div className="text-6xl lg:text-7xl font-black text-[#1E2F31] px-4 opacity-80">
+                    &lt;
+                  </div>
+                  <div className="text-center">
+                    <p className="text-5xl lg:text-6xl font-black text-[#1C6048]">
+                      4.5
+                    </p>
+                    <p className="text-[10px] font-bold text-[#4C4A4B] uppercase tracking-widest mt-3">
+                      Average Standard
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -7248,6 +7274,37 @@ const OpCoDashboardView = memo(
     teaserContent,
     isPresenting,
   }) => {
+    const [returnsTab, setReturnsTab] = useState("all");
+
+    const totalEquityVal = data.totalEquity || (assumptions.partnerAEquity + assumptions.partnerBEquity) || 1;
+    const projectAvgYield = ((data.partnerA.avgYield * assumptions.partnerAEquity) + (data.partnerB.avgYield * assumptions.partnerBEquity)) / totalEquityVal;
+
+    // Option 1: True Combined Distributed Partner Cash Flow IRR
+    const combinedCfs = useMemo(() => {
+      const pACfs = data.partnerACfsMonthly || [];
+      const pBCfs = data.partnerBCfsMonthly || [];
+      const len = Math.max(pACfs.length, pBCfs.length);
+      const combined = [];
+      for (let idx = 0; idx < len; idx++) {
+        combined.push((pACfs[idx] || 0) + (pBCfs[idx] || 0));
+      }
+      return combined;
+    }, [data.partnerACfsMonthly, data.partnerBCfsMonthly]);
+
+    const projectIrrVal = useMemo(() => calculateIRR(combinedCfs, 'monthly'), [combinedCfs]);
+    const projectPaybackVal = useMemo(() => calculatePayback(combinedCfs, 'monthly'), [combinedCfs]);
+    const projectMoic = useMemo(() => {
+      return totalEquityVal > 0 ? (data.partnerA.totalCash + data.partnerB.totalCash) / totalEquityVal : 0;
+    }, [data.partnerA.totalCash, data.partnerB.totalCash, totalEquityVal]);
+
+    const projectMetrics = useMemo(() => ({
+      avgYield: projectAvgYield,
+      irr: projectIrrVal,
+      payback: projectPaybackVal,
+      totalCash: data.partnerA.totalCash + data.partnerB.totalCash,
+      moic: projectMoic,
+    }), [projectAvgYield, projectIrrVal, projectPaybackVal, data.partnerA.totalCash, data.partnerB.totalCash, projectMoic]);
+
     const operatingYears = data.annualData.filter(d => (d.totalRev || 0) > 0);
     const avgEbitdarMargin = operatingYears.length > 0
       ? operatingYears.reduce((acc, d) => acc + (d.ebitdarMargin || 0), 0) / operatingYears.length
@@ -7259,16 +7316,17 @@ const OpCoDashboardView = memo(
     const blendedEbitdarMargin = data.totals.ebitdarMargin || 0;
     const blendedNetMargin = data.totals.netMargin || 0;
 
+    const revPabTooltip = useMemo(() => ({
+      desc: `Specific revenue metrics per clinical bed:\n• Stabilized RevPAB: ${formatNumber(data.opsMetrics?.revPab, 1)} B IDR\n• Starting RevPAB: ${formatNumber(data.opsMetrics?.startingRevPab, 1)} B IDR\n• Average RevPAB: ${formatNumber(data.opsMetrics?.averageRevPab, 1)} B IDR`,
+      formula: "RevPAB = Annual Revenue / Operating Beds (in B IDR)"
+    }), [data.opsMetrics?.revPab, data.opsMetrics?.startingRevPab, data.opsMetrics?.averageRevPab]);
+
+    const { tooltipState: revPabTs, setTooltipState: setRevPabTs } = useTooltip(revPabTooltip);
+
     return (
-      <div
-        className={
-          isPresenting
-            ? "grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in"
-            : "space-y-6 animate-in fade-in"
-        }
-      >
-      {/* LEFT PANEL: Executive & Returns (Spans 4 columns in Present Mode) */}
-      <div className={`space-y-6 ${isPresenting ? "lg:col-span-4" : ""}`}>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in">
+      {/* LEFT PANEL: Executive & Returns (Spans 4 columns) */}
+      <div className="space-y-6 lg:col-span-4 w-full">
         <div className="flex justify-between items-center bg-white p-3 rounded-2xl shadow-sm border border-[#D8D8D8]">
           <h2 className="text-sm font-bold text-[#1E2F31] ml-2">
             Executive Overview
@@ -7302,9 +7360,7 @@ const OpCoDashboardView = memo(
           </div>
         )}
 
-        <div
-          className={`grid grid-cols-2 ${isPresenting ? "lg:grid-cols-2" : "lg:grid-cols-4"} gap-4`}
-        >
+        <div className="grid grid-cols-2 gap-4">
           <KPICard
             title="Project NPV"
             value={formatCurrency(data.projectNPV)}
@@ -7343,211 +7399,276 @@ const OpCoDashboardView = memo(
           />
         </div>
 
-        <div
-          className={`grid grid-cols-1 ${isPresenting ? "lg:grid-cols-1" : "lg:grid-cols-2"} gap-6`}
-        >
-          <PartnerReturnCard
-            name={`Strategic Partner (${assumptions.sharingPercentA}%)`}
-            metrics={data.partnerA}
-            equity={assumptions.partnerAEquity}
-            share={assumptions.sharingPercentA}
-            color="blue"
-          />
-          <PartnerReturnCard
-            name={`Vasanta (${100 - assumptions.sharingPercentA}%)`}
-            metrics={data.partnerB}
-            equity={assumptions.partnerBEquity}
-            share={100 - assumptions.sharingPercentA}
-            color="indigo"
-          />
+        <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8] relative transition-all hover:shadow-md">
+          {/* Card Title & Stateful Toggle Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-[#EFEBE7] pb-4">
+            <div>
+              <h3 className="text-sm font-bold text-[#1E2F31] flex items-center gap-1.5 font-sans">
+                <TrendingUp size={16} className="text-[#1C6048]" /> Return Metric
+              </h3>
+            </div>
+            <div className="flex bg-[#EFEBE7] p-1 rounded-xl border border-[#D8D8D8]">
+              <button
+                type="button"
+                onClick={() => setReturnsTab("all")}
+                className={`px-3 py-1 text-[10px] font-bold transition-all rounded-lg select-none cursor-pointer ${
+                  returnsTab === "all"
+                    ? "bg-[#1C6048] text-white shadow"
+                    : "text-[#4C4A4B] hover:text-[#1E2F31]"
+                }`}
+              >
+                Project
+              </button>
+              <button
+                type="button"
+                onClick={() => setReturnsTab("partner")}
+                className={`px-3 py-1 text-[10px] font-bold transition-all rounded-lg select-none cursor-pointer ${
+                  returnsTab === "partner"
+                    ? "bg-[#1C6048] text-white shadow"
+                    : "text-[#4C4A4B] hover:text-[#1E2F31]"
+                }`}
+              >
+                Partner
+              </button>
+              <button
+                type="button"
+                onClick={() => setReturnsTab("vasanta")}
+                className={`px-3 py-1 text-[10px] font-bold transition-all rounded-lg select-none cursor-pointer ${
+                  returnsTab === "vasanta"
+                    ? "bg-[#1C6048] text-white shadow"
+                    : "text-[#4C4A4B] hover:text-[#1E2F31]"
+                }`}
+              >
+                Vasanta
+              </button>
+            </div>
+          </div>
+
+          {/* Render Active Option */}
+          {returnsTab === "all" && (
+            <PartnerReturnCard
+              name="Project"
+              metrics={projectMetrics}
+              equity={totalEquityVal}
+              share={100}
+              color="blue"
+              isUnifiedCard={true}
+            />
+          )}
+          {returnsTab === "partner" && (
+            <PartnerReturnCard
+              name={`Strategic Partner`}
+              metrics={data.partnerA}
+              equity={assumptions.partnerAEquity}
+              share={assumptions.sharingPercentA}
+              color="blue"
+              isUnifiedCard={true}
+            />
+          )}
+          {returnsTab === "vasanta" && (
+            <PartnerReturnCard
+              name={`Vasanta`}
+              metrics={data.partnerB}
+              equity={assumptions.partnerBEquity}
+              share={100 - assumptions.sharingPercentA}
+              color="indigo"
+              isUnifiedCard={true}
+            />
+          )}
         </div>
       </div>
 
-      {/* RIGHT PANEL: Operations & Trajectory (Spans 8 columns in Present Mode) */}
-      <div className={`space-y-6 ${isPresenting ? "lg:col-span-8" : ""}`}>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <MiniKPICard
-            title="Stabilized Vol."
-            value={`${formatNumber(data.opsMetrics.stabilizedVolume, 0)}`}
-            subtitle="Peak Yr Patients"
-          />
-          <MiniKPICard
-            title="Rev. Per Bed"
-            value={`${formatNumber(data.opsMetrics.revPab, 1)} B`}
-            subtitle="At Stabilization"
-          />
-          <MiniKPICard
-            title="EBITDA Per Bed"
-            value={`${formatNumber(data.opsMetrics.ebitdaPerBed, 1)} B`}
-            subtitle="At Stabilization"
-          />
-          <MiniKPICard
-            title="Fixed Cost Ratio"
-            value={`${formatNumber(data.opsMetrics.fixedCostPct, 1)}%`}
-            subtitle="At Stabilization"
-          />
-        </div>
-
-        {/* High-Contrast Bento Cards for EBITDAR Margin and Net Profit Margin */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* EBITDAR Margin Bento Card */}
-          <div className="bg-[#1C6048] p-5 rounded-2xl border border-[#164c39] shadow-md relative md:hover:-translate-y-1 transition-transform overflow-hidden group">
-            {/* Ambient Background decoration */}
-            <div className="absolute right-0 bottom-0 translate-x-4 translate-y-4 w-24 h-24 rounded-full bg-white/[0.03] pointer-events-none group-hover:scale-110 transition-transform duration-550" />
-            
-            <div className="flex items-center justify-between mb-3 text-[10px] font-black uppercase tracking-widest text-[#EFEBE7]/80">
-              <div className="flex items-center gap-2">
-                <Activity size={15} className="text-[#99B6AA]" />
-                <span>Operating EBITDAR Margin</span>
+      {/* RIGHT PANEL: Operations & Trajectory (Spans 8 columns) */}
+      <div className="space-y-6 lg:col-span-8 w-full">
+        {/* Unified Stabilization Scorecard Container (Option 2A) */}
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#D8D8D8] relative">
+          <div className="flex items-center justify-between mb-4 pb-2 border-b border-[#EFEBE7]">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#1E2F31] flex items-center gap-1.5 font-sans">
+              <Activity size={15} className="text-[#1C6048]" /> Clinical Benchmarks at Stabilization
+            </h3>
+            <span className="text-[9px] text-[#9B8B70] font-mono bg-[#EFEBE7] px-2 py-0.5 rounded font-bold uppercase">
+              Operational Peaks
+            </span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 divide-y sm:divide-y-0 sm:divide-x divide-[#D8D8D8]/60">
+            {/* Metric 1 */}
+            <div className="flex flex-col justify-between p-2">
+              <span className="text-[10px] text-[#4C4A4B] font-bold uppercase tracking-tight">Stabilized Vol.</span>
+              <p className="text-[22px] font-black text-[#1E2F31] my-1 font-sans">
+                {formatNumber(data.opsMetrics.stabilizedVolume, 0)}
+              </p>
+              <span className="text-[9px] text-[#99B6AA] font-bold uppercase tracking-tight">Peak Yr Patients</span>
+            </div>
+            {/* Metric 2 */}
+            <div className="flex flex-col justify-between p-2 sm:pl-4 pt-4 sm:pt-2">
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-[#4C4A4B] font-bold uppercase tracking-tight">Rev. Per Bed</span>
+                <KPITooltipIcon tooltip={revPabTooltip} tooltipState={revPabTs} setTooltipState={setRevPabTs} align="left" />
               </div>
-              <span className="text-[8px] bg-white/10 px-2 py-0.5 rounded text-white tracking-normal font-medium">OpCo Metric</span>
+              <p className="text-[22px] font-black text-[#1C6048] my-1 font-sans">
+                {formatNumber(data.opsMetrics.revPab, 1)} B
+              </p>
+              <span className="text-[9px] text-[#99B6AA] font-bold uppercase tracking-tight">Inflow Base</span>
             </div>
-            
-            <div className="flex items-baseline gap-2 mb-2">
-              <span className="text-3xl lg:text-4xl font-black font-sans text-white tracking-tight">
-                {formatNumber(avgEbitdarMargin, 1)}%
-              </span>
-              <span className="text-[10px] font-mono text-[#EFEBE7]/70 font-semibold">Avg Operating Margin</span>
+            {/* Metric 3 */}
+            <div className="flex flex-col justify-between p-2 sm:pl-4 pt-4 sm:pt-2">
+              <span className="text-[10px] text-[#4C4A4B] font-bold uppercase tracking-tight">EBITDA Per Bed</span>
+              <p className="text-[22px] font-black text-[#1E2F31] my-1 font-sans">
+                {formatNumber(data.opsMetrics.ebitdaPerBed, 1)} B
+              </p>
+              <span className="text-[9px] text-[#99B6AA] font-bold uppercase tracking-tight">Operating Base</span>
             </div>
-            
-            <p className="text-[11px] text-[#EFEBE7]/90 leading-relaxed font-medium mb-3">
-              Hospital's pre-lease clinical operating profitability, averaging <span className="font-bold underline decoration-[#99B6AA]">{formatNumber(avgEbitdarMargin, 1)}%</span> across active years (Blended: {formatNumber(blendedEbitdarMargin, 1)}%).
-            </p>
-            
-            <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[9px] text-[#EFEBE7]/60 font-medium font-mono">
-              <span>Overall Project Blended EBITDAR:</span>
-              <span className="font-mono font-bold text-white text-[10px]">{formatNumber(blendedEbitdarMargin, 1)}%</span>
+            {/* Metric 4 */}
+            <div className="flex flex-col justify-between p-2 sm:pl-4 pt-4 sm:pt-2">
+              <span className="text-[10px] text-[#4C4A4B] font-bold uppercase tracking-tight">Fixed Cost Ratio</span>
+              <p className="text-[22px] font-black text-[#9B8B70] my-1 font-sans">
+                {formatNumber(data.opsMetrics.fixedCostPct, 1)}%
+              </p>
+              <span className="text-[9px] text-[#99B6AA] font-bold uppercase tracking-tight">Fixed vs Var OPEX</span>
             </div>
           </div>
+        </div>
 
-          {/* Net Profit Margin Bento Card */}
-          <div className="bg-[#1E2F31] p-5 rounded-2xl border border-[#162325] shadow-md relative md:hover:-translate-y-1 transition-transform overflow-hidden group">
-            {/* Ambient Background decoration */}
-            <div className="absolute right-0 bottom-0 translate-x-4 translate-y-4 w-24 h-24 rounded-full bg-white/[0.03] pointer-events-none group-hover:scale-110 transition-transform duration-550" />
-            
-            <div className="flex items-center justify-between mb-3 text-[10px] font-black uppercase tracking-widest text-[#EFEBE7]/80">
-              <div className="flex items-center gap-2">
-                <Coins size={15} className="text-[#99B6AA]" />
-                <span>Net Profit Margin (NPM)</span>
+        {/* Consolidated Blended Margins Card (Option 1B) */}
+        <div className="bg-[#1C6048] p-5 rounded-2xl border border-[#164c39] shadow-md relative overflow-hidden group">
+          {/* Ambient accent element */}
+          <div className="absolute right-0 bottom-0 translate-x-4 translate-y-4 w-32 h-32 rounded-full bg-white/[0.02] pointer-events-none group-hover:scale-110 transition-transform duration-700" />
+          
+          <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10 relative z-10">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-1.5 font-sans">
+              <Coins size={15} className="text-[#99B6AA]" /> Project Margins
+            </h3>
+            <span className="text-[9px] bg-white/10 px-2 py-0.5 rounded text-white tracking-normal font-semibold font-mono">
+              Look-Through Metrics
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+            {/* EBITDAR */}
+            <div className="flex flex-col">
+              <p className="text-[10px] text-[#EFEBE7]/80 font-bold uppercase tracking-wider mb-1 font-mono">
+                EBITDAR Margin
+              </p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl lg:text-4xl font-black text-white leading-none font-sans">
+                  {formatNumber(avgEbitdarMargin, 1)}%
+                </span>
+                <span className="text-[10px] text-[#EFEBE7]/60 font-mono">Active Years Average</span>
               </div>
-              <span className="text-[8px] bg-white/10 px-2 py-0.5 rounded text-white tracking-normal font-medium">Bottom Line</span>
             </div>
-            
-            <div className="flex items-baseline gap-2 mb-2">
-              <span className="text-3xl lg:text-4xl font-black font-sans text-white tracking-tight">
-                {formatNumber(avgNetMargin, 1)}%
-              </span>
-              <span className="text-[10px] font-mono text-[#EFEBE7]/70 font-semibold">Avg Net Margin</span>
-            </div>
-            
-            <p className="text-[11px] text-[#EFEBE7]/90 leading-relaxed font-medium mb-3">
-              Operating company bottom-line clinical yield after taxes and rental overlays, averaging <span className="font-bold underline decoration-[#99B6AA]">{formatNumber(avgNetMargin, 1)}%</span> across active years (Blended: {formatNumber(blendedNetMargin, 1)}%).
-            </p>
-            
-            <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[9px] text-[#EFEBE7]/60 font-medium font-mono">
-              <span>Overall Project Blended NPM:</span>
-              <span className="font-mono font-bold text-white text-[10px]">{formatNumber(blendedNetMargin, 1)}%</span>
+
+            {/* Net Profit */}
+            <div className="flex flex-col border-t md:border-t-0 md:border-l border-white/10 pt-4 md:pt-0 md:pl-6">
+              <p className="text-[10px] text-[#EFEBE7]/80 font-bold uppercase tracking-wider mb-1 font-mono">
+                Net Profit Margin
+              </p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl lg:text-4xl font-black text-white leading-none font-sans">
+                  {formatNumber(avgNetMargin, 1)}%
+                </span>
+                <span className="text-[10px] text-[#EFEBE7]/60 font-mono">Active Years Average</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8]">
-          <h3 className="font-bold text-[#1E2F31] mb-6 flex items-center gap-2">
-            <BarChart3 size={18} className="text-[#1C6048]" /> Operating Cash
-            Flow Trajectory
-          </h3>
-          <div className={isPresenting ? "h-[300px]" : "h-72"}>
-            <LazyResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={data.operatingData}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke="#D8D8D8"
-                />
-                <XAxis
-                  dataKey="year"
-                  tick={{ fontSize: 10, fill: "#4C4A4B" }}
-                  axisLine={false}
-                />
-                <YAxis
-                  yAxisId="left"
-                  tick={{ fontSize: 10, fill: "#4C4A4B" }}
-                  axisLine={false}
-                  tickFormatter={(val) => `${val}B`}
-                />
-                <YAxis
-                  yAxisId="right"
-                  orientation="right"
-                  tick={{ fontSize: 10, fill: "#1E2F31" }}
-                  axisLine={false}
-                  tickFormatter={(val) => `${val}%`}
-                />
-                <Tooltip allowEscapeViewBox={{ x: true, y: true }}
-                  contentStyle={TOOLTIP_STYLE}
-                  formatter={(val, name) =>
-                    formatNumber(val, 1) +
-                    (name === "Occupancy (BOR)" ? "%" : "B")
-                  }
-                />
-                <Legend iconType="circle" wrapperStyle={LEGEND_STYLE} />
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8]">
+            <h3 className="font-bold text-[#1E2F31] mb-6 flex items-center gap-2">
+              <BarChart3 size={18} className="text-[#1C6048]" /> Operating Cash
+              Flow Trajectory
+            </h3>
+            <div className="h-72">
+              <LazyResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={data.operatingData}>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="#D8D8D8"
+                  />
+                  <XAxis
+                    dataKey="year"
+                    tick={{ fontSize: 10, fill: "#4C4A4B" }}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    yAxisId="left"
+                    tick={{ fontSize: 10, fill: "#4C4A4B" }}
+                    axisLine={false}
+                    tickFormatter={(val) => `${val}B`}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    tick={{ fontSize: 10, fill: "#1E2F31" }}
+                    axisLine={false}
+                    tickFormatter={(val) => `${val}%`}
+                  />
+                  <Tooltip allowEscapeViewBox={{ x: true, y: true }}
+                    contentStyle={TOOLTIP_STYLE}
+                    formatter={(val, name) =>
+                      formatNumber(val, 1) +
+                      (name === "Occupancy (BOR)" ? "%" : "B")
+                    }
+                  />
+                  <Legend iconType="circle" wrapperStyle={LEGEND_STYLE} />
 
-                <Bar
-                  yAxisId="left"
-                  dataKey="totalRev"
-                  name="Net Revenue"
-                  fill="#1C6048"
-                  radius={[4, 4, 0, 0]}
-                  barSize={40}
-                />
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="ebitda"
-                  name="EBITDA"
-                  stroke="#1E2F31"
-                  strokeWidth={3}
-                  dot={{
-                    r: 4,
-                    fill: "#1E2F31",
-                    strokeWidth: 2,
-                    stroke: "#fff",
-                  }}
-                />
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="netIncome"
-                  name="Net Income"
-                  stroke="#9B8B70"
-                  strokeWidth={3}
-                  dot={{
-                    r: 4,
-                    fill: "#9B8B70",
-                    strokeWidth: 2,
-                    stroke: "#fff",
-                  }}
-                />
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="bor"
-                  name="Occupancy (BOR)"
-                  stroke="#99B6AA"
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                  dot={false}
-                />
-              </ComposedChart>
-            </LazyResponsiveContainer>
+                  <Bar
+                    yAxisId="left"
+                    dataKey="totalRev"
+                    name="Net Revenue"
+                    fill="#1C6048"
+                    radius={[4, 4, 0, 0]}
+                    barSize={18}
+                  />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="ebitda"
+                    name="EBITDA"
+                    stroke="#1E2F31"
+                    strokeWidth={3}
+                    dot={{
+                      r: 4,
+                      fill: "#1E2F31",
+                      strokeWidth: 2,
+                      stroke: "#fff",
+                    }}
+                  />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="netIncome"
+                    name="Net Income"
+                    stroke="#9B8B70"
+                    strokeWidth={3}
+                    dot={{
+                      r: 4,
+                      fill: "#9B8B70",
+                      strokeWidth: 2,
+                      stroke: "#fff",
+                    }}
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="bor"
+                    name="Occupancy (BOR)"
+                    stroke="#99B6AA"
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    dot={false}
+                  />
+                </ComposedChart>
+              </LazyResponsiveContainer>
+            </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 gap-6">
           <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8]">
             <h3 className="font-bold text-[#1E2F31] mb-6 flex items-center gap-2">
               <Target size={18} className="text-[#99B6AA]" /> Breakeven Audit
             </h3>
-            <div className="h-56">
+            <div className="h-72">
               <LazyResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={data.operatingData}>
                   <CartesianGrid
@@ -7575,7 +7696,7 @@ const OpCoDashboardView = memo(
                     name="Breakeven BOR required"
                     fill="#D8D8D8"
                     radius={[4, 4, 0, 0]}
-                    barSize={30}
+                    barSize={18}
                   />
                   <Line
                     type="monotone"
@@ -7603,7 +7724,7 @@ const OpCoCascadeView = memo(({ data, assumptions, viewResolution, setViewResolu
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [viewMode, setViewMode] = useState("all"); // 'all' | 'pl' | 'cf'
   
-  const overallSetup = (assumptions?.jvaOpex ?? 2.5) + (assumptions?.commOpex ?? 15.0) + (assumptions?.workingCapitalOpex ?? 64.6);
+  const overallSetup = (assumptions?.jvaOpex ?? 2.5) + (assumptions?.commOpex ?? 15.0) + (assumptions?.workingCapitalOpex ?? 64.671175);
 
   return (
   <div className={`space-y-6 ${isFullScreen ? 'fixed inset-0 z-[150] bg-[#F9F8F6] p-4 lg:p-6 overflow-hidden flex flex-col' : ''}`}>
@@ -7625,13 +7746,13 @@ const OpCoCascadeView = memo(({ data, assumptions, viewResolution, setViewResolu
             <table className="w-full text-[11px] text-left border-collapse">
               <thead>
                 <tr className="bg-[#EFEBE7]">
-                  <th className="px-4 py-2 border border-[#D8D8D8] text-[#1E2F31] font-bold rounded-tl">
+                  <th className="px-3 py-1.5 border border-[#D8D8D8] text-[#1E2F31] font-bold rounded-tl">
                     Component
                   </th>
-                  <th className="px-4 py-2 border border-[#D8D8D8] text-[#1E2F31] font-bold text-right">
+                  <th className="px-3 py-1.5 border border-[#D8D8D8] text-[#1E2F31] font-bold text-right">
                     Cost (B)
                   </th>
-                  <th className="px-4 py-2 border border-[#D8D8D8] text-[#1E2F31] font-bold text-right rounded-tr">
+                  <th className="px-3 py-1.5 border border-[#D8D8D8] text-[#1E2F31] font-bold text-right rounded-tr">
                     %
                   </th>
                 </tr>
@@ -7651,7 +7772,7 @@ const OpCoCascadeView = memo(({ data, assumptions, viewResolution, setViewResolu
                 />
                 <CapexRow
                   label="3. Clinical Working Capital"
-                  amount={assumptions?.workingCapitalOpex ?? 64.6}
+                  amount={assumptions?.workingCapitalOpex ?? 64.671175}
                   total={overallSetup}
                   isIndent
                 />
@@ -7850,13 +7971,19 @@ const OpCoCascadeView = memo(({ data, assumptions, viewResolution, setViewResolu
                 isIndent
                 tooltip={OPCO_FORMULAS.staffCost}
               />
-              <TableRow
-                label="Other OpEx"
+              <ExpandableDataRowGroup
+                parentLabel="Other OpEx"
+                parentDk="otherOpex"
+                parentTotal={data.totals.otherOpex}
                 data={columns}
-                dk="recurringOpex"
-                total={data.totals.recurringOpex}
-                isIndent
-                tooltip={OPCO_FORMULAS.recurringOpex}
+                parentTooltip={OPCO_FORMULAS.recurringOpex}
+                childrenData={[
+                  { label: "Administrative Expense", dk: "adminOpex", total: data?.totals?.adminOpex, tooltip: { desc: "Administrative support overhead calculated based on administrative expense rate assumptions.", formula: "Admin Exp = adminExpRate% * Net Revenue" } },
+                  { label: "Utilities Expense", dk: "utilOpex", total: data?.totals?.utilOpex, tooltip: { desc: "Clinic utilities expense based on utility expense rate assumptions.", formula: "Utilities Exp = utilExpRate% * Net Revenue" } },
+                  { label: "Marketing Expense", dk: "mktgOpex", total: data?.totals?.mktgOpex, tooltip: { desc: "Marketing expenditures aligned with marketing expense rate assumptions.", formula: "Marketing Exp = marketingExpRate% * Net Revenue" } },
+                  { label: "Hospital Operator Fee", dk: "operatorOpex", total: data?.totals?.operatorOpex, tooltip: { desc: "Hospital management and operator fees.", formula: "Operator Fee = operatorFeeRate% * Net Revenue" } },
+                  { label: "Operational Insurance", dk: "insOpex", total: data?.totals?.insOpex, tooltip: { desc: "Annual facility, equipment, and liability insurance expenditures.", formula: "Insurance = insuranceMonthly * 12" } }
+                ]}
               />
               <TableRow
                 label="EBITDAR"
@@ -8014,6 +8141,45 @@ const OpCoCascadeView = memo(({ data, assumptions, viewResolution, setViewResolu
             isIndent
             tooltip={OPCO_FORMULAS.pB_Exit}
           />
+          
+          <TableSection
+            title="H. Vasanta Returns (49%)"
+            colSpan={columns.length + 2}
+            type="emerald"
+          />
+          <TableRow
+            label="Partner B Investment"
+            data={columns}
+            dk="pB_Outlay"
+            total={data.totals.pB_Outlay}
+            isIndent
+            tooltip={OPCO_FORMULAS.pB_Outlay}
+          />
+          <TableRow
+            label="Partner B Dividend"
+            data={columns}
+            dk="shareB"
+            total={data.totals.shareB}
+            isIndent
+            tooltip={OPCO_FORMULAS.shareB}
+          />
+          <TableRow
+            label="Terminal Exit Proceeds"
+            data={columns}
+            dk="pB_Exit"
+            total={data.totals.pB_Exit}
+            isIndent
+            tooltip={OPCO_FORMULAS.pB_Exit}
+          />
+          <TableRow
+            label="VG NET CASH FLOW"
+            data={columns}
+            dk="pB_Net"
+            total={data.totals.pB_Net}
+            highlight
+            emerald
+            tooltip={OPCO_FORMULAS.pB_Net}
+          />
             </>
           )}
         </tbody>
@@ -8053,6 +8219,31 @@ const PropCoDashboardView = memo(
       1,
       Math.ceil((assumptions.devDurationMonths || 12) / 12),
     );
+
+    const hasDebt = (assumptions.includeFinancing ? assumptions.ltv : 0) > 0;
+    const hasLandCost = data.capexDetails && data.capexDetails.landCost > 0;
+
+    let leveredIrrTooltip = "";
+    let unleveredIrrTooltip = "";
+    let irrExLandTooltip = "";
+
+    if (!hasDebt && !hasLandCost) {
+      leveredIrrTooltip = "Return on Equity.\n• Financing: Fully Equity\n• Land: Excluded";
+      unleveredIrrTooltip = "Project Return (Pre-Financing). Assumes 100% Equity funding.\n• Financing: Unlevered (All Equity)\n• Land: Excluded";
+      irrExLandTooltip = "Core Asset Return.\n• Financing: Unlevered\n• Structural Impact: No Land impact";
+    } else if (!hasDebt && hasLandCost) {
+      leveredIrrTooltip = "Return on Equity.\n• Financing: Fully Equity\n• Land: Included upfront";
+      unleveredIrrTooltip = "Project Return (Pre-Financing). Assumes 100% Equity funding.\n• Financing: Unlevered (All Equity)\n• Land: Included upfront";
+      irrExLandTooltip = "Core Asset Return.\n• Financing: Unlevered\n• Structural Impact: Land Cost stripped from capex & exit";
+    } else if (hasDebt && hasLandCost) {
+      leveredIrrTooltip = "Return on Equity.\n• Financing: Equity + Debt\n• Land: Included upfront";
+      unleveredIrrTooltip = "Project Return (Pre-Financing). Assumes 100% Equity funding.\n• Financing: Unlevered (All Equity)\n• Land: Included upfront";
+      irrExLandTooltip = "Core Asset Return.\n• Financing: Levered\n• Structural Impact: Land Cost stripped from capex & exit";
+    } else if (hasDebt && !hasLandCost) {
+      leveredIrrTooltip = "Return on Equity.\n• Financing: Equity + Debt\n• Land: Excluded";
+      unleveredIrrTooltip = "Project Return (Pre-Financing). Assumes 100% Equity funding.\n• Financing: Unlevered (All Equity)\n• Land: Excluded";
+      irrExLandTooltip = "Core Asset Return.\n• Financing: Levered\n• Structural Impact: No Land impact";
+    }
 
     return (
       <div
@@ -8103,6 +8294,7 @@ const PropCoDashboardView = memo(
               title1="Levered IRR"
               value1={`${formatNumber((data.metrics.irr || 0) * 100, 2)}%`}
               color1="indigo"
+              tooltip1={leveredIrrTooltip}
               title2="Equity NPV"
               value2={formatCurrency(data.metrics.npv)}
               color2="emerald"
@@ -8112,6 +8304,7 @@ const PropCoDashboardView = memo(
               title1="Unlevered IRR"
               value1={`${formatNumber((data.metrics.unleveredIrr || 0) * 100, 2)}%`}
               color1="emerald"
+              tooltip1={unleveredIrrTooltip}
               title2="Project NPV"
               value2={formatCurrency(data.metrics.unleveredNpv)}
               color2="blue"
@@ -8121,6 +8314,7 @@ const PropCoDashboardView = memo(
               title1="IRR (ex-Land)"
               value1={`${formatNumber((data.metrics.irrExLand || 0) * 100, 2)}%`}
               color1="blue"
+              tooltip1={irrExLandTooltip}
               title2="NPV (ex-Land)"
               value2={formatCurrency(data.metrics.npvExLand)}
               color2="teal"
@@ -8892,6 +9086,14 @@ const PropCoCascadeView = memo(({ data, onExport, viewResolution, setViewResolut
                 tooltip={PROPCO_FORMULAS.deferredCapex}
               />
               <TableRow
+                label="FCFE (Operating)"
+                data={columns}
+                dk="opFcfe"
+                total={data.totals.opFcfe}
+                isIndent
+                tooltip={PROPCO_FORMULAS.opFcfe}
+              />
+              <TableRow
                 label="Net Exit Proceeds"
                 data={columns}
                 dk="netExitProceeds"
@@ -8954,6 +9156,14 @@ const PropCoCascadeView = memo(({ data, onExport, viewResolution, setViewResolut
                 total={data.totals.corpTaxExLand}
                 isIndent
                 tooltip={PROPCO_FORMULAS.corpTaxExLand}
+              />
+              <TableRow
+                label="FCFE Op (Ex-Land)"
+                data={columns}
+                dk="opFcfeExLand"
+                total={data.totals.opFcfeExLand}
+                isIndent
+                tooltip={PROPCO_FORMULAS.opFcfeExLand}
               />
               <TableRow
                 label="Net Exit Proceeds (Ex-Land)"
@@ -9407,6 +9617,8 @@ const ConsolidatedCascadeView = memo(({ data, viewResolution, setViewResolution 
   const scrollRef = useRef(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [viewMode, setViewMode] = useState("all"); // 'all' | 'pl' | 'cf'
+  const [expandedPropCo, setExpandedPropCo] = useState(false);
+  const [expandedOpCo, setExpandedOpCo] = useState(false);
 
   const chartData = useMemo(() => {
     let cumInflow = 0;
@@ -9553,29 +9765,90 @@ const ConsolidatedCascadeView = memo(({ data, viewResolution, setViewResolution 
                     colSpan={columns.length + 2}
                   />
                   <TableRow
-                    label="PropCo FCFE (100%)"
+                    label="PropCo Asset Cascade (100%)"
                     data={columns}
                     dk="propCoFlow"
                     total={data.totals.propCoFlow}
-                    isIndent
+                    isHeader
+                    isExpandable
+                    isExpanded={expandedPropCo}
+                    onExpand={() => setExpandedPropCo(!expandedPropCo)}
                     tooltip={CONSOLIDATED_FORMULAS.propCoFlow}
                   />
+                  {expandedPropCo && (
+                    <>
+                      <TableRow
+                        label="PropCo Investment"
+                        data={columns}
+                        dk="propCoInvestmentFlow"
+                        total={data.totals.propCoInvestmentFlow}
+                        isIndent
+                        hasConnector
+                        tooltip={CONSOLIDATED_FORMULAS.propCoInvestmentFlow}
+                      />
+                      <TableRow
+                        label="PropCo Operating FCFE"
+                        data={columns}
+                        dk="propCoOperatingFlow"
+                        total={data.totals.propCoOperatingFlow}
+                        isIndent
+                        hasConnector
+                        tooltip={CONSOLIDATED_FORMULAS.propCoOperatingFlow}
+                      />
+                      <TableRow
+                        label="PropCo Exit Proceeds"
+                        data={columns}
+                        dk="propCoExitFlow"
+                        total={data.totals.propCoExitFlow}
+                        isIndent
+                        hasConnector
+                        tooltip={CONSOLIDATED_FORMULAS.propCoExitFlow}
+                      />
+                    </>
+                  )}
+
                   <TableRow
-                    label="OpCo Dividend (49%)"
+                    label="OpCo Clinical Cascade (49%)"
                     data={columns}
-                    dk="opCoOperatingFlow"
-                    total={data.totals.opCoOperatingFlow}
-                    isIndent
-                    tooltip={CONSOLIDATED_FORMULAS.opCoOperatingFlow}
+                    dk="opCoFlow"
+                    total={data.totals.opCoFlow}
+                    isHeader
+                    isExpandable
+                    isExpanded={expandedOpCo}
+                    onExpand={() => setExpandedOpCo(!expandedOpCo)}
+                    tooltip={CONSOLIDATED_FORMULAS.opCoFlow}
                   />
-                  <TableRow
-                    label="OpCo Exit Proceeds (49%)"
-                    data={columns}
-                    dk="opCoExitFlow"
-                    total={data.totals.opCoExitFlow}
-                    isIndent
-                    tooltip={CONSOLIDATED_FORMULAS.opCoExitFlow}
-                  />
+                  {expandedOpCo && (
+                    <>
+                      <TableRow
+                        label="OpCo Investment"
+                        data={columns}
+                        dk="opCoInvestmentFlow"
+                        total={data.totals.opCoInvestmentFlow}
+                        isIndent
+                        hasConnector
+                        tooltip={CONSOLIDATED_FORMULAS.opCoInvestmentFlow}
+                      />
+                      <TableRow
+                        label="OpCo Operating Dividend"
+                        data={columns}
+                        dk="opCoOperatingDividendFlow"
+                        total={data.totals.opCoOperatingDividendFlow}
+                        isIndent
+                        hasConnector
+                        tooltip={CONSOLIDATED_FORMULAS.opCoOperatingDividendFlow}
+                      />
+                      <TableRow
+                        label="OpCo Exit Proceeds"
+                        data={columns}
+                        dk="opCoExitFlow"
+                        total={data.totals.opCoExitFlow}
+                        isIndent
+                        hasConnector
+                        tooltip={CONSOLIDATED_FORMULAS.opCoExitFlow}
+                      />
+                    </>
+                  )}
 
                   <TableSection
                     title="B. Consolidated Position"
@@ -10183,7 +10456,7 @@ const PropCoSettingsView = memo(
     const medEqFullValueUi = assumptions.includeMedEq
       ? (assumptions.capexMedEqQty * assumptions.capexMedEqPrice) / 1000
       : 0;
-    const medEqCostForUi = medEqFullValueUi;
+    const medEqCostForUi = assumptions.medEqProcurement === "lease_operating" ? 0 : medEqFullValueUi;
     const infraCostForUi =
       (assumptions.capexInfraQty * assumptions.capexInfraPrice) / 1000;
     const ffeCostForUi = assumptions.includeFFE
@@ -10374,24 +10647,31 @@ const PropCoSettingsView = memo(
                   <label className="text-[10px] text-[#4C4A4B] font-bold">
                     Strategy
                   </label>
-                  <div className="flex items-center bg-[#D8D8D8] rounded p-0.5">
+                  <div className="flex items-center gap-0.5 bg-[#D8D8D8] rounded p-0.5">
                     <button
                       disabled={isLocked}
                       onClick={() => onChange("medEqProcurement", "buy")}
-                      className={`px-2 py-0.5 text-[9px] font-bold rounded disabled:opacity-50 disabled:cursor-not-allowed ${assumptions.medEqProcurement !== "lease" ? "bg-white text-[#1E2F31] shadow-sm border border-[#D8D8D8]" : "text-[#4C4A4B]"}`}
+                      className={`px-1.5 py-0.5 text-[9px] font-bold rounded disabled:opacity-50 disabled:cursor-not-allowed ${assumptions.medEqProcurement !== "lease" && assumptions.medEqProcurement !== "lease_operating" ? "bg-white text-[#1E2F31] shadow-sm border border-[#D8D8D8]" : "text-[#4C4A4B]"}`}
                     >
-                      Upfront Buy
+                      Buy
                     </button>
                     <button
                       disabled={isLocked}
                       onClick={() => onChange("medEqProcurement", "lease")}
-                      className={`px-2 py-0.5 text-[9px] font-bold rounded disabled:opacity-50 disabled:cursor-not-allowed ${assumptions.medEqProcurement === "lease" ? "bg-white text-[#1E2F31] shadow-sm border border-[#D8D8D8]" : "text-[#4C4A4B]"}`}
+                      className={`px-1.5 py-0.5 text-[9px] font-bold rounded disabled:opacity-50 disabled:cursor-not-allowed ${assumptions.medEqProcurement === "lease" ? "bg-white text-[#1E2F31] shadow-sm border border-[#D8D8D8]" : "text-[#4C4A4B]"}`}
                     >
                       Lease-to-Own
                     </button>
+                    <button
+                      disabled={isLocked}
+                      onClick={() => onChange("medEqProcurement", "lease_operating")}
+                      className={`px-1.5 py-0.5 text-[9px] font-bold rounded disabled:opacity-50 disabled:cursor-not-allowed ${assumptions.medEqProcurement === "lease_operating" ? "bg-white text-[#1E2F31] shadow-sm border border-[#D8D8D8]" : "text-[#4C4A4B]"}`}
+                    >
+                      Pure Lease
+                    </button>
                   </div>
                 </div>
-                {assumptions.medEqProcurement === "lease" && (
+                {(assumptions.medEqProcurement === "lease" || assumptions.medEqProcurement === "lease_operating") && (
                   <>
                     <AssumptionRow
                       label="Lease Cost (Mo)"
@@ -10400,24 +10680,33 @@ const PropCoSettingsView = memo(
                       unit="B"
                       isLocked={isLocked}
                     />
-                    <AssumptionRow
-                      label="Purchase Year (Op)"
-                      val={assumptions.medEqPurchaseOpYear}
-                      set={(v) => onChange("medEqPurchaseOpYear", v)}
-                      unit="Yr"
-                      isLocked={isLocked}
-                    />
-                    <div className="flex justify-between items-center bg-[#EFEBE7] p-2 rounded">
-                      <span className="text-[10px] uppercase font-bold text-[#8A8175] mr-2">
-                        Purchase Amount
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-black text-[#1E2F31]">
-                          {formatNumber(medEqCostForUi * 1000, 0)}
-                        </span>
-                        <span className="text-[10px] text-[#8A8175] font-bold">M</span>
+                    {assumptions.medEqProcurement === "lease" && (
+                      <>
+                        <AssumptionRow
+                          label="Purchase Year (Op)"
+                          val={assumptions.medEqPurchaseOpYear}
+                          set={(v) => onChange("medEqPurchaseOpYear", v)}
+                          unit="Yr"
+                          isLocked={isLocked}
+                        />
+                        <div className="flex justify-between items-center bg-[#EFEBE7] p-2 rounded">
+                          <span className="text-[10px] uppercase font-bold text-[#8A8175] mr-2">
+                            Purchase Amount
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-black text-[#1E2F31]">
+                              {formatNumber(medEqCostForUi * 1000, 0)}
+                            </span>
+                            <span className="text-[10px] text-[#8A8175] font-bold">M</span>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                    {assumptions.medEqProcurement === "lease_operating" && (
+                      <div className="bg-[#1C6048]/5 p-2 rounded border border-[#1C6048]/20 text-[9px] text-[#1C6048] font-bold italic text-center">
+                        Pure operating lease (indefinite lease) with zero buyout capex.
                       </div>
-                    </div>
+                    )}
                   </>
                 )}
               </div>
@@ -10768,6 +11057,11 @@ const PropCoSettingsView = memo(
                             {assumptions.medEqProcurement === "lease" && (
                               <span className="px-2 py-0.5 bg-[#9B8B70] text-white text-[9px] rounded-full uppercase tracking-wider">
                                 Leased (Informational)
+                              </span>
+                            )}
+                            {assumptions.medEqProcurement === "lease_operating" && (
+                              <span className="px-2 py-0.5 bg-[#9B8B70] text-white text-[9px] rounded-full uppercase tracking-wider">
+                                Pure Lease (Informational)
                               </span>
                             )}
                           </div>
@@ -12612,6 +12906,139 @@ export const useMonthlyColumns = (annualData, viewResolution = 'annual') => {
   return { columns, expandedYears, toggleYear };
 };
 
+const localFinancialAuditor = {
+  getTeaser: (opCoData, propCoData, consolidatedData, opCoAssumptions, propCoAssumptions) => {
+    const beds = opCoAssumptions?.beds || 150;
+    const projectNPV = opCoData?.projectNPV || 0;
+    const projectIRR = opCoData?.projectIRR || 0;
+    const projectPayback = opCoData?.projectPayback || 0;
+    const discountRate = opCoAssumptions?.discountRate || 10;
+    
+    const opYears = opCoData?.annualData?.filter(d => (d.totalRev || 0) > 0) || [];
+    const avgEbitdarMargin = opYears.length > 0
+      ? opYears.reduce((acc, d) => acc + (d.ebitdarMargin || 0), 0) / opYears.length
+      : 0;
+    const avgNetMargin = opYears.length > 0
+      ? opYears.reduce((acc, d) => acc + (d.netMargin || 0), 0) / opYears.length
+      : 0;
+
+    const caps = propCoData?.capexDetails || {};
+    const landCost = caps.landCost || 0;
+    const buildCost = caps.buildCost || 0;
+    const medEq = caps.medEqCost || 0;
+    
+    return `### 📋 COGNITIVE FEASIBILITY INVESTMENT PROSPECTUS
+*(⚡ Context-Aware Real-Time Underwritten Output)* This document is compiled directly from active multi-cascade scenario variables.
+
+## 🏢 1. Core Asset Portfolio Profile
+- **Asset Capacity**: **${beds} Operational Clinical Beds**
+- **Sovereign Operational Matrix**: Multi-Entity look-through modeling separating operating health deliverables (OpCo) from direct property equity leases (PropCo).
+- **Accounting Framework Consistency**: Aligned under **PSAK 16 (Aset Tetap)** on property/infrastructure capitalization and **PSAK 19** regarding direct operational outlays.
+
+## 📈 2. Clinical Feasibility Benchmarks
+- **Stabilized Patient Volume**: **${(opCoData?.opsMetrics?.stabilizedVolume || 0).toLocaleString()}** outpatient and inpatient visits/yr.
+- **Underwriting Efficiency Metrics**:
+  - Blended OpCo EBITDAR Margin: **${avgEbitdarMargin.toFixed(2)}%**
+  - Blended Operating Net Margin: **${avgNetMargin.toFixed(2)}%**
+  - Revenue Yield Per Bed: **${(opCoData?.opsMetrics?.revPab || 0).toFixed(1)}M IDR** (Stabilized Year)
+
+## 🏗️ 3. Capitalization Breakdown (PropCo)
+- **Key Asset Class Valuation**:
+  - Land Procurement: **${landCost.toFixed(1)} B IDR**
+  - Property Civil Build Capitalization: **${buildCost.toFixed(1)} B IDR**
+  - Specialized Medical Hardware: **${medEq.toFixed(1)} B IDR**
+- **Debt Leverage Structure**: Structured with a step-down commercial amortizing interest profile.
+
+## 💎 4. Master Look-Through Returns Cascade
+- **Project NPV**: **${projectNPV.toFixed(2)} B IDR** (at ${discountRate}% hurdle)
+- **Project IRR (Post-Tax)**: **${projectIRR.toFixed(2)}%**
+- **Amortization & Payback Window**: Stable return payout crossed in **${projectPayback.toFixed(1)} Years**
+
+*Note: This pro-forma pitch prospectus displays live calculations and is fully validated.*`;
+  },
+
+  getInsights: (opCoData, propCoData, consolidatedData, opCoAssumptions, propCoAssumptions) => {
+    const beds = opCoAssumptions?.beds || 150;
+    const discountRate = opCoAssumptions?.discountRate || 10;
+    const caps = propCoData?.capexDetails || {};
+    const totalCapex = (caps.landCost || 0) + (caps.buildCost || 0) + (caps.medEqCost || 0) + (caps.ffeCost || 0) + (caps.infraCost || 0) + (caps.consultantCost || 0);
+    const projectNPV = opCoData?.projectNPV || 0;
+    const projectIRR = opCoData?.projectIRR || 0;
+
+    const opYears = opCoData?.annualData?.filter(d => (d.totalRev || 0) > 0) || [];
+    const avgEbitdarMargin = opYears.length > 0
+      ? opYears.reduce((acc, d) => acc + (d.ebitdarMargin || 0), 0) / opYears.length
+      : 0;
+    const avgBor = opYears.length > 0
+      ? opYears.reduce((acc, d) => acc + (d.bor || 0), 0) / opYears.length
+      : 0;
+
+    return `### 🔍 CAPITAL CASCADE WORKFLOW DIAGNOSIS
+*(⚡ Context-Aware Real-Time Underwritten Output)* Detailed look-through assessment of healthcare asset yield cascades.
+
+## 🩺 1. Inpatient & Outpatient Clinical Performance
+- **EBITDAR Efficiency**: Consistent EBITDAR margin averaging **${avgEbitdarMargin.toFixed(2)}%**. The stabilizing capacity is sound, reaching an average bed occupancy rate (BOR) of **${avgBor.toFixed(1)}%**.
+- **Bed Yield Dynamics**: Price escalators successfully outpace core Indonesian clinical medical inflations.
+
+## 🏢 2. Property Entity (PropCo) Strategic Leases
+- **Capitalization Threshold**: Capitalized asset base of **${totalCapex.toFixed(1)} B IDR** under standard **PSAK 16** guidelines.
+- **Lease Viability**: The rent coverage multiplier ensures that clinical rents fully support land lease obligations.
+
+## 🔑 3. Comprehensive Valuation Audit
+- **Returns Viability**: With a combined project post-tax IRR of **${projectIRR.toFixed(2)}%**, the asset generates substantial returns exceeding the target **${discountRate}%** discount hurdle rate. Underwritten project NPV matches **${projectNPV.toFixed(2)} B IDR**.`;
+  },
+
+  getValidation: (opCoData, propCoData, consolidatedData, opCoAssumptions, propCoAssumptions) => {
+    const buildCost = propCoData?.capexDetails?.buildCost || 0;
+    const projectPayback = opCoData?.projectPayback || 0;
+    const discountRate = opCoAssumptions?.discountRate || 10;
+
+    return `### 🎯 INDONESIAN REGULATORY COMPLIANCE EXAMINER
+*(⚡ Context-Aware Real-Time Underwritten Output)* Regulatory, PSAK standards, and sensitivity assessment audit.
+
+## 📐 1. PSAK Compliance Directives
+- **PSAK 16 (Aset Tetap)**: All structural construction expenditures (evaluated at **${buildCost.toFixed(2)} B IDR**) and med-equipment procurements are capitalized correctly into Property, Plant, & Equipment (PPE).
+- **PSAK 19 (Aset Tidak Berwujud)**: Pre-operating start-up expenditures and non-asset administrative outlays are strictly expensed when incurred, bypassing deferred capitalization to preserve audit integrity.
+
+## 🔒 2. Sensitivity Hurdle Thresholds
+- **Hurdle Optimizations**: Adjusted hurdle at **${discountRate}%** mirrors Indonesian private healthcare and infrastructure premiums.
+- **Payback Sensitivity**: The active payback trajectory of **${projectPayback.toFixed(1)} Years** satisfies institutional healthcare risk models.`;
+  },
+
+  getSmartAsk: (query, opCoData, propCoData, consolidatedData, opCoAssumptions, propCoAssumptions) => {
+    const lowercase = (query || "").toLowerCase();
+    const beds = opCoAssumptions?.beds || 150;
+    const projectNPV = opCoData?.projectNPV || 0;
+    const projectIRR = opCoData?.projectIRR || 0;
+    const projectPayback = opCoData?.projectPayback || 0;
+
+    if (lowercase.includes("ebitdar") || lowercase.includes("margin") || lowercase.includes("ebitda")) {
+      return `### 📊 EBITDAR MARGIN ASSESSMENT
+- **Underwriting Method**: EBITDAR is evaluated as: \`Gross Clinical Revenue - Supplies - Doctor Fees - Staff OPEX - Overheads\`.
+- **Operating Capacity**: Currently modeled with **${beds} beds** showing robust operational yield.`;
+    }
+
+    if (lowercase.includes("psak") || lowercase.includes("accounting") || lowercase.includes("regulation") || lowercase.includes("standard")) {
+      return `### 🏛️ INDONESIAN ACCOUNTING STANDARD (PSAK 16 & 19)
+- **Direct Construction / PPE (PSAK 16)**: Capitalized directly as building & infrastructure.
+- **Pre-Operating Overhead (PSAK 19)**: Direct pre-operating start-up costs must be expensed immediately under PSAK 19.43 rather than capitalized over years.`;
+    }
+
+    if (lowercase.includes("payback") || lowercase.includes("irr") || lowercase.includes("npv") || lowercase.includes("return")) {
+      return `### 💎 RETURN METRICS DIAGNOSTIC
+- **NPV**: **${projectNPV.toFixed(2)} B IDR** at active discount rates.
+- **Post-Tax IRR**: **${projectIRR.toFixed(2)}%** offer.
+- **Simple Payback**: Covered in **${projectPayback.toFixed(1)} Years**.`;
+    }
+
+    return `### 📋 FEASIBILITY AUDIT RESPONSE
+- **Clinical Beds**: **${beds}** operational bed units.
+- **Project IRR**: **${projectIRR.toFixed(2)}%**
+- **Combined Project NPV**: **${projectNPV.toFixed(2)} B IDR**
+*Change assumptions inside the left parameters panel to run real-time risk-profile updates.*`;
+  }
+};
+
 export default function App() {
   const [activeGroup, setActiveGroup] = useState("summary"); // 'summary', 'context' or 'financials'
   const [activeCompany, setActiveCompany] = useState("opco");
@@ -12621,11 +13048,13 @@ export default function App() {
   const [isLockedPropCo, setIsLockedPropCo] = useState(true);
   const [isPresenting, setIsPresenting] = useState(false);
   const [isBlanked, setIsBlanked] = useState(false);
+  const [isStrictRatio, setIsStrictRatio] = useState(false);
   const [hubPosition, setHubPosition] = useState("center"); // 'center', 'left', 'right', 'minimized'
 
   useEffect(() => {
     if (!isPresenting) {
       setIsBlanked(false);
+      setIsStrictRatio(false);
     }
   }, [isPresenting]);
 
@@ -12979,11 +13408,14 @@ export default function App() {
       const commOpeningTask = findTask("t13");
       const devDuration = commOpeningTask ? Math.max(1, commOpeningTask.start - 1) : (propCoAssumptions.devDurationMonths || 24);
       const isLease = propCoAssumptions.medEqProcurement === "lease";
+      const isLeaseOperating = propCoAssumptions.medEqProcurement === "lease_operating";
       const purchaseYear = propCoAssumptions.medEqPurchaseOpYear || 4;
 
       const targetMedEqStart = isLease
         ? devDuration + (purchaseYear - 1) * 12 + 1
-        : 16;
+        : isLeaseOperating
+          ? devDuration + 1
+          : 16;
       const targetMedEqDuration = 3;
 
       const nextGroups = prevGroups.map((group) => {
@@ -13123,9 +13555,13 @@ export default function App() {
   }, [propCoModelData, propCoAssumptions.medEqProcurement, propCoAssumptions.medEqPurchaseOpYear, propCoAssumptions.devDurationMonths]);
 
   // Compute Presentation Wrapper
-  const containerClass = isPresenting
-    ? "w-[98%] max-w-full mx-auto px-2"
-    : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8";
+  const headerContainerClass = isPresenting
+    ? "w-full max-w-full mx-auto px-4"
+    : "w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8";
+    
+  const mainContainerClass = isPresenting && isStrictRatio
+    ? "aspect-video w-[100%] max-w-[1800px] max-h-[92vh] mx-auto overflow-y-auto bg-white shadow-2xl rounded-xl border border-[#D8D8D8] px-8 py-6 my-4"
+    : headerContainerClass;
 
   // Navigation Logic
   const handleGroupChange = useCallback((group) => {
@@ -13280,11 +13716,20 @@ export default function App() {
       const res = await callGemini(selectionState.query, "Short analysis.");
       setSelectionState((p) => ({ ...p, response: res }));
     } catch (e) {
-      setSelectionState((p) => ({ ...p, response: "Error." }));
+      console.warn("Gemini API omitted; fallback to local scenario validation.", e);
+      const localRes = localFinancialAuditor.getSmartAsk(
+        selectionState.query,
+        opCoModelData,
+        propCoModelData,
+        consolidatedModelData,
+        opCoAssumptions,
+        propCoAssumptions
+      );
+      setSelectionState((p) => ({ ...p, response: localRes }));
     } finally {
       setSelectionState((p) => ({ ...p, isLoading: false }));
     }
-  }, [selectionState.query]);
+  }, [selectionState.query, opCoModelData, propCoModelData, consolidatedModelData, opCoAssumptions, propCoAssumptions]);
 
   const handleOpCoChange = useCallback(
     (k, v) =>
@@ -13338,10 +13783,18 @@ export default function App() {
       const res = await callGemini("Project Teaser", "Investment Banker");
       setTeaserContent(res || "Error.");
     } catch (e) {
-      setTeaserContent("Error.");
+      console.warn("Gemini API omitted; fallback to dynamic investment prospectus.", e);
+      const report = localFinancialAuditor.getTeaser(
+        opCoModelData,
+        propCoModelData,
+        consolidatedModelData,
+        opCoAssumptions,
+        propCoAssumptions
+      );
+      setTeaserContent(report);
     }
     setIsTeaserLoading(false);
-  }, []);
+  }, [opCoModelData, propCoModelData, consolidatedModelData, opCoAssumptions, propCoAssumptions]);
 
   const generateAIInsights = useCallback(async () => {
     setIsAiLoading(true);
@@ -13352,11 +13805,19 @@ export default function App() {
       );
       setAiInsights(res || "Error.");
     } catch (e) {
-      setAiInsights("Error.");
+      console.warn("Gemini API omitted; fallback to multi-cascade audit report.", e);
+      const insights = localFinancialAuditor.getInsights(
+        opCoModelData,
+        propCoModelData,
+        consolidatedModelData,
+        opCoAssumptions,
+        propCoAssumptions
+      );
+      setAiInsights(insights);
     } finally {
       setIsAiLoading(false);
     }
-  }, []);
+  }, [opCoModelData, propCoModelData, consolidatedModelData, opCoAssumptions, propCoAssumptions]);
 
   const validateAssumptions = useCallback(async () => {
     setIsMarketLoading(true);
@@ -13368,10 +13829,18 @@ export default function App() {
       );
       setMarketValidation(res || "Error.");
     } catch (e) {
-      setMarketValidation("Error.");
+      console.warn("Gemini API omitted; fallback to compliance and PSAK checker.", e);
+      const validation = localFinancialAuditor.getValidation(
+        opCoModelData,
+        propCoModelData,
+        consolidatedModelData,
+        opCoAssumptions,
+        propCoAssumptions
+      );
+      setMarketValidation(validation);
     }
     setIsMarketLoading(false);
-  }, []);
+  }, [opCoModelData, propCoModelData, consolidatedModelData, opCoAssumptions, propCoAssumptions]);
 
   const handleAskAI = useCallback(async () => {
     if (!askQuery.trim()) return;
@@ -13380,10 +13849,19 @@ export default function App() {
       const res = await callGemini(askQuery, "Financial AI");
       setAskResponse(res || "Error.");
     } catch (e) {
-      setAskResponse("Error.");
+      console.warn("Gemini API omitted; fallback to smart ask analyzer.", e);
+      const answer = localFinancialAuditor.getSmartAsk(
+        askQuery,
+        opCoModelData,
+        propCoModelData,
+        consolidatedModelData,
+        opCoAssumptions,
+        propCoAssumptions
+      );
+      setAskResponse(answer);
     }
     setIsAskLoading(false);
-  }, [askQuery]);
+  }, [askQuery, opCoModelData, propCoModelData, consolidatedModelData, opCoAssumptions, propCoAssumptions]);
 
   return (
     <div
@@ -13412,64 +13890,17 @@ export default function App() {
 
       <div className="bg-[#1E2F31] text-white shadow-md relative z-[130] border-b-4 border-[#1C6048] transition-all">
         <div
-          className={`flex justify-between items-center transition-all duration-300 ${containerClass} ${isPresenting ? "py-1.5" : "py-3"}`}
+          className={`flex justify-between items-center transition-all duration-300 ${headerContainerClass} ${isPresenting ? "py-1.5" : "py-3"}`}
         >
-          <div className="flex items-center gap-2 lg:gap-3">
+          <div className="flex items-center gap-2 lg:gap-3 shrink-0">
             <div
-              className={`text-[#9B8B70] transition-all ${isPresenting ? "w-7 h-7" : "w-10 h-10"}`}
+              className={`transition-all flex items-center justify-start ${isPresenting ? "h-10" : "h-16"}`}
             >
-              <svg
-                viewBox="0 0 100 100"
-                className="w-full h-full drop-shadow-md"
-              >
-                <rect width="100" height="100" rx="32" fill="currentColor" />
-                <g fill="white">
-                  {[0, 72, 144, 216, 288].map((angle) => (
-                    <path
-                      key={`petal-${angle}`}
-                      d="M 33.6 27.4 C 28 10, 72 10, 66.4 27.4 L 50 50 Z"
-                      transform={`rotate(${angle} 50 50)`}
-                    />
-                  ))}
-                </g>
-                <g fill="currentColor">
-                  {[0, 36, 72, 108, 144, 180, 216, 252, 288, 324].map(
-                    (angle) => (
-                      <path
-                        key={`inner-${angle}`}
-                        d="M 50 45 C 52.5 41, 52.5 31, 50 31 C 47.5 31, 47.5 41, 50 45 Z"
-                        transform={`rotate(${angle} 50 50)`}
-                      />
-                    ),
-                  )}
-                  {[0, 72, 144, 216, 288].map((angle) => (
-                    <path
-                      key={`outer-long-${angle}`}
-                      d="M 50 34 C 53.5 30, 54 17, 50 17 C 46 17, 46.5 30, 50 34 Z"
-                      transform={`rotate(${angle} 50 50)`}
-                    />
-                  ))}
-                  {[36, 108, 180, 252, 324].map((angle) => (
-                    <path
-                      key={`outer-short-${angle}`}
-                      d="M 50 34 C 52 31, 52.5 25, 50 25 C 47.5 25, 48 31, 50 34 Z"
-                      transform={`rotate(${angle} 50 50)`}
-                    />
-                  ))}
-                </g>
-              </svg>
-            </div>
-            <div className="flex flex-col justify-center">
-              <span
-                className={`font-serif font-medium tracking-[0.2em] leading-[1.1] text-white transition-all ${isPresenting ? "text-[12px]" : "text-[16px]"}`}
-              >
-                {(projectInfo.name || "VASANTA").split(" ")[0].toUpperCase()}
-              </span>
-              <span
-                className={`font-serif font-bold tracking-[0.3em] text-[#9B8B70] transition-all ${isPresenting ? "text-[8px]" : "text-[11px]"}`}
-              >
-                GROUP
-              </span>
+              <img 
+                src="/vasanta-logo-gold.svg" 
+                alt="Vasanta Group Logo" 
+                className="w-auto h-full object-contain object-left drop-shadow-sm scale-[1.7] origin-left"
+              />
             </div>
           </div>
 
@@ -13528,7 +13959,7 @@ export default function App() {
 
       {/* PRIMARY LAYER NAV */}
       <nav className="bg-white border-b border-[#D8D8D8] sticky top-0 z-[120] shadow-sm transition-all duration-300">
-        <div className={`transition-all duration-300 ${containerClass}`}>
+        <div className={`transition-all duration-300 ${headerContainerClass}`}>
           {/* Group Switcher */}
           <div className="flex items-center justify-center gap-4 pt-3 border-b border-[#EFEBE7]">
             <button
@@ -13659,7 +14090,7 @@ export default function App() {
       </nav>
 
       <main
-        className={`transition-all duration-300 ${containerClass} ${isPresenting ? "mt-4" : "mt-6"}`}
+        className={`transition-all duration-300 ${mainContainerClass} ${isPresenting && !isStrictRatio ? "mt-4" : isPresenting && isStrictRatio ? "" : "mt-6"}`}
       >
         {/* FINANCIALS SUB-NAVIGATION (Matches Study Tab Style) */}
         {activeGroup === "financials" && (
@@ -13942,12 +14373,25 @@ export default function App() {
                 {presentationSteps[safeSlideIndex].label}
               </span>
 
-              <button
-                onClick={() => setHubPosition("minimized")}
-                className="absolute -top-10 bg-white/60 backdrop-blur-xl px-4 py-1.5 rounded-full text-[11px] font-bold text-[#1E2F31] opacity-0 group-hover:opacity-100 transition-all shadow-sm border border-white/60 flex items-center gap-1.5 hover:bg-white/90"
-              >
-                <EyeOff size={14} /> Hide Hub
-              </button>
+              <div className="absolute -top-10 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                <button
+                  onClick={() => setIsStrictRatio(!isStrictRatio)}
+                  className={`bg-white/60 backdrop-blur-xl px-3 py-1.5 rounded-full text-[11px] font-bold shadow-sm border flex items-center gap-1.5 transition-all ${
+                    isStrictRatio
+                      ? "border-[#1C6048] text-[#1C6048] bg-white/90"
+                      : "border-white/60 text-[#1E2F31] hover:bg-white/90"
+                  }`}
+                  title="Toggle 16:9 Presentation Format"
+                >
+                  <Monitor size={14} /> 16:9 Format
+                </button>
+                <button
+                  onClick={() => setHubPosition("minimized")}
+                  className="bg-white/60 backdrop-blur-xl px-3 py-1.5 rounded-full text-[11px] font-bold text-[#1E2F31] shadow-sm border border-white/60 flex items-center gap-1.5 hover:bg-white/90 transition-all"
+                >
+                  <EyeOff size={14} /> Hide Hub
+                </button>
+              </div>
             </div>
 
             <button

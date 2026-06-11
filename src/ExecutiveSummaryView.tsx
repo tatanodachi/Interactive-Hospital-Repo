@@ -119,7 +119,7 @@ export const ExecutiveSummaryView = memo(({
   const currentPropCoCapexText = rawPropCoCapex !== undefined ? `IDR ${rawPropCoCapex.toFixed(1)} Billion` : "IDR 406.6 Billion";
 
   const rawOpCoEquity = opCoData?.totalEquity;
-  const currentOpCoEquityText = rawOpCoEquity !== undefined ? `IDR ${rawOpCoEquity.toFixed(2)} Billion` : "IDR 82.10 Billion";
+  const currentOpCoEquityText = rawOpCoEquity !== undefined ? `IDR ${rawOpCoEquity.toFixed(2)} Billion` : "IDR 82.17 Billion";
 
   const rawPayback = consolidatedData?.metrics?.payback;
   const currentPaybackText = rawPayback !== undefined ? `${rawPayback.toFixed(2)} Years` : "5.86 Years";
@@ -128,9 +128,7 @@ export const ExecutiveSummaryView = memo(({
   const currentBedsText = opCoData?.opsMetrics?.beds !== undefined ? `${opCoData.opsMetrics.beds}-bed Capacity` : "120-bed Capacity";
 
   const stabilizedRevPab = opCoData?.opsMetrics?.revPab;
-  const startingRevPab = opCoData?.operatingData?.[0]?.totalRev 
-    ? (opCoData.operatingData[0].totalRev * 1000) / rawBeds 
-    : undefined;
+  const startingRevPab = opCoData?.opsMetrics?.startingRevPab;
 
   // Efficiency Benchmark Metrics
   const buildArea = propCoData?.assumptions?.buildArea || 13000;
@@ -404,14 +402,14 @@ export const ExecutiveSummaryView = memo(({
                     </div>
                     <div className="flex justify-between font-display hover:bg-[#F9F8F6] p-0.5 px-1 rounded">
                       <span className="font-semibold text-[#1E2F31]">3. Working Capital</span>
-                      <span className="font-bold text-[#1C6048] text-right">{opCoData?.setupDetails?.workingCapitalOpex !== undefined ? opCoData.setupDetails.workingCapitalOpex.toFixed(2) : "64.60"}</span>
+                      <span className="font-bold text-[#1C6048] text-right">{opCoData?.setupDetails?.workingCapitalOpex !== undefined ? opCoData.setupDetails.workingCapitalOpex.toFixed(2) : "64.67"}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="flex justify-between font-display hover:bg-[#1C6048]/5 p-1 rounded border-t border-[#1C6048]/20 pt-1.5 mt-2 text-[#1C6048] font-black uppercase text-[10px]">
                   <span>TOTAL OPCO (IDR B)</span>
-                  <span className="text-right">{rawOpCoEquity !== undefined ? rawOpCoEquity.toFixed(2) : "82.10"}</span>
+                  <span className="text-right">{rawOpCoEquity !== undefined ? rawOpCoEquity.toFixed(2) : "82.17"}</span>
                 </div>
               </div>
 
@@ -518,103 +516,110 @@ export const ExecutiveSummaryView = memo(({
         </div>
 
         {/* RIGHT COLUMN: Unified Project Fundamentals Dashboard (5 Columns) */}
-          <div className="lg:col-span-5 space-y-6">
+        <div className="lg:col-span-5 space-y-6">
+          
+          {/* Unified Project Fundamentals Ledger Card */}
+          <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden p-5 space-y-6">
             
-            {/* Unified Project Fundamentals Board */}
-            <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#D8D8D8]">
+            {/* SECTION I: Key Milestones & Capacity */}
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between border-b border-[#D8D8D8] pb-1.5">
+                <span className="text-[10px] uppercase font-black tracking-wider text-[#1C6048]">I. Project Milestones & Scale</span>
+                <span className="text-[9px] font-sans font-bold text-[#8A8175]">Year 1 = 2026</span>
+              </div>
               
-              <div className="space-y-6">
-                
-                {/* Timeline & Ramp Section */}
-                <div className="space-y-3">
-                  <h4 className="text-[11px] font-black uppercase tracking-wider text-[#4C4A4B] border-b border-[#EFEBE7] pb-1.5">1. Key Milestones & Operational Ramp</h4>
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 bg-[#F9F8F6] border border-[#D8D8D8]/60 rounded-xl relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-12 h-12 bg-[#1E2F31]/5 rounded-bl-full -z-0"></div>
-                    <span className="text-[9px] text-[#8A8175] font-black uppercase tracking-wider block relative z-10">Hospital Dev</span>
-                    <strong className="text-lg text-[#1E2F31] font-display block mt-0.5 relative z-10">2 Years</strong>
-                    <span className="text-[10px] text-[#4C4A4B] mt-0.5 block relative z-10 leading-tight">Construction phase</span>
-                  </div>
-                  <div className="p-3 bg-[#1C6048]/5 border border-[#1C6048]/20 rounded-xl relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-12 h-12 bg-[#1C6048]/10 rounded-bl-full -z-0"></div>
-                    <span className="text-[9px] text-[#1C6048] font-black uppercase tracking-wider block relative z-10 opacity-80">Start Operational</span>
-                    <strong className="text-lg text-[#1E2F31] font-display block mt-0.5 relative z-10">Q3 2028</strong>
-                    <span className="text-[10px] text-[#4C4A4B] mt-0.5 block relative z-10 leading-tight">Target readiness</span>
-                  </div>
+              <div className="divide-y divide-[#D8D8D8]/40 border-b border-[#D8D8D8]/40">
+                {/* Row 1 */}
+                <div className="py-2 flex justify-between items-center hover:bg-[#F9F8F6] px-1 transition-colors">
+                  <span className="text-[11px] font-medium text-[#4C4A4B]">Hospital Development Phase</span>
+                  <span className="text-xs font-bold font-sans text-[#1E2F31]">2.0 Years</span>
                 </div>
-                
-                <div className="p-3 bg-white border border-[#D8D8D8] rounded-xl flex flex-col justify-between">
-                  <div className="mb-2 flex items-start justify-between">
-                    <span className="text-[9px] text-[#8A8175] font-black uppercase tracking-wider block">BOR Target Ramp</span>
-                    <span className="text-[9px] font-bold text-[#1C6048] bg-[#1C6048]/10 px-2 py-0.5 rounded">45% → 65% (+5%/Yr)</span>
-                  </div>
-                  <div className="h-[80px] w-full relative mb-1 mt-1">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={[
-                        { name: "Y1", val: 45 },
-                        { name: "Y2", val: 50 },
-                        { name: "Y3", val: 55 },
-                        { name: "Y4", val: 60 },
-                        { name: "Y5+", val: 65 },
-                      ]} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EFEBE7" />
-                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#8A8175', fontWeight: 600 }} dy={5} />
-                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#8A8175' }} ticks={[40, 50, 60, 70]} domain={[40, 70]} tickFormatter={(val) => val+"%"} />
-                        <Tooltip 
-                          contentStyle={{ fontSize: '10px', borderRadius: '6px', border: '1px solid #D8D8D8', padding: '4px 8px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }} 
-                          cursor={{ stroke: '#EFEBE7', strokeWidth: 1 }}
-                          formatter={(val: number) => [`${val}%`, 'BOR']} 
-                          labelStyle={{ color: '#8A8175', fontWeight: 600, fontSize: '9px' }}
-                        />
-                        <Line type="monotone" dataKey="val" stroke="#1C6048" strokeWidth={2} dot={{ r: 2.5, strokeWidth: 2, fill: '#fff', stroke: '#1C6048' }} activeDot={{ r: 4, fill: '#1C6048', stroke: '#fff', strokeWidth: 2 }} animationDuration={1000} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <p className="text-[10px] text-[#4C4A4B] leading-relaxed pt-2 border-t border-[#EFEBE7]">
-                    Starts at <strong className="text-[#1E2F31]">45%</strong> with <strong className="text-[#1C6048]">+5%</strong> annual ramp-up, stabilizing at <strong className="text-[#1E2F31]">65%</strong>.
-                  </p>
+                {/* Row 2 */}
+                <div className="py-2 flex justify-between items-center hover:bg-[#F9F8F6] px-1 transition-colors">
+                  <span className="text-[11px] font-medium text-[#4C4A4B]">Commercial Operations Start</span>
+                  <span className="text-xs font-bold font-sans text-[#1C6048]">Q3 2028</span>
+                </div>
+                {/* Row 3 */}
+                <div className="py-2 flex justify-between items-center hover:bg-[#F9F8F6] px-1 transition-colors">
+                  <span className="text-[11px] font-medium text-[#4C4A4B]">Bed Scale</span>
+                  <span className="text-xs font-bold font-sans text-[#1E2F31]">{currentBedsText}</span>
+                </div>
+                {/* Row 4 */}
+                <div className="py-2 flex justify-between items-center hover:bg-[#F9F8F6] px-1 transition-colors">
+                  <span className="text-[11px] font-medium text-[#4C4A4B]">Gross Floor Area (GFA)</span>
+                  <span className="text-xs font-bold font-sans text-[#1E2F31]">{buildArea.toLocaleString()} sqm</span>
+                </div>
+              </div>
+
+              {/* Minimal BOR Target Ramp Spark-Section */}
+              <div className="pt-2">
+                <div className="flex justify-between items-center mb-1.5">
+                  <span className="text-[10px] font-bold text-[#4C4A4B]">Occupancy (BOR) Target Ramp</span>
+                  <span className="text-[10px] font-bold font-sans text-[#1C6048]">45% → 65% (+5%/Yr)</span>
+                </div>
+                <div className="h-[74px] w-full relative bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/50 p-1.5">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={[
+                      { name: "Y1", val: 45 },
+                      { name: "Y2", val: 50 },
+                      { name: "Y3", val: 55 },
+                      { name: "Y4", val: 60 },
+                      { name: "Y5+", val: 65 },
+                    ]} margin={{ top: 5, right: 8, left: -25, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EFEBE7" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#8A8175', fontWeight: 600 }} dy={3} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#8A8175' }} ticks={[40, 55, 70]} domain={[40, 70]} tickFormatter={(val) => val+"%"} />
+                      <Tooltip 
+                        contentStyle={{ fontSize: '9px', borderRadius: '4px', border: '1px solid #D8D8D8', padding: '3px 6px', backgroundColor: '#1E2F31', color: '#fff' }} 
+                        cursor={{ stroke: '#EFEBE7', strokeWidth: 1 }}
+                        formatter={(val: number) => [`${val}%`, 'BOR']} 
+                        labelStyle={{ color: '#9B8B70', fontWeight: 600, fontSize: '8px' }}
+                      />
+                      <Line type="monotone" dataKey="val" stroke="#1C6048" strokeWidth={2} dot={{ r: 2, strokeWidth: 1.5, fill: '#fff', stroke: '#1C6048' }} activeDot={{ r: 3, fill: '#1C6048', stroke: '#fff', strokeWidth: 1.5 }} animationDuration={850} />
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
             </div>
 
-            {/* Financial Pillars Section */}
-            <div className="space-y-3">
-              <h4 className="text-[11px] font-black uppercase tracking-wider text-[#4C4A4B] border-b border-[#EFEBE7] pb-1.5">2. High-Level Assumptions & Returns</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Metric Item: PropCo CapEx with clean interactive layout */}
+            {/* SECTION II: Capital Commitments */}
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between border-b border-[#D8D8D8] pb-1.5">
+                <span className="text-[10px] uppercase font-black tracking-wider text-[#1C6048]">II. Capital Commitments & Setup</span>
+                <span className="text-[9px] font-sans font-bold text-[#8A8175]">IDR Billions</span>
+              </div>
+              
+              <div className="divide-y divide-[#D8D8D8]/40 border-b border-[#D8D8D8]/40 relative">
+                {/* PropCo Asset CapEx row with inline tooltip trigger */}
                 <div 
                   ref={containerRef}
-                  className="relative p-3 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/80 flex flex-col justify-center hover:border-[#1E2F31]/30 transition-all duration-200"
+                  className="py-2.5 flex justify-between items-center hover:bg-[#F9F8F6] px-1 transition-colors"
                 >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[10px] uppercase font-black tracking-wider text-[#4C4A4B] block">PropCo Investment</span>
-                      <button 
-                        ref={buttonRef}
-                        className="text-[#9B8B70] hover:text-[#1E2F31] transition-colors p-1 -m-1 rounded-full focus:outline-none"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowPropCoBreakdown(prev => !prev);
-                        }}
-                        title="Show Breakdown"
-                        aria-label="Show Breakdown"
-                      >
-                        <Info size={14} className="inline opacity-90" />
-                      </button>
-                    </div>
-                    <span className="text-lg font-bold text-[#1E2F31] font-display">{currentPropCoCapexText}</span>
-                    <span className="text-[9px] text-[#8A8175] block">Active calc cost (Click ⓘ)</span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[11px] font-medium text-[#4C4A4B]">PropCo Asset Development CapEx</span>
+                    <button 
+                      ref={buttonRef}
+                      className="text-[#9B8B70] hover:text-[#1E2F31] transition-colors p-0.5 rounded-full focus:outline-none"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowPropCoBreakdown(prev => !prev);
+                      }}
+                      title="Show Breakdown"
+                      aria-label="Show Breakdown"
+                    >
+                      <Info size={13} className="inline opacity-90" />
+                    </button>
                   </div>
+                  <span className="text-xs font-bold font-sans text-[#1E2F31]">{currentPropCoCapexText}</span>
 
-                  {/* Absolute Breakdown Tooltip dynamically positioned relative to the Info button */}
+                  {/* Premium Slate Tooltip overlay for Capital breakdown */}
                   {showPropCoBreakdown && (
                     <div 
                       style={tooltipStyle}
                       className="z-50 bg-[#1E2F31] text-white p-4 rounded-xl shadow-2xl border border-white/10 text-xs text-left animate-in fade-in zoom-in-95 duration-200"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {/* Dynamic Visual Caret pointing directly to ⓘ icon anchor */}
+                      {/* Dynamic visual anchor caret */}
                       <div 
                         style={caretStyle}
                         className="absolute w-2.5 h-2.5 bg-[#1E2F31] border-t border-l border-white/10 rotate-45 top-[-5px]" 
@@ -689,90 +694,69 @@ export const ExecutiveSummaryView = memo(({
                   )}
                 </div>
 
-                <div className="p-3 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/80 flex flex-col justify-center hover:border-[#1C6048]/30 transition-colors">
-                  <div className="space-y-1">
-                    <span className="text-[10px] uppercase font-black tracking-wider text-[#1C6048] block">OpCo Investment</span>
-                    <span className="text-lg font-bold text-[#1C6048] font-display">{currentOpCoEquityText}</span>
-                    <span className="text-[9px] text-[#8A8175] block">Active clinical setup funding</span>
-                  </div>
-                </div>
-
-                {/* Metric Item: Revenue per Bed */}
-                <div className="sm:col-span-2 p-3 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/80 flex flex-col justify-center hover:border-[#1E2F31]/30 transition-colors gap-3">
-                  <div className="space-y-2 w-full pr-4">
-                    <span className="text-[10px] uppercase font-black tracking-wider text-[#1E2F31] block">Revenue Per Bed (RevPAB)</span>
-                    <div className="grid grid-cols-2 gap-4 border-t border-[#D8D8D8]/60 pt-2 mt-1">
-                      <div>
-                        <span className="text-[9px] uppercase font-bold text-[#8A8175] block mb-0.5">Starting (Y1)</span>
-                        <span className="text-base font-bold text-[#1E2F31] font-display">
-                          {startingRevPab !== undefined 
-                            ? `IDR ${(startingRevPab / 1000).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 })} B` 
-                            : "IDR 2.1 B"}
-                        </span>
-                      </div>
-                      <div className="pl-4 border-l border-[#D8D8D8]/60">
-                         <span className="text-[9px] uppercase font-bold text-[#1C6048] block mb-0.5">Stabilized</span>
-                         <span className="text-base font-bold text-[#1C6048] font-display">
-                          {stabilizedRevPab !== undefined 
-                            ? `IDR ${(stabilizedRevPab / 1000).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 })} B` 
-                            : "IDR 3.5 B"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Metric Item: EBITDA Sharing Benchmark */}
-                <div className="p-3 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/80 flex flex-col justify-center hover:border-[#1E2F31]/30 transition-colors">
-                  <div className="space-y-1">
-                    <span className="text-[10px] uppercase font-black tracking-wider text-[#1E2F31] block">EBITDA Sharing</span>
-                    <span className="text-lg font-bold text-[#1C6048] font-display">15% To PropCo</span>
-                    <span className="text-[9px] text-[#8A8175] block">Profit sharing to capture operational upside</span>
-                  </div>
-                </div>
-
-                {/* Metric Item: Base Case IRR */}
-                <div className="p-3 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/80 flex flex-col justify-center hover:border-[#1C6048]/30 transition-colors">
-                  <div className="space-y-1">
-                    <span className="text-[10px] uppercase font-black tracking-wider text-[#1C6048] block">Projected Base IRR (Blended)</span>
-                    <span className="text-lg font-bold text-[#1C6048] font-display">{currentBlendedIrr}</span>
-                    <span className="text-[9px] text-[#8A8175] block">Stabilized macro clinical yield</span>
-                  </div>
-                </div>
-
-                {/* Metric Item: Payback Period */}
-                <div className="p-3 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/80 flex flex-col justify-center hover:border-[#9B8B70]/30 transition-colors">
-                  <div className="space-y-1">
-                    <span className="text-[10px] uppercase font-black tracking-wider text-[#9B8B70] block">Equity Payback Period</span>
-                    <span className="text-lg font-bold text-[#4C4A4B] font-display">{currentPaybackText}</span>
-                    <span className="text-[9px] text-[#8A8175] block">Cumulative cash flow break-even</span>
-                  </div>
-                </div>
-
-                {/* Metric Item: Exit EBITDA Multiple */}
-                <div className="p-3 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/80 flex flex-col justify-center hover:border-[#9B8B70]/30 transition-colors">
-                  <div className="space-y-1">
-                    <span className="text-[10px] uppercase font-black tracking-wider text-[#9B8B70] block">Exit Valuation Multiple</span>
-                    <span className="text-lg font-bold text-[#1E2F31] font-display">15x EBITDA</span>
-                    <span className="text-[9px] text-[#8A8175] block">EBITDA multiple applied at investment exit</span>
-                  </div>
-                </div>
-
-                {/* Metric Item: Total Scale */}
-                <div className="p-3 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/80 flex flex-col justify-center hover:border-[#2A4750]/30 transition-colors">
-                  <div className="space-y-1">
-                    <span className="text-[10px] uppercase font-black tracking-wider text-[#2A4750] block">Specialist Bed Scale</span>
-                    <span className="text-lg font-bold text-[#1E2F31] font-display">{currentBedsText}</span>
-                    <span className="text-[9px] text-[#8A8175] block">Active clinical design capacity</span>
-                  </div>
+                {/* OpCo Capital row */}
+                <div className="py-2.5 flex justify-between items-center hover:bg-[#F9F8F6] px-1 transition-colors">
+                  <span className="text-[11px] font-medium text-[#4C4A4B]">OpCo Clinical Setup Equity</span>
+                  <span className="text-xs font-bold font-sans text-[#1C6048]">{currentOpCoEquityText}</span>
                 </div>
               </div>
             </div>
+
+            {/* SECTION III: Yields, Returns & Performance */}
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between border-b border-[#D8D8D8] pb-1.5">
+                <span className="text-[10px] uppercase font-black tracking-wider text-[#1C6048]">III. Yields, Returns & Performance</span>
+                <span className="text-[9px] font-sans font-bold text-[#8A8175]">Investment & Return Metrics</span>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-x-6 gap-y-3.5 pt-1 font-sans">
+                {/* Row 1, Col 1: Starting RevPAB */}
+                <div className="flex flex-col pb-1 border-b border-[#D8D8D8]/40 hover:bg-[#F9F8F6] px-1 rounded transition-colors">
+                  <span className="text-[9px] uppercase font-bold text-[#8A8175] tracking-wide">Starting RevPAB (Y1)</span>
+                  <span className="text-xs font-bold text-[#1E2F31] mt-0.5">
+                    {startingRevPab !== undefined 
+                      ? `IDR ${startingRevPab.toFixed(2)} B` 
+                      : "IDR 2.13 B"}
+                  </span>
+                </div>
+                {/* Row 1, Col 2: Stabilized RevPAB */}
+                <div className="flex flex-col pb-1 border-b border-[#D8D8D8]/40 hover:bg-[#F9F8F6] px-1 rounded transition-colors">
+                  <span className="text-[9px] uppercase font-bold text-[#8A8175] tracking-wide">Stabilized RevPAB</span>
+                  <span className="text-xs font-bold text-[#1C6048] mt-0.5">
+                    {stabilizedRevPab !== undefined 
+                      ? `IDR ${stabilizedRevPab.toFixed(2)} B` 
+                      : "IDR 3.47 B"}
+                  </span>
+                </div>
+
+                {/* Row 2, Col 1: EBITDA Share */}
+                <div className="flex flex-col pb-1 border-b border-[#D8D8D8]/40 hover:bg-[#F9F8F6] px-1 rounded transition-colors">
+                  <span className="text-[9px] uppercase font-bold text-[#8A8175] tracking-wide">EBITDA Share to PropCo</span>
+                  <span className="text-xs font-bold text-[#1C6048] mt-0.5">15.0%</span>
+                </div>
+                {/* Row 2, Col 2: Exit Multiple */}
+                <div className="flex flex-col pb-1 border-b border-[#D8D8D8]/40 hover:bg-[#F9F8F6] px-1 rounded transition-colors">
+                  <span className="text-[9px] uppercase font-bold text-[#8A8175] tracking-wide">Exit Multiple</span>
+                  <span className="text-xs font-bold text-slate-700 mt-0.5">15.0x EBITDA</span>
+                </div>
+
+                {/* Row 3, Col 1: Blended IRR */}
+                <div className="flex flex-col bg-[#1C6048]/5 p-2 rounded-xl border border-[#1C6048]/15 hover:bg-[#1C6048]/10 transition-colors">
+                  <span className="text-[8.5px] uppercase font-extrabold text-[#1C6048] tracking-widest">Blended Base IRR</span>
+                  <span className="text-sm font-black text-[#1C6048] mt-0.5">{currentBlendedIrr}</span>
+                </div>
+                {/* Row 3, Col 2: Payback Period */}
+                <div className="flex flex-col bg-[#1E2F31]/5 p-2 rounded-xl border border-[#1E2F31]/10 hover:bg-[#1E2F31]/10 transition-colors">
+                  <span className="text-[8.5px] uppercase font-extrabold text-[#4C4A4B] tracking-widest">Payback Period</span>
+                  <span className="text-sm font-black text-[#1E2F31] mt-0.5">{currentPaybackText}</span>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 );
 });

@@ -110,6 +110,30 @@ export const OPCO_FORMULAS: Record<string, TooltipInfo> = {
   pB_Exit: {
     desc: "clinical exit proceed share apportioned look-through to Vasanta (49%).",
     formula: "Vasanta Proceeds = Total Exit Equity Value * 49%"
+  },
+  pA_Outlay: {
+    desc: "Capital contribution (outlay) by Strategic Local entity Partner (51%) during setup/pre-op years.",
+    formula: "Strategic Outlay = OpCo Total Investment * 51% (Negative during setup years)"
+  },
+  pB_Outlay: {
+    desc: "Capital contribution (outlay) apportioned to Vasanta (49%) during setup/pre-op years.",
+    formula: "Vasanta Outlay = OpCo Total Investment * 49% (Negative during setup years)"
+  },
+  shareA: {
+    desc: "Strategic Partner's look-through share (51%) of annual clinical dividends.",
+    formula: "Strategic Dividend = Distributable Dividend * 51%"
+  },
+  shareB: {
+    desc: "Vasanta's look-through share (49%) of annual clinical dividends.",
+    formula: "Vasanta Dividend = Distributable Dividend * 49%"
+  },
+  pA_Net: {
+    desc: "Strategic Partner's net look-through cash yield including outlays, dividends, and exit proceeds.",
+    formula: "Strategic Net Flow = Strategic Outlay + Strategic Dividend + Strategic Exit"
+  },
+  pB_Net: {
+    desc: "Vasanta's net look-through cash yield including outlays, dividends, and exit proceeds.",
+    formula: "Vasanta Net Flow = Vasanta Outlay + Vasanta Dividend + Vasanta Exit"
   }
 };
 
@@ -206,9 +230,13 @@ export const PROPCO_FORMULAS: Record<string, TooltipInfo> = {
     desc: "Net cash realized from property valuation asset sale after liquidating remaining senior mortgages.",
     formula: "Property Exit Yield = Facility Valuation - Remaining Debt - Land Cost (if separate) - Selling Costs"
   },
+  opFcfe: {
+    desc: "Levered free cash flow generated purely from rental operations, after interest and principal payments but before exit proceeds.",
+    formula: "FCFE (Op) = Net Income + Depreciation - Principal - Deferred Capex"
+  },
   fcfe: {
     desc: "Levered Free Cash Flow to Equity measuring actual cash available to property developers and equity sponsors.",
-    formula: "FCFE = Net Income + Depreciation (D&A) - Principal Repayments + Net Exit Proceeds - Deferred purchases"
+    formula: "FCFE = FCFE (Operating) + Net Exit Proceeds"
   },
   cumFcfe: {
     desc: "Cumulative levered equity cash yield distributed to property sponsors since project launch.",
@@ -234,9 +262,13 @@ export const PROPCO_FORMULAS: Record<string, TooltipInfo> = {
     desc: "Theoretical net proceeds after subtracting remaining ex-land mortgage balance.",
     formula: "Ex-land Exit Return = Valuation - Outstanding Debt Ex-Land - Land value deduction - transactional cuts"
   },
+  opFcfeExLand: {
+    desc: "Operational free cash flows (excluding land) before exit proceeds.",
+    formula: "FCFE Op (Ex-Land) = Net Income Ex-Land + Dep - Principal Ex-Land - Deferred Purchases"
+  },
   fcfeExLand: {
     desc: "Theoretical free cash flows distributed to property sponsors if land is completely omitted from finances.",
-    formula: "FCFE (Ex-Land) = Net Income Ex-Land + Dep - Principal Ex-Land + Net Exit Proceeds Ex-Land - Deferred Purchases"
+    formula: "FCFE (Ex-Land) = FCFE Op (Ex-Land) + Net Exit Proceeds Ex-Land"
   },
   cumFcfeExLand: {
     desc: "Cumulative look-through levered cash yield under ex-land investment borders.",
@@ -245,13 +277,29 @@ export const PROPCO_FORMULAS: Record<string, TooltipInfo> = {
 };
 
 export const CONSOLIDATED_FORMULAS: Record<string, TooltipInfo> = {
+  propCoOperatingFlow: {
+    desc: "Property Company Levered FCFE (Operating) swept directly into the combined financial lookup. Excludes initial investment and terminal exit.",
+    formula: "Matches 'FCFE (Operating)' of PropCo Cascade."
+  },
+  propCoInvestmentFlow: {
+    desc: "Initial equity required for PropCo development (Capex, soft costs, and land).",
+    formula: "Matches negative total equity required for PropCo phase."
+  },
+  propCoExitFlow: {
+    desc: "Property Company Exit Proceeds swept into the combined financial lookup.",
+    formula: "Matches PropCo Net Exit Proceeds."
+  },
   propCoFlow: {
     desc: "Property Company Levered FCFE swept directly into the combined financial lookup.",
     formula: "Matches 100% of 'FCFE (Levered)' of PropCo Cascade."
   },
-  opCoOperatingFlow: {
-    desc: "Strategic share (49%) of OpCo distributed clinical dividends swept to look-through combined sponsors.",
-    formula: "OpCo Distributable Dividend * 49%"
+  opCoInvestmentFlow: {
+    desc: "Partner B's share (49%) of initial OpCo equity capital requirements.",
+    formula: "Matches the 'Outlay' of Partner B in Year 1 and Year 2 in OpCo Cascade."
+  },
+  opCoOperatingDividendFlow: {
+    desc: "Partner B's share (49%) of OpCo distributed clinical dividends from profitable operations.",
+    formula: "Matches 'Dividend' of Partner B swept to look-through combined sponsors."
   },
   opCoExitFlow: {
     desc: "Strategic share (49%) of OpCo clinical operations terminal valuation swepped to combined sponsors upon exit.",
