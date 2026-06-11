@@ -226,6 +226,14 @@ export const PROPCO_FORMULAS: Record<string, TooltipInfo> = {
     desc: "Direct cash buyout outflows to acquire physical ownership of previously-leased medical equipment in Year N.",
     formula: "Acquisition Buyout = Leased Med. Equipment Value (occurring at buyout year)"
   },
+  grossExitValue: {
+    desc: "Gross asset valuation at exit minus selling costs, BEFORE settling the outstanding debt.",
+    formula: "Gross Exit = Valuation - Selling Costs"
+  },
+  loanSettledAtExit: {
+    desc: "The outstanding debt balance that must be repaid to the bank upon asset sale.",
+    formula: "Debt Settled = Outstanding Principal Balance"
+  },
   netExitProceeds: {
     desc: "Net cash realized from property valuation asset sale after liquidating remaining senior mortgages.",
     formula: "Property Exit Yield = Facility Valuation - Remaining Debt - Land Cost (if separate) - Selling Costs"

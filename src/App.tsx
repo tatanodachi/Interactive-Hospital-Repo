@@ -7726,7 +7726,7 @@ const OpCoCascadeView = memo(({ data, assumptions, viewResolution, setViewResolu
   <div className={`space-y-6 ${isFullScreen ? 'fixed inset-0 z-[150] bg-[#F9F8F6] p-4 lg:p-6 overflow-hidden flex flex-col' : ''}`}>
     <div className={`grid grid-cols-1 gap-6 animate-in slide-in-from-bottom-4 duration-500 ${isFullScreen ? 'flex-1 overflow-hidden' : ''} ${showSetupBudget && !isFullScreen ? 'md:grid-cols-3' : 'md:grid-cols-1'}`}>
       {showSetupBudget && !isFullScreen && (
-        <div className="md:col-span-1 bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8] h-[calc(100vh-320px)] overflow-y-auto custom-scrollbar flex flex-col">
+        <div className="md:col-span-1 bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8] h-[calc(100vh-240px)] overflow-y-auto custom-scrollbar flex flex-col">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-[#1E2F31] flex items-center gap-2">
               <Briefcase size={18} className="text-[#1C6048]" /> OpCo Setup Budget
@@ -7791,7 +7791,7 @@ const OpCoCascadeView = memo(({ data, assumptions, viewResolution, setViewResolu
         </div>
       )}
 
-      <div className={`${showSetupBudget && !isFullScreen ? 'md:col-span-2' : 'md:col-span-1'} bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden ${isFullScreen ? 'h-full' : 'h-[calc(100vh-320px)]'} flex flex-col`}>
+      <div className={`${showSetupBudget && !isFullScreen ? 'md:col-span-2' : 'md:col-span-1'} bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden ${isFullScreen ? 'h-full' : 'h-[calc(100vh-240px)]'} flex flex-col`}>
         <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
           <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
             <List size={14} /> OpCo P&L & Cash Flow
@@ -8637,7 +8637,7 @@ const PropCoCascadeView = memo(({ data, onExport, viewResolution, setViewResolut
   <div className={`space-y-6 ${isFullScreen ? 'fixed inset-0 z-[150] bg-[#F9F8F6] p-4 lg:p-6 overflow-hidden flex flex-col' : ''}`}>
     <div className={`grid grid-cols-1 gap-6 animate-in slide-in-from-bottom-4 duration-500 ${isFullScreen ? 'flex-1 overflow-hidden' : ''} ${showDevBudget && !isFullScreen ? 'md:grid-cols-3' : 'md:grid-cols-1'}`}>
       {showDevBudget && !isFullScreen && (
-        <div className="md:col-span-1 bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8] h-[calc(100vh-320px)] overflow-y-auto custom-scrollbar">
+        <div className="md:col-span-1 bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8] h-[calc(100vh-240px)] overflow-y-auto custom-scrollbar">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-[#1E2F31] flex items-center gap-2">
               <Map size={18} className="text-[#1C6048]" /> Development Budget
@@ -8764,7 +8764,7 @@ const PropCoCascadeView = memo(({ data, onExport, viewResolution, setViewResolut
       </div>
       )}
 
-      <div className={`${showDevBudget && !isFullScreen ? 'md:col-span-2' : 'md:col-span-1'} bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden ${isFullScreen ? 'h-full' : 'h-[calc(100vh-320px)]'} flex flex-col`}>
+      <div className={`${showDevBudget && !isFullScreen ? 'md:col-span-2' : 'md:col-span-1'} bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden ${isFullScreen ? 'h-full' : 'h-[calc(100vh-240px)]'} flex flex-col`}>
         <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
           <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
             <List size={14} /> PropCo P&L & Cash Flow
@@ -9084,6 +9084,22 @@ const PropCoCascadeView = memo(({ data, onExport, viewResolution, setViewResolut
                 total={data.totals.opFcfe}
                 isIndent
                 tooltip={PROPCO_FORMULAS.opFcfe}
+              />
+              <TableRow
+                label="Gross Exit Proceeds"
+                data={columns}
+                dk="grossExitValue"
+                total={data.totals.grossExitValue}
+                isIndent
+                tooltip={PROPCO_FORMULAS.grossExitValue}
+              />
+              <TableRow
+                label="Loan Settlement at Exit"
+                data={columns}
+                dk="loanSettledAtExit"
+                total={data.totals.loanSettledAtExit}
+                isIndent
+                tooltip={PROPCO_FORMULAS.loanSettledAtExit}
               />
               <TableRow
                 label="Net Exit Proceeds"
@@ -9676,7 +9692,7 @@ const ConsolidatedCascadeView = memo(({ data, viewResolution, setViewResolution 
   return (
     <div className={`space-y-6 ${isFullScreen ? 'fixed inset-0 z-[150] bg-[#F9F8F6] p-4 lg:p-6 pb-24 overflow-y-auto flex flex-col' : ''}`}>
       {/* Detailed HoldCo Waterfall Panel */}
-      <div className={`bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden flex flex-col ${isFullScreen ? 'flex-1 overflow-hidden min-h-0 h-full' : 'max-h-[calc(100vh-320px)] h-fit'}`}>
+      <div className={`bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden flex flex-col ${isFullScreen ? 'flex-1 overflow-hidden min-h-0 h-full' : 'max-h-[calc(100vh-240px)] h-fit'}`}>
         <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
           <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
             <List size={14} /> Consolidated P&L & Cash Flow
@@ -10767,7 +10783,7 @@ const PropCoSettingsView = memo(
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-black text-[#1E2F31]">
-                    {formatNumber(data?.metrics?.totalCapexExLand || 0, 1)}
+                    {formatNumber((data?.metrics?.totalCapexExLand || 0) / 1000, 1)}
                   </span>
                   <span className="text-[10px] text-[#8A8175] font-bold">B</span>
                 </div>
@@ -14008,7 +14024,8 @@ export default function App() {
           <div
             className={`flex flex-col md:flex-row justify-between items-center gap-2 lg:gap-3 transition-all duration-300 ${isPresenting ? "py-2" : "py-3"}`}
           >
-            <div>
+            {/* PILLAR 1: BRANDED TITLE */}
+            <div className="flex-1 flex justify-start">
               <h1 className="text-xl font-bold flex items-center gap-2 text-[#1E2F31]">
                 {activeTab === "executive" ? (
                   <Briefcase className="text-[#9B8B70]" />
@@ -14027,72 +14044,117 @@ export default function App() {
                 ) : (
                   <Layers className="text-[#1E2F31]" />
                 )}
-                {activeTab === "executive"
-                  ? "Executive Summary"
-                  : activeTab === "overview"
-                  ? "Project Context"
-                  : activeTab === "study"
-                    ? "Feasibility Study"
-                    : activeTab === "collab"
-                      ? "Collaboration Strategy"
-                      : activeTab === "timeline"
-                        ? "Project Timeline"
-                        : activeCompany === "opco"
-                          ? "Hospital Operation Model"
-                          : activeCompany === "propco"
-                            ? "PropCo Real Estate Model"
-                            : "HoldCo Consolidated"}
+                <span className="whitespace-nowrap">
+                  {activeTab === "executive"
+                    ? "Executive Summary"
+                    : activeTab === "overview"
+                    ? "Project Context"
+                    : activeTab === "study"
+                      ? "Feasibility Study"
+                      : activeTab === "collab"
+                        ? "Collaboration"
+                        : activeTab === "timeline"
+                          ? "Timeline"
+                          : activeCompany === "opco"
+                            ? "OpCo Model"
+                            : activeCompany === "propco"
+                              ? "PropCo Model"
+                              : "HoldCo VG"}
+                </span>
               </h1>
             </div>
 
-            {/* SECONDARY LAYER NAV (Tabs) */}
-            {activeGroup !== "summary" && (
-              <div className="flex p-1 bg-[#EFEBE7] rounded-lg gap-1 overflow-x-auto border border-[#D8D8D8] max-w-full items-center">
-                {activeGroup === "context" ? (
-                  <>
-                    <NavButton
-                      active={activeTab === "overview"}
-                      onClick={() => setActiveTab("overview")}
-                      icon={<FileText size={14} />}
-                      label="Overview"
-                    />
-                    <NavButton
-                      active={activeTab === "study"}
-                      onClick={() => setActiveTab("study")}
-                      icon={<BookOpen size={14} />}
-                      label="Study"
-                    />
-                    <NavButton
-                      active={activeTab === "collab"}
-                      onClick={() => setActiveTab("collab")}
-                      icon={<Network size={14} />}
-                      label="Collaboration Strategy"
-                    />
-                  </>
-                ) : (
-                  <>
-                    <NavButton
-                      active={activeCompany === "opco"}
-                      onClick={() => handleCompanyChange("opco")}
-                      icon={<Activity size={14} />}
-                      label="OpCo"
-                    />
-                    <NavButton
-                      active={activeCompany === "propco"}
-                      onClick={() => handleCompanyChange("propco")}
-                      icon={<Building2 size={14} />}
-                      label="PropCo"
-                    />
-                    <NavButton
-                      active={activeCompany === "consolidated"}
-                      onClick={() => handleCompanyChange("consolidated")}
-                      icon={<Layers size={14} />}
-                      label="HoldCo VG"
-                    />
-                  </>
-                )}
+            {/* PILLAR 2: CENTERED DYNAMIC NAVIGATION (Financials Sub-Nav) */}
+            {activeGroup === "financials" && (
+              <div className="flex-1 flex justify-center">
+                <div className="flex p-1 bg-[#EFEBE7]/50 rounded-xl gap-0.5 border border-[#D8D8D8] overflow-x-auto max-w-full items-center">
+                  <button
+                    onClick={() => setActiveTab("dashboard")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${activeTab === "dashboard" ? "bg-[#1C6048] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
+                  >
+                    <LayoutDashboard size={13} /> Dashboard
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("comprehensive")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${activeTab === "comprehensive" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
+                  >
+                    <List size={13} /> P&L / CF
+                  </button>
+                  <button
+                    disabled={activeCompany === "consolidated"}
+                    onClick={() => setActiveTab("sensitivity")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${activeCompany === "consolidated" ? "opacity-30 cursor-not-allowed text-[#4C4A4B]" : activeTab === "sensitivity" ? "bg-[#1E2F31] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
+                  >
+                    <TrendingUp size={13} /> Sensitivity
+                  </button>
+                  <button
+                    disabled={activeCompany === "consolidated"}
+                    onClick={() => setActiveTab("assumptions")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${activeCompany === "consolidated" ? "opacity-30 cursor-not-allowed text-[#4C4A4B]" : activeTab === "assumptions" ? "bg-[#99B6AA] text-[#1E2F31] shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
+                  >
+                    <Settings size={13} /> Settings
+                  </button>
+                  <div className="w-px h-4 bg-[#D8D8D8] mx-0.5"></div>
+                  <button
+                    onClick={() => setActiveTab("timeline")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${activeTab === "timeline" ? "bg-[#1C6048] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
+                  >
+                    <Calendar size={13} /> Timeline
+                  </button>
+                </div>
               </div>
             )}
+
+            {/* PILLAR 3: SECONDARY LAYER NAV (Tabs / Module Selection) */}
+            <div className="flex-1 flex justify-end">
+              {activeGroup !== "summary" && (
+                <div className="flex p-1 bg-[#EFEBE7] rounded-lg gap-1 overflow-x-auto border border-[#D8D8D8] max-w-full items-center">
+                  {activeGroup === "context" ? (
+                    <>
+                      <NavButton
+                        active={activeTab === "overview"}
+                        onClick={() => setActiveTab("overview")}
+                        icon={<FileText size={14} />}
+                        label="Overview"
+                      />
+                      <NavButton
+                        active={activeTab === "study"}
+                        onClick={() => setActiveTab("study")}
+                        icon={<BookOpen size={14} />}
+                        label="Study"
+                      />
+                      <NavButton
+                        active={activeTab === "collab"}
+                        onClick={() => setActiveTab("collab")}
+                        icon={<Network size={14} />}
+                        label="Collab"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <NavButton
+                        active={activeCompany === "opco"}
+                        onClick={() => handleCompanyChange("opco")}
+                        icon={<Activity size={14} />}
+                        label="OpCo"
+                      />
+                      <NavButton
+                        active={activeCompany === "propco"}
+                        onClick={() => handleCompanyChange("propco")}
+                        icon={<Building2 size={14} />}
+                        label="PropCo"
+                      />
+                      <NavButton
+                        active={activeCompany === "consolidated"}
+                        onClick={() => handleCompanyChange("consolidated")}
+                        icon={<Layers size={14} />}
+                        label="HoldCo"
+                      />
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </nav>
@@ -14100,66 +14162,7 @@ export default function App() {
       <main
         className={`transition-all duration-300 ${mainContainerClass} ${isPresenting && !isStrictRatio ? "mt-4" : isPresenting && isStrictRatio ? "" : "mt-6"}`}
       >
-        {/* FINANCIALS SUB-NAVIGATION (Matches Study Tab Style) */}
-        {activeGroup === "financials" && (
-          <div className={`w-full flex justify-center sticky top-[164px] sm:top-[140px] md:top-[104px] z-[110] transition-all duration-300`}>
-            {!isPresenting && (
-              <div className="absolute inset-x-0 -top-6 -bottom-2 pointer-events-none backdrop-blur-[8px] [mask-image:linear-gradient(to_bottom,transparent,black_20%,black_80%,transparent)] -z-10" />
-            )}
-            <div
-              className={`flex p-1.5 gap-1 rounded-2xl border border-[#D8D8D8] w-fit overflow-x-auto max-w-full transition-all ${
-                  isPresenting
-                    ? "bg-white/95 backdrop-blur-md shadow-[0_10px_40px_rgba(30,47,49,0.15)] fixed bottom-[100px] left-1/2 -translate-x-1/2 z-[105]"
-                    : "bg-white/90 backdrop-blur-md shadow-sm hover:shadow-md mb-6"
-                }`}
-              >
-                <button
-                  onClick={() => setActiveTab("dashboard")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-[14px] text-xs font-bold transition-all whitespace-nowrap ${activeTab === "dashboard" ? "bg-[#1C6048] text-white shadow-md" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#EFEBE7]/50"}`}
-            >
-              <LayoutDashboard size={16} /> Dashboard
-            </button>
-            <button
-              onClick={() => setActiveTab("comprehensive")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-[14px] text-xs font-bold transition-all whitespace-nowrap ${activeTab === "comprehensive" ? "bg-[#9B8B70] text-white shadow-md" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#EFEBE7]/50"}`}
-            >
-              <List size={16} /> P&L and Cash Flow
-            </button>
-            <button
-              disabled={activeCompany === "consolidated"}
-              onClick={() => setActiveTab("sensitivity")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-[14px] text-xs font-bold transition-all whitespace-nowrap ${activeCompany === "consolidated" ? "opacity-30 cursor-not-allowed text-[#4C4A4B]" : activeTab === "sensitivity" ? "bg-[#1E2F31] text-white shadow-md" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#EFEBE7]/50"}`}
-            >
-              <TrendingUp size={16} /> Sensitivity
-            </button>
-            <button
-              disabled={activeCompany === "consolidated"}
-              onClick={() => setActiveTab("assumptions")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-[14px] text-xs font-bold transition-all whitespace-nowrap ${activeCompany === "consolidated" ? "opacity-30 cursor-not-allowed text-[#4C4A4B]" : activeTab === "assumptions" ? "bg-[#99B6AA] text-[#1E2F31] shadow-md" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#EFEBE7]/50"}`}
-            >
-              <Settings size={16} /> Settings
-            </button>
-            <div className="w-px h-6 bg-[#D8D8D8] mx-1 self-center"></div>
-            <button
-              onClick={() => setActiveTab("timeline")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-[14px] text-xs font-bold transition-all whitespace-nowrap ${activeTab === "timeline" ? "bg-[#1C6048] text-white shadow-md" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#EFEBE7]/50"}`}
-              id="subnav-timeline"
-            >
-              <Calendar size={16} /> Timeline
-            </button>
-            <button
-              onClick={(e) => e.preventDefault()}
-              disabled={true}
-              title="Temporarily locked"
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-[14px] text-xs font-bold transition-all whitespace-nowrap opacity-40 cursor-not-allowed text-[#4C4A4B]`}
-              id="subnav-aiaudit"
-            >
-              <AIMicroscopeIcon size={16} /> AI Audit
-            </button>
-          </div>
-        </div>
-        )}
-
+        {/* Content Section */}
         {activeTab === "executive" && (
           <ExecutiveSummaryView 
             isPresenting={isPresenting} 
@@ -14630,7 +14633,25 @@ export default function App() {
                 <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
               </label>
             </div>
-            {/* In the future we can add more toggles here */}
+            {/* Dropdown: Master Exit Strategy */}
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
+                <Target size={14} className="text-[#1C6048]" /> Master Exit
+              </span>
+              <select
+                className="w-[130px] bg-white border border-[#D8D8D8] text-[#1E2F31] text-[10px] rounded p-1 font-bold focus:outline-none focus:border-[#1C6048]"
+                value={holdCoScenario}
+                onChange={(e) => setHoldCoScenario(e.target.value)}
+              >
+                <option value="manual">Manual (Settings)</option>
+                <option value="yr10">Exit in Yr 10</option>
+                <option value="breakeven">Exit at Breakeven</option>
+                <option value="debt_free" disabled={!propCoAssumptions?.includeFinancing}>
+                  Exit Post-Debt
+                </option>
+                <option value="none">No Exit (Yield)</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>

@@ -1505,7 +1505,9 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       year_opFcfe = 0,
       year_opFcfeExLand = 0,
       year_exit = 0,
-      year_exitExLand = 0;
+      year_exitExLand = 0,
+      year_loanSettledAtExit = 0,
+      year_grossExitValue = 0;
 
     for (let m = 1; m <= 12; m++) {
       // Distributed monthly:
@@ -1675,7 +1677,9 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
 
       let m_exit = 0,
         m_exitExLand = 0,
-        m_exitUnlev = 0;
+        m_exitUnlev = 0,
+        m_loanSettledAtExit = 0,
+        m_grossExitValue = 0;
 
       if (exitYear !== null && i === exitYear && m === 12) {
         let tv =
@@ -1687,6 +1691,9 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
 
         if (tv > 0) {
           const cost = tv * (assumptions.sellingCosts / 100);
+          m_grossExitValue = tv - cost;
+          m_loanSettledAtExit = outstandingDebt;
+          
           m_exit = tv - cost - outstandingDebt;
           m_exitUnlev = tv - cost;
           m_exitExLand = tv - cost - outstandingDebtExLand - landCost;
@@ -1808,6 +1815,8 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       year_opFcfeExLand += m_fcfeExLand - m_exitExLand;
       year_exit += m_exit;
       year_exitExLand += m_exitExLand;
+      year_loanSettledAtExit += m_loanSettledAtExit;
+      year_grossExitValue += m_grossExitValue;
     }
 
     const dscr =
@@ -1868,6 +1877,8 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       totalSpend: 0,
       debtDraw: 0,
       exit: year_exit,
+      loanSettledAtExit: year_loanSettledAtExit,
+      grossExitValue: year_grossExitValue,
       netExitProceeds: year_exit,
       ebt: year_ebt,
       netExitProceedsExLand: year_exitExLand,
@@ -1987,6 +1998,14 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       opFcfe: annualData.reduce((acc, d) => acc + (d.opFcfe || 0), 0),
       netExitProceeds: annualData.reduce(
         (acc, d) => acc + (d.netExitProceeds || 0),
+        0,
+      ),
+      loanSettledAtExit: annualData.reduce(
+        (acc, d) => acc + (d.loanSettledAtExit || 0),
+        0,
+      ),
+      grossExitValue: annualData.reduce(
+        (acc, d) => acc + (d.grossExitValue || 0),
         0,
       ),
       interestExLand: annualData.reduce(
