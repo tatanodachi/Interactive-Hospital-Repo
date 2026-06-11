@@ -7332,15 +7332,11 @@ const OpCoDashboardView = memo(
             Executive Overview
           </h2>
           <button
-            onClick={generateTeaser}
-            disabled={isTeaserLoading}
-            className="bg-[#1C6048] hover:opacity-90 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm flex items-center gap-2 transition-colors disabled:opacity-50"
+            disabled={true}
+            title="Temporarily disabled"
+            className="bg-[#D8D8D8] text-[#8A8175] cursor-not-allowed text-xs font-bold px-4 py-2 rounded-xl shadow-sm flex items-center gap-2 transition-colors opacity-70"
           >
-            {isTeaserLoading ? (
-              <RefreshCcw size={14} className="animate-spin" />
-            ) : (
-              <Sparkles size={14} />
-            )}
+            <Sparkles size={14} />
             ✨ Pitch Teaser
           </button>
         </div>
@@ -8259,15 +8255,11 @@ const PropCoDashboardView = memo(
               PropCo Executive Summary
             </h2>
             <button
-              onClick={generateTeaser}
-              disabled={isTeaserLoading}
-              className="bg-[#9B8B70] hover:opacity-90 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm flex items-center gap-2 transition-colors disabled:opacity-50"
+              disabled={true}
+              title="Temporarily disabled"
+              className="bg-[#D8D8D8] text-[#8A8175] cursor-not-allowed text-xs font-bold px-4 py-2 rounded-xl shadow-sm flex items-center gap-2 transition-colors opacity-70"
             >
-              {isTeaserLoading ? (
-                <RefreshCcw size={14} className="animate-spin" />
-              ) : (
-                <Sparkles size={14} />
-              )}
+              <Sparkles size={14} />
               ✨ Pitch Teaser
             </button>
           </div>
@@ -14140,8 +14132,10 @@ export default function App() {
               <Calendar size={16} /> Timeline
             </button>
             <button
-              onClick={() => setActiveTab("ai")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-[14px] text-xs font-bold transition-all whitespace-nowrap ${activeTab === "ai" ? "bg-[#4C4A4B] text-white shadow-md" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#EFEBE7]/50"}`}
+              onClick={(e) => e.preventDefault()}
+              disabled={true}
+              title="Temporarily locked"
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-[14px] text-xs font-bold transition-all whitespace-nowrap opacity-40 cursor-not-allowed text-[#4C4A4B]`}
               id="subnav-aiaudit"
             >
               <AIMicroscopeIcon size={16} /> AI Audit
