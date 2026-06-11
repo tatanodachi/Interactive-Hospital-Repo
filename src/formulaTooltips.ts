@@ -156,7 +156,7 @@ export const PROPCO_FORMULAS: Record<string, TooltipInfo> = {
   },
   debtDraw: {
     desc: "Upfront project development funding drawn from structured building/mortgage construction financing lines.",
-    formula: "Debt Drawdown = Upfront Total Capex * effectiveLtv%\n(Note: Leased MedEq and deferred costs are excluded from drawdowns)"
+    formula: "Debt Drawdown = Upfront Total Capex (Excluding Land) * effectiveLtv%\n(Note: Land, Leased MedEq, and deferred costs are excluded from drawdowns)"
   },
   revenue: {
     desc: "Holding company property rental lease proceeds collected from clinical tenant (OpCo).",

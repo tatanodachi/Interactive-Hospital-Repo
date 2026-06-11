@@ -1027,7 +1027,8 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
   const upfrontSoftCosts = totalSoftCosts - deferredSoftCosts;
   const effectiveLtv = assumptions.includeFinancing ? assumptions.ltv : 0;
   
-  const totalDebt = upfrontTotalCapex * (effectiveLtv / 100);
+  const totalCapexExLand = upfrontTotalCapex - landCost;
+  const totalDebt = Math.max(0, totalCapexExLand) * (effectiveLtv / 100);
   const totalEquity = upfrontTotalCapex - totalDebt;
 
   const ioYears = assumptions.ioGracePeriodYears || 0;
@@ -1040,9 +1041,8 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
     calculatePMT(rateMonthly, amortizingTenorMonths, totalDebt),
   );
   
-  const totalCapexExLand = upfrontTotalCapex - landCost;
-  const totalDebtExLand = totalCapexExLand * (effectiveLtv / 100);
-  const totalEquityExLand = totalCapexExLand - totalDebtExLand;
+  const totalDebtExLand = totalDebt;
+  const totalEquityExLand = Math.max(0, totalCapexExLand) - totalDebtExLand;
   const postIoPmtExLandMonthly = Math.abs(
     calculatePMT(rateMonthly, amortizingTenorMonths, totalDebtExLand),
   );
@@ -1203,15 +1203,15 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       m_land_final = upfrontTotalCapex > 0 ? (capDrawBase_month * landCost) / upfrontTotalCapex : 0;
     }
     
-    // Track debt drawn based on capEx base month
-    const m_debtDraw = capDrawBase_month * (effectiveLtv / 100);
-    const m_debtDrawExLand = (capDrawBase_month - m_land_final) * (effectiveLtv / 100);
+    // Track debt drawn based on capEx base month (Land is strictly equity funded)
+    const m_debtDraw = Math.max(0, capDrawBase_month - m_land_final) * (effectiveLtv / 100);
+    const m_debtDrawExLand = m_debtDraw;
     
     outstandingDebt += m_debtDraw;
     outstandingDebtExLand += m_debtDrawExLand;
 
-    const m_eqDraw = -eqDrawBase_month;
-    const m_eqDrawExLand = -eqDrawExLandBase_month;
+    const m_eqDraw = -(capDrawBase_month - m_debtDraw);
+    const m_eqDrawExLand = -(Math.max(0, capDrawBase_month - m_land_final) - m_debtDrawExLand);
     const m_unleveredCf = -capDrawBase_month;
 
     const projectSpend_month = m_land_final + m_hard + m_soft;
@@ -1888,6 +1888,8 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
     operatingData,
     metrics: {
       totalCapex,
+      upfrontTotalCapex,
+      totalCapexExLand,
       totalDebt,
       totalEquity: peakEquityRequired,
       totalInvestment: peakTotalInvestment,

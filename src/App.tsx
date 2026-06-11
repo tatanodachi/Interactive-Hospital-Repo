@@ -10433,6 +10433,7 @@ const OpCoSettingsView = memo(
 const PropCoSettingsView = memo(
   ({
     assumptions,
+    data,
     onChange,
     isLocked,
     onToggleLock,
@@ -10758,6 +10759,20 @@ const PropCoSettingsView = memo(
               onChange={(v) => onChange("includeFinancing", v)}
               isLocked={isLocked}
             />
+            {assumptions.includeFinancing && (
+              <div className="flex justify-between items-center bg-[#EFEBE7] p-2 rounded mb-2">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-[#8A8175] mr-2">Debt Calculation Basis</span>
+                  <p className="text-[8px] text-[#8A8175]/80 font-medium leading-tight mt-0.5">LTV applies solely to non-land capex</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-[#1E2F31]">
+                    {formatNumber(data?.metrics?.totalCapexExLand || 0, 1)}
+                  </span>
+                  <span className="text-[10px] text-[#8A8175] font-bold">B</span>
+                </div>
+              </div>
+            )}
             <AssumptionRow
               label="Loan To Value (LTV)"
               val={assumptions.ltv}
@@ -13042,6 +13057,7 @@ export default function App() {
   const [isBlanked, setIsBlanked] = useState(false);
   const [isStrictRatio, setIsStrictRatio] = useState(false);
   const [hubPosition, setHubPosition] = useState("center"); // 'center', 'left', 'right', 'minimized'
+  const [isFloatingPanelVisible, setIsFloatingPanelVisible] = useState(true);
 
   useEffect(() => {
     if (!isPresenting) {
@@ -14258,6 +14274,7 @@ export default function App() {
                 <SettingsPasswordGate>
                   <PropCoSettingsView
                     assumptions={propCoAssumptions}
+                    data={propCoModelData}
                     onChange={handlePropCoChange}
                     onValidate={validateAssumptions}
                     isLocked={isLockedPropCo}
@@ -14552,6 +14569,71 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Floating Action Menu for Global Toggles */}
+      <div className="fixed bottom-6 left-6 z-[9000] flex flex-col-reverse items-start gap-3">
+        {/* Toggle Button */}
+        <button
+          onClick={() => setIsFloatingPanelVisible(!isFloatingPanelVisible)}
+          className={`flex items-center justify-center p-3 rounded-full shadow-lg transition-colors ${
+            isFloatingPanelVisible ? "bg-[#1E2F31] text-[#EFEBE7]" : "bg-white text-[#1E2F31] border border-[#D8D8D8]"
+          }`}
+          title="Toggle Global Settings"
+          aria-label="Toggle Global Settings"
+        >
+          <Settings size={20} className={isFloatingPanelVisible ? "opacity-100" : "opacity-80"} />
+        </button>
+
+        {/* The Panel */}
+        <div
+          className={`bg-white border border-[#D8D8D8] rounded-2xl shadow-xl w-72 overflow-hidden transition-all duration-300 origin-bottom-left ${
+            isFloatingPanelVisible ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-4 pointer-events-none"
+          }`}
+        >
+          <div className="bg-[#EFEBE7] px-4 py-3 border-b border-[#D8D8D8]">
+            <h4 className="text-[11px] uppercase font-bold tracking-wider text-[#1E2F31] flex items-center gap-1.5">
+              <Settings size={14} /> Global Model Settings
+            </h4>
+          </div>
+          <div className="p-4 space-y-4">
+            {/* Toggle Item: Bank Debt */}
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
+                <Landmark size={14} className="text-[#9B8B70]" /> Bank Debt Financing
+              </span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={propCoAssumptions?.includeFinancing || false}
+                  onChange={(e) =>
+                    handlePropCoChange("includeFinancing", e.target.checked)
+                  }
+                />
+                <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
+              </label>
+            </div>
+            {/* Toggle Item: Land Cost */}
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
+                <Map size={14} className="text-[#9B8B70]" /> Include Land Cost
+              </span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={propCoAssumptions?.includeLand ?? true}
+                  onChange={(e) =>
+                    handlePropCoChange("includeLand", e.target.checked)
+                  }
+                />
+                <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
+              </label>
+            </div>
+            {/* In the future we can add more toggles here */}
+          </div>
+        </div>
+      </div>
 
     </div>
   );
