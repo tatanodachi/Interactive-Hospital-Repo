@@ -18,6 +18,7 @@ import {
   Info,
   Flag
 } from "lucide-react";
+import { LifetimePnLTable } from "./components/LifetimePnLTable";
 
 interface ExecutiveSummaryViewProps {
   isPresenting: boolean;
@@ -568,7 +569,7 @@ export const ExecutiveSummaryView = memo(({
                     ]} margin={{ top: 5, right: 8, left: -25, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EFEBE7" />
                       <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#8A8175', fontWeight: 600 }} dy={3} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#8A8175' }} ticks={[40, 55, 70]} domain={[40, 70]} tickFormatter={(val) => val+"%"} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#8A8175' }} domain={[40, 70]} tickFormatter={(val) => val+"%"} />
                       <Tooltip 
                         contentStyle={{ fontSize: '9px', borderRadius: '4px', border: '1px solid #D8D8D8', padding: '3px 6px', backgroundColor: '#1E2F31', color: '#fff' }} 
                         cursor={{ stroke: '#EFEBE7', strokeWidth: 1 }}
@@ -753,6 +754,22 @@ export const ExecutiveSummaryView = memo(({
               </div>
             </div>
 
+          </div>
+        </div>
+
+        {/* Lifetime P&L Summary Section */}
+        <div className="lg:col-span-12 pt-8">
+          <div className="flex flex-col gap-1 mb-6 border-l-4 border-[#1C6048] pl-4">
+            <h3 className="text-xl font-bold text-[#1E2F31]">Lifetime Profit & Loss Summary</h3>
+            <p className="text-xs text-[#8A8175] font-medium tracking-tight">Consolidated clinical and infrastructure performance across the 10-year operational lifecycle.</p>
+          </div>
+          
+          <div className="w-full">
+            <LifetimePnLTable 
+              opCoData={opCoData} 
+              propCoData={propCoData} 
+              consolidatedData={consolidatedData} 
+            />
           </div>
         </div>
       </div>

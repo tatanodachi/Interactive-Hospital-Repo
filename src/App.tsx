@@ -5807,44 +5807,9 @@ const ClinicalProgrammingView = memo(() => {
   );
 });
 
-const StudyView = memo(({ isPresenting, info }) => {
-  const [activeMiniTab, setActiveMiniTab] = useState("marketAnalysis"); // Default to our new macro tab
-
+const StudyView = memo(({ isPresenting, info, activeMiniTab, setActiveMiniTab }) => {
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12 relative">
-      {/* Navigation Bar for Study */}
-      <div className={`w-full flex justify-center sticky top-[164px] sm:top-[140px] md:top-[104px] z-[110] transition-all duration-300`}>
-        {!isPresenting && (
-          <div className="absolute inset-x-0 -top-6 -bottom-2 pointer-events-none backdrop-blur-md [mask-image:linear-gradient(to_bottom,transparent,black_20%,black_80%,transparent)] -z-10" />
-        )}
-        <div
-          className={`flex p-1.5 rounded-2xl border border-[#D8D8D8] w-fit overflow-x-auto max-w-full transition-all ${
-              isPresenting
-                ? "bg-white/95 backdrop-blur-md shadow-[0_10px_40px_rgba(30,47,49,0.15)] fixed bottom-28 left-1/2 -translate-x-1/2 z-[105]"
-                : "bg-white/90 backdrop-blur-md shadow-sm hover:shadow-md mb-6"
-            }`}
-          >
-            <button
-              onClick={() => setActiveMiniTab("marketAnalysis")}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-[14px] text-xs font-bold transition-all whitespace-nowrap ${activeMiniTab === "marketAnalysis" ? "bg-[#1C6048] text-white shadow-md" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#EFEBE7]/50"}`}
-          >
-            <Search size={16} /> Market Analysis
-          </button>
-          <button
-            onClick={() => setActiveMiniTab("opportunities")}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-[14px] text-xs font-bold transition-all whitespace-nowrap ${activeMiniTab === "opportunities" ? "bg-[#9B8B70] text-white shadow-md" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#EFEBE7]/50"}`}
-          >
-            <Target size={16} /> Opportunities
-          </button>
-          <button
-            onClick={() => setActiveMiniTab("clinicalRooms")}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-[14px] text-xs font-bold transition-all whitespace-nowrap ${activeMiniTab === "clinicalRooms" ? "bg-[#1E2F31] text-white shadow-md" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#EFEBE7]/50"}`}
-          >
-            <Stethoscope size={16} /> Facility & Rooms
-          </button>
-        </div>
-      </div>
-
       {/* Dynamic Content Rendering */}
       {activeMiniTab === "clinicalRooms" && <ClinicalProgrammingView />}
 
@@ -7190,7 +7155,7 @@ SES A&B penetration (approx. 18-20% in Greater Jakarta) is estimated by mapping 
                       tick={TICK_STYLE}
                       dy={10}
                     />
-                    <YAxis hide domain={["dataMin - 2", "dataMax + 2"]} />
+                    <YAxis hide domain={["auto", "auto"]} />
                     <Tooltip allowEscapeViewBox={{ x: true, y: true }}
                       contentStyle={TOOLTIP_STYLE}
                       formatter={formatInsuranceTooltip}
@@ -13066,6 +13031,7 @@ export default function App() {
   const [activeGroup, setActiveGroup] = useState("summary"); // 'summary', 'context' or 'financials'
   const [activeCompany, setActiveCompany] = useState("opco");
   const [activeTab, setActiveTab] = useState("executive");
+  const [activeMiniTab, setActiveMiniTab] = useState("marketAnalysis");
   const [viewResolution, setViewResolution] = useState("annual");
   const [isLockedOpCo, setIsLockedOpCo] = useState(true);
   const [isLockedPropCo, setIsLockedPropCo] = useState(true);
@@ -13073,7 +13039,7 @@ export default function App() {
   const [isBlanked, setIsBlanked] = useState(false);
   const [isStrictRatio, setIsStrictRatio] = useState(false);
   const [hubPosition, setHubPosition] = useState("center"); // 'center', 'left', 'right', 'minimized'
-  const [isFloatingPanelVisible, setIsFloatingPanelVisible] = useState(true);
+  const [isFloatingPanelVisible, setIsFloatingPanelVisible] = useState(false);
 
   useEffect(() => {
     if (!isPresenting) {
@@ -14064,8 +14030,8 @@ export default function App() {
               </h1>
             </div>
 
-            {/* PILLAR 2: CENTERED DYNAMIC NAVIGATION (Financials Sub-Nav) */}
-            {activeGroup === "financials" && (
+            {/* PILLAR 2: CENTERED DYNAMIC NAVIGATION (Financials or Study Sub-Nav) */}
+            {activeGroup === "financials" ? (
               <div className="flex-1 flex justify-center">
                 <div className="flex p-1 bg-[#EFEBE7]/50 rounded-xl gap-0.5 border border-[#D8D8D8] overflow-x-auto max-w-full items-center">
                   <button
@@ -14103,7 +14069,30 @@ export default function App() {
                   </button>
                 </div>
               </div>
-            )}
+            ) : activeTab === "study" ? (
+              <div className="flex-1 flex justify-center">
+                <div className="flex p-1 bg-[#EFEBE7]/50 rounded-xl gap-0.5 border border-[#D8D8D8] overflow-x-auto max-w-full items-center">
+                  <button
+                    onClick={() => setActiveMiniTab("marketAnalysis")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${activeMiniTab === "marketAnalysis" ? "bg-[#1C6048] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
+                  >
+                    <Search size={13} /> Market Analysis
+                  </button>
+                  <button
+                    onClick={() => setActiveMiniTab("opportunities")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${activeMiniTab === "opportunities" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
+                  >
+                    <Target size={13} /> Opportunities
+                  </button>
+                  <button
+                    onClick={() => setActiveMiniTab("clinicalRooms")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${activeMiniTab === "clinicalRooms" ? "bg-[#1E2F31] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
+                  >
+                    <Stethoscope size={13} /> Facility & Rooms
+                  </button>
+                </div>
+              </div>
+            ) : null}
 
             {/* PILLAR 3: SECONDARY LAYER NAV (Tabs / Module Selection) */}
             <div className="flex-1 flex justify-end">
@@ -14179,7 +14168,12 @@ export default function App() {
           />
         )}
         {activeTab === "study" && (
-          <StudyView isPresenting={isPresenting} info={projectInfo} />
+          <StudyView 
+            isPresenting={isPresenting} 
+            info={projectInfo} 
+            activeMiniTab={activeMiniTab}
+            setActiveMiniTab={setActiveMiniTab}
+          />
         )}
         {activeTab === "collab" && (
           <CollaborationStrategyView isPresenting={isPresenting} />
