@@ -1164,7 +1164,7 @@ const NavButton = memo(({ active, onClick, icon, label, disabled }) => (
   <button
     onClick={disabled ? undefined : onClick}
     disabled={disabled}
-    className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+    className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap shrink-0 ${
       disabled
         ? "opacity-20 cursor-not-allowed text-[#4C4A4B]"
         : active
@@ -14158,11 +14158,11 @@ export default function App() {
           </div>
 
           <div
-            className={`flex flex-col md:flex-row justify-between items-center gap-2 lg:gap-3 transition-all duration-300 ${isPresenting ? "py-2" : "py-3"}`}
+            className={`grid grid-cols-2 md:flex md:flex-row justify-between items-center gap-2 lg:gap-3 transition-all duration-300 ${isPresenting ? "py-2" : "py-3"}`}
           >
             {/* PILLAR 1: BRANDED TITLE */}
-            <div className="flex-1 flex justify-start">
-              <h1 className="text-xl font-bold flex items-center gap-2 text-[#1E2F31]">
+            <div className="order-1 md:order-1 col-span-1 flex justify-start min-w-0 md:flex-1">
+              <h1 className="text-xl font-bold flex items-center gap-2 text-[#1E2F31] truncate">
                 {activeTab === "executive" ? (
                   <Briefcase className="text-[#9B8B70]" />
                 ) : activeTab === "overview" ? (
@@ -14202,61 +14202,61 @@ export default function App() {
 
             {/* PILLAR 2: CENTERED DYNAMIC NAVIGATION (Financials or Study Sub-Nav) */}
             {activeGroup === "financials" ? (
-              <div className="flex-1 flex justify-center">
-                <div className="flex p-1 bg-[#EFEBE7]/50 rounded-xl gap-0.5 border border-[#D8D8D8] overflow-x-auto max-w-full items-center">
+              <div className="order-3 md:order-2 col-span-2 flex justify-start md:justify-center min-w-0 w-full md:w-auto md:flex-1 mt-1 md:mt-0">
+                <div className="flex p-1 bg-[#EFEBE7]/50 rounded-xl gap-0.5 border border-[#D8D8D8] overflow-x-auto w-full md:w-auto max-w-full items-center custom-scrollbar">
                   <button
                     onClick={() => setActiveTab("dashboard")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${activeTab === "dashboard" ? "bg-[#1C6048] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap shrink-0 ${activeTab === "dashboard" ? "bg-[#1C6048] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
                   >
                     <LayoutDashboard size={13} /> Dashboard
                   </button>
                   <button
                     onClick={() => setActiveTab("comprehensive")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${activeTab === "comprehensive" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap shrink-0 ${activeTab === "comprehensive" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
                   >
                     <List size={13} /> P&L / CF
                   </button>
                   <button
                     disabled={activeCompany === "consolidated"}
                     onClick={() => setActiveTab("sensitivity")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${activeCompany === "consolidated" ? "opacity-30 cursor-not-allowed text-[#4C4A4B]" : activeTab === "sensitivity" ? "bg-[#1E2F31] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap shrink-0 ${activeCompany === "consolidated" ? "opacity-30 cursor-not-allowed text-[#4C4A4B]" : activeTab === "sensitivity" ? "bg-[#1E2F31] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
                   >
                     <TrendingUp size={13} /> Sensitivity
                   </button>
                   <button
                     disabled={activeCompany === "consolidated"}
                     onClick={() => setActiveTab("assumptions")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${activeCompany === "consolidated" ? "opacity-30 cursor-not-allowed text-[#4C4A4B]" : activeTab === "assumptions" ? "bg-[#99B6AA] text-[#1E2F31] shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap shrink-0 ${activeCompany === "consolidated" ? "opacity-30 cursor-not-allowed text-[#4C4A4B]" : activeTab === "assumptions" ? "bg-[#99B6AA] text-[#1E2F31] shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
                   >
                     <Settings size={13} /> Settings
                   </button>
-                  <div className="w-px h-4 bg-[#D8D8D8] mx-0.5"></div>
+                  <div className="w-px h-4 bg-[#D8D8D8] mx-0.5 shrink-0"></div>
                   <button
                     onClick={() => setActiveTab("timeline")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${activeTab === "timeline" ? "bg-[#1C6048] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap shrink-0 ${activeTab === "timeline" ? "bg-[#1C6048] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
                   >
                     <Calendar size={13} /> Timeline
                   </button>
                 </div>
               </div>
             ) : activeTab === "study" ? (
-              <div className="flex-1 flex justify-center">
-                <div className="flex p-1 bg-[#EFEBE7]/50 rounded-xl gap-0.5 border border-[#D8D8D8] overflow-x-auto max-w-full items-center">
+              <div className="order-3 md:order-2 col-span-2 flex justify-start md:justify-center min-w-0 w-full md:w-auto md:flex-1 mt-1 md:mt-0">
+                <div className="flex p-1 bg-[#EFEBE7]/50 rounded-xl gap-0.5 border border-[#D8D8D8] overflow-x-auto w-full md:w-auto max-w-full items-center custom-scrollbar">
                   <button
                     onClick={() => setActiveMiniTab("marketAnalysis")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${activeMiniTab === "marketAnalysis" ? "bg-[#1C6048] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap shrink-0 ${activeMiniTab === "marketAnalysis" ? "bg-[#1C6048] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
                   >
                     <Search size={13} /> Market Analysis
                   </button>
                   <button
                     onClick={() => setActiveMiniTab("opportunities")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${activeMiniTab === "opportunities" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap shrink-0 ${activeMiniTab === "opportunities" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
                   >
                     <Target size={13} /> Opportunities
                   </button>
                   <button
                     onClick={() => setActiveMiniTab("clinicalRooms")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap ${activeMiniTab === "clinicalRooms" ? "bg-[#1E2F31] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap shrink-0 ${activeMiniTab === "clinicalRooms" ? "bg-[#1E2F31] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
                   >
                     <Stethoscope size={13} /> Facility & Rooms
                   </button>
@@ -14265,9 +14265,9 @@ export default function App() {
             ) : null}
 
             {/* PILLAR 3: SECONDARY LAYER NAV (Tabs / Module Selection) */}
-            <div className="flex-1 flex justify-end">
+            <div className="order-2 md:order-3 col-span-1 flex justify-end min-w-0 w-full md:w-auto md:flex-1">
               {activeGroup !== "summary" && (
-                <div className="flex p-1 bg-[#EFEBE7] rounded-lg gap-1 overflow-x-auto border border-[#D8D8D8] max-w-full items-center">
+                <div className="flex p-1 bg-[#EFEBE7] rounded-lg gap-1 overflow-x-auto border border-[#D8D8D8] max-w-full items-center custom-scrollbar">
                   {activeGroup === "context" ? (
                     <>
                       <NavButton
