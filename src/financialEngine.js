@@ -116,7 +116,7 @@ const DEFAULT_PROPCO_ASSUMPTIONS = {
   buildArea: 13000,
   buildCost: 11.5,
   includeMedEq: true,
-  medEqProcurement: "lease",
+  medEqProcurement: "lease_operating",
   medEqLeaseMonthly: 0.375,
   medEqPurchaseOpYear: 4,
   medEqPurchaseAmount: 150000,
@@ -141,6 +141,8 @@ const DEFAULT_PROPCO_ASSUMPTIONS = {
   opOverheadInc: 4,
   ffeReservePct: 2,
   includeFinancing: false,
+  drawdownScenario: "tranches",
+  drawdownTranches: [20, 40, 60, 80, 100],
   ltv: 70,
   interestRate: 8.5,
   loanTenor: 15,
@@ -1089,6 +1091,8 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
     equityCumExLand = 0;
 
   let debtDrawsMonthly = [];
+  let idcMonthly = [];
+  let idcExLandMonthly = [];
   let landSpendMonthly = [];
   let buildSpendMonthlyArr = [];
   let eqSpendMonthlyArr = [];
@@ -1103,6 +1107,9 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
   const genericCapex = totalCapex - consultantCost - licenseCost - leasedMedEq;
   const genericEquity = genericCapex * (1 - effectiveLtv / 100);
   const genericEquityExLand = (genericCapex - landCost) * (1 - effectiveLtv / 100);
+
+  let cumNonLandCapex = 0;
+  let cumDebtDrawn = 0;
 
   // Run development phase month-by-month
   for (let md = 1; md <= totalDevMonths; md++) {
@@ -1204,14 +1211,42 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
     }
     
     // Track debt drawn based on capEx base month (Land is strictly equity funded)
-    const m_debtDraw = Math.max(0, capDrawBase_month - m_land_final) * (effectiveLtv / 100);
+    let m_debtDraw = 0;
+    const m_nonLandCapex = Math.max(0, capDrawBase_month - m_land_final);
+    
+    if (assumptions.drawdownScenario === "tranches" && totalCapexExLand > 0) {
+      cumNonLandCapex += m_nonLandCapex;
+      const progress = cumNonLandCapex / totalCapexExLand;
+      
+      const tranches = assumptions.drawdownTranches || [20, 40, 60, 80, 100];
+      const p = (progress * 100) + 0.0001; // Allow for floating point precision
+      
+      let targetTrancheDebtPct = 0;
+      for (let tIdx = 0; tIdx < tranches.length; tIdx++) {
+         if (p >= tranches[tIdx] || md === totalDevMonths) {
+           targetTrancheDebtPct = tranches[tIdx];
+         }
+      }
+      if (md === totalDevMonths) targetTrancheDebtPct = 100;
+      
+      const targetDebtDrawn = totalDebt * (targetTrancheDebtPct / 100);
+      
+      m_debtDraw = Math.max(0, targetDebtDrawn - cumDebtDrawn);
+      cumDebtDrawn += m_debtDraw;
+    } else {
+      m_debtDraw = m_nonLandCapex * (effectiveLtv / 100);
+    }
     const m_debtDrawExLand = m_debtDraw;
+    
+    // IDC calculated on PRIOR balance (before this month's draw)
+    const m_idc = outstandingDebt * rateMonthly;
+    const m_idcExLand = outstandingDebtExLand * rateMonthly;
     
     outstandingDebt += m_debtDraw;
     outstandingDebtExLand += m_debtDrawExLand;
 
-    const m_eqDraw = -(capDrawBase_month - m_debtDraw);
-    const m_eqDrawExLand = -(Math.max(0, capDrawBase_month - m_land_final) - m_debtDrawExLand);
+    const m_eqDraw = -(capDrawBase_month - m_debtDraw + m_idc);
+    const m_eqDrawExLand = -(Math.max(0, capDrawBase_month - m_land_final) - m_debtDrawExLand + m_idcExLand);
     const m_unleveredCf = -capDrawBase_month;
 
     const projectSpend_month = m_land_final + m_hard + m_soft;
@@ -1221,6 +1256,8 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
     softSpendMonthly.push(m_soft);
     totalSpendMonthly.push(projectSpend_month);
     debtDrawsMonthly.push(m_debtDraw);
+    idcMonthly.push(m_idc);
+    idcExLandMonthly.push(m_idcExLand);
 
     buildSpendMonthlyArr.push(m_build);
     eqSpendMonthlyArr.push(m_eq);
@@ -1281,7 +1318,7 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       debtBalance: [], debtBalanceExLand: [], fcfe: [], fcfeExLand: [], debtDraw: [], landSpend: [],
       buildSpend: [], eqSpend: [], infraSpend: [], ffeSpend: [], sharingSpend: [],
       consultantSpend: [], licenseSpend: [], vatSpend: [], contingencySpend: [],
-      cumFcfe: [], cumFcfeExLand: [], devGa: [], devCar: [], ebitda: [],
+      cumFcfe: [], cumFcfeExLand: [], devGa: [], devCar: [], gop: [], ebitda: [], ebit: [],
       ebt: [], netIncome: [], corpTax: [], ebtExLand: [], corpTaxExLand: [],
       interest: [], interestExLand: [], dep: [],
       hardSpend: [], softSpend: [], totalSpend: [], unleveredCf: []
@@ -1310,7 +1347,11 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       const m_contingency = contingencySpendMonthlyArr[mIdx] || 0;
 
       const m_unleveredCf = unleveredCfsMonthly[mIdx] || 0;
+      const m_idc = idcMonthly[mIdx] || 0;
+      const m_idcExLand = idcExLandMonthly[mIdx] || 0;
       const m_ebitda = -(m_ga + m_car);
+      const m_ebt = m_ebitda - m_idc;
+      const m_ebtExLand = m_ebitda - m_idcExLand;
       
       monthly.debtBalance.push(outstandingDebt);
       monthly.debtBalanceExLand.push(outstandingDebtExLand);
@@ -1334,33 +1375,39 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       monthly.debtDraw.push(m_debtDraw);
       monthly.unleveredCf.push(m_unleveredCf);
       monthly.ebitda.push(m_ebitda);
-      monthly.ebt.push(m_ebitda);
-      monthly.ebtExLand.push(m_ebitda);
-      monthly.netIncome.push(m_ebitda);
+      monthly.ebt.push(m_ebt);
+      monthly.ebtExLand.push(m_ebtExLand);
+      monthly.netIncome.push(m_ebt);
       monthly.corpTax.push(0);
       monthly.corpTaxExLand.push(0);
-      monthly.interest.push(0);
-      monthly.interestExLand.push(0);
+      monthly.interest.push(m_idc);
+      monthly.interestExLand.push(m_idcExLand);
       monthly.dep.push(0);
       monthly.cumFcfe.push(equityCfsMonthly.slice(0, mIdx + 1).reduce((a, b) => a + b, 0));
       monthly.cumFcfeExLand.push(equityCfsExLandMonthly.slice(0, mIdx + 1).reduce((a, b) => a + b, 0));
     }
 
+    const interest_year = monthly.interest.reduce((a, b) => a + b, 0);
+    const interestExLand_year = monthly.interestExLand.reduce((a, b) => a + b, 0);
+
     annualData.push({
       year: `Year ${i}`,
       isOperating: false,
       revenue: 0,
+      preOpeningDev: ga_year + car_year,
+      gop: -(ga_year + car_year),
       ebitda: -(ga_year + car_year),
-      ebt: -(ga_year + car_year),
-      ebtExLand: -(ga_year + car_year),
-      netIncome: -(ga_year + car_year),
+      ebit: -(ga_year + car_year),
+      ebt: -(ga_year + car_year) - interest_year,
+      ebtExLand: -(ga_year + car_year) - interestExLand_year,
+      netIncome: -(ga_year + car_year) - interest_year,
       corpTax: 0,
       corpTaxExLand: 0,
-      interest: 0,
-      interestExLand: 0,
+      interest: interest_year,
+      interestExLand: interestExLand_year,
       dep: 0,
-      debtBalance: totalDebt,
-      debtBalanceExLand: totalDebtExLand,
+      debtBalance: monthly.debtBalance[monthly.debtBalance.length - 1] || outstandingDebt,
+      debtBalanceExLand: monthly.debtBalanceExLand[monthly.debtBalanceExLand.length - 1] || outstandingDebtExLand,
       devGa: ga_year,
       devCar: car_year,
       landSpend: land_year,
@@ -1463,7 +1510,7 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       Math.pow(1 + assumptions.opOverheadInc / 100, i - 1);
 
     let monthly = {
-      revenue: [], maintOpex: [], taxOpex: [], overheadOpex: [], ffeReserve: [], medEqLeaseOpex: [], ebitda: [],
+      revenue: [], maintOpex: [], taxOpex: [], overheadOpex: [], ffeReserve: [], medEqLeaseOpex: [], gop: [], ebitda: [], ebit: [],
       interest: [], principal: [], interestExLand: [], principalExLand: [], dep: [], ebt: [],
       corpTax: [], netIncome: [], deferredCapex: [], fcfe: [], cumFcfe: [], fcfeExLand: [], cumFcfeExLand: [], unleveredCf: [],
       opFcfe: [], exit: [], exitExLand: [], debtBalance: [], debtBalanceExLand: [],
@@ -1479,7 +1526,9 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       year_overhead = 0,
       year_reserve = 0,
       year_medEqLease = 0,
+      year_gop = 0,
       year_ebitda = 0,
+      year_ebit = 0,
       year_interest = 0,
       year_principal = 0,
       year_interestExLand = 0,
@@ -1568,8 +1617,8 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
         }
       }
 
-      const m_ebitda =
-        m_revenue - m_maint - m_taxOp - m_overhead - m_reserve - m_medEqLeaseOpex;
+      const m_gop = m_revenue - m_maint - m_taxOp - m_overhead - m_medEqLeaseOpex;
+      const m_ebitda = m_gop - m_reserve;
 
       const m_op = (i - 1) * 12 + m;
       let m_interest = 0,
@@ -1740,7 +1789,10 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       monthly.overheadOpex.push(m_overhead);
       monthly.ffeReserve.push(m_reserve);
       monthly.medEqLeaseOpex.push(m_medEqLeaseOpex);
+      monthly.gop.push(m_gop);
       monthly.ebitda.push(m_ebitda);
+      const m_ebit = m_ebitda - m_dep;
+      monthly.ebit.push(m_ebit);
       monthly.interest.push(m_interest);
       monthly.principal.push(m_principal);
       monthly.interestExLand.push(m_interestExLand);
@@ -1788,7 +1840,9 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       year_overhead += m_overhead;
       year_reserve += m_reserve;
       year_medEqLease += m_medEqLeaseOpex;
+      year_gop += m_gop;
       year_ebitda += m_ebitda;
+      year_ebit += m_ebit;
       year_interest += m_interest;
       year_principal += m_principal;
       year_interestExLand += m_interestExLand;
@@ -1828,12 +1882,15 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       year: `Year ${i + devYears}`,
       isOperating: true,
       revenue: year_revenue,
+      preOpeningDev: 0,
       maintOpex: year_maint,
       taxOpex: year_taxOp,
       overheadOpex: year_overhead,
       ffeReserve: year_reserve,
       medEqLeaseOpex: year_medEqLease,
+      gop: year_gop,
       ebitda: year_ebitda,
+      ebit: year_ebit,
       interest: year_interest,
       principal: year_principal,
       debtBalance: outstandingDebt,
@@ -1944,6 +2001,7 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       revenue: annualData.reduce((acc, d) => acc + (d.revenue || 0), 0),
       devGa: annualData.reduce((acc, d) => acc + (d.devGa || 0), 0),
       devCar: annualData.reduce((acc, d) => acc + (d.devCar || 0), 0),
+      preOpeningDev: annualData.reduce((acc, d) => acc + (d.devGa || 0) + (d.devCar || 0), 0),
       maintOpex: annualData.reduce((acc, d) => acc + (d.maintOpex || 0), 0),
       taxOpex: annualData.reduce((acc, d) => acc + (d.taxOpex || 0), 0),
       overheadOpex: annualData.reduce(
@@ -1955,7 +2013,9 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
         (acc, d) => acc + (d.medEqLeaseOpex || 0),
         0,
       ),
+      gop: annualData.reduce((acc, d) => acc + (d.gop || 0), 0),
       ebitda: annualData.reduce((acc, d) => acc + (d.ebitda || 0), 0),
+      ebit: annualData.reduce((acc, d) => acc + (d.ebit || 0), 0),
       interest: annualData.reduce((acc, d) => acc + (d.interest || 0), 0),
       principal: annualData.reduce((acc, d) => acc + (d.principal || 0), 0),
       ds: annualData.reduce(

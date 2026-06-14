@@ -174,6 +174,10 @@ export const PROPCO_FORMULAS: Record<string, TooltipInfo> = {
     desc: "Holding property company administrative, management, and localized operational support expenses.",
     formula: "Overhead Expense = Flat monthly charge or percentage scaled rate based on property assets"
   },
+  preOpeningDev: {
+    desc: "Pre-Opening & Dev Expenses: Total of Pre-opening expenditures and Contractor's All Risk (CAR) insurance.",
+    formula: "Pre-Opening = Dev G&A + Dev CAR"
+  },
   devGa: {
     desc: "Project developer General & Administrative costs. Pre-operating start-up costs under PSAK 19 must be expensed as incurred.",
     formula: "Total Dev G&A = Monthly Dev. G&A * totalDevMonths\n(Note: Warning shown in audit logs if capitalized vs expensed in P&L)"
@@ -190,9 +194,21 @@ export const PROPCO_FORMULAS: Record<string, TooltipInfo> = {
     desc: "Operating clinical leases paid for rented medical equipment prior to acquisition buy-out event.",
     formula: "Lease Outlay = medEqLeaseMonthly * Early operational months"
   },
+  gop: {
+    desc: "Gross Operating Profit: Net Operating revenues less all direct operating expenses before reserves and financing.",
+    formula: "GOP = Revenue - Operating Expenses (Maintenance, Property Taxes, Overhead, MedEq Leases)"
+  },
   ebitda: {
     desc: "Property NOI (Net Operating Income) available for debt service and taxes before interest, dep, and corp tax.",
-    formula: "EBITDA = Rental Revenue - Maintenance - Land/Building Taxes - Overhead - Dev G&A - Dev CAR - FF&E sweeps - Equipment Leases"
+    formula: "EBITDA = GOP - FF&E sweeps"
+  },
+  dep: {
+    desc: "Annual depreciation charges of capitalized physical facilities, systems, soft costs, and medical equipment.",
+    formula: "Under Indonesian PSAK 16 & PSAK 19 straight-line depreciation conventions representing asset decay."
+  },
+  ebit: {
+    desc: "Earnings Before Interest and Taxes (Operating Profit after depreciation capitalization).",
+    formula: "EBIT = EBITDA - Depreciation"
   },
   interest: {
     desc: "Structured interest payments paid over property financing schedule, incorporating interest-only grace periods.",
@@ -205,10 +221,6 @@ export const PROPCO_FORMULAS: Record<string, TooltipInfo> = {
   dscr: {
     desc: "Debt Service Coverage Ratio (DSCR): Metric measuring safety buffer of physical property yields relative to debt service.",
     formula: "DSCR = EBITDA (NOI) / (Interest Expense + Principal Repayments)\n(Benchmark: Values above 1.25x are standard for hospital financing)"
-  },
-  dep: {
-    desc: "Annual depreciation charges of capitalized physical facilities, systems, soft costs, and medical equipment.",
-    formula: "Under PSAK 16 & PSAK 19: Calculated by Straight-Line (SL) or Double Declining (DB) methods based on asset lives."
   },
   ebt: {
     desc: "Property earnings before tax (accounting taxable profits) after non-cash depreciation and financial interest.",

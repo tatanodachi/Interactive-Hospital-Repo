@@ -302,8 +302,8 @@ const INITIAL_GROUPS = [
       {
         id: "c5",
         name: "Cluster Infrastructure",
-        start: 1,
-        duration: 12,
+        start: 9,
+        duration: 6,
         progress: 0,
         dependencies: [],
         owner: "IT / Facilities",
@@ -314,8 +314,8 @@ const INITIAL_GROUPS = [
       {
         id: "c6",
         name: "Sharing Development",
-        start: 1,
-        duration: 12,
+        start: 9,
+        duration: 6,
         progress: 0,
         dependencies: [],
         owner: "Tech Team",
@@ -351,7 +351,7 @@ const INITIAL_GROUPS = [
   },
   {
     id: "design",
-    name: "1. Design & Planning",
+    name: "1. DESIGN & PLANNING",
     color: "from-[#1C6048] to-[#2E8563]",
     bgLight: "bg-[#1C6048]/5",
     tasks: [
@@ -359,7 +359,7 @@ const INITIAL_GROUPS = [
         id: "t1",
         name: "JV & Feasibility",
         start: 1,
-        duration: 4,
+        duration: 6,
         progress: 100,
         owner: "Sponsor Board",
         cost: 2.5,
@@ -370,7 +370,7 @@ const INITIAL_GROUPS = [
       {
         id: "t2",
         name: "Architectural Planning",
-        start: 4,
+        start: 7,
         duration: 4,
         progress: 60,
         owner: "Lead Architect",
@@ -382,7 +382,7 @@ const INITIAL_GROUPS = [
       {
         id: "t3",
         name: "MEP & Vault Layouts",
-        start: 6,
+        start: 8,
         duration: 4,
         progress: 10,
         owner: "MEP Engineers",
@@ -390,31 +390,33 @@ const INITIAL_GROUPS = [
         desc: "Designing complex ventilation, electrical backups, and customized structural reinforced vaults.",
         critical: true,
         dependencies: ["t2"],
+        warning: true,
       },
     ],
   },
   {
     id: "licensing",
-    name: "2. Licensing & Regulatory",
+    name: "2. LICENSING & REGULATORY",
     color: "from-[#9B8B70] to-[#B5A58A]",
     bgLight: "bg-[#9B8B70]/5",
     tasks: [
       {
         id: "t4",
         name: "Hospital Clearances (IMB)",
-        start: 4,
-        duration: 6,
+        start: 9,
+        duration: 3,
         progress: 0,
         owner: "Legal Team",
         cost: 1.5,
         desc: "Securing local building approvals (IMB), environmental impact assessments (AMDAL), and initial MoH registrations.",
         critical: false,
         dependencies: ["t2"],
+        warning: true,
       },
       {
         id: "t5",
         name: "BAPETEN Vault Licence",
-        start: 13,
+        start: 12,
         duration: 3,
         progress: 0,
         owner: "Nuclear Physicist / Legal",
@@ -514,8 +516,8 @@ const INITIAL_GROUPS = [
       {
         id: "t8",
         name: "Cluster Infrastructure",
-        start: 1,
-        duration: 12,
+        start: 9,
+        duration: 6,
         progress: 0,
         owner: "IT / Facilities",
         cost: 5.8,
@@ -526,8 +528,8 @@ const INITIAL_GROUPS = [
       {
         id: "t9",
         name: "Sharing Development",
-        start: 1,
-        duration: 12,
+        start: 9,
+        duration: 6,
         progress: 0,
         owner: "Tech Team",
         cost: 4.3,
@@ -546,7 +548,7 @@ const INITIAL_GROUPS = [
       {
         id: "t10",
         name: "Oncology Asset Lease",
-        start: 61,
+        start: 22,
         duration: 3,
         progress: 0,
         owner: "Procurement Board",
@@ -558,7 +560,7 @@ const INITIAL_GROUPS = [
       {
         id: "t11",
         name: "Machinery Rigging & Fit",
-        start: 19,
+        start: 25,
         duration: 3,
         progress: 0,
         owner: "Install Engineers",
@@ -570,7 +572,7 @@ const INITIAL_GROUPS = [
       {
         id: "t12",
         name: "Testing & Staff Drills",
-        start: 22,
+        start: 28,
         duration: 3,
         progress: 0,
         owner: "Clinical Director",
@@ -582,7 +584,7 @@ const INITIAL_GROUPS = [
       {
         id: "t13",
         name: "Commercial Opening",
-        start: 25,
+        start: 31,
         duration: 1,
         progress: 0,
         owner: "Operations GM",
@@ -1794,6 +1796,7 @@ const TableRow = memo(
     onExpand,
     isHeader,
     hasConnector,
+    isSubtractor,
   }) => {
     let baseColorClass = "bg-white font-medium text-[#4C4A4B]";
     if (highlight || isHeader) {
@@ -1830,7 +1833,8 @@ const TableRow = memo(
           </div>
         </td>
         {data.map((d, i) => {
-          const val = d[dk] || 0;
+          const rawVal = d[dk] || 0;
+          const val = isSubtractor ? -Math.abs(rawVal) : rawVal;
           const isCrossover =
             crossover && val >= 0 && i > 0 && data[i - 1][dk] < 0;
           const cellBg = highlight
@@ -1844,7 +1848,7 @@ const TableRow = memo(
           const formattedVal = formatNumber(val, 1);
           const displayVal = isPercent && formattedVal !== "0"
             ? (val < 0 ? `(${formattedVal.replace(/[()]/g, "")}%)` : `${formattedVal}%`)
-            : val === 0 && val >= 0
+            : rawVal === 0 && rawVal >= 0
               ? (isPercent ? "0.0%" : "-")
               : formattedVal;
 
@@ -1861,7 +1865,7 @@ const TableRow = memo(
           <td className={totalColClass}>
             {isPercent 
               ? (total < 0 ? `(${formatNumber(total, 1).replace(/[()]/g, "")}%)` : `${formatNumber(total, 1)}%`)
-              : formatNumber(total, 1)}
+              : formatNumber(isSubtractor ? -Math.abs(total) : total, 1)}
           </td>
         ) : (
           <td className={totalColClass}></td>
@@ -1871,7 +1875,7 @@ const TableRow = memo(
   },
 );
 
-const ExpandableDataRowGroup = ({ parentLabel, parentDk, parentTotal, data, childrenData, parentTooltip }) => {
+const ExpandableDataRowGroup = ({ parentLabel, parentDk, parentTotal, data, childrenData, parentTooltip, isSubtractor }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   
   return (
@@ -1893,6 +1897,7 @@ const ExpandableDataRowGroup = ({ parentLabel, parentDk, parentTotal, data, chil
         total={parentTotal}
         isIndent
         tooltip={parentTooltip}
+        isSubtractor={isSubtractor}
       />
       {isExpanded && childrenData.map((child, i) => (
         <TableRow
@@ -1910,6 +1915,7 @@ const ExpandableDataRowGroup = ({ parentLabel, parentDk, parentTotal, data, chil
           total={child.total}
           isIndent
           tooltip={child.tooltip}
+          isSubtractor={isSubtractor}
         />
       ))}
     </>
@@ -4535,8 +4541,9 @@ const InteractiveDemographicMap = memo(() => {
                 .leaflet-popup-content { margin: 12px 16px; line-height: 1.4; }
                 
                 /* Custom Scrollbar */
-                .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; margin: 16px 0; }
+                .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+                .custom-scrollbar::-webkit-scrollbar-track:vertical { background: transparent; margin: 16px 0; }
+                .custom-scrollbar::-webkit-scrollbar-track:horizontal { background: transparent; margin: 0 16px; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(155, 139, 112, 0.5); border-radius: 8px; }
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(155, 139, 112, 0.8); }
                 
@@ -7903,49 +7910,53 @@ const OpCoCascadeView = memo(({ data, assumptions, viewResolution, setViewResolu
                   total={data.totals.totalMedSupp}
                   isIndent
                   tooltip={OPCO_FORMULAS.totalMedSupp}
+                  isSubtractor
                 />
                 <TableRow
                   label="Doctor Fees"
                   data={columns}
                   dk="totalDocFee"
-                total={data.totals.totalDocFee}
-                isIndent
-                tooltip={OPCO_FORMULAS.totalDocFee}
-              />
-              <TableRow
-                label="GROSS PROFIT"
-                data={columns}
-                dk="grossProfit"
-                total={data.totals.grossProfit}
-                highlight
-                tooltip={OPCO_FORMULAS.grossProfit}
-              />
+                  total={data.totals.totalDocFee}
+                  isIndent
+                  tooltip={OPCO_FORMULAS.totalDocFee}
+                  isSubtractor
+                />
+                <TableRow
+                  label="GROSS PROFIT"
+                  data={columns}
+                  dk="grossProfit"
+                  total={data.totals.grossProfit}
+                  highlight
+                  tooltip={OPCO_FORMULAS.grossProfit}
+                />
 
-              <TableSection
-                title="D. Operating Expenses"
-                colSpan={columns.length + 2}
-              />
-              <TableRow
-                label="Staffing & Labor"
-                data={columns}
-                dk="staffCost"
-                isIndent
-                tooltip={OPCO_FORMULAS.staffCost}
-              />
-              <ExpandableDataRowGroup
-                parentLabel="Other OpEx"
-                parentDk="otherOpex"
-                parentTotal={data.totals.otherOpex}
-                data={columns}
-                parentTooltip={OPCO_FORMULAS.recurringOpex}
-                childrenData={[
-                  { label: "Administrative Expense", dk: "adminOpex", total: data?.totals?.adminOpex, tooltip: { desc: "Administrative support overhead calculated based on administrative expense rate assumptions.", formula: "Admin Exp = adminExpRate% * Net Revenue" } },
-                  { label: "Utilities Expense", dk: "utilOpex", total: data?.totals?.utilOpex, tooltip: { desc: "Clinic utilities expense based on utility expense rate assumptions.", formula: "Utilities Exp = utilExpRate% * Net Revenue" } },
-                  { label: "Marketing Expense", dk: "mktgOpex", total: data?.totals?.mktgOpex, tooltip: { desc: "Marketing expenditures aligned with marketing expense rate assumptions.", formula: "Marketing Exp = marketingExpRate% * Net Revenue" } },
-                  { label: "Hospital Operator Fee", dk: "operatorOpex", total: data?.totals?.operatorOpex, tooltip: { desc: "Hospital management and operator fees.", formula: "Operator Fee = operatorFeeRate% * Net Revenue" } },
-                  { label: "Operational Insurance", dk: "insOpex", total: data?.totals?.insOpex, tooltip: { desc: "Annual facility, equipment, and liability insurance expenditures.", formula: "Insurance = insuranceMonthly * 12" } }
-                ]}
-              />
+                <TableSection
+                  title="D. Operating Expenses"
+                  colSpan={columns.length + 2}
+                />
+                <TableRow
+                  label="Staffing & Labor"
+                  data={columns}
+                  dk="staffCost"
+                  isIndent
+                  tooltip={OPCO_FORMULAS.staffCost}
+                  isSubtractor
+                />
+                <ExpandableDataRowGroup
+                  parentLabel="Other OpEx"
+                  parentDk="otherOpex"
+                  parentTotal={data.totals.otherOpex}
+                  data={columns}
+                  parentTooltip={OPCO_FORMULAS.recurringOpex}
+                  isSubtractor
+                  childrenData={[
+                    { label: "Administrative Expense", dk: "adminOpex", total: data?.totals?.adminOpex, tooltip: { desc: "Administrative support overhead calculated based on administrative expense rate assumptions.", formula: "Admin Exp = adminExpRate% * Net Revenue" } },
+                    { label: "Utilities Expense", dk: "utilOpex", total: data?.totals?.utilOpex, tooltip: { desc: "Clinic utilities expense based on utility expense rate assumptions.", formula: "Utilities Exp = utilExpRate% * Net Revenue" } },
+                    { label: "Marketing Expense", dk: "mktgOpex", total: data?.totals?.mktgOpex, tooltip: { desc: "Marketing expenditures aligned with marketing expense rate assumptions.", formula: "Marketing Exp = marketingExpRate% * Net Revenue" } },
+                    { label: "Hospital Operator Fee", dk: "operatorOpex", total: data?.totals?.operatorOpex, tooltip: { desc: "Hospital management and operator fees.", formula: "Operator Fee = operatorFeeRate% * Net Revenue" } },
+                    { label: "Operational Insurance", dk: "insOpex", total: data?.totals?.insOpex, tooltip: { desc: "Annual facility, equipment, and liability insurance expenditures.", formula: "Insurance = insuranceMonthly * 12" } }
+                  ]}
+                />
               <TableRow
                 label="EBITDAR"
                 data={columns}
@@ -7975,6 +7986,7 @@ const OpCoCascadeView = memo(({ data, assumptions, viewResolution, setViewResolu
                 total={data.totals.rent}
                 isIndent
                 tooltip={OPCO_FORMULAS.rent}
+                isSubtractor
               />
               <TableRow
                 label="EBITDA"
@@ -7991,6 +8003,7 @@ const OpCoCascadeView = memo(({ data, assumptions, viewResolution, setViewResolu
                 total={data.totals.tax}
                 isIndent
                 tooltip={OPCO_FORMULAS.tax}
+                isSubtractor
               />
               <TableRow
                 label="NET INCOME"
@@ -8881,70 +8894,114 @@ const PropCoCascadeView = memo(({ data, onExport, viewResolution, setViewResolut
                     colSpan={columns.length + 2}
                   />
                   <TableRow
-                    label="Rental Revenue"
+                    label="Net Rent Revenue / NOR"
                     data={columns}
                     dk="revenue"
                     total={data.totals.revenue}
+                    highlight
                     tooltip={PROPCO_FORMULAS.revenue}
                   />
+                  
+                  <tr className="group">
+                    <td className="px-3 py-1.5 sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap transition-colors shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-[#EFEBE7] font-bold text-[#1E2F31] text-[11px]">
+                      Operating Expenses (OpEx)
+                    </td>
+                    {columns.map((_, idx) => (
+                      <td
+                        key={idx}
+                        className="px-2 py-1.5 text-right border-r border-b border-[#D8D8D8] font-mono transition-colors bg-[#EFEBE7]/50"
+                      />
+                    ))}
+                    <td className="px-2 py-1.5 text-right font-bold font-mono border-l border-b border-[#D8D8D8] sticky right-0 z-[40] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-[#EFEBE7] font-bold text-[#1E2F31] text-[11px]">
+                      &nbsp;
+                    </td>
+                  </tr>
+
+                  <ExpandableDataRowGroup
+                    parentLabel="Pre-Opening & Dev Expenses"
+                    parentDk="preOpeningDev"
+                    parentTotal={data.totals.preOpeningDev}
+                    data={columns}
+                    parentTooltip={PROPCO_FORMULAS.preOpeningDev}
+                    isSubtractor
+                    childrenData={[
+                      { label: "Dev. G&A Expense", dk: "devGa", total: data.totals.devGa },
+                      { label: "Dev. CAR Expense", dk: "devCar", total: data.totals.devCar }
+                    ]}
+                  />
+
                   <TableRow
-                    label="Maintenance OpEx"
+                    label="Facility Maintenance OPEX"
                     data={columns}
                     dk="maintOpex"
                     total={data.totals.maintOpex}
                     isIndent
                     tooltip={PROPCO_FORMULAS.maintOpex}
+                    isSubtractor
                   />
                   <TableRow
-                    label="Property Taxes"
+                    label="Property Tax"
                     data={columns}
                     dk="taxOpex"
                     total={data.totals.taxOpex}
                     isIndent
                     tooltip={PROPCO_FORMULAS.taxOpex}
+                    isSubtractor
                   />
                   <TableRow
-                    label="Overhead OpEx"
+                    label="Management / Overhead OPEX"
                     data={columns}
                     dk="overheadOpex"
                     total={data.totals.overheadOpex}
                     isIndent
                     tooltip={PROPCO_FORMULAS.overheadOpex}
+                    isSubtractor
                   />
                   <TableRow
-                    label="Dev. G&A Expense"
-                    data={columns}
-                    dk="devGa"
-                    total={data.totals.devGa}
-                    isIndent
-                    tooltip={PROPCO_FORMULAS.devGa}
-                  />
-                  <TableRow
-                    label="Dev. CAR Expense"
-                    data={columns}
-                    dk="devCar"
-                    total={data.totals.devCar}
-                    isIndent
-                    tooltip={PROPCO_FORMULAS.devCar}
-                  />
-                  <TableRow
-                    label="FF&E Reserve"
-                    data={columns}
-                    dk="ffeReserve"
-                    total={data.totals.ffeReserve}
-                    isIndent
-                    tooltip={PROPCO_FORMULAS.ffeReserve}
-                  />
-                  <TableRow
-                    label="MedEq Lease Expense"
+                    label="Equipment Lease OPEX"
                     data={columns}
                     dk="medEqLeaseOpex"
                     total={data.totals.medEqLeaseOpex}
                     isIndent
                     tooltip={PROPCO_FORMULAS.medEqLeaseOpex}
+                    isSubtractor
+                  />
+                  
+                  <TableRow
+                    label="Gross Operating Profit (GOP)"
+                    data={columns}
+                    dk="gop"
+                    total={data.totals.gop}
+                    highlight
+                    tooltip={PROPCO_FORMULAS.gop}
+                  />
+
+                  <tr className="group">
+                    <td className="px-3 py-1.5 sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap transition-colors shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-[#EFEBE7] font-bold text-[#1E2F31] text-[11px]">
+                      Finance & Reserves
+                    </td>
+                    {columns.map((_, idx) => (
+                      <td
+                        key={idx}
+                        className="px-2 py-1.5 text-right border-r border-b border-[#D8D8D8] font-mono transition-colors bg-[#EFEBE7]/50"
+                      />
+                    ))}
+                    <td className="px-2 py-1.5 text-right font-bold font-mono border-l border-b border-[#D8D8D8] sticky right-0 z-[40] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-[#EFEBE7] font-bold text-[#1E2F31] text-[11px]">
+                      &nbsp;
+                    </td>
+                  </tr>
+
+                  <TableRow
+                    label="FF&E Reserve Allocation"
+                    data={columns}
+                    dk="ffeReserve"
+                    total={data.totals.ffeReserve}
+                    isIndent
+                    tooltip={PROPCO_FORMULAS.ffeReserve}
+                    isSubtractor
                   />
                   <TableRow
-                    label="EBITDA (NOI)"
+                    label="EBITDA"
                     data={columns}
                     dk="ebitda"
                     total={data.totals.ebitda}
@@ -8956,74 +9013,86 @@ const PropCoCascadeView = memo(({ data, onExport, viewResolution, setViewResolut
 
               {(viewMode === "all" || viewMode === "pl" || viewMode === "cf") && (
                 <>
+                  <ExpandableDataRowGroup
+                    parentLabel="Depreciation (D&A)"
+                    parentDk="dep"
+                    parentTotal={data.totals.dep}
+                    data={columns}
+                    parentTooltip={PROPCO_FORMULAS.dep}
+                    isSubtractor
+                    childrenData={[
+                      { label: "Construction", dk: "depBuild", total: data.totals.depBuild },
+                      { label: "Medical Equipment", dk: "depMedEq", total: data.totals.depMedEq },
+                      { label: "Infrastructure", dk: "depInfra", total: data.totals.depInfra },
+                      { label: "FF&E", dk: "depFfe", total: data.totals.depFfe },
+                      { label: "Sharing Dev.", dk: "depSharing", total: data.totals.depSharing },
+                      { label: "Consultant", dk: "depConsultant", total: data.totals.depConsultant },
+                      { label: "License", dk: "depLicense", total: data.totals.depLicense },
+                      { label: "VAT", dk: "depVat", total: data.totals.depVat },
+                      { label: "Contingency", dk: "depContingency", total: data.totals.depContingency },
+                    ]}
+                  />
+                  <TableRow
+                    label="EBIT"
+                    data={columns}
+                    dk="ebit"
+                    total={data.totals.ebit}
+                    highlight
+                    tooltip={PROPCO_FORMULAS.ebit}
+                  />
+                  <TableRow
+                    label="Interest Expense (Debt)"
+                    data={columns}
+                    dk="interest"
+                    total={data.totals.interest}
+                    isIndent
+                    tooltip={PROPCO_FORMULAS.interest}
+                    isSubtractor
+                  />
+                  <TableRow
+                    label="Earnings Before Tax (EBT)"
+                    data={columns}
+                    dk="ebt"
+                    total={data.totals.ebt}
+                    highlight
+                    tooltip={PROPCO_FORMULAS.ebt}
+                  />
+                  <TableRow
+                    label="Corporate Income Tax"
+                    data={columns}
+                    dk="corpTax"
+                    total={data.totals.corpTax}
+                    isIndent
+                    tooltip={PROPCO_FORMULAS.corpTax}
+                    isSubtractor
+                  />
+                  <TableRow
+                    label="Net Profit"
+                    data={columns}
+                    dk="netIncome"
+                    total={data.totals.netIncome}
+                    highlight
+                    tooltip={PROPCO_FORMULAS.netIncome}
+                  />
                   <TableSection
-                    title="C. Debt Service & Taxes"
-                colSpan={columns.length + 2}
-              />
-              <TableRow
-                label="Interest Expense"
-                data={columns}
-                dk="interest"
-                total={data.totals.interest}
-                isIndent
-                tooltip={PROPCO_FORMULAS.interest}
-              />
-              <TableRow
-                label="Principal Repayment"
-                data={columns}
-                dk="principal"
-                total={data.totals.principal}
-                isIndent
-                tooltip={PROPCO_FORMULAS.principal}
-              />
-              <TableRow
-                label="DSCR (Coverage Ratio)"
-                data={columns}
-                dk="dscr"
-                tooltip={PROPCO_FORMULAS.dscr}
-              />
-              <ExpandableDataRowGroup
-                parentLabel="Depreciation (D&A)"
-                parentDk="dep"
-                parentTotal={data.totals.dep}
-                data={columns}
-                parentTooltip={PROPCO_FORMULAS.dep}
-                childrenData={[
-                  { label: "Construction", dk: "depBuild", total: data.totals.depBuild },
-                  { label: "Medical Equipment", dk: "depMedEq", total: data.totals.depMedEq },
-                  { label: "Infrastructure", dk: "depInfra", total: data.totals.depInfra },
-                  { label: "FF&E", dk: "depFfe", total: data.totals.depFfe },
-                  { label: "Sharing Dev.", dk: "depSharing", total: data.totals.depSharing },
-                  { label: "Consultant", dk: "depConsultant", total: data.totals.depConsultant },
-                  { label: "License", dk: "depLicense", total: data.totals.depLicense },
-                  { label: "VAT", dk: "depVat", total: data.totals.depVat },
-                  { label: "Contingency", dk: "depContingency", total: data.totals.depContingency },
-                ]}
-              />
-              <TableRow
-                label="Earnings Before Tax (EBT)"
-                data={columns}
-                dk="ebt"
-                total={data.totals.ebt}
-                highlight
-                tooltip={PROPCO_FORMULAS.ebt}
-              />
-              <TableRow
-                label="Corporate Tax"
-                data={columns}
-                dk="corpTax"
-                total={data.totals.corpTax}
-                isIndent
-                tooltip={PROPCO_FORMULAS.corpTax}
-              />
-              <TableRow
-                label="NET INCOME"
-                data={columns}
-                dk="netIncome"
-                total={data.totals.netIncome}
-                highlight
-                tooltip={PROPCO_FORMULAS.netIncome}
-              />
+                    title="C. Debt Service & Exit"
+                    colSpan={columns.length + 2}
+                  />
+                  <TableRow
+                    label="Principal Repayment"
+                    data={columns}
+                    dk="principal"
+                    total={data.totals.principal}
+                    isIndent
+                    tooltip={PROPCO_FORMULAS.principal}
+                    isSubtractor
+                  />
+                  <TableRow
+                    label="DSCR (Coverage Ratio)"
+                    data={columns}
+                    dk="dscr"
+                    tooltip={PROPCO_FORMULAS.dscr}
+                  />
                 </>
               )}
 
@@ -9105,6 +9174,7 @@ const PropCoCascadeView = memo(({ data, onExport, viewResolution, setViewResolut
                 total={data.totals.interestExLand}
                 isIndent
                 tooltip={PROPCO_FORMULAS.interestExLand}
+                isSubtractor
               />
               <TableRow
                 label="Principal (Ex-Land)"
@@ -9113,6 +9183,7 @@ const PropCoCascadeView = memo(({ data, onExport, viewResolution, setViewResolut
                 total={data.totals.principalExLand}
                 isIndent
                 tooltip={PROPCO_FORMULAS.principalExLand}
+                isSubtractor
               />
               <TableRow
                 label="EBT (Ex-Land)"
@@ -9129,6 +9200,7 @@ const PropCoCascadeView = memo(({ data, onExport, viewResolution, setViewResolut
                 total={data.totals.corpTaxExLand}
                 isIndent
                 tooltip={PROPCO_FORMULAS.corpTaxExLand}
+                isSubtractor
               />
               <TableRow
                 label="FCFE Op (Ex-Land)"
@@ -10430,7 +10502,7 @@ const PropCoSettingsView = memo(
     const medEqFullValueUi = assumptions.includeMedEq
       ? (assumptions.capexMedEqQty * assumptions.capexMedEqPrice) / 1000
       : 0;
-    const medEqCostForUi = assumptions.medEqProcurement === "lease_operating" ? 0 : medEqFullValueUi;
+    const medEqCostForUi = (assumptions.medEqProcurement || "lease_operating") === "lease_operating" ? 0 : medEqFullValueUi;
     const infraCostForUi =
       (assumptions.capexInfraQty * assumptions.capexInfraPrice) / 1000;
     const ffeCostForUi = assumptions.includeFFE
@@ -10625,7 +10697,7 @@ const PropCoSettingsView = memo(
                     <button
                       disabled={isLocked}
                       onClick={() => onChange("medEqProcurement", "buy")}
-                      className={`px-1.5 py-0.5 text-[9px] font-bold rounded disabled:opacity-50 disabled:cursor-not-allowed ${assumptions.medEqProcurement !== "lease" && assumptions.medEqProcurement !== "lease_operating" ? "bg-white text-[#1E2F31] shadow-sm border border-[#D8D8D8]" : "text-[#4C4A4B]"}`}
+                      className={`px-1.5 py-0.5 text-[9px] font-bold rounded disabled:opacity-50 disabled:cursor-not-allowed ${(assumptions.medEqProcurement || "lease_operating") !== "lease" && (assumptions.medEqProcurement || "lease_operating") !== "lease_operating" ? "bg-white text-[#1E2F31] shadow-sm border border-[#D8D8D8]" : "text-[#4C4A4B]"}`}
                     >
                       Buy
                     </button>
@@ -10639,13 +10711,13 @@ const PropCoSettingsView = memo(
                     <button
                       disabled={isLocked}
                       onClick={() => onChange("medEqProcurement", "lease_operating")}
-                      className={`px-1.5 py-0.5 text-[9px] font-bold rounded disabled:opacity-50 disabled:cursor-not-allowed ${assumptions.medEqProcurement === "lease_operating" ? "bg-white text-[#1E2F31] shadow-sm border border-[#D8D8D8]" : "text-[#4C4A4B]"}`}
+                      className={`px-1.5 py-0.5 text-[9px] font-bold rounded disabled:opacity-50 disabled:cursor-not-allowed ${(assumptions.medEqProcurement || "lease_operating") === "lease_operating" ? "bg-white text-[#1E2F31] shadow-sm border border-[#D8D8D8]" : "text-[#4C4A4B]"}`}
                     >
                       Pure Lease
                     </button>
                   </div>
                 </div>
-                {(assumptions.medEqProcurement === "lease" || assumptions.medEqProcurement === "lease_operating") && (
+                {((assumptions.medEqProcurement || "lease_operating") === "lease" || (assumptions.medEqProcurement || "lease_operating") === "lease_operating") && (
                   <>
                     <AssumptionRow
                       label="Lease Cost (Mo)"
@@ -10676,7 +10748,7 @@ const PropCoSettingsView = memo(
                         </div>
                       </>
                     )}
-                    {assumptions.medEqProcurement === "lease_operating" && (
+                    {(assumptions.medEqProcurement || "lease_operating") === "lease_operating" && (
                       <div className="bg-[#1C6048]/5 p-2 rounded border border-[#1C6048]/20 text-[9px] text-[#1C6048] font-bold italic text-center">
                         Pure operating lease (indefinite lease) with zero buyout capex.
                       </div>
@@ -10741,18 +10813,98 @@ const PropCoSettingsView = memo(
               isLocked={isLocked}
             />
             {assumptions.includeFinancing && (
-              <div className="flex justify-between items-center bg-[#EFEBE7] p-2 rounded mb-2">
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-[#8A8175] mr-2">Debt Calculation Basis</span>
-                  <p className="text-[8px] text-[#8A8175]/80 font-medium leading-tight mt-0.5">LTV applies solely to non-land capex</p>
+              <>
+                <div className="flex justify-between items-center bg-[#EFEBE7] p-2 rounded mb-2">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-[#8A8175] mr-2">Debt Calculation Basis</span>
+                    <p className="text-[8px] text-[#8A8175]/80 font-medium leading-tight mt-0.5">LTV applies solely to non-land capex</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black text-[#1E2F31]">
+                      {formatNumber(data?.metrics?.totalCapexExLand || 0, 1)}
+                    </span>
+                    <span className="text-[10px] text-[#8A8175] font-bold">B</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-black text-[#1E2F31]">
-                    {formatNumber((data?.metrics?.totalCapexExLand || 0) / 1000, 1)}
-                  </span>
-                  <span className="text-[10px] text-[#8A8175] font-bold">B</span>
+                <div className="flex justify-between items-center bg-white p-2 border border-[#D8D8D8] rounded mb-2 shadow-sm">
+                  <label className="text-[10px] font-bold uppercase text-[#4C4A4B]">
+                    Drawdown Scenario
+                  </label>
+                  <div className="flex items-center gap-0.5 bg-[#D8D8D8] rounded p-0.5">
+                    <button
+                      disabled={isLocked}
+                      onClick={() => onChange("drawdownScenario", "monthly")}
+                      className={`px-2 py-0.5 text-[9px] font-bold rounded disabled:opacity-50 disabled:cursor-not-allowed ${assumptions.drawdownScenario === "monthly" ? "bg-white text-[#1E2F31] shadow-sm border border-[#D8D8D8]" : "text-[#4C4A4B]"}`}
+                    >
+                      Monthly Basis
+                    </button>
+                    <button
+                      disabled={isLocked}
+                      onClick={() => onChange("drawdownScenario", "tranches")}
+                      className={`px-2 py-0.5 text-[9px] font-bold rounded disabled:opacity-50 disabled:cursor-not-allowed ${(assumptions.drawdownScenario || "tranches") === "tranches" ? "bg-white text-[#1E2F31] shadow-sm border border-[#D8D8D8]" : "text-[#4C4A4B]"}`}
+                    >
+                      Tranche-Based
+                    </button>
+                  </div>
                 </div>
-              </div>
+
+                {(assumptions.drawdownScenario || "tranches") === "tranches" && (
+                  <div className="bg-white p-2 border border-[#D8D8D8] rounded mb-2 shadow-sm space-y-1">
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-[10px] font-bold uppercase text-[#4C4A4B]">
+                        Drawdown Tranches (%)
+                      </label>
+                      <button
+                        disabled={isLocked}
+                        onClick={() => {
+                          const newT = [...(assumptions.drawdownTranches || [20, 40, 60, 80, 100])];
+                          newT.push(100);
+                          onChange("drawdownTranches", newT);
+                        }}
+                        className="text-[10px] font-bold text-[#1C6048] hover:underline flex items-center"
+                      >
+                        <Plus className="w-3 h-3 mr-0.5" /> Add
+                      </button>
+                    </div>
+                    <p className="text-[8px] text-[#8A8175]/80 font-medium leading-tight mb-2">
+                      Set construction progress thresholds at which debt is evenly drawn.
+                    </p>
+                    <div className="space-y-1">
+                      {(assumptions.drawdownTranches || [20, 40, 60, 80, 100]).map((tranche, idx, arr) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <span className="text-[9px] font-bold text-[#8A8175] w-12 shrink-0">
+                            Tranche {idx + 1}
+                          </span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={tranche}
+                            disabled={isLocked || idx === arr.length - 1}
+                            onChange={(e) => {
+                              const newT = [...arr];
+                              newT[idx] = parseFloat(e.target.value) || 0;
+                              onChange("drawdownTranches", newT);
+                            }}
+                            className="flex-1 px-1.5 py-0.5 text-[10px] border border-[#D8D8D8] rounded font-mono font-medium outline-none focus:border-[#1C6048] disabled:opacity-50"
+                          />
+                          <span className="text-[9px] font-bold text-[#8A8175]">%</span>
+                          <button
+                            disabled={isLocked || idx === arr.length - 1 || arr.length <= 1}
+                            onClick={() => {
+                              const newT = arr.filter((_, i) => i !== idx);
+                              onChange("drawdownTranches", newT);
+                            }}
+                            className="p-0.5 text-red-500 hover:bg-red-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
             <AssumptionRow
               label="Loan To Value (LTV)"
@@ -11047,7 +11199,7 @@ const PropCoSettingsView = memo(
                                 Leased (Informational)
                               </span>
                             )}
-                            {assumptions.medEqProcurement === "lease_operating" && (
+                            {(assumptions.medEqProcurement || "lease_operating") === "lease_operating" && (
                               <span className="px-2 py-0.5 bg-[#9B8B70] text-white text-[9px] rounded-full uppercase tracking-wider">
                                 Pure Lease (Informational)
                               </span>
@@ -11218,7 +11370,7 @@ function AIAuditView({
 // ==========================================
 const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
   const [activeYearFilter, setActiveYearFilter] = useState("All");
-  const [selectedMonthIndex, setSelectedMonthIndex] = useState(5);
+  const [selectedMonthIndex, setSelectedMonthIndex] = useState(6);
   const [highlightCritical, setHighlightCritical] = useState(true);
   const [timelineSearch, setTimelineSearch] = useState("");
   const [showDetailPanel, setShowDetailPanel] = useState(false);
@@ -11229,7 +11381,7 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
   const [newTask, setNewTask] = useState({
     name: "",
     groupId: "design",
-    start: 5,
+    start: 6,
     duration: 4,
     progress: 0,
     owner: "",
@@ -11240,11 +11392,21 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
   const [activeMonthPicker, setActiveMonthPicker] = useState(null);
   const [tempPickerYear, setTempPickerYear] = useState(START_YEAR);
 
-  const TIMELINE_MONTHS = useMemo(
-    () => generateTimelineMonths(START_YEAR, endYear),
-    [endYear],
-  );
+  const TIMELINE_MONTHS = useMemo(() => {
+    const fullMonths = generateTimelineMonths(START_YEAR, endYear);
+    let maxM = 12;
+    groups.forEach((g) => {
+      g.tasks.forEach((t) => {
+        const endm = (parseInt(t.start) || 1) + (parseInt(t.duration) || 1) - 1;
+        if (endm > maxM) maxM = endm;
+      });
+    });
+    const targetCount = Math.min(fullMonths.length, maxM + 1);
+    return fullMonths.slice(0, targetCount);
+  }, [groups, endYear]);
+
   const maxMonths = TIMELINE_MONTHS.length;
+  const maxAvailableMonths = (endYear - START_YEAR + 1) * 12;
   const uniqueYears = useMemo(
     () =>
       [...new Set(TIMELINE_MONTHS.map((m) => m.year))].sort((a, b) => a - b),
@@ -11305,7 +11467,7 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
               else
                 parsedValue = Math.max(
                   1,
-                  Math.min(maxMonths, parseInt(value) || 1),
+                  Math.min(maxAvailableMonths, parseInt(value) || 1),
                 );
             } else if (key === "duration") {
               if (value === "") parsedValue = "";
@@ -11827,7 +11989,7 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
                 key={mName}
                 type="button"
                 style={customInlineColor}
-                disabled={globalNum > maxMonths}
+                disabled={globalNum > maxAvailableMonths}
                 onClick={(e) => {
                   e.stopPropagation();
                   picker.onSelect(globalNum);
@@ -11969,8 +12131,8 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
                         const colorInfo = getBlockColorInfo(block);
                         const activeCount = block.activeTaskIds.length;
                         let isCurrent =
-                          5 >= block.startMonth && 5 <= block.endMonth;
-                        const dotClass = `w-2 h-2 rounded-full ${colorInfo.dot} ${isCurrent ? "animate-pulse ring-2 ring-offset-1 ring-emerald-500" : ""}`;
+                          6 >= block.startMonth && 6 <= block.endMonth;
+                        const dotClass = `w-2 h-2 rounded-full ${colorInfo.dot} ${isCurrent ? "ring-2 ring-offset-1 ring-emerald-500" : ""}`;
                         const rangeLabel =
                           block.startMonth === block.endMonth
                             ? block.startName
@@ -12023,7 +12185,7 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
           </div>
         </div>
 
-        <div className={`bg-white border border-[#D8D8D8] rounded-[24px] overflow-hidden shadow-sm flex flex-col justify-between transition-all duration-300 ${showDetailPanel ? "xl:col-span-6" : "xl:col-span-9"}`}>
+        <div className={`bg-white border border-[#D8D8D8] rounded-[24px] overflow-hidden shadow-sm flex flex-col justify-between transition-all duration-300 max-h-[640px] ${showDetailPanel ? "xl:col-span-6" : "xl:col-span-9"}`}>
           <div className="p-5 border-b border-[#D8D8D8] flex flex-wrap justify-between items-center bg-[#F9F8F6]/30 gap-4">
             <div className="flex items-center gap-2.5">
               <Layers size={18} className="text-[#1C6048]" />
@@ -12065,11 +12227,11 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
           </div>
           <div
             ref={timelineScrollRef}
-            className="overflow-x-auto custom-scrollbar w-full flex-1"
+            className="overflow-auto custom-scrollbar w-full flex-1"
           >
             <div
               style={{ width: `${totalTimelineWidth}px` }}
-              className="pb-6 relative select-none"
+              className="pb-24 relative select-none"
             >
               <div className="flex border-b border-[#D8D8D8] sticky top-0 bg-white z-20 shadow-sm">
                 <div className="w-44 px-4 py-3 text-[10px] font-black uppercase text-[#9B8B70] text-left border-r border-[#EFEBE7]/60 bg-white sticky left-0 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] flex items-center justify-between">
@@ -12130,24 +12292,24 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
                 </div>
               </div>
               <div className="absolute inset-0 pointer-events-none flex">
-                <div className="w-44 border-r border-[#EFEBE7]/60 bg-white/20 sticky left-0 z-10"></div>
-                <div className="w-28 border-r border-[#D8D8D8] bg-white/20 sticky left-44 z-10"></div>
-                <div className="flex">
+                <div className="w-44 border-r border-[#EFEBE7]/60 bg-white/20 sticky left-0 z-10 pointer-events-none"></div>
+                <div className="w-28 border-r border-[#D8D8D8] bg-white/20 sticky left-44 z-10 pointer-events-none"></div>
+                <div className="flex pointer-events-none">
                   {TIMELINE_MONTHS.map((m) => {
                     const isSelected = selectedMonthIndex === m.num;
                     const isInBlock = isMonthInActiveBlock(m.num);
                     const monthColor = getMonthColorInfo(m.num);
                     let guideStyle =
-                      "w-16 h-full border-r border-[#EFEBE7]/40 relative last:border-0";
+                      "w-16 h-full border-r border-[#EFEBE7]/40 relative last:border-0 pointer-events-none";
                     if (isSelected && monthColor)
                       guideStyle += ` ${monthColor.bgLight} border-l border-r border-dashed ${monthColor.borderDashed}`;
                     else if (isInBlock && monthColor)
                       guideStyle += ` ${monthColor.bgLight}`;
                     return (
                       <div key={m.num} className={guideStyle}>
-                        {m.num === 5 && (
-                          <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-0.5 bg-[#1C6048] opacity-60 z-10">
-                            <div className="absolute top-4 -translate-x-1/2 bg-[#1C6048] text-white text-[7px] px-1 rounded uppercase font-black">
+                        {m.num === 6 && (
+                          <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-0.5 bg-[#1C6048] opacity-60 z-10 pointer-events-none">
+                            <div className="absolute top-4 -translate-x-1/2 bg-[#1C6048] text-white text-[7px] px-1 rounded uppercase font-black pointer-events-none">
                               Now
                             </div>
                           </div>
@@ -12155,7 +12317,7 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
                       </div>
                     );
                   })}
-                  <div className="w-16 h-full border-r border-b border-[#EFEBE7]/20"></div>
+                  <div className="w-16 h-full border-r border-b border-[#EFEBE7]/20 pointer-events-none"></div>
                 </div>
               </div>
               <div className="relative z-10">
@@ -12176,10 +12338,16 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
                       key={group.id}
                       className="border-b border-[#D8D8D8]/50 last:border-0"
                     >
-                      <div className="flex items-center bg-[#F9F8F6]/90 border-b border-[#EFEBE7] h-10 select-none">
+                      <div
+                        onClick={() => toggleGroup(group.id)}
+                        className="flex items-stretch bg-[#F9F8F6]/90 border-b border-[#EFEBE7] h-10 select-none cursor-pointer hover:bg-[#EFEBE7]/60 active:bg-[#EFEBE7]/80 transition-colors relative z-20"
+                      >
                         <div
-                          onClick={() => toggleGroup(group.id)}
-                          className="w-72 sticky left-0 bg-[#F9F8F6] px-4 py-2 flex items-center gap-1.5 text-[10px] font-black uppercase text-[#1E2F31] cursor-pointer border-r border-[#D8D8D8] z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] shrink-0 h-full"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleGroup(group.id);
+                          }}
+                          className="w-72 sticky left-0 bg-[#F9F8F6] px-4 py-2 flex items-center gap-1.5 text-[10px] font-black uppercase text-[#1E2F31] border-r border-[#D8D8D8] z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] shrink-0 h-full cursor-pointer hover:bg-[#EFEBE7]/60 active:bg-[#EFEBE7]/80 transition-colors"
                         >
                           {isExpanded ? (
                             <ChevronDown size={14} className="text-[#9B8B70]" />
@@ -12241,7 +12409,7 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
                                   <AlertTriangle
                                     size={11}
                                     className="text-amber-500 shrink-0 select-none animate-bounce"
-                                    title={`Schedule Clash: ${taskConflicts[task.id][0]}`}
+                                    title={`Schedule Clash: Starts before predecessor task [${taskConflicts[task.id][0].toUpperCase()}] completes`}
                                   />
                                 )}
                               </div>
@@ -12319,7 +12487,7 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
         </div>
 
         {showDetailPanel && (
-          <div className="xl:col-span-3 flex flex-col gap-6">
+          <div className="xl:col-span-3 flex flex-col gap-6 max-h-[640px] overflow-y-auto custom-scrollbar">
           {isCreatingTask ? (
             <form
               onSubmit={handleTaskCreate}
@@ -12407,7 +12575,7 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
                   <input
                     type="number"
                     min="1"
-                    max={maxMonths}
+                    max={maxAvailableMonths}
                     value={newTask.duration}
                     onChange={(e) =>
                       setNewTask((p) => ({ ...p, duration: e.target.value }))
@@ -12424,7 +12592,7 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
                       const cleanVal =
                         isNaN(val) || val < 1
                           ? fallback
-                          : Math.min(maxMonths, val);
+                          : Math.min(maxAvailableMonths, val);
                       setNewTask((p) => ({ ...p, duration: cleanVal }));
                     }}
                     className="w-full p-2 bg-[#F9F8F6] border border-[#D8D8D8] rounded-xl text-xs font-bold text-[#1E2F31] focus:ring-1 focus:ring-[#1C6048] outline-none"
@@ -12657,7 +12825,7 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
                     <input
                       type="number"
                       min="1"
-                      max={maxMonths - selectedTask.start + 1}
+                      max={maxAvailableMonths - selectedTask.start + 1}
                       value={selectedTask.duration}
                       onChange={(e) =>
                         handleTaskUpdate(
@@ -12679,7 +12847,7 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
                         const cleanVal =
                           isNaN(val) || val < 1
                             ? fallback
-                            : Math.min(maxMonths - selectedTask.start + 1, val);
+                            : Math.min(maxAvailableMonths - selectedTask.start + 1, val);
                         handleTaskUpdate(
                           selectedTask.groupId,
                           selectedTask.id,
@@ -13748,6 +13916,8 @@ export default function App() {
           "includeTerminalValue",
           "exitMethod",
           "includeFinancing",
+          "drawdownScenario",
+          "drawdownTranches",
         ].includes(k)
           ? v
           : (v === "" ? 0 : parseFloat(v)) || 0,

@@ -1,4 +1,4 @@
-# Security Specification: Healthcare pre-feasibility & Capital Cascade Model
+# Security Specification: Healthcare pre-feasibility and Capital Cascade Model
 
 This document outlines the security architecture, data invariants, and hostile payloads designed to test our Firestore ruleset.
 

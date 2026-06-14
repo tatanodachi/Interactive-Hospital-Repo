@@ -1,5 +1,5 @@
 {
-  "name": "Healthcare pre-feasibility & Capital Cascade Model",
+  "name": "Healthcare pre-feasibility and Capital Cascade Model",
   "description": "A comprehensive, multi-entity, interactive financial underwriting and feasibility model for a specialized healthcare hospital facility.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

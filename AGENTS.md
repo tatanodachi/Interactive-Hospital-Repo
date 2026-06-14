@@ -1,4 +1,4 @@
-# Project Profile: Healthcare pre-feasibility & Capital Cascade Model
+# Project Profile: Healthcare pre-feasibility and Capital Cascade Model
 
 This document serves as permanent instructions and context memory for the AI coding agent working on this workspace. It ensures that the application's unique visual design, financial engine logic, and custom feature implementations are kept intact across chat sessions.
 
