@@ -1,7 +1,7 @@
 const calculatePMT = (rate, nper, pv) =>
   rate === 0 ? -(pv / nper) : -(pv * rate) / (1 - Math.pow(1 + rate, -nper));
 
-const calculatePayback = (cfs, frequency = 'annual') => {
+const calculatePayback = (cfs, frequency = "annual") => {
   if (!cfs || cfs.length === 0) return 0;
   let cumulative = 0;
   for (let i = 0; i < cfs.length; i++) {
@@ -10,15 +10,15 @@ const calculatePayback = (cfs, frequency = 'annual') => {
     if (cumulative >= 0 && prevCumulative < 0) {
       const fraction = Math.abs(prevCumulative) / (cfs[i] || 1);
       const periods = i + fraction;
-      return frequency === 'monthly' ? periods / 12 : periods;
+      return frequency === "monthly" ? periods / 12 : periods;
     }
   }
   return 0; // Return 0 if the project never catches up, preventing fake extrapolation
 };
 
-const calculateIRR = (cfs, frequency = 'annual') => {
+const calculateIRR = (cfs, frequency = "annual") => {
   if (!cfs || cfs.length === 0) return 0;
-  let rate = frequency === 'monthly' ? 0.01 : 0.1;
+  let rate = frequency === "monthly" ? 0.01 : 0.1;
   for (let i = 0; i < 150; i++) {
     let npv = 0,
       dNpv = 0;
@@ -30,7 +30,7 @@ const calculateIRR = (cfs, frequency = 'annual') => {
     if (Math.abs(dNpv) < 1e-12) break;
     let newRate = rate - npv / dNpv;
     if (Math.abs(newRate - rate) < 1e-7) {
-      if (frequency === 'monthly') {
+      if (frequency === "monthly") {
         const annualEquivalent = Math.pow(1 + newRate, 12) - 1;
         if (isNaN(annualEquivalent) || !isFinite(annualEquivalent)) return 0;
         return annualEquivalent;
@@ -42,10 +42,10 @@ const calculateIRR = (cfs, frequency = 'annual') => {
   return 0;
 };
 
-const calculateNPV = (cfs, rate, frequency = 'annual') => {
+const calculateNPV = (cfs, rate, frequency = "annual") => {
   if (!cfs) return 0;
   const discountRate = rate || 12;
-  if (frequency === 'monthly') {
+  if (frequency === "monthly") {
     const rMonthly = Math.pow(1 + discountRate / 100, 1 / 12) - 1;
     return cfs.reduce(
       (acc, val, t) => acc + (val || 0) / Math.pow(1 + rMonthly, t),
@@ -237,19 +237,21 @@ const runOpCoEngine = (assumptions, config) => {
   // Simulate 24 pre-operating months
   for (let m = 1; m <= 24; m++) {
     const isY1 = m <= 12;
-    const split = isY1 ? (assumptions.equitySplitY1 / 100) : ((100 - assumptions.equitySplitY1) / 100);
-    
+    const split = isY1
+      ? assumptions.equitySplitY1 / 100
+      : (100 - assumptions.equitySplitY1) / 100;
+
     // jvaOpex occurs 100% in Month 1, commOpex occurs across Months 19-24 (6 months) pro-rata
     let net_month = 0;
     if (isY1) {
-      net_month = (m === 1 ? -assumptions.jvaOpex : 0);
+      net_month = m === 1 ? -assumptions.jvaOpex : 0;
     } else {
-      net_month = (m >= 19 && m <= 24 ? -assumptions.commOpex / 6 : 0);
+      net_month = m >= 19 && m <= 24 ? -assumptions.commOpex / 6 : 0;
     }
 
     cumulativeNetIncome += net_month;
-    const m_pA_Outlay = -assumptions.partnerAEquity * split / 12;
-    const m_pB_Outlay = -assumptions.partnerBEquity * split / 12;
+    const m_pA_Outlay = (-assumptions.partnerAEquity * split) / 12;
+    const m_pB_Outlay = (-assumptions.partnerBEquity * split) / 12;
     partnerA_CumCF += m_pA_Outlay;
     partnerB_CumCF += m_pB_Outlay;
 
@@ -260,12 +262,17 @@ const runOpCoEngine = (assumptions, config) => {
 
   // Pre-operating years: Yr 1 & Yr 2 pushed for Annual Spreadsheets
   const preOp = [
-    { k: "jvaOpex", y: "Year 1", split: assumptions.equitySplitY1 / 100, startM: 1 },
+    {
+      k: "jvaOpex",
+      y: "Year 1",
+      split: assumptions.equitySplitY1 / 100,
+      startM: 1,
+    },
     {
       k: "commOpex",
       y: "Year 2",
       split: (100 - assumptions.equitySplitY1) / 100,
-      startM: 13
+      startM: 13,
     },
   ];
   preOp.forEach((p, idx) => {
@@ -274,12 +281,49 @@ const runOpCoEngine = (assumptions, config) => {
     const pB_Outlay = -assumptions.partnerBEquity * p.split;
 
     let monthly = {
-      ipRev: [], opRev: [], totalRev: [], totalMedSupp: [], totalDocFee: [],
-      grossProfit: [], staffCost: [], recurringOpex: [], ebitdar: [],
-      rent: [], ebitda: [], tax: [], netIncome: [], cumNI: [], distributableProfit: [],
-      retainedThisYear: [], cumulativeRetainedEarnings: [], shareA: [], shareB: [], opCoExit: [], pA_Exit: [], pB_Exit: [], ev: [],
-      pA_Div: [], pA_Net: [], pA_Outlay: [], pA_Cum: [], pB_Div: [], pB_Net: [], pB_Outlay: [], pB_Cum: [], fcf: [], bor: [], pA_Yield: [], pB_Yield: [], ipCases: [], opVisits: [],
-      otherOpex: [], adminOpex: [], utilOpex: [], mktgOpex: [], operatorOpex: [], insOpex: []
+      ipRev: [],
+      opRev: [],
+      totalRev: [],
+      totalMedSupp: [],
+      totalDocFee: [],
+      grossProfit: [],
+      staffCost: [],
+      recurringOpex: [],
+      ebitdar: [],
+      rent: [],
+      ebitda: [],
+      tax: [],
+      netIncome: [],
+      cumNI: [],
+      distributableProfit: [],
+      retainedThisYear: [],
+      cumulativeRetainedEarnings: [],
+      shareA: [],
+      shareB: [],
+      opCoExit: [],
+      pA_Exit: [],
+      pB_Exit: [],
+      ev: [],
+      pA_Div: [],
+      pA_Net: [],
+      pA_Outlay: [],
+      pA_Cum: [],
+      pB_Div: [],
+      pB_Net: [],
+      pB_Outlay: [],
+      pB_Cum: [],
+      fcf: [],
+      bor: [],
+      pA_Yield: [],
+      pB_Yield: [],
+      ipCases: [],
+      opVisits: [],
+      otherOpex: [],
+      adminOpex: [],
+      utilOpex: [],
+      mktgOpex: [],
+      operatorOpex: [],
+      insOpex: [],
     };
 
     for (let m = 0; m < 12; m++) {
@@ -293,13 +337,13 @@ const runOpCoEngine = (assumptions, config) => {
 
       let m_recOpex, m_ebitdar, m_ebitda, m_netInc;
       if (p.k === "jvaOpex") {
-        m_recOpex = (m === 0) ? assumptions.jvaOpex : 0;
+        m_recOpex = m === 0 ? assumptions.jvaOpex : 0;
         m_ebitdar = -m_recOpex;
         m_ebitda = -m_recOpex;
         m_netInc = -m_recOpex;
       } else {
         // commOpex occurs across Months 19-24 (indices 6 to 11 of Year 2, which is m >= 6)
-        m_recOpex = (m >= 6) ? (assumptions.commOpex / 6) : 0;
+        m_recOpex = m >= 6 ? assumptions.commOpex / 6 : 0;
         m_ebitdar = -m_recOpex;
         m_ebitda = -m_recOpex;
         m_netInc = -m_recOpex;
@@ -324,7 +368,8 @@ const runOpCoEngine = (assumptions, config) => {
       if (p.k === "jvaOpex") {
         cum_net_up_to_month = -assumptions.jvaOpex;
       } else {
-        const commOpexExpensed = (m >= 6) ? (m - 5) * (assumptions.commOpex / 6) : 0;
+        const commOpexExpensed =
+          m >= 6 ? (m - 5) * (assumptions.commOpex / 6) : 0;
         cum_net_up_to_month = -assumptions.jvaOpex - commOpexExpensed;
       }
       monthly.cumNI.push(cum_net_up_to_month);
@@ -347,8 +392,10 @@ const runOpCoEngine = (assumptions, config) => {
         pA_CumVal = (pA_Outlay / 12) * (m + 1);
         pB_CumVal = (pB_Outlay / 12) * (m + 1);
       } else {
-        const pA_Yr1_total = -assumptions.partnerAEquity * (assumptions.equitySplitY1 / 100);
-        const pB_Yr1_total = -assumptions.partnerBEquity * (assumptions.equitySplitY1 / 100);
+        const pA_Yr1_total =
+          -assumptions.partnerAEquity * (assumptions.equitySplitY1 / 100);
+        const pB_Yr1_total =
+          -assumptions.partnerBEquity * (assumptions.equitySplitY1 / 100);
         pA_CumVal = pA_Yr1_total + (pA_Outlay / 12) * (m + 1);
         pB_CumVal = pB_Yr1_total + (pB_Outlay / 12) * (m + 1);
       }
@@ -390,7 +437,10 @@ const runOpCoEngine = (assumptions, config) => {
       ebitda: net,
       tax: 0,
       netIncome: net,
-      cumNI: idx === 0 ? -assumptions.jvaOpex : -assumptions.jvaOpex - assumptions.commOpex,
+      cumNI:
+        idx === 0
+          ? -assumptions.jvaOpex
+          : -assumptions.jvaOpex - assumptions.commOpex,
       distributableProfit: 0,
       retainedThisYear: 0,
       cumulativeRetainedEarnings: 0,
@@ -399,12 +449,20 @@ const runOpCoEngine = (assumptions, config) => {
       pA_Outlay,
       pA_Div: 0,
       pA_Net: pA_Outlay,
-      pA_Cum: idx === 0 ? pA_Outlay : pA_Outlay + (-assumptions.partnerAEquity * (assumptions.equitySplitY1 / 100)),
+      pA_Cum:
+        idx === 0
+          ? pA_Outlay
+          : pA_Outlay +
+            -assumptions.partnerAEquity * (assumptions.equitySplitY1 / 100),
       pA_Yield: 0,
       pB_Outlay,
       pB_Div: 0,
       pB_Net: pB_Outlay,
-      pB_Cum: idx === 0 ? pB_Outlay : pB_Outlay + (-assumptions.partnerBEquity * (assumptions.equitySplitY1 / 100)),
+      pB_Cum:
+        idx === 0
+          ? pB_Outlay
+          : pB_Outlay +
+            -assumptions.partnerBEquity * (assumptions.equitySplitY1 / 100),
       pB_Yield: 0,
       fcf: pA_Outlay + pB_Outlay,
       ebitdaMargin: 0,
@@ -421,8 +479,12 @@ const runOpCoEngine = (assumptions, config) => {
   // Operating years
   for (let i = 1; i <= projYears; i++) {
     const currentYear = 2025 + i;
-    const daysInYear = ((currentYear % 4 === 0 && currentYear % 100 !== 0) || currentYear % 400 === 0) ? 366 : 365;
-    
+    const daysInYear =
+      (currentYear % 4 === 0 && currentYear % 100 !== 0) ||
+      currentYear % 400 === 0
+        ? 366
+        : 365;
+
     let bor = Math.min(
       assumptions.borMax / 100,
       assumptions.borStart / 100 + (i - 1) * (assumptions.borIncrement / 100),
@@ -500,12 +562,49 @@ const runOpCoEngine = (assumptions, config) => {
 
     // Run 12 months for Operating Year i
     let monthly = {
-      ipRev: [], opRev: [], totalRev: [], totalMedSupp: [], totalDocFee: [],
-      grossProfit: [], staffCost: [], recurringOpex: [], ebitdar: [],
-      rent: [], ebitda: [], tax: [], netIncome: [], cumNI: [], distributableProfit: [],
-      retainedThisYear: [], cumulativeRetainedEarnings: [], shareA: [], shareB: [], opCoExit: [], pA_Exit: [], pB_Exit: [], ev: [],
-      pA_Div: [], pA_Net: [], pA_Outlay: [], pA_Cum: [], pB_Div: [], pB_Net: [], pB_Outlay: [], pB_Cum: [], fcf: [], bor: [], pA_Yield: [], pB_Yield: [], ipCases: [], opVisits: [],
-      otherOpex: [], adminOpex: [], utilOpex: [], mktgOpex: [], operatorOpex: [], insOpex: []
+      ipRev: [],
+      opRev: [],
+      totalRev: [],
+      totalMedSupp: [],
+      totalDocFee: [],
+      grossProfit: [],
+      staffCost: [],
+      recurringOpex: [],
+      ebitdar: [],
+      rent: [],
+      ebitda: [],
+      tax: [],
+      netIncome: [],
+      cumNI: [],
+      distributableProfit: [],
+      retainedThisYear: [],
+      cumulativeRetainedEarnings: [],
+      shareA: [],
+      shareB: [],
+      opCoExit: [],
+      pA_Exit: [],
+      pB_Exit: [],
+      ev: [],
+      pA_Div: [],
+      pA_Net: [],
+      pA_Outlay: [],
+      pA_Cum: [],
+      pB_Div: [],
+      pB_Net: [],
+      pB_Outlay: [],
+      pB_Cum: [],
+      fcf: [],
+      bor: [],
+      pA_Yield: [],
+      pB_Yield: [],
+      ipCases: [],
+      opVisits: [],
+      otherOpex: [],
+      adminOpex: [],
+      utilOpex: [],
+      mktgOpex: [],
+      operatorOpex: [],
+      insOpex: [],
     };
 
     let year_ipRev = 0,
@@ -538,7 +637,7 @@ const runOpCoEngine = (assumptions, config) => {
 
     for (let m = 1; m <= 12; m++) {
       const days = new Date(currentYear, m, 0).getDate();
-      
+
       let m_ipCases = ipCases * (days / daysInYear);
       let m_opVisits = opVisits * (days / daysInYear);
 
@@ -551,19 +650,31 @@ const runOpCoEngine = (assumptions, config) => {
       let m_staffCost = staffCost * (days / daysInYear);
       let m_recurringOpex = recurringOpex * (days / daysInYear);
 
-      let m_adminOpex = ((assumptions.adminExpRate || 0) / 100) * totalRev * (days / daysInYear);
-      let m_utilOpex = ((assumptions.utilExpRate || 0) / 100) * totalRev * (days / daysInYear);
-      let m_mktgOpex = ((assumptions.mktgExpRate || 0) / 100) * totalRev * (days / daysInYear);
-      let m_operatorOpex = ((assumptions.operatorFeeRate || 0) / 100) * totalRev * (days / daysInYear);
-      let m_insOpex = ((assumptions.insuranceMonthly || 0) * 12 / 1000) * (days / daysInYear);
-      let m_otherOpex = m_adminOpex + m_utilOpex + m_mktgOpex + m_operatorOpex + m_insOpex;
+      let m_adminOpex =
+        ((assumptions.adminExpRate || 0) / 100) *
+        totalRev *
+        (days / daysInYear);
+      let m_utilOpex =
+        ((assumptions.utilExpRate || 0) / 100) * totalRev * (days / daysInYear);
+      let m_mktgOpex =
+        ((assumptions.mktgExpRate || 0) / 100) * totalRev * (days / daysInYear);
+      let m_operatorOpex =
+        ((assumptions.operatorFeeRate || 0) / 100) *
+        totalRev *
+        (days / daysInYear);
+      let m_insOpex =
+        (((assumptions.insuranceMonthly || 0) * 12) / 1000) *
+        (days / daysInYear);
+      let m_otherOpex =
+        m_adminOpex + m_utilOpex + m_mktgOpex + m_operatorOpex + m_insOpex;
 
       let m_ebitdar = ebitdar * (days / daysInYear);
 
       // Distributed monthly:
       let m_rent = annualRent * (days / daysInYear);
       let m_ebitda = m_ebitdar - m_rent;
-      let m_tax = m_ebitda > 0 ? m_ebitda * (assumptions.corporateTax / 100) : 0;
+      let m_tax =
+        m_ebitda > 0 ? m_ebitda * (assumptions.corporateTax / 100) : 0;
       let m_netIncome = m_ebitda - m_tax;
 
       let prevCumNI = cumulativeNetIncome;
@@ -580,13 +691,19 @@ const runOpCoEngine = (assumptions, config) => {
       let m_distributableProfit =
         m_availableForDistribution *
         ((assumptions.dividendPayoutRatio ?? 100) / 100);
-      let m_retainedThisYear = m_availableForDistribution - m_distributableProfit;
+      let m_retainedThisYear =
+        m_availableForDistribution - m_distributableProfit;
       cumulativeRetainedEarnings += m_retainedThisYear;
 
-      let m_shareA = m_distributableProfit * (assumptions.sharingPercentA / 100);
-      let m_shareB = m_distributableProfit * ((100 - assumptions.sharingPercentA) / 100);
+      let m_shareA =
+        m_distributableProfit * (assumptions.sharingPercentA / 100);
+      let m_shareB =
+        m_distributableProfit * ((100 - assumptions.sharingPercentA) / 100);
 
-      let m_ev = 0, m_opCoExit = 0, m_pA_Exit = 0, m_pB_Exit = 0;
+      let m_ev = 0,
+        m_opCoExit = 0,
+        m_pA_Exit = 0,
+        m_pB_Exit = 0;
       if (exitYear !== null && i === exitYear && m === 12) {
         let annualEbitda = ebitdar - annualRent;
         m_ev = annualEbitda * (assumptions.exitMultiple || 30);
@@ -598,13 +715,14 @@ const runOpCoEngine = (assumptions, config) => {
         m_pB_Exit = m_opCoExit * ((100 - assumptions.sharingPercentA) / 100);
       }
 
-      partnerA_CumCF += (m_shareA + m_pA_Exit);
-      partnerB_CumCF += (m_shareB + m_pB_Exit);
+      partnerA_CumCF += m_shareA + m_pA_Exit;
+      partnerB_CumCF += m_shareB + m_pB_Exit;
 
       partnerACfsMonthly.push(m_shareA + m_pA_Exit);
       partnerBCfsMonthly.push(m_shareB + m_pB_Exit);
 
-      const wcOpex_month = (i === 1 && m === 1) ? assumptions.workingCapitalOpex : 0;
+      const wcOpex_month =
+        i === 1 && m === 1 ? assumptions.workingCapitalOpex : 0;
       let m_fcf = m_netIncome + wcOpex_month + m_opCoExit;
       projectCfsMonthly.push(m_fcf);
 
@@ -650,8 +768,16 @@ const runOpCoEngine = (assumptions, config) => {
       monthly.pB_Outlay.push(0);
       monthly.fcf.push(m_fcf);
       monthly.bor.push(bor * 100);
-      monthly.pA_Yield.push(assumptions.partnerAEquity > 0 ? (m_shareA / assumptions.partnerAEquity) * 100 : 0);
-      monthly.pB_Yield.push(assumptions.partnerBEquity > 0 ? (m_shareB / assumptions.partnerBEquity) * 100 : 0);
+      monthly.pA_Yield.push(
+        assumptions.partnerAEquity > 0
+          ? (m_shareA / assumptions.partnerAEquity) * 100
+          : 0,
+      );
+      monthly.pB_Yield.push(
+        assumptions.partnerBEquity > 0
+          ? (m_shareB / assumptions.partnerBEquity) * 100
+          : 0,
+      );
 
       // Accumulate monthly aggregates for Annual Spreadsheets
       year_ipRev += m_ipRev;
@@ -748,9 +874,13 @@ const runOpCoEngine = (assumptions, config) => {
         assumptions.partnerBEquity > 0
           ? (year_shareB / assumptions.partnerBEquity) * 100
           : 0,
-      fcf: year_netIncome + (i === 1 ? assumptions.workingCapitalOpex : 0) + year_opCoExit,
+      fcf:
+        year_netIncome +
+        (i === 1 ? assumptions.workingCapitalOpex : 0) +
+        year_opCoExit,
       ebitdaMargin: year_totalRev > 0 ? (year_ebitda / year_totalRev) * 100 : 0,
-      ebitdarMargin: year_totalRev > 0 ? (year_ebitdar / year_totalRev) * 100 : 0,
+      ebitdarMargin:
+        year_totalRev > 0 ? (year_ebitdar / year_totalRev) * 100 : 0,
       netMargin: year_totalRev > 0 ? (year_netIncome / year_totalRev) * 100 : 0,
       roe: totalEquity > 0 ? (year_netIncome / totalEquity) * 100 : 0,
       breakEvenBor: breakEvenBor * 100,
@@ -791,7 +921,10 @@ const runOpCoEngine = (assumptions, config) => {
       adminOpex: annualData.reduce((acc, d) => acc + (d.adminOpex || 0), 0),
       utilOpex: annualData.reduce((acc, d) => acc + (d.utilOpex || 0), 0),
       mktgOpex: annualData.reduce((acc, d) => acc + (d.mktgOpex || 0), 0),
-      operatorOpex: annualData.reduce((acc, d) => acc + (d.operatorOpex || 0), 0),
+      operatorOpex: annualData.reduce(
+        (acc, d) => acc + (d.operatorOpex || 0),
+        0,
+      ),
       insOpex: annualData.reduce((acc, d) => acc + (d.insOpex || 0), 0),
       ebitdar: annualData.reduce((acc, d) => acc + (d.ebitdar || 0), 0),
       rent: annualData.reduce((acc, d) => acc + (d.rent || 0), 0),
@@ -815,12 +948,18 @@ const runOpCoEngine = (assumptions, config) => {
       pB_Exit: annualData.reduce((acc, d) => acc + (d.pB_Exit || 0), 0),
       pA_Outlay: annualData.reduce((acc, d) => acc + (d.pA_Outlay || 0), 0),
       pB_Outlay: annualData.reduce((acc, d) => acc + (d.pB_Outlay || 0), 0),
-      ebitdarMargin: annualData.reduce((acc, d) => acc + (d.totalRev || 0), 0) > 0
-        ? (annualData.reduce((acc, d) => acc + (d.ebitdar || 0), 0) / annualData.reduce((acc, d) => acc + (d.totalRev || 0), 0)) * 100
-        : 0,
-      netMargin: annualData.reduce((acc, d) => acc + (d.totalRev || 0), 0) > 0
-        ? (annualData.reduce((acc, d) => acc + (d.netIncome || 0), 0) / annualData.reduce((acc, d) => acc + (d.totalRev || 0), 0)) * 100
-        : 0,
+      ebitdarMargin:
+        annualData.reduce((acc, d) => acc + (d.totalRev || 0), 0) > 0
+          ? (annualData.reduce((acc, d) => acc + (d.ebitdar || 0), 0) /
+              annualData.reduce((acc, d) => acc + (d.totalRev || 0), 0)) *
+            100
+          : 0,
+      netMargin:
+        annualData.reduce((acc, d) => acc + (d.totalRev || 0), 0) > 0
+          ? (annualData.reduce((acc, d) => acc + (d.netIncome || 0), 0) /
+              annualData.reduce((acc, d) => acc + (d.totalRev || 0), 0)) *
+            100
+          : 0,
     },
     opsMetrics: {
       stabilizedVolume:
@@ -835,7 +974,9 @@ const runOpCoEngine = (assumptions, config) => {
           : 0,
       averageRevPab:
         assumptions.beds > 0 && operatingData.length > 0
-          ? (operatingData.reduce((acc, y) => acc + (y.totalRev || 0), 0) / operatingData.length) / assumptions.beds
+          ? operatingData.reduce((acc, y) => acc + (y.totalRev || 0), 0) /
+            operatingData.length /
+            assumptions.beds
           : 0,
       ebitdaPerBed:
         assumptions.beds > 0
@@ -854,11 +995,15 @@ const runOpCoEngine = (assumptions, config) => {
       workingCapitalOpex: assumptions.workingCapitalOpex ?? 64.671175,
     },
     totalEquity,
-    projectIRR: calculateIRR(projectCfsMonthly, 'monthly'),
-    projectNPV: calculateNPV(projectCfsMonthly, assumptions.discountRate, 'monthly'),
+    projectIRR: calculateIRR(projectCfsMonthly, "monthly"),
+    projectNPV: calculateNPV(
+      projectCfsMonthly,
+      assumptions.discountRate,
+      "monthly",
+    ),
     partnerA: {
-      irr: calculateIRR(partnerACfsMonthly, 'monthly'),
-      payback: calculatePayback(partnerACfsMonthly, 'monthly'),
+      irr: calculateIRR(partnerACfsMonthly, "monthly"),
+      payback: calculatePayback(partnerACfsMonthly, "monthly"),
       totalCash: annualData.reduce(
         (acc, d) => acc + (d.shareA || 0) + (d.pA_Exit || 0),
         0,
@@ -877,8 +1022,8 @@ const runOpCoEngine = (assumptions, config) => {
           : 0,
     },
     partnerB: {
-      irr: calculateIRR(partnerBCfsMonthly, 'monthly'),
-      payback: calculatePayback(partnerBCfsMonthly, 'monthly'),
+      irr: calculateIRR(partnerBCfsMonthly, "monthly"),
+      payback: calculatePayback(partnerBCfsMonthly, "monthly"),
       totalCash: annualData.reduce(
         (acc, d) => acc + (d.shareB || 0) + (d.pB_Exit || 0),
         0,
@@ -907,21 +1052,31 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
   const projYears = Math.min(requestedYears, 30);
 
   // Link Timeline Capex
-  const allTasks = (groups || []).flatMap(g => g.tasks || []);
+  const allTasks = (groups || []).flatMap((g) => g.tasks || []);
   const hasTimeline = allTasks.length > 0;
 
-  const commOpeningTask = allTasks.find(t => t.id === "t13" || t.name.toLowerCase().includes("commercial opening"));
-  const totalDevMonths = hasTimeline && commOpeningTask ? Math.max(1, commOpeningTask.start - 1) : (assumptions.devDurationMonths || 24);
+  const commOpeningTask = allTasks.find(
+    (t) =>
+      t.id === "t13" || t.name.toLowerCase().includes("commercial opening"),
+  );
+  const totalDevMonths =
+    hasTimeline && commOpeningTask
+      ? Math.max(1, commOpeningTask.start - 1)
+      : assumptions.devDurationMonths || 24;
 
   const getTaskTimingDistribution = (matchStrs) => {
     const monthly = new Array(projYears * 12).fill(0);
-    const tasks = allTasks.filter(t => matchStrs.some(str => t.name.toLowerCase().includes(str.toLowerCase())));
+    const tasks = allTasks.filter((t) =>
+      matchStrs.some((str) => t.name.toLowerCase().includes(str.toLowerCase())),
+    );
     if (tasks.length === 0) return null;
 
     let totalActiveMonths = 0;
-    tasks.forEach(task => { totalActiveMonths += Math.max(1, task.duration); });
+    tasks.forEach((task) => {
+      totalActiveMonths += Math.max(1, task.duration);
+    });
 
-    tasks.forEach(task => {
+    tasks.forEach((task) => {
       const s = Math.max(0, task.start - 1);
       const d = Math.max(1, task.duration);
       for (let m = s; m < s + d && m < monthly.length; m++) {
@@ -931,13 +1086,39 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
     return monthly;
   };
 
-  const constrTiming = getTaskTimingDistribution(["structure", "construction", "piling", "foundation", "mep", "civil", "bunker"]);
-  const eqTiming = getTaskTimingDistribution(["asset lease", "equipment", "medical equip"]);
+  const constrTiming = getTaskTimingDistribution([
+    "structure",
+    "construction",
+    "piling",
+    "foundation",
+    "mep",
+    "civil",
+    "bunker",
+  ]);
+  const eqTiming = getTaskTimingDistribution([
+    "asset lease",
+    "equipment",
+    "medical equip",
+  ]);
   const infraTiming = getTaskTimingDistribution(["infrastructure"]);
-  const ffeTiming = getTaskTimingDistribution(["ff&e", "interior", "fit-out", "furniture"]);
+  const ffeTiming = getTaskTimingDistribution([
+    "ff&e",
+    "interior",
+    "fit-out",
+    "furniture",
+  ]);
   const sharingTiming = getTaskTimingDistribution(["sharing"]);
-  const consultantTiming = getTaskTimingDistribution(["consultant", "feasibility", "architectural", "layouts"]);
-  const licenseTiming = getTaskTimingDistribution(["licens", "permit", "clearance"]);
+  const consultantTiming = getTaskTimingDistribution([
+    "consultant",
+    "feasibility",
+    "architectural",
+    "layouts",
+  ]);
+  const licenseTiming = getTaskTimingDistribution([
+    "licens",
+    "permit",
+    "clearance",
+  ]);
   const landTiming = getTaskTimingDistribution(["land"]);
 
   let exitYear = null;
@@ -965,7 +1146,8 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
   const medEqFullValue = assumptions.includeMedEq
     ? (assumptions.capexMedEqQty * assumptions.capexMedEqPrice) / 1000
     : 0;
-  const medEqCost = assumptions.medEqProcurement === "lease_operating" ? 0 : medEqFullValue;
+  const medEqCost =
+    assumptions.medEqProcurement === "lease_operating" ? 0 : medEqFullValue;
   const infraCost =
     (assumptions.capexInfraQty * assumptions.capexInfraPrice) / 1000;
   const ffeCost = assumptions.includeFFE
@@ -973,42 +1155,73 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
     : 0;
   const sharingDevCost =
     (assumptions.capexSharingDevQty * assumptions.capexSharingDevPrice) / 1000;
-  const totalHardCosts = buildCost + medEqCost + infraCost + ffeCost + sharingDevCost;
+  const totalHardCosts =
+    buildCost + medEqCost + infraCost + ffeCost + sharingDevCost;
 
-  const upfrontMedEq = (assumptions.medEqProcurement !== "lease" && assumptions.medEqProcurement !== "lease_operating") ? medEqCost : 0;
+  const upfrontMedEq =
+    assumptions.medEqProcurement !== "lease" &&
+    assumptions.medEqProcurement !== "lease_operating"
+      ? medEqCost
+      : 0;
   const leasedMedEq = medEqCost - upfrontMedEq;
 
   const consultantBase = buildCost + ffeCost + infraCost + medEqFullValue;
   const licenseBase = consultantBase;
 
-  const upfrontConsultantCost = consultantBase * ((assumptions.capexConsultantPct || 0) / 100);
-  const upfrontLicenseCost = licenseBase * ((assumptions.capexLicensePct || 0) / 100);
+  const upfrontConsultantCost =
+    consultantBase * ((assumptions.capexConsultantPct || 0) / 100);
+  const upfrontLicenseCost =
+    licenseBase * ((assumptions.capexLicensePct || 0) / 100);
   const deferredConsultantCost = 0;
   const deferredLicenseCost = 0;
-  
+
   const consultantCost = upfrontConsultantCost + deferredConsultantCost;
   const licenseCost = upfrontLicenseCost + deferredLicenseCost;
 
-  const upfrontVatBase = upfrontConsultantCost + buildCost + ffeCost + infraCost + upfrontMedEq + sharingDevCost;
+  const upfrontVatBase =
+    upfrontConsultantCost +
+    buildCost +
+    ffeCost +
+    infraCost +
+    upfrontMedEq +
+    sharingDevCost;
   const upfrontVatCost = upfrontVatBase * ((assumptions.capexVat || 0) / 100);
   const deferredVatBase = deferredConsultantCost + leasedMedEq;
   const deferredVatCost = deferredVatBase * ((assumptions.capexVat || 0) / 100);
-  
+
   const vatCost = upfrontVatCost + deferredVatCost;
 
   const carCost = buildCost * ((assumptions.devCarPct || 0) / 100);
   // totalDevMonths is pre-calculated based on the timeline above
   const devGaTotalCost = (assumptions.devGaMonthly || 0) * totalDevMonths;
 
-  const upfrontContingencyBase = upfrontLicenseCost + upfrontConsultantCost + buildCost + ffeCost + infraCost + sharingDevCost + upfrontVatCost + upfrontMedEq;
-  const upfrontContingencyCost = upfrontContingencyBase * ((assumptions.capexContingencyPct || 0) / 100);
-  const deferredContingencyBase = deferredLicenseCost + deferredConsultantCost + leasedMedEq + deferredVatCost;
-  const deferredContingencyCost = deferredContingencyBase * ((assumptions.capexContingencyPct || 0) / 100);
+  const upfrontContingencyBase =
+    upfrontLicenseCost +
+    upfrontConsultantCost +
+    buildCost +
+    ffeCost +
+    infraCost +
+    sharingDevCost +
+    upfrontVatCost +
+    upfrontMedEq;
+  const upfrontContingencyCost =
+    upfrontContingencyBase * ((assumptions.capexContingencyPct || 0) / 100);
+  const deferredContingencyBase =
+    deferredLicenseCost +
+    deferredConsultantCost +
+    leasedMedEq +
+    deferredVatCost;
+  const deferredContingencyCost =
+    deferredContingencyBase * ((assumptions.capexContingencyPct || 0) / 100);
 
   const contingencyCost = upfrontContingencyCost + deferredContingencyCost;
 
-  const deferredSoftCosts = deferredConsultantCost + deferredLicenseCost + deferredVatCost + deferredContingencyCost;
-  
+  const deferredSoftCosts =
+    deferredConsultantCost +
+    deferredLicenseCost +
+    deferredVatCost +
+    deferredContingencyCost;
+
   const totalCapex =
     landCost +
     buildCost +
@@ -1028,7 +1241,7 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
   const totalSoftCosts = totalCapex - landCost - totalHardCosts;
   const upfrontSoftCosts = totalSoftCosts - deferredSoftCosts;
   const effectiveLtv = assumptions.includeFinancing ? assumptions.ltv : 0;
-  
+
   const totalCapexExLand = upfrontTotalCapex - landCost;
   const totalDebt = Math.max(0, totalCapexExLand) * (effectiveLtv / 100);
   const totalEquity = upfrontTotalCapex - totalDebt;
@@ -1042,7 +1255,7 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
   const postIoPmtMonthly = Math.abs(
     calculatePMT(rateMonthly, amortizingTenorMonths, totalDebt),
   );
-  
+
   const totalDebtExLand = totalDebt;
   const totalEquityExLand = Math.max(0, totalCapexExLand) - totalDebtExLand;
   const postIoPmtExLandMonthly = Math.abs(
@@ -1062,11 +1275,13 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
 
   // Proportional Contingency allocation
   const buildContingency = (buildCost + buildVat) * contingencyRate;
-  const medEqContingencyUpfront = (upfrontMedEq + medEqVatUpfront) * contingencyRate;
+  const medEqContingencyUpfront =
+    (upfrontMedEq + medEqVatUpfront) * contingencyRate;
   const infraContingency = (infraCost + infraVat) * contingencyRate;
   const ffeContingency = (ffeCost + ffeVat) * contingencyRate;
   const sharingContingency = (sharingDevCost + sharingVat) * contingencyRate;
-  const consultantContingency = (upfrontConsultantCost + consultantVat) * contingencyRate;
+  const consultantContingency =
+    (upfrontConsultantCost + consultantVat) * contingencyRate;
   const licenseContingency = upfrontLicenseCost * contingencyRate;
 
   const buildBasis = buildCost;
@@ -1074,16 +1289,13 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
   const infraBasis = infraCost;
   const ffeBasis = ffeCost;
   const sharingBasis = sharingDevCost;
-  
+
   let consultantBasis = upfrontConsultantCost;
   let licenseBasis = upfrontLicenseCost;
   let vatBasis = upfrontVatCost;
   let contingencyBasis = upfrontContingencyCost;
 
-  const devYears = Math.max(
-    1,
-    Math.ceil(totalDevMonths / 12),
-  );
+  const devYears = Math.max(1, Math.ceil(totalDevMonths / 12));
 
   let outstandingDebt = 0,
     outstandingDebtExLand = 0,
@@ -1106,7 +1318,8 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
 
   const genericCapex = totalCapex - consultantCost - licenseCost - leasedMedEq;
   const genericEquity = genericCapex * (1 - effectiveLtv / 100);
-  const genericEquityExLand = (genericCapex - landCost) * (1 - effectiveLtv / 100);
+  const genericEquityExLand =
+    (genericCapex - landCost) * (1 - effectiveLtv / 100);
 
   let cumNonLandCapex = 0;
   let cumDebtDrawn = 0;
@@ -1115,44 +1328,102 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
   for (let md = 1; md <= totalDevMonths; md++) {
     const devYearOfThisMonth = Math.ceil(md / 12);
     const m_ga = assumptions.devGaMonthly || 0;
-    
-    let m_hard = 0, m_soft = 0, capDrawBase_month = 0, eqDrawBase_month = 0, eqDrawExLandBase_month = 0;
+
+    let m_hard = 0,
+      m_soft = 0,
+      capDrawBase_month = 0,
+      eqDrawBase_month = 0,
+      eqDrawExLandBase_month = 0;
     let fallback_m_car = 0;
-    
-    let m_build = 0, m_eq = 0, m_infra = 0, m_ffe = 0, m_sharing = 0;
-    let m_consultant = 0, m_license = 0, m_vat = 0, m_contingency = 0;
-    
+
+    let m_build = 0,
+      m_eq = 0,
+      m_infra = 0,
+      m_ffe = 0,
+      m_sharing = 0;
+    let m_consultant = 0,
+      m_license = 0,
+      m_vat = 0,
+      m_contingency = 0;
+
     if (hasTimeline) {
       // Hard Costs Month
-      const t_land = landTiming ? landCost * (landTiming[md - 1] || 0) : (md === 1 ? landCost : 0);
-      const t_build = constrTiming ? buildCost * (constrTiming[md - 1] || 0) : buildCost / totalDevMonths;
-      const t_eq = eqTiming ? upfrontMedEq * (eqTiming[md - 1] || 0) : upfrontMedEq / totalDevMonths;
-      const t_infra = infraTiming ? infraCost * (infraTiming[md - 1] || 0) : infraCost / totalDevMonths;
-      const t_ffe = ffeTiming ? ffeCost * (ffeTiming[md - 1] || 0) : ffeCost / totalDevMonths;
-      const t_sharing = sharingTiming ? sharingDevCost * (sharingTiming[md - 1] || 0) : sharingDevCost / totalDevMonths;
+      const t_land = landTiming
+        ? landCost * (landTiming[md - 1] || 0)
+        : md === 1
+          ? landCost
+          : 0;
+      const t_build = constrTiming
+        ? buildCost * (constrTiming[md - 1] || 0)
+        : buildCost / totalDevMonths;
+      const t_eq = eqTiming
+        ? upfrontMedEq * (eqTiming[md - 1] || 0)
+        : upfrontMedEq / totalDevMonths;
+      const t_infra = infraTiming
+        ? infraCost * (infraTiming[md - 1] || 0)
+        : infraCost / totalDevMonths;
+      const t_ffe = ffeTiming
+        ? ffeCost * (ffeTiming[md - 1] || 0)
+        : ffeCost / totalDevMonths;
+      const t_sharing = sharingTiming
+        ? sharingDevCost * (sharingTiming[md - 1] || 0)
+        : sharingDevCost / totalDevMonths;
 
       // Soft Costs Month
-      const t_consultant = consultantTiming ? upfrontConsultantCost * (consultantTiming[md - 1] || 0) : (md >= 2 && md <= 7 ? upfrontConsultantCost / 6 : 0);
-      const t_license = licenseTiming ? upfrontLicenseCost * (licenseTiming[md - 1] || 0) : (md === 1 ? upfrontLicenseCost : 0);
+      const t_consultant = consultantTiming
+        ? upfrontConsultantCost * (consultantTiming[md - 1] || 0)
+        : md >= 2 && md <= 7
+          ? upfrontConsultantCost / 6
+          : 0;
+      const t_license = licenseTiming
+        ? upfrontLicenseCost * (licenseTiming[md - 1] || 0)
+        : md === 1
+          ? upfrontLicenseCost
+          : 0;
 
       // Pro-rata VAT, Contingency, CAR based on core spend this month
-      const core_spend = t_build + t_eq + t_infra + t_ffe + t_sharing + t_consultant + t_license;
-      const total_core_cost = buildCost + upfrontMedEq + infraCost + ffeCost + sharingDevCost + upfrontConsultantCost + upfrontLicenseCost;
-      const pct_of_core = total_core_cost > 0 ? core_spend / total_core_cost : 1 / totalDevMonths;
-      
+      const core_spend =
+        t_build + t_eq + t_infra + t_ffe + t_sharing + t_consultant + t_license;
+      const total_core_cost =
+        buildCost +
+        upfrontMedEq +
+        infraCost +
+        ffeCost +
+        sharingDevCost +
+        upfrontConsultantCost +
+        upfrontLicenseCost;
+      const pct_of_core =
+        total_core_cost > 0 ? core_spend / total_core_cost : 1 / totalDevMonths;
+
       const t_vat = upfrontVatCost * pct_of_core;
       const t_contingency = upfrontContingencyCost * pct_of_core;
-      const t_car = constrTiming ? carCost * (constrTiming[md - 1] || 0) : carCost / totalDevMonths;
-      
+      const t_car = constrTiming
+        ? carCost * (constrTiming[md - 1] || 0)
+        : carCost / totalDevMonths;
+
       fallback_m_car = t_car;
 
-      m_build = t_build; m_eq = t_eq; m_infra = t_infra; m_ffe = t_ffe; m_sharing = t_sharing;
-      m_consultant = t_consultant; m_license = t_license; m_vat = t_vat; m_contingency = t_contingency;
+      m_build = t_build;
+      m_eq = t_eq;
+      m_infra = t_infra;
+      m_ffe = t_ffe;
+      m_sharing = t_sharing;
+      m_consultant = t_consultant;
+      m_license = t_license;
+      m_vat = t_vat;
+      m_contingency = t_contingency;
 
       m_hard = t_build + t_eq + t_infra + t_ffe + t_sharing;
       m_soft = t_consultant + t_license + t_vat + t_contingency + t_car + m_ga;
-      
-      capDrawBase_month = (landTiming ? landCost * (landTiming[md - 1] || 0) : (md === 1 ? landCost : 0)) + m_hard + m_soft; // INCLUDING LAND
+
+      capDrawBase_month =
+        (landTiming
+          ? landCost * (landTiming[md - 1] || 0)
+          : md === 1
+            ? landCost
+            : 0) +
+        m_hard +
+        m_soft; // INCLUDING LAND
       eqDrawBase_month = capDrawBase_month * (1 - effectiveLtv / 100);
       eqDrawExLandBase_month = (m_hard + m_soft) * (1 - effectiveLtv / 100);
     } else {
@@ -1167,7 +1438,8 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
           const remainingMonths = totalDevMonths - 12;
           genericCapDraw_month = (genericCapex * (1 - y1Pct)) / remainingMonths;
           genericEqDraw_month = (genericEquity * (1 - y1Pct)) / remainingMonths;
-          genericEqDrawExLand_month = (genericEquityExLand * (1 - y1Pct)) / remainingMonths;
+          genericEqDrawExLand_month =
+            (genericEquityExLand * (1 - y1Pct)) / remainingMonths;
         }
       } else {
         genericCapDraw_month = genericCapex / totalDevMonths;
@@ -1181,72 +1453,125 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       let m_licenseCost = 0;
       if (md === 1) m_licenseCost = upfrontLicenseCost;
 
-      capDrawBase_month = genericCapDraw_month + m_consultantCost + m_licenseCost;
-      eqDrawBase_month = genericEqDraw_month + (m_consultantCost + m_licenseCost) * (1 - effectiveLtv / 100);
-      eqDrawExLandBase_month = genericEqDrawExLand_month + (m_consultantCost + m_licenseCost) * (1 - effectiveLtv / 100);
+      capDrawBase_month =
+        genericCapDraw_month + m_consultantCost + m_licenseCost;
+      eqDrawBase_month =
+        genericEqDraw_month +
+        (m_consultantCost + m_licenseCost) * (1 - effectiveLtv / 100);
+      eqDrawExLandBase_month =
+        genericEqDrawExLand_month +
+        (m_consultantCost + m_licenseCost) * (1 - effectiveLtv / 100);
 
-      m_hard = upfrontTotalCapex > 0 ? (capDrawBase_month * (totalHardCosts - leasedMedEq)) / upfrontTotalCapex : 0;
-      m_soft = upfrontTotalCapex > 0 ? (capDrawBase_month * upfrontSoftCosts) / upfrontTotalCapex : 0;
-      
-      m_build = upfrontTotalCapex > 0 ? (capDrawBase_month * buildCost) / upfrontTotalCapex : 0;
-      m_eq = upfrontTotalCapex > 0 ? (capDrawBase_month * upfrontMedEq) / upfrontTotalCapex : 0;
-      m_infra = upfrontTotalCapex > 0 ? (capDrawBase_month * infraCost) / upfrontTotalCapex : 0;
-      m_ffe = upfrontTotalCapex > 0 ? (capDrawBase_month * ffeCost) / upfrontTotalCapex : 0;
-      m_sharing = upfrontTotalCapex > 0 ? (capDrawBase_month * sharingDevCost) / upfrontTotalCapex : 0;
-      
-      m_consultant = upfrontTotalCapex > 0 ? (capDrawBase_month * upfrontConsultantCost) / upfrontTotalCapex : 0;
-      m_license = upfrontTotalCapex > 0 ? (capDrawBase_month * upfrontLicenseCost) / upfrontTotalCapex : 0;
-      m_vat = upfrontTotalCapex > 0 ? (capDrawBase_month * upfrontVatCost) / upfrontTotalCapex : 0;
-      m_contingency = upfrontTotalCapex > 0 ? (capDrawBase_month * upfrontContingencyCost) / upfrontTotalCapex : 0;
+      m_hard =
+        upfrontTotalCapex > 0
+          ? (capDrawBase_month * (totalHardCosts - leasedMedEq)) /
+            upfrontTotalCapex
+          : 0;
+      m_soft =
+        upfrontTotalCapex > 0
+          ? (capDrawBase_month * upfrontSoftCosts) / upfrontTotalCapex
+          : 0;
 
-      const buildSpendMonthly = upfrontTotalCapex > 0 ? (capDrawBase_month * buildCost) / upfrontTotalCapex : 0;
+      m_build =
+        upfrontTotalCapex > 0
+          ? (capDrawBase_month * buildCost) / upfrontTotalCapex
+          : 0;
+      m_eq =
+        upfrontTotalCapex > 0
+          ? (capDrawBase_month * upfrontMedEq) / upfrontTotalCapex
+          : 0;
+      m_infra =
+        upfrontTotalCapex > 0
+          ? (capDrawBase_month * infraCost) / upfrontTotalCapex
+          : 0;
+      m_ffe =
+        upfrontTotalCapex > 0
+          ? (capDrawBase_month * ffeCost) / upfrontTotalCapex
+          : 0;
+      m_sharing =
+        upfrontTotalCapex > 0
+          ? (capDrawBase_month * sharingDevCost) / upfrontTotalCapex
+          : 0;
+
+      m_consultant =
+        upfrontTotalCapex > 0
+          ? (capDrawBase_month * upfrontConsultantCost) / upfrontTotalCapex
+          : 0;
+      m_license =
+        upfrontTotalCapex > 0
+          ? (capDrawBase_month * upfrontLicenseCost) / upfrontTotalCapex
+          : 0;
+      m_vat =
+        upfrontTotalCapex > 0
+          ? (capDrawBase_month * upfrontVatCost) / upfrontTotalCapex
+          : 0;
+      m_contingency =
+        upfrontTotalCapex > 0
+          ? (capDrawBase_month * upfrontContingencyCost) / upfrontTotalCapex
+          : 0;
+
+      const buildSpendMonthly =
+        upfrontTotalCapex > 0
+          ? (capDrawBase_month * buildCost) / upfrontTotalCapex
+          : 0;
       fallback_m_car = buildSpendMonthly * ((assumptions.devCarPct || 0) / 100);
     }
-    
+
     let m_land_final = 0;
     if (hasTimeline) {
-      m_land_final = landTiming ? landCost * (landTiming[md - 1] || 0) : (md === 1 ? landCost : 0);
+      m_land_final = landTiming
+        ? landCost * (landTiming[md - 1] || 0)
+        : md === 1
+          ? landCost
+          : 0;
     } else {
-      m_land_final = upfrontTotalCapex > 0 ? (capDrawBase_month * landCost) / upfrontTotalCapex : 0;
+      m_land_final =
+        upfrontTotalCapex > 0
+          ? (capDrawBase_month * landCost) / upfrontTotalCapex
+          : 0;
     }
-    
+
     // Track debt drawn based on capEx base month (Land is strictly equity funded)
     let m_debtDraw = 0;
     const m_nonLandCapex = Math.max(0, capDrawBase_month - m_land_final);
-    
+
     if (assumptions.drawdownScenario === "tranches" && totalCapexExLand > 0) {
       cumNonLandCapex += m_nonLandCapex;
       const progress = cumNonLandCapex / totalCapexExLand;
-      
+
       const tranches = assumptions.drawdownTranches || [20, 40, 60, 80, 100];
-      const p = (progress * 100) + 0.0001; // Allow for floating point precision
-      
+      const p = progress * 100 + 0.0001; // Allow for floating point precision
+
       let targetTrancheDebtPct = 0;
       for (let tIdx = 0; tIdx < tranches.length; tIdx++) {
-         if (p >= tranches[tIdx] || md === totalDevMonths) {
-           targetTrancheDebtPct = tranches[tIdx];
-         }
+        if (p >= tranches[tIdx] || md === totalDevMonths) {
+          targetTrancheDebtPct = tranches[tIdx];
+        }
       }
       if (md === totalDevMonths) targetTrancheDebtPct = 100;
-      
+
       const targetDebtDrawn = totalDebt * (targetTrancheDebtPct / 100);
-      
+
       m_debtDraw = Math.max(0, targetDebtDrawn - cumDebtDrawn);
       cumDebtDrawn += m_debtDraw;
     } else {
       m_debtDraw = m_nonLandCapex * (effectiveLtv / 100);
     }
     const m_debtDrawExLand = m_debtDraw;
-    
+
     // IDC calculated on PRIOR balance (before this month's draw)
     const m_idc = outstandingDebt * rateMonthly;
     const m_idcExLand = outstandingDebtExLand * rateMonthly;
-    
+
     outstandingDebt += m_debtDraw;
     outstandingDebtExLand += m_debtDrawExLand;
 
     const m_eqDraw = -(capDrawBase_month - m_debtDraw + m_idc);
-    const m_eqDrawExLand = -(Math.max(0, capDrawBase_month - m_land_final) - m_debtDrawExLand + m_idcExLand);
+    const m_eqDrawExLand = -(
+      Math.max(0, capDrawBase_month - m_land_final) -
+      m_debtDrawExLand +
+      m_idcExLand
+    );
     const m_unleveredCf = -capDrawBase_month;
 
     const projectSpend_month = m_land_final + m_hard + m_soft;
@@ -1264,7 +1589,7 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
     infraSpendMonthlyArr.push(m_infra);
     ffeSpendMonthlyArr.push(m_ffe);
     sharingSpendMonthlyArr.push(m_sharing);
-    
+
     consultantSpendMonthlyArr.push(m_consultant);
     licenseSpendMonthlyArr.push(m_license);
     vatSpendMonthlyArr.push(m_vat);
@@ -1289,39 +1614,104 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       12,
       Math.max(0, totalDevMonths - (i - 1) * 12),
     );
-    const ga_year = devGaMonthly.slice((i - 1) * 12, i * 12).reduce((a, b) => a + b, 0);
-    const car_year = devCarMonthly.slice((i - 1) * 12, i * 12).reduce((a, b) => a + b, 0);
+    const ga_year = devGaMonthly
+      .slice((i - 1) * 12, i * 12)
+      .reduce((a, b) => a + b, 0);
+    const car_year = devCarMonthly
+      .slice((i - 1) * 12, i * 12)
+      .reduce((a, b) => a + b, 0);
 
-    const eqDraw_year = equityCfsMonthly.slice((i - 1) * 12, i * 12).reduce((a, b) => a + b, 0);
-    const eqDrawExLand_year = equityCfsExLandMonthly.slice((i - 1) * 12, i * 12).reduce((a, b) => a + b, 0);
-    const unleveredCf_year = unleveredCfsMonthly.slice((i - 1) * 12, i * 12).reduce((a, b) => a + b, 0);
+    const eqDraw_year = equityCfsMonthly
+      .slice((i - 1) * 12, i * 12)
+      .reduce((a, b) => a + b, 0);
+    const eqDrawExLand_year = equityCfsExLandMonthly
+      .slice((i - 1) * 12, i * 12)
+      .reduce((a, b) => a + b, 0);
+    const unleveredCf_year = unleveredCfsMonthly
+      .slice((i - 1) * 12, i * 12)
+      .reduce((a, b) => a + b, 0);
 
-    const land_year = landSpendMonthly.slice((i - 1) * 12, i * 12).reduce((a, b) => a + b, 0);
-    const hard_year = hardSpendMonthly.slice((i - 1) * 12, i * 12).reduce((a, b) => a + b, 0);
-    const soft_year = softSpendMonthly.slice((i - 1) * 12, i * 12).reduce((a, b) => a + b, 0);
-    const totalSpend_year = totalSpendMonthly.slice((i - 1) * 12, i * 12).reduce((a, b) => a + b, 0);
-    const debtDraw_year = debtDrawsMonthly.slice((i - 1) * 12, i * 12).reduce((a, b) => a + b, 0);
+    const land_year = landSpendMonthly
+      .slice((i - 1) * 12, i * 12)
+      .reduce((a, b) => a + b, 0);
+    const hard_year = hardSpendMonthly
+      .slice((i - 1) * 12, i * 12)
+      .reduce((a, b) => a + b, 0);
+    const soft_year = softSpendMonthly
+      .slice((i - 1) * 12, i * 12)
+      .reduce((a, b) => a + b, 0);
+    const totalSpend_year = totalSpendMonthly
+      .slice((i - 1) * 12, i * 12)
+      .reduce((a, b) => a + b, 0);
+    const debtDraw_year = debtDrawsMonthly
+      .slice((i - 1) * 12, i * 12)
+      .reduce((a, b) => a + b, 0);
 
     // Detailed aggregations
-    const build_year = buildSpendMonthlyArr.slice((i - 1) * 12, i * 12).reduce((a, b) => a + b, 0);
-    const eq_year = eqSpendMonthlyArr.slice((i - 1) * 12, i * 12).reduce((a, b) => a + b, 0);
-    const infra_year = infraSpendMonthlyArr.slice((i - 1) * 12, i * 12).reduce((a, b) => a + b, 0);
-    const ffe_year = ffeSpendMonthlyArr.slice((i - 1) * 12, i * 12).reduce((a, b) => a + b, 0);
-    const sharing_year = sharingSpendMonthlyArr.slice((i - 1) * 12, i * 12).reduce((a, b) => a + b, 0);
+    const build_year = buildSpendMonthlyArr
+      .slice((i - 1) * 12, i * 12)
+      .reduce((a, b) => a + b, 0);
+    const eq_year = eqSpendMonthlyArr
+      .slice((i - 1) * 12, i * 12)
+      .reduce((a, b) => a + b, 0);
+    const infra_year = infraSpendMonthlyArr
+      .slice((i - 1) * 12, i * 12)
+      .reduce((a, b) => a + b, 0);
+    const ffe_year = ffeSpendMonthlyArr
+      .slice((i - 1) * 12, i * 12)
+      .reduce((a, b) => a + b, 0);
+    const sharing_year = sharingSpendMonthlyArr
+      .slice((i - 1) * 12, i * 12)
+      .reduce((a, b) => a + b, 0);
 
-    const consultant_year = consultantSpendMonthlyArr.slice((i - 1) * 12, i * 12).reduce((a, b) => a + b, 0);
-    const license_year = licenseSpendMonthlyArr.slice((i - 1) * 12, i * 12).reduce((a, b) => a + b, 0);
-    const vat_year = vatSpendMonthlyArr.slice((i - 1) * 12, i * 12).reduce((a, b) => a + b, 0);
-    const contingency_year = contingencySpendMonthlyArr.slice((i - 1) * 12, i * 12).reduce((a, b) => a + b, 0);
+    const consultant_year = consultantSpendMonthlyArr
+      .slice((i - 1) * 12, i * 12)
+      .reduce((a, b) => a + b, 0);
+    const license_year = licenseSpendMonthlyArr
+      .slice((i - 1) * 12, i * 12)
+      .reduce((a, b) => a + b, 0);
+    const vat_year = vatSpendMonthlyArr
+      .slice((i - 1) * 12, i * 12)
+      .reduce((a, b) => a + b, 0);
+    const contingency_year = contingencySpendMonthlyArr
+      .slice((i - 1) * 12, i * 12)
+      .reduce((a, b) => a + b, 0);
 
     let monthly = {
-      debtBalance: [], debtBalanceExLand: [], fcfe: [], fcfeExLand: [], debtDraw: [], landSpend: [],
-      buildSpend: [], eqSpend: [], infraSpend: [], ffeSpend: [], sharingSpend: [],
-      consultantSpend: [], licenseSpend: [], vatSpend: [], contingencySpend: [],
-      cumFcfe: [], cumFcfeExLand: [], devGa: [], devCar: [], gop: [], ebitda: [], ebit: [],
-      ebt: [], netIncome: [], corpTax: [], ebtExLand: [], corpTaxExLand: [],
-      interest: [], interestExLand: [], dep: [],
-      hardSpend: [], softSpend: [], totalSpend: [], unleveredCf: []
+      debtBalance: [],
+      debtBalanceExLand: [],
+      fcfe: [],
+      fcfeExLand: [],
+      debtDraw: [],
+      landSpend: [],
+      buildSpend: [],
+      eqSpend: [],
+      infraSpend: [],
+      ffeSpend: [],
+      sharingSpend: [],
+      consultantSpend: [],
+      licenseSpend: [],
+      vatSpend: [],
+      contingencySpend: [],
+      cumFcfe: [],
+      cumFcfeExLand: [],
+      devGa: [],
+      devCar: [],
+      gop: [],
+      ebitda: [],
+      ebit: [],
+      ebt: [],
+      netIncome: [],
+      corpTax: [],
+      ebtExLand: [],
+      corpTaxExLand: [],
+      interest: [],
+      interestExLand: [],
+      dep: [],
+      hardSpend: [],
+      softSpend: [],
+      totalSpend: [],
+      unleveredCf: [],
     };
     for (let m = 0; m < 12; m++) {
       const mIdx = (i - 1) * 12 + m;
@@ -1334,13 +1724,13 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       const m_soft = softSpendMonthly[mIdx] || 0;
       const m_total = totalSpendMonthly[mIdx] || 0;
       const m_debtDraw = debtDrawsMonthly[mIdx] || 0;
-      
+
       const m_build = buildSpendMonthlyArr[mIdx] || 0;
       const m_eq = eqSpendMonthlyArr[mIdx] || 0;
       const m_infra = infraSpendMonthlyArr[mIdx] || 0;
       const m_ffe = ffeSpendMonthlyArr[mIdx] || 0;
       const m_sharing = sharingSpendMonthlyArr[mIdx] || 0;
-      
+
       const m_consultant = consultantSpendMonthlyArr[mIdx] || 0;
       const m_license = licenseSpendMonthlyArr[mIdx] || 0;
       const m_vat = vatSpendMonthlyArr[mIdx] || 0;
@@ -1352,7 +1742,7 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       const m_ebitda = -(m_ga + m_car);
       const m_ebt = m_ebitda - m_idc;
       const m_ebtExLand = m_ebitda - m_idcExLand;
-      
+
       monthly.debtBalance.push(outstandingDebt);
       monthly.debtBalanceExLand.push(outstandingDebtExLand);
       monthly.fcfe.push(m_fcfe);
@@ -1383,12 +1773,19 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       monthly.interest.push(m_idc);
       monthly.interestExLand.push(m_idcExLand);
       monthly.dep.push(0);
-      monthly.cumFcfe.push(equityCfsMonthly.slice(0, mIdx + 1).reduce((a, b) => a + b, 0));
-      monthly.cumFcfeExLand.push(equityCfsExLandMonthly.slice(0, mIdx + 1).reduce((a, b) => a + b, 0));
+      monthly.cumFcfe.push(
+        equityCfsMonthly.slice(0, mIdx + 1).reduce((a, b) => a + b, 0),
+      );
+      monthly.cumFcfeExLand.push(
+        equityCfsExLandMonthly.slice(0, mIdx + 1).reduce((a, b) => a + b, 0),
+      );
     }
 
     const interest_year = monthly.interest.reduce((a, b) => a + b, 0);
-    const interestExLand_year = monthly.interestExLand.reduce((a, b) => a + b, 0);
+    const interestExLand_year = monthly.interestExLand.reduce(
+      (a, b) => a + b,
+      0,
+    );
 
     annualData.push({
       year: `Year ${i}`,
@@ -1406,8 +1803,11 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       interest: interest_year,
       interestExLand: interestExLand_year,
       dep: 0,
-      debtBalance: monthly.debtBalance[monthly.debtBalance.length - 1] || outstandingDebt,
-      debtBalanceExLand: monthly.debtBalanceExLand[monthly.debtBalanceExLand.length - 1] || outstandingDebtExLand,
+      debtBalance:
+        monthly.debtBalance[monthly.debtBalance.length - 1] || outstandingDebt,
+      debtBalanceExLand:
+        monthly.debtBalanceExLand[monthly.debtBalanceExLand.length - 1] ||
+        outstandingDebtExLand,
       devGa: ga_year,
       devCar: car_year,
       landSpend: land_year,
@@ -1428,16 +1828,19 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       fcfe: eqDraw_year,
       cumFcfe: equityCfsMonthly.slice(0, i * 12).reduce((a, b) => a + b, 0),
       fcfeExLand: eqDrawExLand_year,
-      cumFcfeExLand: equityCfsExLandMonthly.slice(0, i * 12).reduce((a, b) => a + b, 0),
+      cumFcfeExLand: equityCfsExLandMonthly
+        .slice(0, i * 12)
+        .reduce((a, b) => a + b, 0),
       monthly,
     });
   }
 
   let avgDscr = 0,
     avgYield = 0;
-  const opCoRents = opCoModelData?.annualData
-    ?.filter((d) => d.isOperating)
-    ?.map((d) => d.rent) || [];
+  const opCoRents =
+    opCoModelData?.annualData
+      ?.filter((d) => d.isOperating)
+      ?.map((d) => d.rent) || [];
   // Track book values of each component (base, vat, contingency) separately
   let bvB_base = buildCost,
     bvB_vat = buildVat,
@@ -1510,14 +1913,52 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       Math.pow(1 + assumptions.opOverheadInc / 100, i - 1);
 
     let monthly = {
-      revenue: [], maintOpex: [], taxOpex: [], overheadOpex: [], ffeReserve: [], medEqLeaseOpex: [], gop: [], ebitda: [], ebit: [],
-      interest: [], principal: [], interestExLand: [], principalExLand: [], dep: [], ebt: [],
-      corpTax: [], netIncome: [], deferredCapex: [], fcfe: [], cumFcfe: [], fcfeExLand: [], cumFcfeExLand: [], unleveredCf: [],
-      opFcfe: [], exit: [], exitExLand: [], debtBalance: [], debtBalanceExLand: [],
-      avgDscr: [], avgYield: [], yocExLand: [],
-      landSpend: [], buildSpend: [], eqSpend: [], infraSpend: [], ffeSpend: [], sharingSpend: [],
-      consultantSpend: [], licenseSpend: [], vatSpend: [], contingencySpend: [],
-      hardSpend: [], softSpend: [], totalSpend: [], debtDraw: []
+      revenue: [],
+      maintOpex: [],
+      taxOpex: [],
+      overheadOpex: [],
+      ffeReserve: [],
+      medEqLeaseOpex: [],
+      gop: [],
+      ebitda: [],
+      ebit: [],
+      interest: [],
+      principal: [],
+      interestExLand: [],
+      principalExLand: [],
+      dep: [],
+      ebt: [],
+      corpTax: [],
+      netIncome: [],
+      deferredCapex: [],
+      fcfe: [],
+      cumFcfe: [],
+      fcfeExLand: [],
+      cumFcfeExLand: [],
+      unleveredCf: [],
+      shortfallEquity: [],
+      opFcfe: [],
+      exit: [],
+      exitExLand: [],
+      debtBalance: [],
+      debtBalanceExLand: [],
+      avgDscr: [],
+      avgYield: [],
+      yocExLand: [],
+      landSpend: [],
+      buildSpend: [],
+      eqSpend: [],
+      infraSpend: [],
+      ffeSpend: [],
+      sharingSpend: [],
+      consultantSpend: [],
+      licenseSpend: [],
+      vatSpend: [],
+      contingencySpend: [],
+      hardSpend: [],
+      softSpend: [],
+      totalSpend: [],
+      debtDraw: [],
     };
 
     let year_revenue = 0,
@@ -1553,6 +1994,7 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       year_unleveredCf = 0,
       year_opFcfe = 0,
       year_opFcfeExLand = 0,
+      year_shortfallEquity = 0,
       year_exit = 0,
       year_exitExLand = 0,
       year_loanSettledAtExit = 0,
@@ -1582,30 +2024,56 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
               const m_deferredHard = leasedMedEq / 3;
               const m_defConsultant = deferredConsultantCost / 3;
               const m_defLicense = deferredLicenseCost / 3;
-              
-              const m_defMedEqVat = (leasedMedEq * (assumptions.capexVat || 0) / 100) / 3;
-              const m_defConsultantVat = (deferredConsultantCost * (assumptions.capexVat || 0) / 100) / 3;
-              
-              const m_defMedEqContingency = ((leasedMedEq + (leasedMedEq * (assumptions.capexVat || 0) / 100)) * (assumptions.capexContingencyPct || 0) / 100) / 3;
-              const m_defConsultantContingency = ((deferredConsultantCost + (deferredConsultantCost * (assumptions.capexVat || 0) / 100)) * (assumptions.capexContingencyPct || 0) / 100) / 3;
-              const m_defLicenseContingency = (deferredLicenseCost * (assumptions.capexContingencyPct || 0) / 100) / 3;
-              
-              m_deferredCapex = m_deferredHard + m_defConsultant + m_defLicense + m_defMedEqVat + m_defConsultantVat + m_defMedEqContingency + m_defConsultantContingency + m_defLicenseContingency;
-              
+
+              const m_defMedEqVat =
+                (leasedMedEq * (assumptions.capexVat || 0)) / 100 / 3;
+              const m_defConsultantVat =
+                (deferredConsultantCost * (assumptions.capexVat || 0)) /
+                100 /
+                3;
+
+              const m_defMedEqContingency =
+                ((leasedMedEq +
+                  (leasedMedEq * (assumptions.capexVat || 0)) / 100) *
+                  (assumptions.capexContingencyPct || 0)) /
+                100 /
+                3;
+              const m_defConsultantContingency =
+                ((deferredConsultantCost +
+                  (deferredConsultantCost * (assumptions.capexVat || 0)) /
+                    100) *
+                  (assumptions.capexContingencyPct || 0)) /
+                100 /
+                3;
+              const m_defLicenseContingency =
+                (deferredLicenseCost * (assumptions.capexContingencyPct || 0)) /
+                100 /
+                3;
+
+              m_deferredCapex =
+                m_deferredHard +
+                m_defConsultant +
+                m_defLicense +
+                m_defMedEqVat +
+                m_defConsultantVat +
+                m_defMedEqContingency +
+                m_defConsultantContingency +
+                m_defLicenseContingency;
+
               bvM_base += m_deferredHard;
               medEqBasis_base += m_deferredHard;
               bvM_vat += m_defMedEqVat;
               medEqBasis_vat += m_defMedEqVat;
               bvM_contingency += m_defMedEqContingency;
               medEqBasis_contingency += m_defMedEqContingency;
-              
+
               bvConsultant_base += m_defConsultant;
               consultantBasis_base += m_defConsultant;
               bvConsultant_vat += m_defConsultantVat;
               consultantBasis_vat += m_defConsultantVat;
               bvConsultant_contingency += m_defConsultantContingency;
               consultantBasis_contingency += m_defConsultantContingency;
-              
+
               bvLicense_base += m_defLicense;
               licenseBasis_base += m_defLicense;
               bvLicense_contingency += m_defLicenseContingency;
@@ -1617,7 +2085,8 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
         }
       }
 
-      const m_gop = m_revenue - m_maint - m_taxOp - m_overhead - m_medEqLeaseOpex;
+      const m_gop =
+        m_revenue - m_maint - m_taxOp - m_overhead - m_medEqLeaseOpex;
       const m_ebitda = m_gop - m_reserve;
 
       const m_op = (i - 1) * 12 + m;
@@ -1629,7 +2098,9 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       if (outstandingDebt > 0.01) {
         m_interest = outstandingDebt * rateMonthly;
         m_principal =
-          m_op <= ioGraceMonths ? 0 : Math.min(outstandingDebt, postIoPmtMonthly - m_interest);
+          m_op <= ioGraceMonths
+            ? 0
+            : Math.min(outstandingDebt, postIoPmtMonthly - m_interest);
         outstandingDebt -= m_principal;
       }
       if (outstandingDebtExLand > 0.01) {
@@ -1637,7 +2108,10 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
         m_principalExLand =
           m_op <= ioGraceMonths
             ? 0
-            : Math.min(outstandingDebtExLand, postIoPmtExLandMonthly - m_interestExLand);
+            : Math.min(
+                outstandingDebtExLand,
+                postIoPmtExLandMonthly - m_interestExLand,
+              );
         outstandingDebtExLand -= m_principalExLand;
       }
 
@@ -1647,11 +2121,29 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       };
 
       // 1. Construction (Building)
-      const m_dB_base = calcDep(bvB_base, buildBasis_base, assumptions.depLifeBuilding || 20, assumptions.depMethodBuilding) / 12;
+      const m_dB_base =
+        calcDep(
+          bvB_base,
+          buildBasis_base,
+          assumptions.depLifeBuilding || 20,
+          assumptions.depMethodBuilding,
+        ) / 12;
       bvB_base -= m_dB_base;
-      const m_dB_vat = calcDep(bvB_vat, buildBasis_vat, assumptions.depLifeBuilding || 20, assumptions.depMethodBuilding) / 12;
+      const m_dB_vat =
+        calcDep(
+          bvB_vat,
+          buildBasis_vat,
+          assumptions.depLifeBuilding || 20,
+          assumptions.depMethodBuilding,
+        ) / 12;
       bvB_vat -= m_dB_vat;
-      const m_dB_contingency = calcDep(bvB_contingency, buildBasis_contingency, assumptions.depLifeBuilding || 20, assumptions.depMethodBuilding) / 12;
+      const m_dB_contingency =
+        calcDep(
+          bvB_contingency,
+          buildBasis_contingency,
+          assumptions.depLifeBuilding || 20,
+          assumptions.depMethodBuilding,
+        ) / 12;
       bvB_contingency -= m_dB_contingency;
       const m_d1 = m_dB_base;
 
@@ -1659,63 +2151,185 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       let m_dM_base = 0;
       let m_dM_vat = 0;
       let m_dM_contingency = 0;
-      if (!(assumptions.includeMedEq && assumptions.medEqProcurement === "lease" && i < (assumptions.medEqPurchaseOpYear || 4))) {
-        m_dM_base = calcDep(bvM_base, medEqBasis_base, assumptions.depLifeMedEq || 10, assumptions.depMethodMedEq) / 12;
+      if (
+        !(
+          assumptions.includeMedEq &&
+          assumptions.medEqProcurement === "lease" &&
+          i < (assumptions.medEqPurchaseOpYear || 4)
+        )
+      ) {
+        m_dM_base =
+          calcDep(
+            bvM_base,
+            medEqBasis_base,
+            assumptions.depLifeMedEq || 10,
+            assumptions.depMethodMedEq,
+          ) / 12;
         bvM_base -= m_dM_base;
-        m_dM_vat = calcDep(bvM_vat, medEqBasis_vat, assumptions.depLifeMedEq || 10, assumptions.depMethodMedEq) / 12;
+        m_dM_vat =
+          calcDep(
+            bvM_vat,
+            medEqBasis_vat,
+            assumptions.depLifeMedEq || 10,
+            assumptions.depMethodMedEq,
+          ) / 12;
         bvM_vat -= m_dM_vat;
-        m_dM_contingency = calcDep(bvM_contingency, medEqBasis_contingency, assumptions.depLifeMedEq || 10, assumptions.depMethodMedEq) / 12;
+        m_dM_contingency =
+          calcDep(
+            bvM_contingency,
+            medEqBasis_contingency,
+            assumptions.depLifeMedEq || 10,
+            assumptions.depMethodMedEq,
+          ) / 12;
         bvM_contingency -= m_dM_contingency;
       }
       const m_d2 = m_dM_base;
 
       // 3. Infrastructure
-      const m_dI_base = calcDep(bvI_base, infraBasis_base, assumptions.depLifeInfra || 20, assumptions.depMethodInfra) / 12;
+      const m_dI_base =
+        calcDep(
+          bvI_base,
+          infraBasis_base,
+          assumptions.depLifeInfra || 20,
+          assumptions.depMethodInfra,
+        ) / 12;
       bvI_base -= m_dI_base;
-      const m_dI_vat = calcDep(bvI_vat, infraBasis_vat, assumptions.depLifeInfra || 20, assumptions.depMethodInfra) / 12;
+      const m_dI_vat =
+        calcDep(
+          bvI_vat,
+          infraBasis_vat,
+          assumptions.depLifeInfra || 20,
+          assumptions.depMethodInfra,
+        ) / 12;
       bvI_vat -= m_dI_vat;
-      const m_dI_contingency = calcDep(bvI_contingency, infraBasis_contingency, assumptions.depLifeInfra || 20, assumptions.depMethodInfra) / 12;
+      const m_dI_contingency =
+        calcDep(
+          bvI_contingency,
+          infraBasis_contingency,
+          assumptions.depLifeInfra || 20,
+          assumptions.depMethodInfra,
+        ) / 12;
       bvI_contingency -= m_dI_contingency;
       const m_d3 = m_dI_base;
 
       // 4. FF&E
-      const m_dF_base = calcDep(bvF_base, ffeBasis_base, assumptions.depLifeFFE || 20, assumptions.depMethodFFE) / 12;
+      const m_dF_base =
+        calcDep(
+          bvF_base,
+          ffeBasis_base,
+          assumptions.depLifeFFE || 20,
+          assumptions.depMethodFFE,
+        ) / 12;
       bvF_base -= m_dF_base;
-      const m_dF_vat = calcDep(bvF_vat, ffeBasis_vat, assumptions.depLifeFFE || 20, assumptions.depMethodFFE) / 12;
+      const m_dF_vat =
+        calcDep(
+          bvF_vat,
+          ffeBasis_vat,
+          assumptions.depLifeFFE || 20,
+          assumptions.depMethodFFE,
+        ) / 12;
       bvF_vat -= m_dF_vat;
-      const m_dF_contingency = calcDep(bvF_contingency, ffeBasis_contingency, assumptions.depLifeFFE || 20, assumptions.depMethodFFE) / 12;
+      const m_dF_contingency =
+        calcDep(
+          bvF_contingency,
+          ffeBasis_contingency,
+          assumptions.depLifeFFE || 20,
+          assumptions.depMethodFFE,
+        ) / 12;
       bvF_contingency -= m_dF_contingency;
       const m_d4 = m_dF_base;
 
       // 5. Sharing Development
-      const m_dSharing_base = calcDep(bvSharing_base, sharingBasis_base, assumptions.depLifeInfra || 20, assumptions.depMethodInfra) / 12;
+      const m_dSharing_base =
+        calcDep(
+          bvSharing_base,
+          sharingBasis_base,
+          assumptions.depLifeInfra || 20,
+          assumptions.depMethodInfra,
+        ) / 12;
       bvSharing_base -= m_dSharing_base;
-      const m_dSharing_vat = calcDep(bvSharing_vat, sharingBasis_vat, assumptions.depLifeInfra || 20, assumptions.depMethodInfra) / 12;
+      const m_dSharing_vat =
+        calcDep(
+          bvSharing_vat,
+          sharingBasis_vat,
+          assumptions.depLifeInfra || 20,
+          assumptions.depMethodInfra,
+        ) / 12;
       bvSharing_vat -= m_dSharing_vat;
-      const m_dSharing_contingency = calcDep(bvSharing_contingency, sharingBasis_contingency, assumptions.depLifeInfra || 20, assumptions.depMethodInfra) / 12;
+      const m_dSharing_contingency =
+        calcDep(
+          bvSharing_contingency,
+          sharingBasis_contingency,
+          assumptions.depLifeInfra || 20,
+          assumptions.depMethodInfra,
+        ) / 12;
       bvSharing_contingency -= m_dSharing_contingency;
       const m_dSharing = m_dSharing_base;
 
       // 6. Consultant & Design (Soft Cost)
-      const m_dConsultant_base = calcDep(bvConsultant_base, consultantBasis_base, assumptions.depLifeSoftCost || 20, assumptions.depMethodSoftCost || "SL") / 12;
+      const m_dConsultant_base =
+        calcDep(
+          bvConsultant_base,
+          consultantBasis_base,
+          assumptions.depLifeSoftCost || 20,
+          assumptions.depMethodSoftCost || "SL",
+        ) / 12;
       bvConsultant_base -= m_dConsultant_base;
-      const m_dConsultant_vat = calcDep(bvConsultant_vat, consultantBasis_vat, assumptions.depLifeSoftCost || 20, assumptions.depMethodSoftCost || "SL") / 12;
+      const m_dConsultant_vat =
+        calcDep(
+          bvConsultant_vat,
+          consultantBasis_vat,
+          assumptions.depLifeSoftCost || 20,
+          assumptions.depMethodSoftCost || "SL",
+        ) / 12;
       bvConsultant_vat -= m_dConsultant_vat;
-      const m_dConsultant_contingency = calcDep(bvConsultant_contingency, consultantBasis_contingency, assumptions.depLifeSoftCost || 20, assumptions.depMethodSoftCost || "SL") / 12;
+      const m_dConsultant_contingency =
+        calcDep(
+          bvConsultant_contingency,
+          consultantBasis_contingency,
+          assumptions.depLifeSoftCost || 20,
+          assumptions.depMethodSoftCost || "SL",
+        ) / 12;
       bvConsultant_contingency -= m_dConsultant_contingency;
       const m_dConsultant = m_dConsultant_base;
 
       // 7. Licenses & Permits (Soft Cost, exempt from VAT)
-      const m_dLicense_base = calcDep(bvLicense_base, licenseBasis_base, assumptions.depLifeSoftCost || 20, assumptions.depMethodSoftCost || "SL") / 12;
+      const m_dLicense_base =
+        calcDep(
+          bvLicense_base,
+          licenseBasis_base,
+          assumptions.depLifeSoftCost || 20,
+          assumptions.depMethodSoftCost || "SL",
+        ) / 12;
       bvLicense_base -= m_dLicense_base;
       const m_dLicense_vat = 0;
-      const m_dLicense_contingency = calcDep(bvLicense_contingency, licenseBasis_contingency, assumptions.depLifeSoftCost || 20, assumptions.depMethodSoftCost || "SL") / 12;
+      const m_dLicense_contingency =
+        calcDep(
+          bvLicense_contingency,
+          licenseBasis_contingency,
+          assumptions.depLifeSoftCost || 20,
+          assumptions.depMethodSoftCost || "SL",
+        ) / 12;
       bvLicense_contingency -= m_dLicense_contingency;
       const m_dLicense = m_dLicense_base;
 
       // Sum all components of VAT & Contingency
-      const m_dVat = m_dB_vat + m_dM_vat + m_dI_vat + m_dF_vat + m_dSharing_vat + m_dConsultant_vat + m_dLicense_vat;
-      const m_dContingency = m_dB_contingency + m_dM_contingency + m_dI_contingency + m_dF_contingency + m_dSharing_contingency + m_dConsultant_contingency + m_dLicense_contingency;
+      const m_dVat =
+        m_dB_vat +
+        m_dM_vat +
+        m_dI_vat +
+        m_dF_vat +
+        m_dSharing_vat +
+        m_dConsultant_vat +
+        m_dLicense_vat;
+      const m_dContingency =
+        m_dB_contingency +
+        m_dM_contingency +
+        m_dI_contingency +
+        m_dF_contingency +
+        m_dSharing_contingency +
+        m_dConsultant_contingency +
+        m_dLicense_contingency;
 
       const m_d5 = m_dConsultant + m_dLicense + m_dVat + m_dContingency;
       const m_dep = m_d1 + m_d2 + m_d3 + m_d4 + m_dSharing + m_d5;
@@ -1733,16 +2347,24 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       if (exitYear !== null && i === exitYear && m === 12) {
         let tv =
           assumptions.exitMethod === "multiple"
-            ? (annualRevenue - maint_year - taxOp_year - overhead_year - annualRevenue * (assumptions.ffeReservePct / 100)) *
+            ? (annualRevenue -
+                maint_year -
+                taxOp_year -
+                overhead_year -
+                annualRevenue * (assumptions.ffeReservePct / 100)) *
               assumptions.exitMultiple
-            : (annualRevenue - maint_year - taxOp_year - overhead_year - annualRevenue * (assumptions.ffeReservePct / 100)) /
+            : (annualRevenue -
+                maint_year -
+                taxOp_year -
+                overhead_year -
+                annualRevenue * (assumptions.ffeReservePct / 100)) /
               (assumptions.exitCapRate / 100);
 
         if (tv > 0) {
           const cost = tv * (assumptions.sellingCosts / 100);
           m_grossExitValue = tv - cost;
           m_loanSettledAtExit = outstandingDebt;
-          
+
           m_exit = tv - cost - outstandingDebt;
           m_exitUnlev = tv - cost;
           m_exitExLand = tv - cost - outstandingDebtExLand - landCost;
@@ -1754,12 +2376,15 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       const m_unleveredCf =
         m_ebitda -
         m_dep -
-        (m_ebitda - m_dep > 0 ? (m_ebitda - m_dep) * (assumptions.corporateTax / 100) : 0) +
+        (m_ebitda - m_dep > 0
+          ? (m_ebitda - m_dep) * (assumptions.corporateTax / 100)
+          : 0) +
         m_dep +
         m_exitUnlev -
         m_deferredCapex;
 
       const m_opFcfe = m_netIncome + m_dep - m_principal - m_deferredCapex;
+      const m_shortfallEquity = m_opFcfe < 0 ? Math.abs(m_opFcfe) : 0;
       const m_fcfe = m_opFcfe + m_exit;
 
       const m_fcfeExLand =
@@ -1767,7 +2392,8 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
         m_interestExLand -
         m_dep -
         (m_ebitda - m_interestExLand - m_dep > 0
-          ? (m_ebitda - m_interestExLand - m_dep) * (assumptions.corporateTax / 100)
+          ? (m_ebitda - m_interestExLand - m_dep) *
+            (assumptions.corporateTax / 100)
           : 0) +
         m_dep -
         m_principalExLand +
@@ -1810,15 +2436,24 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       monthly.fcfeExLand.push(m_fcfeExLand);
       monthly.cumFcfeExLand.push(equityCumExLand);
       monthly.unleveredCf.push(m_unleveredCf);
+      monthly.shortfallEquity.push(m_shortfallEquity);
       monthly.opFcfe.push(m_opFcfe);
       monthly.exit.push(m_exit);
       monthly.exitExLand.push(m_exitExLand);
       monthly.debtBalance.push(outstandingDebt);
       monthly.debtBalanceExLand.push(outstandingDebtExLand);
-      monthly.avgDscr.push(m_interest + m_principal > 0 ? m_ebitda / (m_interest + m_principal) : 5);
-      monthly.avgYield.push(totalCapex > 0 ? (m_revenue * 12 / totalCapex) * 100 : 0);
-      monthly.yocExLand.push(totalCapexExLand > 0 ? (m_ebitda * 12 / totalCapexExLand) * 100 : 0);
-      
+      monthly.avgDscr.push(
+        m_interest + m_principal > 0
+          ? m_ebitda / (m_interest + m_principal)
+          : 5,
+      );
+      monthly.avgYield.push(
+        totalCapex > 0 ? ((m_revenue * 12) / totalCapex) * 100 : 0,
+      );
+      monthly.yocExLand.push(
+        totalCapexExLand > 0 ? ((m_ebitda * 12) / totalCapexExLand) * 100 : 0,
+      );
+
       monthly.landSpend.push(0);
       monthly.buildSpend.push(0);
       monthly.eqSpend.push(0);
@@ -1866,6 +2501,7 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       year_fcfeExLand += m_fcfeExLand;
       year_unleveredCf += m_unleveredCf;
       year_opFcfe += m_opFcfe;
+      year_shortfallEquity += m_shortfallEquity;
       year_opFcfeExLand += m_fcfeExLand - m_exitExLand;
       year_exit += m_exit;
       year_exitExLand += m_exitExLand;
@@ -1874,7 +2510,9 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
     }
 
     const dscr =
-      year_principal + year_interest > 0 ? year_ebitda / (year_principal + year_interest) : 0;
+      year_principal + year_interest > 0
+        ? year_ebitda / (year_principal + year_interest)
+        : 0;
     avgDscr += dscr;
     avgYield += totalEquity > 0 ? (year_opFcfe / totalEquity) * 100 : 0;
 
@@ -1909,6 +2547,7 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       netIncome: year_netIncome,
       deferredCapex: year_deferredCapex,
       opFcfe: year_opFcfe,
+      shortfallEquity: year_shortfallEquity,
       fcfe: year_fcfe,
       cumFcfe: equityCum,
       dscr,
@@ -1942,7 +2581,8 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       ebtExLand: year_ebitda - year_interestExLand - year_dep,
       corpTaxExLand:
         year_ebitda - year_interestExLand - year_dep > 0
-          ? (year_ebitda - year_interestExLand - year_dep) * (assumptions.corporateTax / 100)
+          ? (year_ebitda - year_interestExLand - year_dep) *
+            (assumptions.corporateTax / 100)
           : 0,
       monthly,
     });
@@ -1961,14 +2601,22 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       totalDebt,
       totalEquity: peakEquityRequired,
       totalInvestment: peakTotalInvestment,
-      irr: calculateIRR(equityCfsMonthly, 'monthly'),
-      npv: calculateNPV(equityCfsMonthly, assumptions.discountRate, 'monthly'),
-      unleveredIrr: calculateIRR(unleveredCfsMonthly, 'monthly'),
-      unleveredNpv: calculateNPV(unleveredCfsMonthly, assumptions.discountRate, 'monthly'),
-      irrExLand: calculateIRR(equityCfsExLandMonthly, 'monthly'),
-      npvExLand: calculateNPV(equityCfsExLandMonthly, assumptions.discountRate, 'monthly'),
-      payback: calculatePayback(equityCfsMonthly, 'monthly'),
-      operatingPayback: calculatePayback(operatingCfsMonthly, 'monthly'),
+      irr: calculateIRR(equityCfsMonthly, "monthly"),
+      npv: calculateNPV(equityCfsMonthly, assumptions.discountRate, "monthly"),
+      unleveredIrr: calculateIRR(unleveredCfsMonthly, "monthly"),
+      unleveredNpv: calculateNPV(
+        unleveredCfsMonthly,
+        assumptions.discountRate,
+        "monthly",
+      ),
+      irrExLand: calculateIRR(equityCfsExLandMonthly, "monthly"),
+      npvExLand: calculateNPV(
+        equityCfsExLandMonthly,
+        assumptions.discountRate,
+        "monthly",
+      ),
+      payback: calculatePayback(equityCfsMonthly, "monthly"),
+      operatingPayback: calculatePayback(operatingCfsMonthly, "monthly"),
       avgDscr: projYears > 0 ? avgDscr / projYears : 0,
       minDscr:
         operatingData.filter((d) => d.principal + d.interest > 0).length > 0
@@ -2001,7 +2649,10 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       revenue: annualData.reduce((acc, d) => acc + (d.revenue || 0), 0),
       devGa: annualData.reduce((acc, d) => acc + (d.devGa || 0), 0),
       devCar: annualData.reduce((acc, d) => acc + (d.devCar || 0), 0),
-      preOpeningDev: annualData.reduce((acc, d) => acc + (d.devGa || 0) + (d.devCar || 0), 0),
+      preOpeningDev: annualData.reduce(
+        (acc, d) => acc + (d.devGa || 0) + (d.devCar || 0),
+        0,
+      ),
       maintOpex: annualData.reduce((acc, d) => acc + (d.maintOpex || 0), 0),
       taxOpex: annualData.reduce((acc, d) => acc + (d.taxOpex || 0), 0),
       overheadOpex: annualData.reduce(
@@ -2028,10 +2679,16 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       depInfra: annualData.reduce((acc, d) => acc + (d.depInfra || 0), 0),
       depFfe: annualData.reduce((acc, d) => acc + (d.depFfe || 0), 0),
       depSharing: annualData.reduce((acc, d) => acc + (d.depSharing || 0), 0),
-      depConsultant: annualData.reduce((acc, d) => acc + (d.depConsultant || 0), 0),
+      depConsultant: annualData.reduce(
+        (acc, d) => acc + (d.depConsultant || 0),
+        0,
+      ),
       depLicense: annualData.reduce((acc, d) => acc + (d.depLicense || 0), 0),
       depVat: annualData.reduce((acc, d) => acc + (d.depVat || 0), 0),
-      depContingency: annualData.reduce((acc, d) => acc + (d.depContingency || 0), 0),
+      depContingency: annualData.reduce(
+        (acc, d) => acc + (d.depContingency || 0),
+        0,
+      ),
       depSoft: annualData.reduce((acc, d) => acc + (d.depSoft || 0), 0),
       ebt: annualData.reduce((acc, d) => acc + (d.ebt || 0), 0),
       corpTax: annualData.reduce((acc, d) => acc + (d.corpTax || 0), 0),
@@ -2045,17 +2702,33 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       eqSpend: annualData.reduce((acc, d) => acc + (d.eqSpend || 0), 0),
       infraSpend: annualData.reduce((acc, d) => acc + (d.infraSpend || 0), 0),
       ffeSpend: annualData.reduce((acc, d) => acc + (d.ffeSpend || 0), 0),
-      sharingSpend: annualData.reduce((acc, d) => acc + (d.sharingSpend || 0), 0),
-      consultantSpend: annualData.reduce((acc, d) => acc + (d.consultantSpend || 0), 0),
-      licenseSpend: annualData.reduce((acc, d) => acc + (d.licenseSpend || 0), 0),
+      sharingSpend: annualData.reduce(
+        (acc, d) => acc + (d.sharingSpend || 0),
+        0,
+      ),
+      consultantSpend: annualData.reduce(
+        (acc, d) => acc + (d.consultantSpend || 0),
+        0,
+      ),
+      licenseSpend: annualData.reduce(
+        (acc, d) => acc + (d.licenseSpend || 0),
+        0,
+      ),
       vatSpend: annualData.reduce((acc, d) => acc + (d.vatSpend || 0), 0),
-      contingencySpend: annualData.reduce((acc, d) => acc + (d.contingencySpend || 0), 0),
+      contingencySpend: annualData.reduce(
+        (acc, d) => acc + (d.contingencySpend || 0),
+        0,
+      ),
       hardSpend: annualData.reduce((acc, d) => acc + (d.hardSpend || 0), 0),
       softSpend: annualData.reduce((acc, d) => acc + (d.softSpend || 0), 0),
       totalSpend: annualData.reduce((acc, d) => acc + (d.totalSpend || 0), 0),
       debtDraw: annualData.reduce((acc, d) => acc + (d.debtDraw || 0), 0),
       fcfe: annualData.reduce((acc, d) => acc + (d.fcfe || 0), 0),
       opFcfe: annualData.reduce((acc, d) => acc + (d.opFcfe || 0), 0),
+      shortfallEquity: annualData.reduce(
+        (acc, d) => acc + (d.shortfallEquity || 0),
+        0,
+      ),
       netExitProceeds: annualData.reduce(
         (acc, d) => acc + (d.netExitProceeds || 0),
         0,
@@ -2085,7 +2758,10 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
         (acc, d) => acc + (d.netExitProceedsExLand || 0),
         0,
       ),
-      opFcfeExLand: annualData.reduce((acc, d) => acc + (d.opFcfeExLand || 0), 0),
+      opFcfeExLand: annualData.reduce(
+        (acc, d) => acc + (d.opFcfeExLand || 0),
+        0,
+      ),
       fcfeExLand: annualData.reduce((acc, d) => acc + (d.fcfeExLand || 0), 0),
     },
     capexDetails: {
@@ -2102,8 +2778,12 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       vatCost,
       contingencyCost,
       sharingDevCost,
-      devGaCost: annualData.filter(d => !d.isOperating).reduce((acc, d) => acc + (d.devGa || 0), 0),
-      devCarCost: annualData.filter(d => !d.isOperating).reduce((acc, d) => acc + (d.devCar || 0), 0),
+      devGaCost: annualData
+        .filter((d) => !d.isOperating)
+        .reduce((acc, d) => acc + (d.devGa || 0), 0),
+      devCarCost: annualData
+        .filter((d) => !d.isOperating)
+        .reduce((acc, d) => acc + (d.devCar || 0), 0),
     },
     equityCfsMonthly,
     equityCfsExLandMonthly,
@@ -2133,22 +2813,36 @@ const runConsolidatedEngine = (opCoData, propCoData, opCoAssumptions) => {
     };
 
     // FCFE & pB_Outlay are negative during investment, positive during returns
-    const propCoInvestmentFlow = !pData.isOperating ? (pData.fcfe || 0) : 0;
-    const propCoExitFlow = pData.isOperating ? (pData.exit || 0) : 0;
-    const propCoOperatingFlow = pData.isOperating ? (pData.fcfe || 0) - propCoExitFlow : 0;
-    
-    const propCoFlow = propCoInvestmentFlow + propCoOperatingFlow + propCoExitFlow;
+    const propCoInvestmentFlow = !pData.isOperating ? pData.fcfe || 0 : 0;
+    const propCoExitFlow = pData.isOperating ? pData.exit || 0 : 0;
+    const propCoOperatingFlow = pData.isOperating
+      ? (pData.fcfe || 0) - propCoExitFlow
+      : 0;
+
+    const propCoFlow =
+      propCoInvestmentFlow + propCoOperatingFlow + propCoExitFlow;
     const opCoInvestmentFlow = oData.pB_Outlay || 0;
     const opCoOperatingDividendFlow = oData.shareB || 0;
     const opCoExitFlow = oData.pB_Exit || 0;
-    const opCoFlow = opCoInvestmentFlow + opCoOperatingDividendFlow + opCoExitFlow;
+    const opCoFlow =
+      opCoInvestmentFlow + opCoOperatingDividendFlow + opCoExitFlow;
     const netFlow = propCoFlow + opCoFlow;
 
     let monthly = {
-      propCoInvestmentFlow: [], propCoOperatingFlow: [], propCoExitFlow: [], propCoFlow: [], 
-      opCoInvestmentFlow: [], opCoOperatingDividendFlow: [], opCoExitFlow: [], opCoFlow: [],
-      netFlow: [], cumCf: [], lookThroughRevenue: [], lookThroughEbitda: [],
-      lookThroughNetIncome: [], lookThroughMargin: []
+      propCoInvestmentFlow: [],
+      propCoOperatingFlow: [],
+      propCoExitFlow: [],
+      propCoFlow: [],
+      opCoInvestmentFlow: [],
+      opCoOperatingDividendFlow: [],
+      opCoExitFlow: [],
+      opCoFlow: [],
+      netFlow: [],
+      cumCf: [],
+      lookThroughRevenue: [],
+      lookThroughEbitda: [],
+      lookThroughNetIncome: [],
+      lookThroughMargin: [],
     };
 
     const sharePct = (100 - opCoAssumptions.sharingPercentA) / 100;
@@ -2158,21 +2852,29 @@ const runConsolidatedEngine = (opCoData, propCoData, opCoAssumptions) => {
 
       const m_pFcfe = (pSnapshot.fcfe || [])[m] || 0;
       const m_pExit = (pSnapshot.exit || [])[m] || 0;
-      
+
       const m_propCoInvestmentFlow = !pData.isOperating ? m_pFcfe : 0;
       const m_propCoExitFlow = pData.isOperating ? m_pExit : 0;
       const m_propCoOperatingFlow = pData.isOperating ? m_pFcfe - m_pExit : 0;
-      const m_propCoFlow = m_propCoInvestmentFlow + m_propCoOperatingFlow + m_propCoExitFlow;
-      
+      const m_propCoFlow =
+        m_propCoInvestmentFlow + m_propCoOperatingFlow + m_propCoExitFlow;
+
       const m_opCoInvestmentFlow = (oSnapshot.pB_Outlay || [])[m] || 0;
       const m_opCoOperatingDividendFlow = (oSnapshot.shareB || [])[m] || 0;
       const m_opCoExitFlow = (oSnapshot.pB_Exit || [])[m] || 0;
-      const m_opCoFlow = m_opCoInvestmentFlow + m_opCoOperatingDividendFlow + m_opCoExitFlow;
+      const m_opCoFlow =
+        m_opCoInvestmentFlow + m_opCoOperatingDividendFlow + m_opCoExitFlow;
       const m_netFlow = m_propCoFlow + m_opCoFlow;
 
-      const m_ltRev = ((pSnapshot.revenue || [])[m] || 0) + ((oSnapshot.totalRev || [])[m] || 0) * sharePct;
-      const m_ltEbitda = ((pSnapshot.ebitda || [])[m] || 0) + ((oSnapshot.ebitda || [])[m] || 0) * sharePct;
-      const m_ltNi = ((pSnapshot.netIncome || [])[m] || 0) + ((oSnapshot.netIncome || [])[m] || 0) * sharePct;
+      const m_ltRev =
+        ((pSnapshot.revenue || [])[m] || 0) +
+        ((oSnapshot.totalRev || [])[m] || 0) * sharePct;
+      const m_ltEbitda =
+        ((pSnapshot.ebitda || [])[m] || 0) +
+        ((oSnapshot.ebitda || [])[m] || 0) * sharePct;
+      const m_ltNi =
+        ((pSnapshot.netIncome || [])[m] || 0) +
+        ((oSnapshot.netIncome || [])[m] || 0) * sharePct;
 
       monthly.propCoInvestmentFlow.push(m_propCoInvestmentFlow);
       monthly.propCoOperatingFlow.push(m_propCoOperatingFlow);
@@ -2187,7 +2889,9 @@ const runConsolidatedEngine = (opCoData, propCoData, opCoAssumptions) => {
       monthly.lookThroughRevenue.push(m_ltRev);
       monthly.lookThroughEbitda.push(m_ltEbitda);
       monthly.lookThroughNetIncome.push(m_ltNi);
-      monthly.lookThroughMargin.push(m_ltRev > 0 ? (m_ltNi / m_ltRev) * 100 : 0);
+      monthly.lookThroughMargin.push(
+        m_ltRev > 0 ? (m_ltNi / m_ltRev) * 100 : 0,
+      );
     }
 
     cumCf += netFlow;
@@ -2237,11 +2941,20 @@ const runConsolidatedEngine = (opCoData, propCoData, opCoAssumptions) => {
   });
 
   const totals = {
-    propCoInvestmentFlow: annualData.reduce((acc, d) => acc + d.propCoInvestmentFlow, 0),
-    propCoOperatingFlow: annualData.reduce((acc, d) => acc + d.propCoOperatingFlow, 0),
+    propCoInvestmentFlow: annualData.reduce(
+      (acc, d) => acc + d.propCoInvestmentFlow,
+      0,
+    ),
+    propCoOperatingFlow: annualData.reduce(
+      (acc, d) => acc + d.propCoOperatingFlow,
+      0,
+    ),
     propCoExitFlow: annualData.reduce((acc, d) => acc + d.propCoExitFlow, 0),
     propCoFlow: annualData.reduce((acc, d) => acc + d.propCoFlow, 0),
-    opCoInvestmentFlow: annualData.reduce((acc, d) => acc + d.opCoInvestmentFlow, 0),
+    opCoInvestmentFlow: annualData.reduce(
+      (acc, d) => acc + d.opCoInvestmentFlow,
+      0,
+    ),
     opCoOperatingDividendFlow: annualData.reduce(
       (acc, d) => acc + d.opCoOperatingDividendFlow,
       0,
@@ -2284,9 +2997,13 @@ const runConsolidatedEngine = (opCoData, propCoData, opCoAssumptions) => {
     operatingData: annualData.filter((d) => d.isOperating),
     metrics: {
       totalEquity: totalConsolidatedEquity,
-      irr: calculateIRR(consolidatedCfsMonthly, 'monthly'),
-      npv: calculateNPV(consolidatedCfsMonthly, opCoAssumptions.holdCoDiscountRate, 'monthly'),
-      payback: calculatePayback(consolidatedCfsMonthly, 'monthly'),
+      irr: calculateIRR(consolidatedCfsMonthly, "monthly"),
+      npv: calculateNPV(
+        consolidatedCfsMonthly,
+        opCoAssumptions.holdCoDiscountRate,
+        "monthly",
+      ),
+      payback: calculatePayback(consolidatedCfsMonthly, "monthly"),
       moic:
         totalConsolidatedEquity > 0
           ? consolidatedCfsMonthly.reduce(
@@ -2316,5 +3033,5 @@ export {
   DEFAULT_PROPCO_ASSUMPTIONS,
   CANCER_DATA,
   INSURANCE_DATA,
-  callGemini
+  callGemini,
 };

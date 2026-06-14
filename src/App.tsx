@@ -110,8 +110,25 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { ExecutiveSummaryView } from "./ExecutiveSummaryView";
-import { calculatePMT, calculatePayback, calculateIRR, calculateNPV, runOpCoEngine, runPropCoEngine, runConsolidatedEngine, DEFAULT_OPCO_ASSUMPTIONS, DEFAULT_PROPCO_ASSUMPTIONS, CANCER_DATA, INSURANCE_DATA, callGemini } from './financialEngine';
-import { OPCO_FORMULAS, PROPCO_FORMULAS, CONSOLIDATED_FORMULAS } from "./formulaTooltips";
+import {
+  calculatePMT,
+  calculatePayback,
+  calculateIRR,
+  calculateNPV,
+  runOpCoEngine,
+  runPropCoEngine,
+  runConsolidatedEngine,
+  DEFAULT_OPCO_ASSUMPTIONS,
+  DEFAULT_PROPCO_ASSUMPTIONS,
+  CANCER_DATA,
+  INSURANCE_DATA,
+  callGemini,
+} from "./financialEngine";
+import {
+  OPCO_FORMULAS,
+  PROPCO_FORMULAS,
+  CONSOLIDATED_FORMULAS,
+} from "./formulaTooltips";
 
 // True Secure Cloud Sync Imports
 import {
@@ -122,7 +139,7 @@ import {
   loginWithGoogle,
   logoutUser,
   handleFirestoreError,
-  OperationType
+  OperationType,
 } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
@@ -1183,7 +1200,9 @@ const useTooltip = (tooltip) => {
       const handleScroll = () => setTooltipState(false);
       const closeOthers = () => setTooltipState(false);
       window.addEventListener("scroll", handleScroll, { passive: true });
-      window.addEventListener("close-all-tooltips", closeOthers, { passive: true });
+      window.addEventListener("close-all-tooltips", closeOthers, {
+        passive: true,
+      });
       return () => {
         window.removeEventListener("scroll", handleScroll);
         window.removeEventListener("close-all-tooltips", closeOthers);
@@ -1192,7 +1211,9 @@ const useTooltip = (tooltip) => {
       const handleGlobalClick = () => setTooltipState(false);
       const timeout = setTimeout(() => {
         window.addEventListener("click", handleGlobalClick, { passive: true });
-        window.addEventListener("close-all-tooltips", handleGlobalClick, { passive: true });
+        window.addEventListener("close-all-tooltips", handleGlobalClick, {
+          passive: true,
+        });
       }, 0);
       return () => {
         clearTimeout(timeout);
@@ -1204,215 +1225,277 @@ const useTooltip = (tooltip) => {
   return { tooltipState, setTooltipState };
 };
 
-const KPITooltipIcon = memo(({ tooltip, tooltipState, setTooltipState, align = "right" }) => {
-  if (!tooltip) return null;
-  const buttonRef = useRef(null);
-  const showTooltip = tooltipState !== false;
+const KPITooltipIcon = memo(
+  ({ tooltip, tooltipState, setTooltipState, align = "right" }) => {
+    if (!tooltip) return null;
+    const buttonRef = useRef(null);
+    const showTooltip = tooltipState !== false;
 
-  const tooltipDesc = typeof tooltip === 'string' ? tooltip : tooltip.desc;
-  const tooltipFormula = typeof tooltip === 'string' ? null : tooltip.formula;
+    const tooltipDesc = typeof tooltip === "string" ? tooltip : tooltip.desc;
+    const tooltipFormula = typeof tooltip === "string" ? null : tooltip.formula;
 
-  const [coords, setCoords] = useState(null);
+    const [coords, setCoords] = useState(null);
 
-  React.useLayoutEffect(() => {
-    if (showTooltip && buttonRef.current) {
-      const updateCoords = () => {
-        const rect = buttonRef.current.getBoundingClientRect();
-        setCoords({
-          top: rect.top,
-          left: rect.left,
-          width: rect.width,
-          height: rect.height,
+    React.useLayoutEffect(() => {
+      if (showTooltip && buttonRef.current) {
+        const updateCoords = () => {
+          const rect = buttonRef.current.getBoundingClientRect();
+          setCoords({
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+          });
+        };
+        updateCoords();
+        window.addEventListener("resize", updateCoords, { passive: true });
+        window.addEventListener("scroll", updateCoords, {
+          capture: true,
+          passive: true,
         });
-      };
-      updateCoords();
-      window.addEventListener("resize", updateCoords, { passive: true });
-      window.addEventListener("scroll", updateCoords, { capture: true, passive: true });
-      return () => {
-        window.removeEventListener("resize", updateCoords);
-        window.removeEventListener("scroll", updateCoords, { capture: true });
-      };
-    } else {
-      setCoords(null);
+        return () => {
+          window.removeEventListener("resize", updateCoords);
+          window.removeEventListener("scroll", updateCoords, { capture: true });
+        };
+      } else {
+        setCoords(null);
+      }
+    }, [showTooltip]);
+
+    const showAbove = coords ? coords.top > window.innerHeight * 0.65 : false;
+
+    let leftStyle = {};
+    let verticalStyle = {};
+    let arrowLeft = 145;
+
+    if (coords) {
+      let left = coords.left + coords.width / 2 - 145;
+      if (left < 12) left = 12;
+      if (left + 290 > window.innerWidth - 12) {
+        left = window.innerWidth - 290 - 12;
+      }
+      leftStyle = { left: `${left}px` };
+
+      if (showAbove) {
+        verticalStyle = { bottom: `${window.innerHeight - coords.top + 8}px` };
+      } else {
+        verticalStyle = { top: `${coords.top + coords.height + 8}px` };
+      }
+
+      arrowLeft = coords.left + coords.width / 2 - left;
+      if (arrowLeft < 12) arrowLeft = 12;
+      if (arrowLeft > 278) arrowLeft = 278;
     }
-  }, [showTooltip]);
 
-  const showAbove = coords ? coords.top > window.innerHeight * 0.65 : false;
-
-  let leftStyle = {};
-  let verticalStyle = {};
-  let arrowLeft = 145;
-
-  if (coords) {
-    let left = coords.left + coords.width / 2 - 145;
-    if (left < 12) left = 12;
-    if (left + 290 > window.innerWidth - 12) {
-      left = window.innerWidth - 290 - 12;
-    }
-    leftStyle = { left: `${left}px` };
-
-    if (showAbove) {
-      verticalStyle = { bottom: `${window.innerHeight - coords.top + 8}px` };
-    } else {
-      verticalStyle = { top: `${coords.top + coords.height + 8}px` };
-    }
-
-    arrowLeft = (coords.left + coords.width / 2) - left;
-    if (arrowLeft < 12) arrowLeft = 12;
-    if (arrowLeft > 278) arrowLeft = 278;
-  }
-
-  const tooltipStyle = coords ? {
-    position: 'fixed' as const,
-    ...leftStyle,
-    ...verticalStyle,
-    width: '290px',
-    zIndex: 1000,
-  } : { display: 'none' };
-
-  return (
-    <div 
-      className="relative ml-auto shrink-0"
-      onMouseEnter={() => {
-        if (tooltipState !== "click") {
-          window.dispatchEvent(new Event("close-all-tooltips"));
-          setTooltipState("hover");
+    const tooltipStyle = coords
+      ? {
+          position: "fixed" as const,
+          ...leftStyle,
+          ...verticalStyle,
+          width: "290px",
+          zIndex: 1000,
         }
-      }}
-      onMouseLeave={() => { if (tooltipState !== "click") setTooltipState(false); }}
-    >
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          if (tooltipState === "click") {
-            setTooltipState(false);
-          } else {
+      : { display: "none" };
+
+    return (
+      <div
+        className="relative ml-auto shrink-0"
+        onMouseEnter={() => {
+          if (tooltipState !== "click") {
             window.dispatchEvent(new Event("close-all-tooltips"));
-            setTooltipState("click");
+            setTooltipState("hover");
           }
         }}
-        className={`text-[#4C4A4B]/60 hover:text-[#1C6048] transition-colors focus:outline-none p-0.5 ${showTooltip ? 'relative z-[80]' : ''}`}
-        aria-label="More information"
+        onMouseLeave={() => {
+          if (tooltipState !== "click") setTooltipState(false);
+        }}
       >
-        <Info size={11} strokeWidth={2.5} />
-      </button>
-      
-      {showTooltip && createPortal(
-        <>
-          <div 
-            className="fixed inset-0 z-[9000] sm:hidden" 
-            onClick={(e) => { e.stopPropagation(); setTooltipState(false); }} 
-          />
-          <div 
-            style={tooltipStyle}
-            className="p-4 bg-[#1E2F31] text-white rounded-xl shadow-[0_8px_30px_rgba(30,47,49,0.9)] border border-[#1C6048]/50 text-xs font-medium leading-relaxed normal-case tracking-normal animate-in fade-in duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {coords && (
-              <div 
-                style={{ left: `${arrowLeft}px` }}
-                className={`absolute w-3 h-3 bg-[#1E2F31] rounded-sm transform rotate-45 border-t border-l border-[#1C6048]/50 ${
-                  showAbove ? '-bottom-1.5 border-t-0 border-l-0 border-b border-r' : '-top-1.5'
-                }`}
+        <button
+          ref={buttonRef}
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (tooltipState === "click") {
+              setTooltipState(false);
+            } else {
+              window.dispatchEvent(new Event("close-all-tooltips"));
+              setTooltipState("click");
+            }
+          }}
+          className={`text-[#4C4A4B]/60 hover:text-[#1C6048] transition-colors focus:outline-none p-0.5 ${showTooltip ? "relative z-[80]" : ""}`}
+          aria-label="More information"
+        >
+          <Info size={11} strokeWidth={2.5} />
+        </button>
+
+        {showTooltip &&
+          createPortal(
+            <>
+              <div
+                className="fixed inset-0 z-[9000] sm:hidden"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTooltipState(false);
+                }}
               />
-            )}
-            <div className="relative z-10">
-              <div className="font-bold text-white mb-2 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-[#99B6AA]">
-                <Info size={12} className="text-[#99B6AA]" /> Metric Insight
-              </div>
-              <div className="text-white/90 text-[11px] leading-relaxed mb-3 whitespace-pre-wrap">{tooltipDesc}</div>
-              {tooltipFormula && (
-                <div className="bg-black/20 p-2 rounded-lg border border-white/10 font-mono text-[9px] text-[#48B084] break-words overflow-x-auto custom-scrollbar whitespace-pre-wrap">
-                  <span className="text-white/40 block text-[8px] uppercase font-sans font-bold tracking-widest mb-1 shadow-sm">Formula</span>
-                  {tooltipFormula}
+              <div
+                style={tooltipStyle}
+                className="p-4 bg-[#1E2F31] text-white rounded-xl shadow-[0_8px_30px_rgba(30,47,49,0.9)] border border-[#1C6048]/50 text-xs font-medium leading-relaxed normal-case tracking-normal animate-in fade-in duration-200"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {coords && (
+                  <div
+                    style={{ left: `${arrowLeft}px` }}
+                    className={`absolute w-3 h-3 bg-[#1E2F31] rounded-sm transform rotate-45 border-t border-l border-[#1C6048]/50 ${
+                      showAbove
+                        ? "-bottom-1.5 border-t-0 border-l-0 border-b border-r"
+                        : "-top-1.5"
+                    }`}
+                  />
+                )}
+                <div className="relative z-10">
+                  <div className="font-bold text-white mb-2 flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-[#99B6AA]">
+                    <Info size={12} className="text-[#99B6AA]" /> Metric Insight
+                  </div>
+                  <div className="text-white/90 text-[11px] leading-relaxed mb-3 whitespace-pre-wrap">
+                    {tooltipDesc}
+                  </div>
+                  {tooltipFormula && (
+                    <div className="bg-black/20 p-2 rounded-lg border border-white/10 font-mono text-[9px] text-[#48B084] break-words overflow-x-auto custom-scrollbar whitespace-pre-wrap">
+                      <span className="text-white/40 block text-[8px] uppercase font-sans font-bold tracking-widest mb-1 shadow-sm">
+                        Formula
+                      </span>
+                      {tooltipFormula}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
-        </>,
-        document.body
-      )}
-    </div>
-  );
-});
+              </div>
+            </>,
+            document.body,
+          )}
+      </div>
+    );
+  },
+);
 
 const StatefulTooltipIcon = memo(({ tooltip, align = "right" }) => {
   const { tooltipState, setTooltipState } = useTooltip(tooltip);
   return (
-    <KPITooltipIcon 
-      tooltip={tooltip} 
-      tooltipState={tooltipState} 
-      setTooltipState={setTooltipState} 
-      align={align} 
+    <KPITooltipIcon
+      tooltip={tooltip}
+      tooltipState={tooltipState}
+      setTooltipState={setTooltipState}
+      align={align}
     />
   );
 });
 
-const KPICard = memo(({ title, value, icon, color, subtitle, tooltip, disabled = false }) => {
-  const displayTooltip = disabled ? "Not applicable because Debt Financing is currently OFF." : tooltip;
-  const { tooltipState, setTooltipState } = useTooltip(displayTooltip);
-  
-  const zClass = tooltipState === 'click' ? 'z-[110]' : (tooltipState === 'hover' ? 'z-[100]' : 'z-10 hover:z-[60]');
-  
-  const textColors = {
-    blue: "text-[#1C6048]",
-    emerald: "text-[#1E2F31]",
-    indigo: "text-[#9B8B70]",
-  };
+const KPICard = memo(
+  ({ title, value, icon, color, subtitle, tooltip, disabled = false }) => {
+    const displayTooltip = disabled
+      ? "Not applicable because Debt Financing is currently OFF."
+      : tooltip;
+    const { tooltipState, setTooltipState } = useTooltip(displayTooltip);
 
-  return (
-    <div 
-      className={`p-4 lg:p-5 rounded-2xl border border-[#D8D8D8] bg-white flex flex-col shadow-sm transition-all focus-within:z-[60] relative group ${zClass} ${disabled ? 'opacity-40 grayscale pointer-events-auto' : 'md:hover:-translate-y-1'}`}
-    >
+    const zClass =
+      tooltipState === "click"
+        ? "z-[110]"
+        : tooltipState === "hover"
+          ? "z-[100]"
+          : "z-10 hover:z-[60]";
+
+    const textColors = {
+      blue: "text-[#1C6048]",
+      emerald: "text-[#1E2F31]",
+      indigo: "text-[#9B8B70]",
+    };
+
+    return (
       <div
-        className={`flex items-center justify-between mb-2 text-[9px] lg:text-[10px] font-black uppercase tracking-widest ${textColors[color] || "text-[#1E2F31]"}`}
+        className={`p-4 lg:p-5 rounded-2xl border border-[#D8D8D8] bg-white flex flex-col shadow-sm transition-all focus-within:z-[60] relative group ${zClass} ${disabled ? "opacity-40 grayscale pointer-events-auto" : "md:hover:-translate-y-1"}`}
       >
-        <div className="flex items-center gap-1.5 opacity-80">
-          {icon} {title}
+        <div
+          className={`flex items-center justify-between mb-2 text-[9px] lg:text-[10px] font-black uppercase tracking-widest ${textColors[color] || "text-[#1E2F31]"}`}
+        >
+          <div className="flex items-center gap-1.5 opacity-80">
+            {icon} {title}
+          </div>
+          <KPITooltipIcon
+            tooltip={displayTooltip}
+            tooltipState={tooltipState}
+            setTooltipState={setTooltipState}
+          />
         </div>
-        <KPITooltipIcon tooltip={displayTooltip} tooltipState={tooltipState} setTooltipState={setTooltipState} />
+        <div
+          className={`text-lg lg:text-xl font-black mb-1 ${textColors[color] || "text-[#1E2F31]"}`}
+        >
+          {value}
+        </div>
+        <div className="text-[8px] lg:text-[9px] font-bold uppercase text-[#4C4A4B] opacity-60 tracking-tighter">
+          {subtitle}
+        </div>
       </div>
+    );
+  },
+);
+
+const MiniKPICard = memo(
+  ({ title, value, subtitle, tooltip, disabled = false }) => {
+    const displayTooltip = disabled
+      ? "Not applicable because Debt Financing is currently OFF."
+      : tooltip;
+    const { tooltipState, setTooltipState } = useTooltip(displayTooltip);
+    const zClass =
+      tooltipState === "click"
+        ? "z-[110]"
+        : tooltipState === "hover"
+          ? "z-[100]"
+          : "z-10 hover:z-[60]";
+
+    return (
       <div
-        className={`text-lg lg:text-xl font-black mb-1 ${textColors[color] || "text-[#1E2F31]"}`}
+        className={`p-3 bg-[#EFEBE7] rounded-xl border border-[#D8D8D8] relative group ${zClass} ${disabled ? "opacity-40 grayscale pointer-events-auto" : ""}`}
       >
-        {value}
-      </div>
-      <div className="text-[8px] lg:text-[9px] font-bold uppercase text-[#4C4A4B] opacity-60 tracking-tighter">
-        {subtitle}
-      </div>
-    </div>
-  );
-});
-
-const MiniKPICard = memo(({ title, value, subtitle, tooltip, disabled = false }) => {
-  const displayTooltip = disabled ? "Not applicable because Debt Financing is currently OFF." : tooltip;
-  const { tooltipState, setTooltipState } = useTooltip(displayTooltip);
-  const zClass = tooltipState === 'click' ? 'z-[110]' : (tooltipState === 'hover' ? 'z-[100]' : 'z-10 hover:z-[60]');
-
-  return (
-    <div className={`p-3 bg-[#EFEBE7] rounded-xl border border-[#D8D8D8] relative group ${zClass} ${disabled ? 'opacity-40 grayscale pointer-events-auto' : ''}`}>
-      <div className="flex items-center justify-between mb-1">
-        <p className="text-[9px] text-[#4C4A4B] font-bold uppercase">
-          {title}
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-[9px] text-[#4C4A4B] font-bold uppercase">
+            {title}
+          </p>
+          <KPITooltipIcon
+            tooltip={displayTooltip}
+            tooltipState={tooltipState}
+            setTooltipState={setTooltipState}
+          />
+        </div>
+        <p className="text-lg font-black text-[#1E2F31]">{value}</p>
+        <p className="text-[8px] text-[#99B6AA] font-bold uppercase mt-1">
+          {subtitle}
         </p>
-        <KPITooltipIcon tooltip={displayTooltip} tooltipState={tooltipState} setTooltipState={setTooltipState} />
       </div>
-      <p className="text-lg font-black text-[#1E2F31]">{value}</p>
-      <p className="text-[8px] text-[#99B6AA] font-bold uppercase mt-1">
-        {subtitle}
-      </p>
-    </div>
-  );
-});
+    );
+  },
+);
 
 const DualKPICard = memo(
-  ({ title1, value1, color1, tooltip1, title2, value2, color2, tooltip2, icon }) => {
+  ({
+    title1,
+    value1,
+    color1,
+    tooltip1,
+    title2,
+    value2,
+    color2,
+    tooltip2,
+    icon,
+  }) => {
     const { tooltipState: ts1, setTooltipState: setTs1 } = useTooltip(tooltip1);
     const { tooltipState: ts2, setTooltipState: setTs2 } = useTooltip(tooltip2);
-    
-    const zClass = (ts1 === 'click' || ts2 === 'click') ? 'z-[110]' : (ts1 === 'hover' || ts2 === 'hover' ? 'z-[100]' : 'z-10 hover:z-[60]');
+
+    const zClass =
+      ts1 === "click" || ts2 === "click"
+        ? "z-[110]"
+        : ts1 === "hover" || ts2 === "hover"
+          ? "z-[100]"
+          : "z-10 hover:z-[60]";
 
     const tColors = {
       blue: "text-[#1C6048]",
@@ -1423,14 +1506,20 @@ const DualKPICard = memo(
       rose: "text-[#4C4A4B]",
     };
     return (
-      <div className={`p-4 lg:p-5 rounded-2xl border border-[#D8D8D8] bg-white flex flex-col shadow-sm transition-transform hover:-translate-y-1 relative group ${zClass} focus-within:z-[60]`}>
+      <div
+        className={`p-4 lg:p-5 rounded-2xl border border-[#D8D8D8] bg-white flex flex-col shadow-sm transition-transform hover:-translate-y-1 relative group ${zClass} focus-within:z-[60]`}
+      >
         <div
           className={`flex items-center gap-2 mb-2 text-[10px] font-black uppercase tracking-widest ${tColors[color1] || "text-[#1E2F31]"}`}
         >
           <div className="flex items-center gap-1.5 opacity-80">
             {icon} {title1}
           </div>
-          <KPITooltipIcon tooltip={tooltip1} tooltipState={ts1} setTooltipState={setTs1} />
+          <KPITooltipIcon
+            tooltip={tooltip1}
+            tooltipState={ts1}
+            setTooltipState={setTs1}
+          />
         </div>
         <div
           className={`text-lg lg:text-xl font-black mb-1 ${tColors[color1] || "text-[#1E2F31]"}`}
@@ -1441,10 +1530,12 @@ const DualKPICard = memo(
         <div
           className={`flex items-center gap-2 mb-2 text-[10px] font-black uppercase tracking-widest ${tColors[color2] || "text-[#1E2F31]"}`}
         >
-          <div className="flex items-center gap-1.5 opacity-80">
-            {title2}
-          </div>
-          <KPITooltipIcon tooltip={tooltip2} tooltipState={ts2} setTooltipState={setTs2} />
+          <div className="flex items-center gap-1.5 opacity-80">{title2}</div>
+          <KPITooltipIcon
+            tooltip={tooltip2}
+            tooltipState={ts2}
+            setTooltipState={setTs2}
+          />
         </div>
         <div
           className={`text-lg lg:text-xl font-black ${tColors[color2] || "text-[#1E2F31]"}`}
@@ -1510,7 +1601,12 @@ const AssumptionRow = memo(({ label, val, set, unit, isLocked, tooltip }) => {
     <div className="flex justify-between items-center group py-1 border-b border-[#D8D8D8] last:border-0 hover:bg-[#EFEBE7] px-1 rounded transition-colors relative">
       <div className="flex items-center gap-1.5">
         <label className="text-[10px] text-[#4C4A4B] font-bold">{label}</label>
-        <KPITooltipIcon tooltip={tooltip} tooltipState={tooltipState} setTooltipState={setTooltipState} align="left" />
+        <KPITooltipIcon
+          tooltip={tooltip}
+          tooltipState={tooltipState}
+          setTooltipState={setTooltipState}
+          align="left"
+        />
       </div>
       <div className="flex items-center gap-1">
         <FormattedInput
@@ -1810,7 +1906,7 @@ const TableRow = memo(
     let totalColClass = `px-2 py-1.5 text-right font-bold font-mono border-l border-b border-[#D8D8D8] sticky right-0 z-[40] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] ${baseColorClass} ${!highlight && !isHeader ? "group-hover:bg-[#F9F8F6]" : ""}`;
 
     return (
-      <tr 
+      <tr
         className={`group ${highlight || isHeader ? "" : "hover:bg-[#F9F8F6]"} ${isExpandable ? "cursor-pointer" : ""}`}
         onClick={isExpandable ? onExpand : undefined}
       >
@@ -1819,7 +1915,11 @@ const TableRow = memo(
             <div className="flex items-center gap-1.5">
               {isExpandable && (
                 <span className="text-[#9B8B70]">
-                  {isExpanded ? <ChevronDown size={12} strokeWidth={3} /> : <ChevronRight size={12} strokeWidth={3} />}
+                  {isExpanded ? (
+                    <ChevronDown size={12} strokeWidth={3} />
+                  ) : (
+                    <ChevronRight size={12} strokeWidth={3} />
+                  )}
                 </span>
               )}
               {hasConnector && (
@@ -1827,7 +1927,9 @@ const TableRow = memo(
                   └─
                 </span>
               )}
-              <span className={isHeader ? "font-bold text-[#1E2F31]" : ""}>{label}</span>
+              <span className={isHeader ? "font-bold text-[#1E2F31]" : ""}>
+                {label}
+              </span>
             </div>
             {tooltip && <StatefulTooltipIcon tooltip={tooltip} align="right" />}
           </div>
@@ -1846,11 +1948,16 @@ const TableRow = memo(
             : "bg-white group-hover:bg-[#F9F8F6]";
 
           const formattedVal = formatNumber(val, 1);
-          const displayVal = isPercent && formattedVal !== "0"
-            ? (val < 0 ? `(${formattedVal.replace(/[()]/g, "")}%)` : `${formattedVal}%`)
-            : rawVal === 0 && rawVal >= 0
-              ? (isPercent ? "0.0%" : "-")
-              : formattedVal;
+          const displayVal =
+            isPercent && formattedVal !== "0"
+              ? val < 0
+                ? `(${formattedVal.replace(/[()]/g, "")}%)`
+                : `${formattedVal}%`
+              : rawVal === 0 && rawVal >= 0
+                ? isPercent
+                  ? "0.0%"
+                  : "-"
+                : formattedVal;
 
           return (
             <td
@@ -1863,8 +1970,10 @@ const TableRow = memo(
         })}
         {total !== undefined ? (
           <td className={totalColClass}>
-            {isPercent 
-              ? (total < 0 ? `(${formatNumber(total, 1).replace(/[()]/g, "")}%)` : `${formatNumber(total, 1)}%`)
+            {isPercent
+              ? total < 0
+                ? `(${formatNumber(total, 1).replace(/[()]/g, "")}%)`
+                : `${formatNumber(total, 1)}%`
               : formatNumber(isSubtractor ? -Math.abs(total) : total, 1)}
           </td>
         ) : (
@@ -1875,21 +1984,32 @@ const TableRow = memo(
   },
 );
 
-const ExpandableDataRowGroup = ({ parentLabel, parentDk, parentTotal, data, childrenData, parentTooltip, isSubtractor }) => {
+const ExpandableDataRowGroup = ({
+  parentLabel,
+  parentDk,
+  parentTotal,
+  data,
+  childrenData,
+  parentTooltip,
+  isSubtractor,
+}) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  
+
   return (
     <>
-      <TableRow 
+      <TableRow
         label={
-          <div 
-             className="flex items-center cursor-pointer hover:text-[#1E2F31] -ml-4" 
-             onClick={() => setIsExpanded(!isExpanded)}
+          <div
+            className="flex items-center cursor-pointer hover:text-[#1E2F31] -ml-4"
+            onClick={() => setIsExpanded(!isExpanded)}
           >
-             <div className="flex items-center justify-center w-4 shrink-0">
-               <ChevronDown size={14} className={`text-[#9B8B70] transition-transform duration-200 ${!isExpanded ? "-rotate-90" : "rotate-0"}`} />
-             </div>
-             <span>{parentLabel}</span>
+            <div className="flex items-center justify-center w-4 shrink-0">
+              <ChevronDown
+                size={14}
+                className={`text-[#9B8B70] transition-transform duration-200 ${!isExpanded ? "-rotate-90" : "rotate-0"}`}
+              />
+            </div>
+            <span>{parentLabel}</span>
           </div>
         }
         data={data}
@@ -1899,25 +2019,26 @@ const ExpandableDataRowGroup = ({ parentLabel, parentDk, parentTotal, data, chil
         tooltip={parentTooltip}
         isSubtractor={isSubtractor}
       />
-      {isExpanded && childrenData.map((child, i) => (
-        <TableRow
-          key={i}
-          label={
-            <div className="flex items-start pl-4 opacity-90 transition-opacity">
-              <div className="w-3 flex items-start justify-end mr-2 pt-2 shrink-0">
-                 <div className="w-2.5 border-b border-l rounded-bl border-[#A1A1AA] h-2"></div>
+      {isExpanded &&
+        childrenData.map((child, i) => (
+          <TableRow
+            key={i}
+            label={
+              <div className="flex items-start pl-4 opacity-90 transition-opacity">
+                <div className="w-3 flex items-start justify-end mr-2 pt-2 shrink-0">
+                  <div className="w-2.5 border-b border-l rounded-bl border-[#A1A1AA] h-2"></div>
+                </div>
+                <span className="text-[#8e8e8e]">{child.label}</span>
               </div>
-              <span className="text-[#8e8e8e]">{child.label}</span>
-            </div>
-          }
-          data={data}
-          dk={child.dk}
-          total={child.total}
-          isIndent
-          tooltip={child.tooltip}
-          isSubtractor={isSubtractor}
-        />
-      ))}
+            }
+            data={data}
+            dk={child.dk}
+            total={child.total}
+            isIndent
+            tooltip={child.tooltip}
+            isSubtractor={isSubtractor}
+          />
+        ))}
     </>
   );
 };
@@ -2034,7 +2155,14 @@ const ExpandableCapexRow = memo(
   },
 );
 
-const PartnerReturnCard = ({ name, metrics, equity, share, color, isUnifiedCard = false }) => {
+const PartnerReturnCard = ({
+  name,
+  metrics,
+  equity,
+  share,
+  color,
+  isUnifiedCard = false,
+}) => {
   const c =
     color === "blue"
       ? {
@@ -2048,7 +2176,13 @@ const PartnerReturnCard = ({ name, metrics, equity, share, color, isUnifiedCard 
           border: "border-[#D8D8D8]",
         };
   return (
-    <div className={isUnifiedCard ? "relative w-full" : "bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8] relative transition-all hover:shadow-md"}>
+    <div
+      className={
+        isUnifiedCard
+          ? "relative w-full"
+          : "bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8] relative transition-all hover:shadow-md"
+      }
+    >
       <div
         className={`absolute top-0 right-0 py-1 px-2.5 ${c.bg} rounded-bl-xl border-l border-b ${c.border}`}
       >
@@ -2063,7 +2197,7 @@ const PartnerReturnCard = ({ name, metrics, equity, share, color, isUnifiedCard 
         <h3
           className={`text-lg font-bold text-[#1E2F31] flex items-start gap-2 mb-1`}
         >
-          <Users size={20} className={`shrink-0 mt-0.5 ${c.text}`} /> 
+          <Users size={20} className={`shrink-0 mt-0.5 ${c.text}`} />
           <span className="leading-tight">{name}</span>
         </h3>
         <p className="text-xs text-[#4C4A4B] font-medium">
@@ -3536,11 +3670,13 @@ const InteractiveDemographicMap = memo(() => {
     const loadGestureHandling = () => {
       const ghCSS = document.createElement("link");
       ghCSS.rel = "stylesheet";
-      ghCSS.href = "https://unpkg.com/leaflet-gesture-handling@1.2.2/dist/leaflet-gesture-handling.min.css";
+      ghCSS.href =
+        "https://unpkg.com/leaflet-gesture-handling@1.2.2/dist/leaflet-gesture-handling.min.css";
       document.head.appendChild(ghCSS);
 
       const ghJS = document.createElement("script");
-      ghJS.src = "https://unpkg.com/leaflet-gesture-handling@1.2.2/dist/leaflet-gesture-handling.min.js";
+      ghJS.src =
+        "https://unpkg.com/leaflet-gesture-handling@1.2.2/dist/leaflet-gesture-handling.min.js";
       ghJS.onload = () => setLeafletReady(true);
       document.body.appendChild(ghJS);
     };
@@ -3575,13 +3711,10 @@ const InteractiveDemographicMap = memo(() => {
       container._leaflet_id = null;
     }
 
-    const map = L.map("demographics-map", { 
+    const map = L.map("demographics-map", {
       zoomControl: false,
-      gestureHandling: true
-    }).setView(
-      [-6.1543, 106.7398],
-      11,
-    );
+      gestureHandling: true,
+    }).setView([-6.1543, 106.7398], 11);
     L.control.zoom({ position: "bottomleft" }).addTo(map);
 
     map.createPane("labelsPane");
@@ -3603,7 +3736,7 @@ const InteractiveDemographicMap = memo(() => {
     });
     poiGroupRef.current = L.layerGroup().addTo(map);
 
-    map.on('click', () => {
+    map.on("click", () => {
       if (activeClickedPoiRef.current) {
         const prevId = activeClickedPoiRef.current;
         activeClickedPoiRef.current = null;
@@ -3625,22 +3758,26 @@ const InteractiveDemographicMap = memo(() => {
 
   useEffect(() => {
     if (!mapRef.current) return;
-    
+
     if (showTollRoads) {
       if (!tollRoadLayerRef.current) {
-        setLoadingStatus({ active: true, text: "Loading Toll Roads...", isError: false });
-        
+        setLoadingStatus({
+          active: true,
+          text: "Loading Toll Roads...",
+          isError: false,
+        });
+
         const renderTollRoads = (lines, isFallback = false) => {
           if (!mapRef.current) return;
           const L = window.L;
           const tollGroup = L.layerGroup();
-          
+
           L.polyline(lines, {
             color: "#1E3A8A",
             weight: 3,
             opacity: 0.6,
             dashArray: "5, 5",
-            pane: "ringsPane"
+            pane: "ringsPane",
           }).addTo(tollGroup);
 
           // Add nearest toll gate to Vasanta Hospital marker
@@ -3662,32 +3799,35 @@ const InteractiveDemographicMap = memo(() => {
             html: tollIconHtml,
             className: "",
             iconSize: [15, 15],
-            iconAnchor: [7.5, 7.5]
+            iconAnchor: [7.5, 7.5],
           });
           const marker = L.marker([-6.152, 106.727], {
-             pane: "labelsPane",
-             icon: customIcon
+            pane: "labelsPane",
+            icon: customIcon,
           });
-          
-          marker.bindTooltip(`
+
+          marker.bindTooltip(
+            `
               <div style="background: white; border: 1px solid #EFEBE7; padding: 6px 8px; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); font-family: sans-serif; font-size: 10px; line-height: 1.3;">
                   <div style="font-weight: bold; color: #1E2F31; margin-bottom: 2px;">Rawa Buaya Toll Gate ${isFallback ? "(Offline Mode)" : ""}</div>
                   <div style="color: #4C4A4B;">JORR W1 KM4</div>
               </div>
-          `, {
-             direction: "top",
-             offset: [0, -8],
-             className: "custom-poi-tooltip"
-          });
+          `,
+            {
+              direction: "top",
+              offset: [0, -8],
+              className: "custom-poi-tooltip",
+            },
+          );
           marker.addTo(tollGroup);
-          
+
           tollRoadLayerRef.current = tollGroup.addTo(mapRef.current);
           setLoadingStatus({ active: false, text: "", isError: false });
         };
 
         // Request overpass data for motorways in the region
         const query = `[out:json][timeout:25];(way["highway"="motorway"](-6.4,106.5,-6.0,107.0);way["highway"="motorway_link"](-6.4,106.5,-6.0,107.0););out geom;`;
-        
+
         const fetchTollRoadsWithFallback = async () => {
           const cacheKey = "cached_toll_roads_jakarta";
           const cached = sessionStorage.getItem(cacheKey);
@@ -3703,7 +3843,7 @@ const InteractiveDemographicMap = memo(() => {
             "https://overpass-api.de/api/interpreter",
             "https://lz4.overpass-api.de/api/interpreter",
             "https://overpass.kumi.systems/api/interpreter",
-            "https://overpass.osm.ch/api/interpreter"
+            "https://overpass.osm.ch/api/interpreter",
           ];
 
           for (const url of endpoints) {
@@ -3712,8 +3852,8 @@ const InteractiveDemographicMap = memo(() => {
                 method: "POST",
                 body: "data=" + encodeURIComponent(query),
                 headers: {
-                  "Content-Type": "application/x-www-form-urlencoded"
-                }
+                  "Content-Type": "application/x-www-form-urlencoded",
+                },
               });
               if (!res.ok) continue;
               const text = await res.text();
@@ -3721,7 +3861,7 @@ const InteractiveDemographicMap = memo(() => {
               if (data && data.elements) {
                 try {
                   sessionStorage.setItem(cacheKey, JSON.stringify(data));
-                } catch(e) {
+                } catch (e) {
                   // Ignore quota exceeded errors
                 }
                 return data;
@@ -3734,16 +3874,17 @@ const InteractiveDemographicMap = memo(() => {
         };
 
         fetchTollRoadsWithFallback()
-          .then(data => {
+          .then((data) => {
             if (!mapRef.current) return;
             const lines = [];
-            data.elements.forEach(element => {
+            data.elements.forEach((element) => {
               if (element.type === "way" && element.geometry) {
-                lines.push(element.geometry.map(p => [p.lat, p.lon]));
+                lines.push(element.geometry.map((p) => [p.lat, p.lon]));
               }
             });
             renderTollRoads(lines, false);
-          }).catch(e => {
+          })
+          .catch((e) => {
             console.error("Failed to load toll roads via Overpass.", e);
             if (!mapRef.current) return;
             // Hardcoded fallback removed to prevent random straight lines
@@ -3753,7 +3894,10 @@ const InteractiveDemographicMap = memo(() => {
         mapRef.current.addLayer(tollRoadLayerRef.current);
       }
     } else {
-      if (tollRoadLayerRef.current && mapRef.current.hasLayer(tollRoadLayerRef.current)) {
+      if (
+        tollRoadLayerRef.current &&
+        mapRef.current.hasLayer(tollRoadLayerRef.current)
+      ) {
         mapRef.current.removeLayer(tollRoadLayerRef.current);
       }
     }
@@ -3827,17 +3971,21 @@ const InteractiveDemographicMap = memo(() => {
         const cacheKey = `nominatim_${encodeURIComponent(region.query)}`;
         const cached = sessionStorage.getItem(cacheKey);
         let data = null;
-        
+
         if (cached) {
-          try { data = JSON.parse(cached); } catch(e) { sessionStorage.removeItem(cacheKey); }
+          try {
+            data = JSON.parse(cached);
+          } catch (e) {
+            sessionStorage.removeItem(cacheKey);
+          }
         }
 
         if (!data) {
           const endpoints = [
             `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(region.query)}&polygon_geojson=1&format=json`,
-            `https://nominatim.kumi.systems/search?q=${encodeURIComponent(region.query)}&polygon_geojson=1&format=json`
+            `https://nominatim.kumi.systems/search?q=${encodeURIComponent(region.query)}&polygon_geojson=1&format=json`,
           ];
-          
+
           for (const url of endpoints) {
             try {
               const response = await fetch(url);
@@ -3846,7 +3994,9 @@ const InteractiveDemographicMap = memo(() => {
               const parsed = JSON.parse(text);
               if (parsed) {
                 data = parsed;
-                try { sessionStorage.setItem(cacheKey, JSON.stringify(data)); } catch(e) {}
+                try {
+                  sessionStorage.setItem(cacheKey, JSON.stringify(data));
+                } catch (e) {}
                 break;
               }
             } catch (err) {
@@ -3854,7 +4004,7 @@ const InteractiveDemographicMap = memo(() => {
             }
           }
         }
-        
+
         if (!data) throw new Error("API Error");
 
         let geojsonData;
@@ -3985,17 +4135,21 @@ const InteractiveDemographicMap = memo(() => {
           const cacheKey = `nominatim_poi_${encodeURIComponent(loc.query)}`;
           const cached = sessionStorage.getItem(cacheKey);
           let data = null;
-          
+
           if (cached) {
-            try { data = JSON.parse(cached); } catch(e) { sessionStorage.removeItem(cacheKey); }
+            try {
+              data = JSON.parse(cached);
+            } catch (e) {
+              sessionStorage.removeItem(cacheKey);
+            }
           }
-          
+
           if (!data) {
             const endpoints = [
               `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(loc.query)}&polygon_geojson=1&format=json`,
-              `https://nominatim.kumi.systems/search?q=${encodeURIComponent(loc.query)}&polygon_geojson=1&format=json`
+              `https://nominatim.kumi.systems/search?q=${encodeURIComponent(loc.query)}&polygon_geojson=1&format=json`,
             ];
-            
+
             for (const url of endpoints) {
               try {
                 const response = await fetch(url);
@@ -4004,7 +4158,9 @@ const InteractiveDemographicMap = memo(() => {
                 const parsed = JSON.parse(text);
                 if (parsed) {
                   data = parsed;
-                  try { sessionStorage.setItem(cacheKey, JSON.stringify(data)); } catch(e) {}
+                  try {
+                    sessionStorage.setItem(cacheKey, JSON.stringify(data));
+                  } catch (e) {}
                   break;
                 }
               } catch (err) {
@@ -4012,7 +4168,7 @@ const InteractiveDemographicMap = memo(() => {
               }
             }
           }
-          
+
           if (!data) throw new Error("API Error");
 
           let geojsonData;
@@ -4084,7 +4240,7 @@ const InteractiveDemographicMap = memo(() => {
             iconSize: [20, 20],
             iconAnchor: [10, 10],
           }),
-          pane: "markersPane"
+          pane: "markersPane",
         }).addTo(singlePoiGroup);
       } else {
         marker = L.circleMarker([lat, lon], {
@@ -4202,17 +4358,24 @@ const InteractiveDemographicMap = memo(() => {
     }
   };
   const handlePoiHover = useCallback((id, isHovering) => {
-    if (isHovering && activeClickedPoiRef.current && activeClickedPoiRef.current !== id) {
+    if (
+      isHovering &&
+      activeClickedPoiRef.current &&
+      activeClickedPoiRef.current !== id
+    ) {
       const prevId = activeClickedPoiRef.current;
       activeClickedPoiRef.current = null;
       const prevLayer = poiLayersRef.current[prevId];
       if (prevLayer) {
         prevLayer.eachLayer((layer) => {
           if (layer.options && layer.options.pane === "markersPane") {
-            if (typeof layer.setStyle === 'function') {
+            if (typeof layer.setStyle === "function") {
               layer.setStyle({ className: "" });
             }
-            const el = typeof layer.getElement === 'function' ? layer.getElement() : null;
+            const el =
+              typeof layer.getElement === "function"
+                ? layer.getElement()
+                : null;
             if (el) el.classList.remove("glowing-marker");
           }
         });
@@ -4224,7 +4387,7 @@ const InteractiveDemographicMap = memo(() => {
       layerGroup.eachLayer((layer) => {
         if (layer.options && layer.options.pane === "markersPane") {
           const isGlowing = isHovering || activeClickedPoiRef.current === id;
-          if (typeof layer.setStyle === 'function') {
+          if (typeof layer.setStyle === "function") {
             layer.setStyle({
               className: isGlowing ? "glowing-marker" : "",
               radius: 8,
@@ -4232,12 +4395,13 @@ const InteractiveDemographicMap = memo(() => {
               opacity: 1,
             });
           }
-          const el = typeof layer.getElement === 'function' ? layer.getElement() : null;
+          const el =
+            typeof layer.getElement === "function" ? layer.getElement() : null;
           if (el) {
             if (isGlowing) el.classList.add("glowing-marker");
             else el.classList.remove("glowing-marker");
           }
-          if (isGlowing && typeof layer.bringToFront === 'function') {
+          if (isGlowing && typeof layer.bringToFront === "function") {
             layer.bringToFront();
           }
         }
@@ -4245,14 +4409,20 @@ const InteractiveDemographicMap = memo(() => {
     }
   }, []);
 
-  const handleGroupHover = useCallback((locs, isHovering) => {
-    locs.forEach(loc => handlePoiHover(loc.id, isHovering));
-  }, [handlePoiHover]);
+  const handleGroupHover = useCallback(
+    (locs, isHovering) => {
+      locs.forEach((loc) => handlePoiHover(loc.id, isHovering));
+    },
+    [handlePoiHover],
+  );
 
   useEffect(() => {
     const handleDocumentClick = (e) => {
       // If we clicked something that is not a location list item and is not on the map itself
-      if (!e.target.closest('.location-list-item') && !e.target.closest('#demographics-map')) {
+      if (
+        !e.target.closest(".location-list-item") &&
+        !e.target.closest("#demographics-map")
+      ) {
         if (activeClickedPoiRef.current) {
           const prevId = activeClickedPoiRef.current;
           activeClickedPoiRef.current = null;
@@ -4260,8 +4430,8 @@ const InteractiveDemographicMap = memo(() => {
         }
       }
     };
-    document.addEventListener('mousedown', handleDocumentClick);
-    return () => document.removeEventListener('mousedown', handleDocumentClick);
+    document.addEventListener("mousedown", handleDocumentClick);
+    return () => document.removeEventListener("mousedown", handleDocumentClick);
   }, [handlePoiHover]);
 
   useEffect(() => {
@@ -4607,7 +4777,10 @@ const InteractiveDemographicMap = memo(() => {
         >
           <span className="hidden sm:inline">Legend</span>
           <span className="sm:hidden">Legend</span>
-          <ChevronRight size={14} className="text-[#1E2F31] shrink-0 rotate-180" />
+          <ChevronRight
+            size={14}
+            className="text-[#1E2F31] shrink-0 rotate-180"
+          />
         </div>
       )}
 
@@ -4627,7 +4800,7 @@ const InteractiveDemographicMap = memo(() => {
               <ChevronRight size={16} />
             </button>
           </div>
-          
+
           <div className="p-3 flex flex-col">
             {/* 1. Demographic Section */}
             <h4 className="text-[9px] font-bold text-[#9B8B70] uppercase tracking-wider mb-2">
@@ -4709,674 +4882,265 @@ const InteractiveDemographicMap = memo(() => {
               <X size={16} />
             </button>
           </div>
-          
+
           <div className="flex bg-[#F9F8F6] p-1 rounded-lg">
             <button
-              className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${activeTab === 'controls' ? 'bg-white text-[#1C6048] shadow-sm' : 'text-[#8A8175] hover:text-[#1E2F31]'}`}
-              onClick={() => setActiveTab('controls')}
+              className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${activeTab === "controls" ? "bg-white text-[#1C6048] shadow-sm" : "text-[#8A8175] hover:text-[#1E2F31]"}`}
+              onClick={() => setActiveTab("controls")}
             >
               Layers
             </button>
             <button
-              className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${activeTab === 'analytics' ? 'bg-white text-[#1C6048] shadow-sm' : 'text-[#8A8175] hover:text-[#1E2F31]'}`}
-              onClick={() => setActiveTab('analytics')}
+              className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${activeTab === "analytics" ? "bg-white text-[#1C6048] shadow-sm" : "text-[#8A8175] hover:text-[#1E2F31]"}`}
+              onClick={() => setActiveTab("analytics")}
             >
               Age-Gender
             </button>
           </div>
         </div>
 
-        {activeTab === 'controls' && (
-        <div className="p-4 flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-[#8A8175] uppercase tracking-wider">
-              Show Labels
-            </span>
-            <label className="switch item">
-              <input
-                type="checkbox"
-                checked={showRegionLabels}
-                onChange={() => setShowRegionLabels(!showRegionLabels)}
-              />
-              <span className="slider"></span>
-            </label>
-          </div>
-          
-          <select
-            value={viewMode}
-            onChange={(e) => setViewMode(e.target.value)}
-            className="w-full p-2 bg-[#F9F8F6] border border-[#D8D8D8] rounded-lg font-bold text-xs text-[#1E2f31] outline-none cursor-pointer"
-          >
-            <option value="admin">Administrative Regions</option>
-            <option value="population">Total Population</option>
-            <option value="density">Population Density</option>
-            <option value="economy">Economic Profile (GDRP)</option>
-            <option value="commuter">Commuter Flow (% to Core)</option>
-            <option value="age">Age Demographics (Median)</option>
-          </select>
-
-          <div className="flex flex-col">
-            <div
-              className="flex justify-between items-center text-[11px] font-extrabold text-[#1C6048] uppercase tracking-wider pb-1 border-b border-dashed border-[#d8d8d8] cursor-pointer"
-              onClick={() => setRegionsSectionExpanded(!regionsSectionExpanded)}
-            >
-              <div className="flex items-center gap-1.5">
-                <span>Regions</span>
-                <ChevronDown
-                  size={14}
-                  className={`transition-transform duration-300 ${!regionsSectionExpanded ? "-rotate-90" : ""}`}
-                />
-              </div>
-            </div>
-            {regionsSectionExpanded &&
-              Object.entries(regionGroups).map(([groupName, regions]) => (
-                <div
-                  key={groupName}
-                  className={`flex flex-col transition-all`}
-                >
-                  <div
-                    className={`flex justify-between items-center text-[10px] font-bold text-[#9B8B70] uppercase py-1 bg-[#F9F8F6] px-2 rounded cursor-pointer transition-all`}
-                    onClick={() =>
-                      setExpandedGroups((p) => ({
-                        ...p,
-                        [groupName]: !p[groupName],
-                      }))
-                    }
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <ChevronDown
-                        size={14}
-                        className={`transition-transform duration-300 ${!expandedGroups[groupName] ? "-rotate-90" : ""}`}
-                      />
-                      <span>{groupName}</span>
-                    </div>
-                    <label
-                      className="switch group"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={regions.every((r) =>
-                          activeRegions.includes(r.id),
-                        )}
-                        onChange={() => toggleGroup(groupName)}
-                      />
-                      <span className="slider"></span>
-                    </label>
-                  </div>
-                  {expandedGroups[groupName] &&
-                    regions.map((region) => (
-                      <div
-                        key={region.id}
-                        className="flex justify-between items-center py-1.5 pl-7 pr-2 text-[10px] font-medium text-[#4C4A4B] hover:bg-[#EFEBE7] rounded transition-colors"
-                        onMouseEnter={() => {
-                          const layer = regionsLayersRef.current[region.id];
-                          if (layer && mapRef.current?.hasLayer(layer)) {
-                            applyLayerStyle(layer, region.id, true, viewMode);
-                            if (typeof layer.bringToFront === "function")
-                              layer.bringToFront();
-                          }
-                        }}
-                        onMouseLeave={() => {
-                          const layer = regionsLayersRef.current[region.id];
-                          if (layer && mapRef.current?.hasLayer(layer)) {
-                            applyLayerStyle(layer, region.id, false, viewMode);
-                          }
-                        }}
-                      >
-                        <span
-                          className="cursor-pointer hover:text-[#1C6048]"
-                          onClick={() => handleRegionClick(region.id)}
-                        >
-                          {region.name}
-                        </span>
-                        <label className="switch item">
-                          <input
-                            type="checkbox"
-                            checked={activeRegions.includes(region.id)}
-                            onChange={() => toggleRegion(region.id)}
-                            disabled={
-                              regionFetchStatuses[region.id] === "loading"
-                            }
-                          />
-                          <span className="slider"></span>
-                        </label>
-                      </div>
-                    ))}
-                </div>
-              ))}
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <div
-              className="flex justify-between items-center text-[11px] font-extrabold text-[#1C6048] uppercase tracking-wider pb-1 border-b border-dashed border-[#d8d8d8] cursor-pointer pr-2"
-              onClick={() => setPoiSectionExpanded(!poiSectionExpanded)}
-            >
-              <div className="flex items-center gap-1.5">
-                <span>Locations</span>
-                <ChevronDown
-                  size={14}
-                  className={`transition-transform duration-300 ${!poiSectionExpanded ? "-rotate-90" : ""}`}
-                />
-              </div>
-              <label
-                className="switch group"
-                onClick={(e) => e.stopPropagation()}
-              >
+        {activeTab === "controls" && (
+          <div className="p-4 flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-[#8A8175] uppercase tracking-wider">
+                Show Labels
+              </span>
+              <label className="switch item">
                 <input
                   type="checkbox"
-                  checked={activePOIs.length === mapLocations.length}
-                  onChange={toggleAllPoi}
+                  checked={showRegionLabels}
+                  onChange={() => setShowRegionLabels(!showRegionLabels)}
                 />
                 <span className="slider"></span>
               </label>
             </div>
-            {poiSectionExpanded && (
-              <div className="flex flex-col">
-                {["Vasanta", "Cancer Hospitals", "General", "Infrastructure"].map((groupName) => {
-                  const groupLocs = mapLocations.filter(
-                    (loc) => loc.group === groupName,
-                  );
-                  if (groupLocs.length === 0) return null;
 
-                  return (
+            <select
+              value={viewMode}
+              onChange={(e) => setViewMode(e.target.value)}
+              className="w-full p-2 bg-[#F9F8F6] border border-[#D8D8D8] rounded-lg font-bold text-xs text-[#1E2f31] outline-none cursor-pointer"
+            >
+              <option value="admin">Administrative Regions</option>
+              <option value="population">Total Population</option>
+              <option value="density">Population Density</option>
+              <option value="economy">Economic Profile (GDRP)</option>
+              <option value="commuter">Commuter Flow (% to Core)</option>
+              <option value="age">Age Demographics (Median)</option>
+            </select>
+
+            <div className="flex flex-col">
+              <div
+                className="flex justify-between items-center text-[11px] font-extrabold text-[#1C6048] uppercase tracking-wider pb-1 border-b border-dashed border-[#d8d8d8] cursor-pointer"
+                onClick={() =>
+                  setRegionsSectionExpanded(!regionsSectionExpanded)
+                }
+              >
+                <div className="flex items-center gap-1.5">
+                  <span>Regions</span>
+                  <ChevronDown
+                    size={14}
+                    className={`transition-transform duration-300 ${!regionsSectionExpanded ? "-rotate-90" : ""}`}
+                  />
+                </div>
+              </div>
+              {regionsSectionExpanded &&
+                Object.entries(regionGroups).map(([groupName, regions]) => (
+                  <div
+                    key={groupName}
+                    className={`flex flex-col transition-all`}
+                  >
                     <div
-                      key={groupName}
-                      className={`flex flex-col transition-all`}
+                      className={`flex justify-between items-center text-[10px] font-bold text-[#9B8B70] uppercase py-1 bg-[#F9F8F6] px-2 rounded cursor-pointer transition-all`}
+                      onClick={() =>
+                        setExpandedGroups((p) => ({
+                          ...p,
+                          [groupName]: !p[groupName],
+                        }))
+                      }
                     >
-                      {/* TIER 1: The Main Group Header */}
-                      <div
-                        className={`flex justify-between items-center text-[10px] font-bold text-[#9B8B70] uppercase py-1 bg-[#F9F8F6] px-2 rounded cursor-pointer transition-all`}
-                        onClick={() =>
-                          setExpandedPoiGroups((p) => ({
-                            ...p,
-                            [groupName]: !p[groupName],
-                          }))
-                        }
-                        onMouseEnter={() => handleGroupHover(groupLocs, true)}
-                        onMouseLeave={() => handleGroupHover(groupLocs, false)}
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <ChevronDown
-                            size={14}
-                            className={`transition-transform duration-300 ${!expandedPoiGroups[groupName] ? "-rotate-90" : ""}`}
-                          />
-                          <span>{groupName}</span>
-                        </div>
-                        <label
-                          className="switch group"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={
-                              groupName === "Infrastructure"
-                                ? groupLocs.every((l) => activePOIs.includes(l.id)) && showTollRoads
-                                : groupLocs.every((l) => activePOIs.includes(l.id))
-                            }
-                            onChange={() => {
-                              const ids = groupLocs.map((l) => l.id);
-                              const allActive = groupName === "Infrastructure"
-                                ? ids.every((id) => activePOIs.includes(id)) && showTollRoads
-                                : ids.every((id) => activePOIs.includes(id));
-                                
-                              if (groupName === "Infrastructure") {
-                                setShowTollRoads(!allActive);
-                              }
-                              
-                              setActivePOIs((prev) =>
-                                allActive
-                                  ? prev.filter((id) => !ids.includes(id))
-                                  : [...new Set([...prev, ...ids])],
-                              );
-                            }}
-                          />
-                          <span className="slider"></span>
-                        </label>
+                      <div className="flex items-center gap-1.5">
+                        <ChevronDown
+                          size={14}
+                          className={`transition-transform duration-300 ${!expandedGroups[groupName] ? "-rotate-90" : ""}`}
+                        />
+                        <span>{groupName}</span>
                       </div>
+                      <label
+                        className="switch group"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={regions.every((r) =>
+                            activeRegions.includes(r.id),
+                          )}
+                          onChange={() => toggleGroup(groupName)}
+                        />
+                        <span className="slider"></span>
+                      </label>
+                    </div>
+                    {expandedGroups[groupName] &&
+                      regions.map((region) => (
+                        <div
+                          key={region.id}
+                          className="flex justify-between items-center py-1.5 pl-7 pr-2 text-[10px] font-medium text-[#4C4A4B] hover:bg-[#EFEBE7] rounded transition-colors"
+                          onMouseEnter={() => {
+                            const layer = regionsLayersRef.current[region.id];
+                            if (layer && mapRef.current?.hasLayer(layer)) {
+                              applyLayerStyle(layer, region.id, true, viewMode);
+                              if (typeof layer.bringToFront === "function")
+                                layer.bringToFront();
+                            }
+                          }}
+                          onMouseLeave={() => {
+                            const layer = regionsLayersRef.current[region.id];
+                            if (layer && mapRef.current?.hasLayer(layer)) {
+                              applyLayerStyle(
+                                layer,
+                                region.id,
+                                false,
+                                viewMode,
+                              );
+                            }
+                          }}
+                        >
+                          <span
+                            className="cursor-pointer hover:text-[#1C6048]"
+                            onClick={() => handleRegionClick(region.id)}
+                          >
+                            {region.name}
+                          </span>
+                          <label className="switch item">
+                            <input
+                              type="checkbox"
+                              checked={activeRegions.includes(region.id)}
+                              onChange={() => toggleRegion(region.id)}
+                              disabled={
+                                regionFetchStatuses[region.id] === "loading"
+                              }
+                            />
+                            <span className="slider"></span>
+                          </label>
+                        </div>
+                      ))}
+                  </div>
+                ))}
+            </div>
 
-                      {expandedPoiGroups[groupName] && (
-                        <div className="flex flex-col">
-                          {/* Anchor / Base Locations (No SubGroup) */}
-                          {groupLocs
-                            .filter((l) => !l.subGroup && (groupName !== "Vasanta" || (l.id !== "tb" && l.id !== "new_vasanta")))
-                            .map((loc, index) => (
-                              <div
-                                key={loc.id}
-                                className="location-list-item flex justify-between items-center py-1.5 pl-7 pr-2 text-[10px] font-medium hover:bg-[#EFEBE7] rounded cursor-pointer transition-colors"
-                                onClick={() =>
-                                  handlePoiClick(
-                                    loc.lat !== undefined
-                                      ? loc.lat
-                                      : loc.fallbackLat,
-                                    loc.lon !== undefined
-                                      ? loc.lon
-                                      : loc.fallbackLon,
-                                    loc.id
-                                  )
+            <div className="flex flex-col gap-1">
+              <div
+                className="flex justify-between items-center text-[11px] font-extrabold text-[#1C6048] uppercase tracking-wider pb-1 border-b border-dashed border-[#d8d8d8] cursor-pointer pr-2"
+                onClick={() => setPoiSectionExpanded(!poiSectionExpanded)}
+              >
+                <div className="flex items-center gap-1.5">
+                  <span>Locations</span>
+                  <ChevronDown
+                    size={14}
+                    className={`transition-transform duration-300 ${!poiSectionExpanded ? "-rotate-90" : ""}`}
+                  />
+                </div>
+                <label
+                  className="switch group"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <input
+                    type="checkbox"
+                    checked={activePOIs.length === mapLocations.length}
+                    onChange={toggleAllPoi}
+                  />
+                  <span className="slider"></span>
+                </label>
+              </div>
+              {poiSectionExpanded && (
+                <div className="flex flex-col">
+                  {[
+                    "Vasanta",
+                    "Cancer Hospitals",
+                    "General",
+                    "Infrastructure",
+                  ].map((groupName) => {
+                    const groupLocs = mapLocations.filter(
+                      (loc) => loc.group === groupName,
+                    );
+                    if (groupLocs.length === 0) return null;
+
+                    return (
+                      <div
+                        key={groupName}
+                        className={`flex flex-col transition-all`}
+                      >
+                        {/* TIER 1: The Main Group Header */}
+                        <div
+                          className={`flex justify-between items-center text-[10px] font-bold text-[#9B8B70] uppercase py-1 bg-[#F9F8F6] px-2 rounded cursor-pointer transition-all`}
+                          onClick={() =>
+                            setExpandedPoiGroups((p) => ({
+                              ...p,
+                              [groupName]: !p[groupName],
+                            }))
+                          }
+                          onMouseEnter={() => handleGroupHover(groupLocs, true)}
+                          onMouseLeave={() =>
+                            handleGroupHover(groupLocs, false)
+                          }
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <ChevronDown
+                              size={14}
+                              className={`transition-transform duration-300 ${!expandedPoiGroups[groupName] ? "-rotate-90" : ""}`}
+                            />
+                            <span>{groupName}</span>
+                          </div>
+                          <label
+                            className="switch group"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={
+                                groupName === "Infrastructure"
+                                  ? groupLocs.every((l) =>
+                                      activePOIs.includes(l.id),
+                                    ) && showTollRoads
+                                  : groupLocs.every((l) =>
+                                      activePOIs.includes(l.id),
+                                    )
+                              }
+                              onChange={() => {
+                                const ids = groupLocs.map((l) => l.id);
+                                const allActive =
+                                  groupName === "Infrastructure"
+                                    ? ids.every((id) =>
+                                        activePOIs.includes(id),
+                                      ) && showTollRoads
+                                    : ids.every((id) =>
+                                        activePOIs.includes(id),
+                                      );
+
+                                if (groupName === "Infrastructure") {
+                                  setShowTollRoads(!allActive);
                                 }
-                                onMouseEnter={() =>
-                                  handlePoiHover?.(loc.id, true)
-                                }
-                                onMouseLeave={() =>
-                                  handlePoiHover?.(loc.id, false)
-                                }
-                              >
-                                <div className="truncate flex-1 min-w-0 pr-3">
-                                  <span className="text-[#9B8B70] mr-1.5 font-bold">
-                                    {index + 1}.
-                                  </span>
-                                  <span className="font-bold text-[#1E2F31]">
-                                    {loc.name}
-                                  </span>
-                                  <span className="hidden text-[9px] text-[#9B8B70] ml-1.5">
-                                    — {loc.desc}
-                                  </span>
-                                </div>
-                                <label
-                                  className="switch item"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={activePOIs.includes(loc.id)}
-                                    onChange={() =>
-                                      setActivePOIs((prev) =>
-                                        prev.includes(loc.id)
-                                          ? prev.filter((i) => i !== loc.id)
-                                          : [...prev, loc.id],
-                                      )
-                                    }
-                                  />
-                                  <span className="slider"></span>
-                                </label>
-                              </div>
-                            ))}
 
-                          {/* TIER 2: Sub-Groups Loop (e.g., '< 5km Radius' or 'Class A') */}
-                          {[
-                            ...new Set(
-                              groupLocs
-                                .filter((l) => l.subGroup)
-                                .map((l) => l.subGroup),
-                            ),
-                          ].map((subGroupName) => {
-                            const subGroupLocs = groupLocs.filter(
-                              (l) => l.subGroup === subGroupName,
-                            );
+                                setActivePOIs((prev) =>
+                                  allActive
+                                    ? prev.filter((id) => !ids.includes(id))
+                                    : [...new Set([...prev, ...ids])],
+                                );
+                              }}
+                            />
+                            <span className="slider"></span>
+                          </label>
+                        </div>
 
-                            // Determine if this is a distance folder or a standalone class
-                            const isDistanceFolder =
-                              subGroupName.includes("km Radius");
-
-                            return (
-                              <div
-                                key={subGroupName}
-                                className={`flex flex-col ${isDistanceFolder ? "mt-0.5" : ""}`}
-                              >
-                                {isDistanceFolder ? (
-                                  // 1. Collapsible Distance Folder with Master Toggle
-                                  <div
-                                    className="flex justify-between items-center pl-7 pr-2 mt-1.5 mb-0.5 border-b border-[#D8D8D8]/50 pb-0.5 opacity-70 hover:opacity-100 cursor-pointer"
-                                    onClick={() =>
-                                      setExpandedSubGroups((p) => ({
-                                        ...p,
-                                        [subGroupName]: !p[subGroupName],
-                                      }))
-                                    }
-                                    onMouseEnter={() => handleGroupHover(subGroupLocs, true)}
-                                    onMouseLeave={() => handleGroupHover(subGroupLocs, false)}
-                                  >
-                                    <div className="flex items-center gap-1.5 text-[8px] font-black text-[#1E2F31] uppercase tracking-widest">
-                                      <ChevronDown
-                                        size={10}
-                                        className={`transition-transform duration-300 ${expandedSubGroups[subGroupName] === false ? "-rotate-90" : ""}`}
-                                      />
-                                      <span>{subGroupName}</span>
-                                    </div>
-                                    <label
-                                      className="switch item scale-75 origin-right"
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      <input
-                                        type="checkbox"
-                                        checked={subGroupLocs.every((l) =>
-                                          activePOIs.includes(l.id),
-                                        )}
-                                        onChange={() => {
-                                          const ids = subGroupLocs.map(
-                                            (l) => l.id,
-                                          );
-                                          const allActive = ids.every((id) =>
-                                            activePOIs.includes(id),
-                                          );
-                                          setActivePOIs((prev) =>
-                                            allActive
-                                              ? prev.filter(
-                                                  (id) => !ids.includes(id),
-                                                )
-                                              : [...new Set([...prev, ...ids])],
-                                          );
-                                        }}
-                                      />
-                                      <span className="slider"></span>
-                                    </label>
-                                  </div>
-                                ) : (
-                                  // 2. Standalone Class Header (e.g., Cancer Hospitals > Class A) with Toggle
-                                  <div
-                                    className="flex justify-between items-center pl-7 pr-2 mt-1.5 mb-0.5 border-b border-[#D8D8D8]/50 pb-0.5 opacity-70 hover:opacity-100 cursor-pointer"
-                                    onClick={() =>
-                                      setExpandedSubGroups((p) => ({
-                                        ...p,
-                                        [subGroupName]: !p[subGroupName],
-                                      }))
-                                    }
-                                    onMouseEnter={() => handleGroupHover(subGroupLocs, true)}
-                                    onMouseLeave={() => handleGroupHover(subGroupLocs, false)}
-                                  >
-                                    <div className="flex items-center gap-1.5 text-[8px] font-black text-[#1E2F31] uppercase tracking-widest">
-                                      <ChevronDown
-                                        size={10}
-                                        className={`transition-transform duration-300 ${expandedSubGroups[subGroupName] === false ? "-rotate-90" : ""}`}
-                                      />
-                                      <span>{subGroupName}</span>
-                                    </div>
-                                    <label
-                                      className="switch item scale-75 origin-right"
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      <input
-                                        type="checkbox"
-                                        checked={subGroupLocs.every((l) =>
-                                          activePOIs.includes(l.id),
-                                        )}
-                                        onChange={() => {
-                                          const ids = subGroupLocs.map(
-                                            (l) => l.id,
-                                          );
-                                          const allActive = ids.every((id) =>
-                                            activePOIs.includes(id),
-                                          );
-                                          setActivePOIs((prev) =>
-                                            allActive
-                                              ? prev.filter(
-                                                  (id) => !ids.includes(id),
-                                                )
-                                              : [...new Set([...prev, ...ids])],
-                                          );
-                                        }}
-                                      />
-                                      <span className="slider"></span>
-                                    </label>
-                                  </div>
-                                )}
-
-                                {/* TIER 3: Nested Items & Sub-Sub Headers (Rendered if Tier 2 is expanded) */}
-                                {expandedSubGroups[subGroupName] !== false && (
-                                  <div className="flex flex-col mb-1">
-                                    {/* Class A Sub-Header inside Distance Folder */}
-                                    {isDistanceFolder &&
-                                      subGroupLocs.some(
-                                        (l) => l.tier === "Class A",
-                                      ) && (
-                                        <div
-                                          className="flex justify-between items-center pl-9 pr-2 mt-1 mb-0.5 border-b border-[#D8D8D8]/50 pb-0.5 opacity-60 hover:opacity-100 cursor-pointer"
-                                          onClick={() =>
-                                            setExpandedSubGroups((p) => ({
-                                              ...p,
-                                              [`${subGroupName}_ClassA`]:
-                                                !p[`${subGroupName}_ClassA`],
-                                            }))
-                                          }
-                                          onMouseEnter={() => handleGroupHover(subGroupLocs.filter(l => l.tier === 'Class A'), true)}
-                                          onMouseLeave={() => handleGroupHover(subGroupLocs.filter(l => l.tier === 'Class A'), false)}
-                                        >
-                                          <div className="flex items-center gap-1.5 text-[8px] font-black text-[#1E2F31] uppercase tracking-widest">
-                                            <ChevronDown
-                                              size={10}
-                                              className={`transition-transform duration-300 ${expandedSubGroups[`${subGroupName}_ClassA`] === false ? "-rotate-90" : ""}`}
-                                            />
-                                            <span>Class A (Comprehensive)</span>
-                                          </div>
-                                          <label
-                                            className="switch item scale-75 origin-right"
-                                            onClick={(e) => e.stopPropagation()}
-                                          >
-                                            <input
-                                              type="checkbox"
-                                              checked={subGroupLocs
-                                                .filter(
-                                                  (l) => l.tier === "Class A",
-                                                )
-                                                .every((l) =>
-                                                  activePOIs.includes(l.id),
-                                                )}
-                                              onChange={() => {
-                                                const ids = subGroupLocs
-                                                  .filter(
-                                                    (l) => l.tier === "Class A",
-                                                  )
-                                                  .map((l) => l.id);
-                                                const allActive = ids.every(
-                                                  (id) =>
-                                                    activePOIs.includes(id),
-                                                );
-                                                setActivePOIs((prev) =>
-                                                  allActive
-                                                    ? prev.filter(
-                                                        (id) =>
-                                                          !ids.includes(id),
-                                                      )
-                                                    : [
-                                                        ...new Set([
-                                                          ...prev,
-                                                          ...ids,
-                                                        ]),
-                                                      ],
-                                                );
-                                              }}
-                                            />
-                                            <span className="slider"></span>
-                                          </label>
-                                        </div>
-                                      )}
-
-                                    {/* Class A Loop */}
-                                    {expandedSubGroups[
-                                      `${subGroupName}_ClassA`
-                                    ] !== false &&
-                                      subGroupLocs
-                                        .filter(
-                                          (l) =>
-                                            l.tier === "Class A" ||
-                                            !isDistanceFolder,
-                                        )
-                                        .map((loc, index) => (
-                                          <div
-                                            key={loc.id}
-                                            className={`location-list-item flex justify-between items-center py-1.5 ${isDistanceFolder ? "pl-12" : "pl-10"} pr-2 text-[10px] font-medium hover:bg-[#EFEBE7] rounded cursor-pointer transition-colors`}
-                                            onClick={() =>
-                                              handlePoiClick(loc.lat, loc.lon, loc.id)
-                                            }
-                                            onMouseEnter={() =>
-                                              handlePoiHover?.(loc.id, true)
-                                            }
-                                            onMouseLeave={() =>
-                                              handlePoiHover?.(loc.id, false)
-                                            }
-                                          >
-                                            <div className="truncate flex-1 min-w-0 pr-3">
-                                              <span className="text-[#9B8B70] mr-1.5 font-bold">
-                                                {index + 1}.
-                                              </span>
-                                              <span className="font-bold text-[#1E2F31]">
-                                                {loc.name}
-                                              </span>
-                                              <span className="hidden text-[9px] text-[#9B8B70] ml-1.5">
-                                                — {loc.desc}
-                                              </span>
-                                            </div>
-                                            <label
-                                              className="switch item"
-                                              onClick={(e) =>
-                                                e.stopPropagation()
-                                              }
-                                            >
-                                              <input
-                                                type="checkbox"
-                                                checked={activePOIs.includes(
-                                                  loc.id,
-                                                )}
-                                                onChange={() =>
-                                                  setActivePOIs((prev) =>
-                                                    prev.includes(loc.id)
-                                                      ? prev.filter(
-                                                          (i) => i !== loc.id,
-                                                        )
-                                                      : [...prev, loc.id],
-                                                  )
-                                                }
-                                              />
-                                              <span className="slider"></span>
-                                            </label>
-                                          </div>
-                                        ))}
-
-                                    {/* Class B Sub-Header inside Distance Folder */}
-                                    {isDistanceFolder &&
-                                      subGroupLocs.some(
-                                        (l) => l.tier === "Class B",
-                                      ) && (
-                                        <div
-                                          className="flex justify-between items-center pl-9 pr-2 mt-1.5 mb-0.5 border-b border-[#D8D8D8]/50 pb-0.5 opacity-60 hover:opacity-100 cursor-pointer"
-                                          onClick={() =>
-                                            setExpandedSubGroups((p) => ({
-                                              ...p,
-                                              [`${subGroupName}_ClassB`]:
-                                                !p[`${subGroupName}_ClassB`],
-                                            }))
-                                          }
-                                          onMouseEnter={() => handleGroupHover(subGroupLocs.filter(l => l.tier === 'Class B'), true)}
-                                          onMouseLeave={() => handleGroupHover(subGroupLocs.filter(l => l.tier === 'Class B'), false)}
-                                        >
-                                          <div className="flex items-center gap-1.5 text-[8px] font-black text-[#1E2F31] uppercase tracking-widest">
-                                            <ChevronDown
-                                              size={10}
-                                              className={`transition-transform duration-300 ${expandedSubGroups[`${subGroupName}_ClassB`] === false ? "-rotate-90" : ""}`}
-                                            />
-                                            <span>Class B (Specialized)</span>
-                                          </div>
-                                          <label
-                                            className="switch item scale-75 origin-right"
-                                            onClick={(e) => e.stopPropagation()}
-                                          >
-                                            <input
-                                              type="checkbox"
-                                              checked={subGroupLocs
-                                                .filter(
-                                                  (l) => l.tier === "Class B",
-                                                )
-                                                .every((l) =>
-                                                  activePOIs.includes(l.id),
-                                                )}
-                                              onChange={() => {
-                                                const ids = subGroupLocs
-                                                  .filter(
-                                                    (l) => l.tier === "Class B",
-                                                  )
-                                                  .map((l) => l.id);
-                                                const allActive = ids.every(
-                                                  (id) =>
-                                                    activePOIs.includes(id),
-                                                );
-                                                setActivePOIs((prev) =>
-                                                  allActive
-                                                    ? prev.filter(
-                                                        (id) =>
-                                                          !ids.includes(id),
-                                                      )
-                                                    : [
-                                                        ...new Set([
-                                                          ...prev,
-                                                          ...ids,
-                                                        ]),
-                                                      ],
-                                                );
-                                              }}
-                                            />
-                                            <span className="slider"></span>
-                                          </label>
-                                        </div>
-                                      )}
-
-                                    {/* Class B Loop */}
-                                    {expandedSubGroups[
-                                      `${subGroupName}_ClassB`
-                                    ] !== false &&
-                                      isDistanceFolder &&
-                                      subGroupLocs
-                                        .filter((l) => l.tier === "Class B")
-                                        .map((loc, index) => (
-                                          <div
-                                            key={loc.id}
-                                            className="location-list-item flex justify-between items-center py-1.5 pl-12 pr-2 text-[10px] font-medium hover:bg-[#EFEBE7] rounded cursor-pointer transition-colors"
-                                            onClick={() =>
-                                              handlePoiClick(loc.lat, loc.lon, loc.id)
-                                            }
-                                            onMouseEnter={() =>
-                                              handlePoiHover?.(loc.id, true)
-                                            }
-                                            onMouseLeave={() =>
-                                              handlePoiHover?.(loc.id, false)
-                                            }
-                                          >
-                                            <div className="truncate flex-1 min-w-0 pr-3">
-                                              <span className="text-[#9B8B70] mr-1.5 font-bold">
-                                                {index + 1}.
-                                              </span>
-                                              <span className="font-bold text-[#1E2F31]">
-                                                {loc.name}
-                                              </span>
-                                              <span className="hidden text-[9px] text-[#9B8B70] ml-1.5">
-                                                — {loc.desc}
-                                              </span>
-                                            </div>
-                                            <label
-                                              className="switch item"
-                                              onClick={(e) =>
-                                                e.stopPropagation()
-                                              }
-                                            >
-                                              <input
-                                                type="checkbox"
-                                                checked={activePOIs.includes(
-                                                  loc.id,
-                                                )}
-                                                onChange={() =>
-                                                  setActivePOIs((prev) =>
-                                                    prev.includes(loc.id)
-                                                      ? prev.filter(
-                                                          (i) => i !== loc.id,
-                                                        )
-                                                      : [...prev, loc.id],
-                                                  )
-                                                }
-                                              />
-                                              <span className="slider"></span>
-                                            </label>
-                                          </div>
-                                        ))}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-
-                          {/* Render TB Simatupang and additional anchors as top-level anchor items positioned after the radius sub-groups */}
-                          {groupName === "Vasanta" &&
-                            groupLocs
-                              .filter((l) => l.id === "tb" || l.id === "new_vasanta")
+                        {expandedPoiGroups[groupName] && (
+                          <div className="flex flex-col">
+                            {/* Anchor / Base Locations (No SubGroup) */}
+                            {groupLocs
+                              .filter(
+                                (l) =>
+                                  !l.subGroup &&
+                                  (groupName !== "Vasanta" ||
+                                    (l.id !== "tb" && l.id !== "new_vasanta")),
+                              )
                               .map((loc, index) => (
                                 <div
                                   key={loc.id}
@@ -5389,7 +5153,7 @@ const InteractiveDemographicMap = memo(() => {
                                       loc.lon !== undefined
                                         ? loc.lon
                                         : loc.fallbackLon,
-                                      loc.id
+                                      loc.id,
                                     )
                                   }
                                   onMouseEnter={() =>
@@ -5401,7 +5165,7 @@ const InteractiveDemographicMap = memo(() => {
                                 >
                                   <div className="truncate flex-1 min-w-0 pr-3">
                                     <span className="text-[#9B8B70] mr-1.5 font-bold">
-                                      {index + 2}.
+                                      {index + 1}.
                                     </span>
                                     <span className="font-bold text-[#1E2F31]">
                                       {loc.name}
@@ -5430,51 +5194,557 @@ const InteractiveDemographicMap = memo(() => {
                                 </div>
                               ))}
 
-                          {/* Toll Roads Toggle specifically for Infrastructure Group */}
-                          {groupName === "Infrastructure" && (
-                            <div className="flex justify-between items-center py-1.5 pl-7 pr-2 text-[10px] font-medium hover:bg-[#EFEBE7] rounded cursor-pointer transition-colors"
-                                 onClick={() => setShowTollRoads(!showTollRoads)}
-                            >
-                              <div className="truncate flex-1 min-w-0 pr-3 relative pl-4">
-                                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-2.5 h-0.5 bg-[#1E3A8A]"></span>
-                                <span className="font-bold text-[#1E2F31] group-hover:text-[#1E3A8A]">
-                                  Toll Roads Network
-                                </span>
-                              </div>
-                              <label
-                                className="switch item"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={showTollRoads}
-                                  onChange={() => setShowTollRoads(!showTollRoads)}
-                                />
-                                <span className="slider"></span>
-                              </label>
-                            </div>
-                          )}
+                            {/* TIER 2: Sub-Groups Loop (e.g., '< 5km Radius' or 'Class A') */}
+                            {[
+                              ...new Set(
+                                groupLocs
+                                  .filter((l) => l.subGroup)
+                                  .map((l) => l.subGroup),
+                              ),
+                            ].map((subGroupName) => {
+                              const subGroupLocs = groupLocs.filter(
+                                (l) => l.subGroup === subGroupName,
+                              );
 
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                              // Determine if this is a distance folder or a standalone class
+                              const isDistanceFolder =
+                                subGroupName.includes("km Radius");
+
+                              return (
+                                <div
+                                  key={subGroupName}
+                                  className={`flex flex-col ${isDistanceFolder ? "mt-0.5" : ""}`}
+                                >
+                                  {isDistanceFolder ? (
+                                    // 1. Collapsible Distance Folder with Master Toggle
+                                    <div
+                                      className="flex justify-between items-center pl-7 pr-2 mt-1.5 mb-0.5 border-b border-[#D8D8D8]/50 pb-0.5 opacity-70 hover:opacity-100 cursor-pointer"
+                                      onClick={() =>
+                                        setExpandedSubGroups((p) => ({
+                                          ...p,
+                                          [subGroupName]: !p[subGroupName],
+                                        }))
+                                      }
+                                      onMouseEnter={() =>
+                                        handleGroupHover(subGroupLocs, true)
+                                      }
+                                      onMouseLeave={() =>
+                                        handleGroupHover(subGroupLocs, false)
+                                      }
+                                    >
+                                      <div className="flex items-center gap-1.5 text-[8px] font-black text-[#1E2F31] uppercase tracking-widest">
+                                        <ChevronDown
+                                          size={10}
+                                          className={`transition-transform duration-300 ${expandedSubGroups[subGroupName] === false ? "-rotate-90" : ""}`}
+                                        />
+                                        <span>{subGroupName}</span>
+                                      </div>
+                                      <label
+                                        className="switch item scale-75 origin-right"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          checked={subGroupLocs.every((l) =>
+                                            activePOIs.includes(l.id),
+                                          )}
+                                          onChange={() => {
+                                            const ids = subGroupLocs.map(
+                                              (l) => l.id,
+                                            );
+                                            const allActive = ids.every((id) =>
+                                              activePOIs.includes(id),
+                                            );
+                                            setActivePOIs((prev) =>
+                                              allActive
+                                                ? prev.filter(
+                                                    (id) => !ids.includes(id),
+                                                  )
+                                                : [
+                                                    ...new Set([
+                                                      ...prev,
+                                                      ...ids,
+                                                    ]),
+                                                  ],
+                                            );
+                                          }}
+                                        />
+                                        <span className="slider"></span>
+                                      </label>
+                                    </div>
+                                  ) : (
+                                    // 2. Standalone Class Header (e.g., Cancer Hospitals > Class A) with Toggle
+                                    <div
+                                      className="flex justify-between items-center pl-7 pr-2 mt-1.5 mb-0.5 border-b border-[#D8D8D8]/50 pb-0.5 opacity-70 hover:opacity-100 cursor-pointer"
+                                      onClick={() =>
+                                        setExpandedSubGroups((p) => ({
+                                          ...p,
+                                          [subGroupName]: !p[subGroupName],
+                                        }))
+                                      }
+                                      onMouseEnter={() =>
+                                        handleGroupHover(subGroupLocs, true)
+                                      }
+                                      onMouseLeave={() =>
+                                        handleGroupHover(subGroupLocs, false)
+                                      }
+                                    >
+                                      <div className="flex items-center gap-1.5 text-[8px] font-black text-[#1E2F31] uppercase tracking-widest">
+                                        <ChevronDown
+                                          size={10}
+                                          className={`transition-transform duration-300 ${expandedSubGroups[subGroupName] === false ? "-rotate-90" : ""}`}
+                                        />
+                                        <span>{subGroupName}</span>
+                                      </div>
+                                      <label
+                                        className="switch item scale-75 origin-right"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          checked={subGroupLocs.every((l) =>
+                                            activePOIs.includes(l.id),
+                                          )}
+                                          onChange={() => {
+                                            const ids = subGroupLocs.map(
+                                              (l) => l.id,
+                                            );
+                                            const allActive = ids.every((id) =>
+                                              activePOIs.includes(id),
+                                            );
+                                            setActivePOIs((prev) =>
+                                              allActive
+                                                ? prev.filter(
+                                                    (id) => !ids.includes(id),
+                                                  )
+                                                : [
+                                                    ...new Set([
+                                                      ...prev,
+                                                      ...ids,
+                                                    ]),
+                                                  ],
+                                            );
+                                          }}
+                                        />
+                                        <span className="slider"></span>
+                                      </label>
+                                    </div>
+                                  )}
+
+                                  {/* TIER 3: Nested Items & Sub-Sub Headers (Rendered if Tier 2 is expanded) */}
+                                  {expandedSubGroups[subGroupName] !==
+                                    false && (
+                                    <div className="flex flex-col mb-1">
+                                      {/* Class A Sub-Header inside Distance Folder */}
+                                      {isDistanceFolder &&
+                                        subGroupLocs.some(
+                                          (l) => l.tier === "Class A",
+                                        ) && (
+                                          <div
+                                            className="flex justify-between items-center pl-9 pr-2 mt-1 mb-0.5 border-b border-[#D8D8D8]/50 pb-0.5 opacity-60 hover:opacity-100 cursor-pointer"
+                                            onClick={() =>
+                                              setExpandedSubGroups((p) => ({
+                                                ...p,
+                                                [`${subGroupName}_ClassA`]:
+                                                  !p[`${subGroupName}_ClassA`],
+                                              }))
+                                            }
+                                            onMouseEnter={() =>
+                                              handleGroupHover(
+                                                subGroupLocs.filter(
+                                                  (l) => l.tier === "Class A",
+                                                ),
+                                                true,
+                                              )
+                                            }
+                                            onMouseLeave={() =>
+                                              handleGroupHover(
+                                                subGroupLocs.filter(
+                                                  (l) => l.tier === "Class A",
+                                                ),
+                                                false,
+                                              )
+                                            }
+                                          >
+                                            <div className="flex items-center gap-1.5 text-[8px] font-black text-[#1E2F31] uppercase tracking-widest">
+                                              <ChevronDown
+                                                size={10}
+                                                className={`transition-transform duration-300 ${expandedSubGroups[`${subGroupName}_ClassA`] === false ? "-rotate-90" : ""}`}
+                                              />
+                                              <span>
+                                                Class A (Comprehensive)
+                                              </span>
+                                            </div>
+                                            <label
+                                              className="switch item scale-75 origin-right"
+                                              onClick={(e) =>
+                                                e.stopPropagation()
+                                              }
+                                            >
+                                              <input
+                                                type="checkbox"
+                                                checked={subGroupLocs
+                                                  .filter(
+                                                    (l) => l.tier === "Class A",
+                                                  )
+                                                  .every((l) =>
+                                                    activePOIs.includes(l.id),
+                                                  )}
+                                                onChange={() => {
+                                                  const ids = subGroupLocs
+                                                    .filter(
+                                                      (l) =>
+                                                        l.tier === "Class A",
+                                                    )
+                                                    .map((l) => l.id);
+                                                  const allActive = ids.every(
+                                                    (id) =>
+                                                      activePOIs.includes(id),
+                                                  );
+                                                  setActivePOIs((prev) =>
+                                                    allActive
+                                                      ? prev.filter(
+                                                          (id) =>
+                                                            !ids.includes(id),
+                                                        )
+                                                      : [
+                                                          ...new Set([
+                                                            ...prev,
+                                                            ...ids,
+                                                          ]),
+                                                        ],
+                                                  );
+                                                }}
+                                              />
+                                              <span className="slider"></span>
+                                            </label>
+                                          </div>
+                                        )}
+
+                                      {/* Class A Loop */}
+                                      {expandedSubGroups[
+                                        `${subGroupName}_ClassA`
+                                      ] !== false &&
+                                        subGroupLocs
+                                          .filter(
+                                            (l) =>
+                                              l.tier === "Class A" ||
+                                              !isDistanceFolder,
+                                          )
+                                          .map((loc, index) => (
+                                            <div
+                                              key={loc.id}
+                                              className={`location-list-item flex justify-between items-center py-1.5 ${isDistanceFolder ? "pl-12" : "pl-10"} pr-2 text-[10px] font-medium hover:bg-[#EFEBE7] rounded cursor-pointer transition-colors`}
+                                              onClick={() =>
+                                                handlePoiClick(
+                                                  loc.lat,
+                                                  loc.lon,
+                                                  loc.id,
+                                                )
+                                              }
+                                              onMouseEnter={() =>
+                                                handlePoiHover?.(loc.id, true)
+                                              }
+                                              onMouseLeave={() =>
+                                                handlePoiHover?.(loc.id, false)
+                                              }
+                                            >
+                                              <div className="truncate flex-1 min-w-0 pr-3">
+                                                <span className="text-[#9B8B70] mr-1.5 font-bold">
+                                                  {index + 1}.
+                                                </span>
+                                                <span className="font-bold text-[#1E2F31]">
+                                                  {loc.name}
+                                                </span>
+                                                <span className="hidden text-[9px] text-[#9B8B70] ml-1.5">
+                                                  — {loc.desc}
+                                                </span>
+                                              </div>
+                                              <label
+                                                className="switch item"
+                                                onClick={(e) =>
+                                                  e.stopPropagation()
+                                                }
+                                              >
+                                                <input
+                                                  type="checkbox"
+                                                  checked={activePOIs.includes(
+                                                    loc.id,
+                                                  )}
+                                                  onChange={() =>
+                                                    setActivePOIs((prev) =>
+                                                      prev.includes(loc.id)
+                                                        ? prev.filter(
+                                                            (i) => i !== loc.id,
+                                                          )
+                                                        : [...prev, loc.id],
+                                                    )
+                                                  }
+                                                />
+                                                <span className="slider"></span>
+                                              </label>
+                                            </div>
+                                          ))}
+
+                                      {/* Class B Sub-Header inside Distance Folder */}
+                                      {isDistanceFolder &&
+                                        subGroupLocs.some(
+                                          (l) => l.tier === "Class B",
+                                        ) && (
+                                          <div
+                                            className="flex justify-between items-center pl-9 pr-2 mt-1.5 mb-0.5 border-b border-[#D8D8D8]/50 pb-0.5 opacity-60 hover:opacity-100 cursor-pointer"
+                                            onClick={() =>
+                                              setExpandedSubGroups((p) => ({
+                                                ...p,
+                                                [`${subGroupName}_ClassB`]:
+                                                  !p[`${subGroupName}_ClassB`],
+                                              }))
+                                            }
+                                            onMouseEnter={() =>
+                                              handleGroupHover(
+                                                subGroupLocs.filter(
+                                                  (l) => l.tier === "Class B",
+                                                ),
+                                                true,
+                                              )
+                                            }
+                                            onMouseLeave={() =>
+                                              handleGroupHover(
+                                                subGroupLocs.filter(
+                                                  (l) => l.tier === "Class B",
+                                                ),
+                                                false,
+                                              )
+                                            }
+                                          >
+                                            <div className="flex items-center gap-1.5 text-[8px] font-black text-[#1E2F31] uppercase tracking-widest">
+                                              <ChevronDown
+                                                size={10}
+                                                className={`transition-transform duration-300 ${expandedSubGroups[`${subGroupName}_ClassB`] === false ? "-rotate-90" : ""}`}
+                                              />
+                                              <span>Class B (Specialized)</span>
+                                            </div>
+                                            <label
+                                              className="switch item scale-75 origin-right"
+                                              onClick={(e) =>
+                                                e.stopPropagation()
+                                              }
+                                            >
+                                              <input
+                                                type="checkbox"
+                                                checked={subGroupLocs
+                                                  .filter(
+                                                    (l) => l.tier === "Class B",
+                                                  )
+                                                  .every((l) =>
+                                                    activePOIs.includes(l.id),
+                                                  )}
+                                                onChange={() => {
+                                                  const ids = subGroupLocs
+                                                    .filter(
+                                                      (l) =>
+                                                        l.tier === "Class B",
+                                                    )
+                                                    .map((l) => l.id);
+                                                  const allActive = ids.every(
+                                                    (id) =>
+                                                      activePOIs.includes(id),
+                                                  );
+                                                  setActivePOIs((prev) =>
+                                                    allActive
+                                                      ? prev.filter(
+                                                          (id) =>
+                                                            !ids.includes(id),
+                                                        )
+                                                      : [
+                                                          ...new Set([
+                                                            ...prev,
+                                                            ...ids,
+                                                          ]),
+                                                        ],
+                                                  );
+                                                }}
+                                              />
+                                              <span className="slider"></span>
+                                            </label>
+                                          </div>
+                                        )}
+
+                                      {/* Class B Loop */}
+                                      {expandedSubGroups[
+                                        `${subGroupName}_ClassB`
+                                      ] !== false &&
+                                        isDistanceFolder &&
+                                        subGroupLocs
+                                          .filter((l) => l.tier === "Class B")
+                                          .map((loc, index) => (
+                                            <div
+                                              key={loc.id}
+                                              className="location-list-item flex justify-between items-center py-1.5 pl-12 pr-2 text-[10px] font-medium hover:bg-[#EFEBE7] rounded cursor-pointer transition-colors"
+                                              onClick={() =>
+                                                handlePoiClick(
+                                                  loc.lat,
+                                                  loc.lon,
+                                                  loc.id,
+                                                )
+                                              }
+                                              onMouseEnter={() =>
+                                                handlePoiHover?.(loc.id, true)
+                                              }
+                                              onMouseLeave={() =>
+                                                handlePoiHover?.(loc.id, false)
+                                              }
+                                            >
+                                              <div className="truncate flex-1 min-w-0 pr-3">
+                                                <span className="text-[#9B8B70] mr-1.5 font-bold">
+                                                  {index + 1}.
+                                                </span>
+                                                <span className="font-bold text-[#1E2F31]">
+                                                  {loc.name}
+                                                </span>
+                                                <span className="hidden text-[9px] text-[#9B8B70] ml-1.5">
+                                                  — {loc.desc}
+                                                </span>
+                                              </div>
+                                              <label
+                                                className="switch item"
+                                                onClick={(e) =>
+                                                  e.stopPropagation()
+                                                }
+                                              >
+                                                <input
+                                                  type="checkbox"
+                                                  checked={activePOIs.includes(
+                                                    loc.id,
+                                                  )}
+                                                  onChange={() =>
+                                                    setActivePOIs((prev) =>
+                                                      prev.includes(loc.id)
+                                                        ? prev.filter(
+                                                            (i) => i !== loc.id,
+                                                          )
+                                                        : [...prev, loc.id],
+                                                    )
+                                                  }
+                                                />
+                                                <span className="slider"></span>
+                                              </label>
+                                            </div>
+                                          ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+
+                            {/* Render TB Simatupang and additional anchors as top-level anchor items positioned after the radius sub-groups */}
+                            {groupName === "Vasanta" &&
+                              groupLocs
+                                .filter(
+                                  (l) =>
+                                    l.id === "tb" || l.id === "new_vasanta",
+                                )
+                                .map((loc, index) => (
+                                  <div
+                                    key={loc.id}
+                                    className="location-list-item flex justify-between items-center py-1.5 pl-7 pr-2 text-[10px] font-medium hover:bg-[#EFEBE7] rounded cursor-pointer transition-colors"
+                                    onClick={() =>
+                                      handlePoiClick(
+                                        loc.lat !== undefined
+                                          ? loc.lat
+                                          : loc.fallbackLat,
+                                        loc.lon !== undefined
+                                          ? loc.lon
+                                          : loc.fallbackLon,
+                                        loc.id,
+                                      )
+                                    }
+                                    onMouseEnter={() =>
+                                      handlePoiHover?.(loc.id, true)
+                                    }
+                                    onMouseLeave={() =>
+                                      handlePoiHover?.(loc.id, false)
+                                    }
+                                  >
+                                    <div className="truncate flex-1 min-w-0 pr-3">
+                                      <span className="text-[#9B8B70] mr-1.5 font-bold">
+                                        {index + 2}.
+                                      </span>
+                                      <span className="font-bold text-[#1E2F31]">
+                                        {loc.name}
+                                      </span>
+                                      <span className="hidden text-[9px] text-[#9B8B70] ml-1.5">
+                                        — {loc.desc}
+                                      </span>
+                                    </div>
+                                    <label
+                                      className="switch item"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={activePOIs.includes(loc.id)}
+                                        onChange={() =>
+                                          setActivePOIs((prev) =>
+                                            prev.includes(loc.id)
+                                              ? prev.filter((i) => i !== loc.id)
+                                              : [...prev, loc.id],
+                                          )
+                                        }
+                                      />
+                                      <span className="slider"></span>
+                                    </label>
+                                  </div>
+                                ))}
+
+                            {/* Toll Roads Toggle specifically for Infrastructure Group */}
+                            {groupName === "Infrastructure" && (
+                              <div
+                                className="flex justify-between items-center py-1.5 pl-7 pr-2 text-[10px] font-medium hover:bg-[#EFEBE7] rounded cursor-pointer transition-colors"
+                                onClick={() => setShowTollRoads(!showTollRoads)}
+                              >
+                                <div className="truncate flex-1 min-w-0 pr-3 relative pl-4">
+                                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-2.5 h-0.5 bg-[#1E3A8A]"></span>
+                                  <span className="font-bold text-[#1E2F31] group-hover:text-[#1E3A8A]">
+                                    Toll Roads Network
+                                  </span>
+                                </div>
+                                <label
+                                  className="switch item"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={showTollRoads}
+                                    onChange={() =>
+                                      setShowTollRoads(!showTollRoads)
+                                    }
+                                  />
+                                  <span className="slider"></span>
+                                </label>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
         )}
 
-        {activeTab === 'analytics' && (
-        <div className="p-4 flex flex-col gap-4 overflow-y-auto custom-scrollbar flex-1">
+        {activeTab === "analytics" && (
+          <div className="p-4 flex flex-col gap-4 overflow-y-auto custom-scrollbar flex-1">
             <div className="border-b border-[#D8D8D8] pb-3 mb-1">
               <span className="text-[11px] font-extrabold text-[#1E2F31] uppercase tracking-wider flex items-center gap-2">
                 <BarChart3 size={14} className="text-[#1C6048]" />
                 Target Capture
               </span>
               <p className="text-[10px] font-medium text-[#4C4A4B] mt-1">
-                {pyramidData.activePop.toLocaleString()} individuals in selected regions.
+                {pyramidData.activePop.toLocaleString()} individuals in selected
+                regions.
               </p>
             </div>
 
@@ -5561,7 +5831,7 @@ const InteractiveDemographicMap = memo(() => {
                 </div>
               </div>
             </div>
-        </div>
+          </div>
         )}
       </div>
 
@@ -5608,26 +5878,52 @@ const InteractiveDemographicMap = memo(() => {
 // === END INTERACTIVE MAP ===
 
 const ClinicalProgrammingView = memo(() => {
-  const [viewMode, setViewMode] = useState<'moh' | 'private'>('moh');
+  const [viewMode, setViewMode] = useState<"moh" | "private">("moh");
 
-  const pieData = useMemo(() => [
-    { name: 'Standard', value: 48, color: viewMode === 'private' ? '#4C4A4B' : '#9B8B70' },
-    { name: 'VIP/VVIP', value: 48, color: viewMode === 'private' ? '#9B8B70' : '#99B6AA' },
-    { name: 'Isolation', value: 12, color: viewMode === 'private' ? '#D8D8D8' : '#FFFFFF' },
-    { name: 'ICU', value: 12, color: viewMode === 'private' ? '#1C6048' : '#48B084' },
-  ], [viewMode]);
+  const pieData = useMemo(
+    () => [
+      {
+        name: "Standard",
+        value: 48,
+        color: viewMode === "private" ? "#4C4A4B" : "#9B8B70",
+      },
+      {
+        name: "VIP/VVIP",
+        value: 48,
+        color: viewMode === "private" ? "#9B8B70" : "#99B6AA",
+      },
+      {
+        name: "Isolation",
+        value: 12,
+        color: viewMode === "private" ? "#D8D8D8" : "#FFFFFF",
+      },
+      {
+        name: "ICU",
+        value: 12,
+        color: viewMode === "private" ? "#1C6048" : "#48B084",
+      },
+    ],
+    [viewMode],
+  );
 
   return (
     <div className="space-y-10 animate-in fade-in zoom-in-95 duration-300">
       <div>
         <div className="border-b border-[#D8D8D8] pb-4 mb-6">
-          <h2 className="text-2xl font-black text-[#1E2F31] tracking-tight">Clinical & Facility Framework</h2>
-          <p className="text-[12px] text-[#4C4A4B] font-medium mt-1">Proposed function room breakdown for an optimal oncology-focused hospital model.</p>
+          <h2 className="text-2xl font-black text-[#1E2F31] tracking-tight">
+            Clinical & Facility Framework
+          </h2>
+          <p className="text-[12px] text-[#4C4A4B] font-medium mt-1">
+            Proposed function room breakdown for an optimal oncology-focused
+            hospital model.
+          </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-
           {/* Radiotherapy & Diagnostic Imaging */}
-          <BentoBox colSpan="md:col-span-12 lg:col-span-7" className="bg-white border-[#D8D8D8]">
+          <BentoBox
+            colSpan="md:col-span-12 lg:col-span-7"
+            className="bg-white border-[#D8D8D8]"
+          >
             <div className="flex items-center gap-3 mb-6">
               <Activity className="text-[#1C6048]" size={24} />
               <h2 className="text-lg font-black text-[#1E2F31] tracking-tight">
@@ -5635,27 +5931,46 @@ const ClinicalProgrammingView = memo(() => {
               </h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-               <div className="p-4 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]">
-                 <p className="font-black text-[#1E2F31] mb-1">LINAC Bunkers</p>
-                 <p className="text-xs text-[#4C4A4B] font-medium">Standard 2-bunker initial rollout with provision for future expansion. Core engine of the facility's revenue.</p>
-               </div>
-               <div className="p-4 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]">
-                 <p className="font-black text-[#1E2F31] mb-1">PET-CT Suite</p>
-                 <p className="text-xs text-[#4C4A4B] font-medium">Dedicated diagnostic room for precise oncology staging. Requires dedicated hot-lab and patient resting area.</p>
-               </div>
-               <div className="p-4 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]">
-                 <p className="font-black text-[#1E2F31] mb-1">MRI & CT Simulator</p>
-                 <p className="text-xs text-[#4C4A4B] font-medium">1.5T to 3T MRI unit along with CT Simulator for precise radiation planning.</p>
-               </div>
-               <div className="p-4 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]">
-                 <p className="font-black text-[#1E2F31] mb-1">General Imaging</p>
-                 <p className="text-xs text-[#4C4A4B] font-medium">Digital X-Ray, Mammography, and Ultrasound suites complementing core diagnostics.</p>
-               </div>
+              <div className="p-4 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]">
+                <p className="font-black text-[#1E2F31] mb-1">LINAC Bunkers</p>
+                <p className="text-xs text-[#4C4A4B] font-medium">
+                  Standard 2-bunker initial rollout with provision for future
+                  expansion. Core engine of the facility's revenue.
+                </p>
+              </div>
+              <div className="p-4 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]">
+                <p className="font-black text-[#1E2F31] mb-1">PET-CT Suite</p>
+                <p className="text-xs text-[#4C4A4B] font-medium">
+                  Dedicated diagnostic room for precise oncology staging.
+                  Requires dedicated hot-lab and patient resting area.
+                </p>
+              </div>
+              <div className="p-4 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]">
+                <p className="font-black text-[#1E2F31] mb-1">
+                  MRI & CT Simulator
+                </p>
+                <p className="text-xs text-[#4C4A4B] font-medium">
+                  1.5T to 3T MRI unit along with CT Simulator for precise
+                  radiation planning.
+                </p>
+              </div>
+              <div className="p-4 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]">
+                <p className="font-black text-[#1E2F31] mb-1">
+                  General Imaging
+                </p>
+                <p className="text-xs text-[#4C4A4B] font-medium">
+                  Digital X-Ray, Mammography, and Ultrasound suites
+                  complementing core diagnostics.
+                </p>
+              </div>
             </div>
           </BentoBox>
 
           {/* Chemotherapy & Outpatient */}
-          <BentoBox colSpan="md:col-span-12 lg:col-span-5" className="!bg-[#EFEBE7] border-transparent">
+          <BentoBox
+            colSpan="md:col-span-12 lg:col-span-5"
+            className="!bg-[#EFEBE7] border-transparent"
+          >
             <div className="flex items-center gap-3 mb-6">
               <Users className="text-[#9B8B70]" size={24} />
               <h2 className="text-lg font-black text-[#1E2F31] tracking-tight">
@@ -5668,8 +5983,13 @@ const ClinicalProgrammingView = memo(() => {
                   <span className="text-[#1C6048] font-bold text-xs">A</span>
                 </div>
                 <div>
-                  <h4 className="font-bold text-[#1E2F31] text-sm mb-1">Chemotherapy Day Care</h4>
-                  <p className="text-xs text-[#4C4A4B] font-medium">15-20 infusion chairs with a mix of open bays and private isolation rooms for comfort and infection control.</p>
+                  <h4 className="font-bold text-[#1E2F31] text-sm mb-1">
+                    Chemotherapy Day Care
+                  </h4>
+                  <p className="text-xs text-[#4C4A4B] font-medium">
+                    15-20 infusion chairs with a mix of open bays and private
+                    isolation rooms for comfort and infection control.
+                  </p>
                 </div>
               </li>
               <li className="flex items-start gap-4 p-4 bg-white rounded-xl shadow-sm border border-[#D8D8D8]">
@@ -5677,8 +5997,13 @@ const ClinicalProgrammingView = memo(() => {
                   <span className="text-[#1C6048] font-bold text-xs">B</span>
                 </div>
                 <div>
-                  <h4 className="font-bold text-[#1E2F31] text-sm mb-1">Oncology Consult Clinics</h4>
-                  <p className="text-xs text-[#4C4A4B] font-medium">10-15 consultation rooms optimized for fast turnaround, bundled with integrated minor procedure rooms.</p>
+                  <h4 className="font-bold text-[#1E2F31] text-sm mb-1">
+                    Oncology Consult Clinics
+                  </h4>
+                  <p className="text-xs text-[#4C4A4B] font-medium">
+                    10-15 consultation rooms optimized for fast turnaround,
+                    bundled with integrated minor procedure rooms.
+                  </p>
                 </div>
               </li>
               <li className="flex items-start gap-4 p-4 bg-white rounded-xl shadow-sm border border-[#D8D8D8]">
@@ -5686,27 +6011,37 @@ const ClinicalProgrammingView = memo(() => {
                   <span className="text-[#1C6048] font-bold text-xs">C</span>
                 </div>
                 <div>
-                  <h4 className="font-bold text-[#1E2F31] text-sm mb-1">Palliative & Pain Mgmt</h4>
-                  <p className="text-xs text-[#4C4A4B] font-medium">Dedicated outpatient unit focused on quality of life and symptomatic relief.</p>
+                  <h4 className="font-bold text-[#1E2F31] text-sm mb-1">
+                    Palliative & Pain Mgmt
+                  </h4>
+                  <p className="text-xs text-[#4C4A4B] font-medium">
+                    Dedicated outpatient unit focused on quality of life and
+                    symptomatic relief.
+                  </p>
                 </div>
               </li>
             </ul>
           </BentoBox>
 
           {/* Inpatient & Surgical */}
-          <BentoBox colSpan="md:col-span-12" className="!bg-[#1E2F31] !text-white border-transparent py-8">
+          <BentoBox
+            colSpan="md:col-span-12"
+            className="!bg-[#1E2F31] !text-white border-transparent py-8"
+          >
             <div className="flex flex-col xl:flex-row justify-between items-center mb-8 px-4 lg:px-8 gap-4">
-              <h2 className="text-xl font-black tracking-tight text-white mb-0 text-center xl:text-left">Inpatient, Surgical, & Critical Care Architecture</h2>
+              <h2 className="text-xl font-black tracking-tight text-white mb-0 text-center xl:text-left">
+                Inpatient, Surgical, & Critical Care Architecture
+              </h2>
               <div className="flex bg-[#121E20] p-1 rounded-lg border border-white/10 shrink-0 mx-auto xl:mx-0">
-                <button 
-                  onClick={() => setViewMode('moh')}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors border outline-none focus:outline-none ${viewMode === 'moh' ? 'bg-[#1C6048] border-[#1C6048] text-white shadow-sm' : 'border-transparent text-white/50 hover:text-white'}`}
+                <button
+                  onClick={() => setViewMode("moh")}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors border outline-none focus:outline-none ${viewMode === "moh" ? "bg-[#1C6048] border-[#1C6048] text-white shadow-sm" : "border-transparent text-white/50 hover:text-white"}`}
                 >
                   MoH Regulatory Requirement
                 </button>
-                <button 
-                  onClick={() => setViewMode('private')}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors border outline-none focus:outline-none ${viewMode === 'private' ? 'bg-[#9B8B70] border-[#9B8B70] text-white shadow-sm' : 'border-transparent text-white/50 hover:text-white'}`}
+                <button
+                  onClick={() => setViewMode("private")}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors border outline-none focus:outline-none ${viewMode === "private" ? "bg-[#9B8B70] border-[#9B8B70] text-white shadow-sm" : "border-transparent text-white/50 hover:text-white"}`}
                 >
                   Private Hospital Optimization
                 </button>
@@ -5716,57 +6051,81 @@ const ClinicalProgrammingView = memo(() => {
               {/* Chart Column (Span 3) */}
               <div className="lg:col-span-3 flex flex-col justify-center items-center lg:border-r border-white/20 pb-6 lg:pb-0 lg:pr-6 border-b lg:border-b-0">
                 <div className="h-40 w-full relative flex items-center justify-center">
-                    <PieChart width={160} height={160}>
-                      <Pie
-                        data={pieData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={50}
-                        outerRadius={75}
-                        paddingAngle={3}
-                        dataKey="value"
-                        stroke="none"
-                      >
-                        {pieData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                    </PieChart>
+                  <PieChart width={160} height={160}>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={75}
+                      paddingAngle={3}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                  </PieChart>
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                     <span className="text-2xl font-black text-white">120</span>
-                    <span className="text-[10px] font-bold text-white/60 -mt-1 uppercase tracking-widest">Beds</span>
+                    <span className="text-[10px] font-bold text-white/60 -mt-1 uppercase tracking-widest">
+                      Beds
+                    </span>
                   </div>
                 </div>
               </div>
 
               {/* Wards Column (Span 4) */}
               <div className="lg:col-span-4 flex flex-col">
-                <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider border-l-2 border-[#1C6048] pl-3">Inpatient Wards (108)</h3>
+                <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider border-l-2 border-[#1C6048] pl-3">
+                  Inpatient Wards (108)
+                </h3>
                 <ul className="text-xs space-y-3 text-white/80 list-none pl-1">
                   <li className="flex items-start gap-2">
-                    <div className={`w-2.5 h-2.5 rounded-sm mt-0.5 shrink-0 transition-colors duration-500 ${viewMode === 'private' ? 'bg-[#4C4A4B]' : 'bg-[#9B8B70]'}`} />
+                    <div
+                      className={`w-2.5 h-2.5 rounded-sm mt-0.5 shrink-0 transition-colors duration-500 ${viewMode === "private" ? "bg-[#4C4A4B]" : "bg-[#9B8B70]"}`}
+                    />
                     <div className="flex-1">
-                      <strong className="text-white">Standard (KRIS)</strong>: 48 Beds
-                      <p className={`text-[10px] min-h-[32px] leading-tight mt-0.5 transition-colors duration-300 ${viewMode === 'private' ? 'text-white/60' : 'text-white/50'}`}>
-                        {viewMode === 'moh' ? 'Min 40% of total beds per MoH requirement' : 'High-volume absorption to capture initial patient funnel'}
+                      <strong className="text-white">Standard (KRIS)</strong>:
+                      48 Beds
+                      <p
+                        className={`text-[10px] min-h-[32px] leading-tight mt-0.5 transition-colors duration-300 ${viewMode === "private" ? "text-white/60" : "text-white/50"}`}
+                      >
+                        {viewMode === "moh"
+                          ? "Min 40% of total beds per MoH requirement"
+                          : "High-volume absorption to capture initial patient funnel"}
                       </p>
                     </div>
                   </li>
                   <li className="flex items-start gap-2">
-                    <div className={`w-2.5 h-2.5 rounded-sm mt-0.5 shrink-0 transition-colors duration-500 ${viewMode === 'private' ? 'bg-[#9B8B70]' : 'bg-[#99B6AA]'}`} />
+                    <div
+                      className={`w-2.5 h-2.5 rounded-sm mt-0.5 shrink-0 transition-colors duration-500 ${viewMode === "private" ? "bg-[#9B8B70]" : "bg-[#99B6AA]"}`}
+                    />
                     <div className="flex-1">
-                      <strong className="text-white">Premium (VIP / VVIP)</strong>: 48 Beds
-                      <p className={`text-[10px] min-h-[32px] leading-tight mt-0.5 transition-colors duration-300 ${viewMode === 'private' ? 'text-[#9B8B70] font-bold' : 'text-white/50'}`}>
-                        {viewMode === 'moh' ? 'Remaining allocation for commercial & private insurance' : 'High-margin core driver for medical tourism & corporate payors'}
+                      <strong className="text-white">
+                        Premium (VIP / VVIP)
+                      </strong>
+                      : 48 Beds
+                      <p
+                        className={`text-[10px] min-h-[32px] leading-tight mt-0.5 transition-colors duration-300 ${viewMode === "private" ? "text-[#9B8B70] font-bold" : "text-white/50"}`}
+                      >
+                        {viewMode === "moh"
+                          ? "Remaining allocation for commercial & private insurance"
+                          : "High-margin core driver for medical tourism & corporate payors"}
                       </p>
                     </div>
                   </li>
                   <li className="flex items-start gap-2">
-                    <div className={`w-2.5 h-2.5 rounded-sm mt-0.5 shrink-0 shadow-[0_0_4px_rgba(255,255,255,0.5)] transition-colors duration-500 ${viewMode === 'private' ? 'bg-[#D8D8D8]' : 'bg-[#FFFFFF]'}`} />
+                    <div
+                      className={`w-2.5 h-2.5 rounded-sm mt-0.5 shrink-0 shadow-[0_0_4px_rgba(255,255,255,0.5)] transition-colors duration-500 ${viewMode === "private" ? "bg-[#D8D8D8]" : "bg-[#FFFFFF]"}`}
+                    />
                     <div className="flex-1">
                       <strong className="text-white">Isolation</strong>: 12 Beds
                       <p className="text-[10px] min-h-[32px] text-white/50 leading-tight mt-0.5">
-                        {viewMode === 'moh' ? 'Min 10% of total beds per MoH requirement' : 'Specialized infection control shielding broader hospital assets'}
+                        {viewMode === "moh"
+                          ? "Min 10% of total beds per MoH requirement"
+                          : "Specialized infection control shielding broader hospital assets"}
                       </p>
                     </div>
                   </li>
@@ -5775,26 +6134,47 @@ const ClinicalProgrammingView = memo(() => {
 
               {/* ICU Column (Span 2) */}
               <div className="lg:col-span-2 flex flex-col">
-                <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider border-l-2 border-[#48B084] pl-3">ICU (12)</h3>
+                <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider border-l-2 border-[#48B084] pl-3">
+                  ICU (12)
+                </h3>
                 <div className="flex items-start gap-2 pl-1 w-full">
-                   <div className={`w-2.5 h-2.5 rounded-sm mt-0.5 shrink-0 shadow-[0_0_8px_rgba(72,176,132,0.6)] transition-colors duration-500 ${viewMode === 'private' ? 'bg-[#1C6048]' : 'bg-[#48B084]'}`} />
-                   <div className="w-full">
-                     <p className={`text-[10px] min-h-[28px] font-bold mb-2 transition-colors duration-300 ${viewMode === 'private' ? 'text-[#48B084]' : 'text-[#48B084]'}`}>
-                       {viewMode === 'moh' ? 'Meets MoH minimum 8%' : 'High-margin intensive revenue center'}
-                     </p>
-                     <ul className="space-y-1.5 text-[11px] text-white/80 w-full">
-                        <li className="flex justify-between border-b border-white/10 pb-1"><span>General:</span><b className="text-white">6</b></li>
-                        <li className="flex justify-between border-b border-white/10 pb-1"><span>HCU:</span><b className="text-white">4</b></li>
-                        <li className="flex justify-between"><span>Isolation:</span><b className="text-white">2</b></li>
-                     </ul>
-                   </div>
+                  <div
+                    className={`w-2.5 h-2.5 rounded-sm mt-0.5 shrink-0 shadow-[0_0_8px_rgba(72,176,132,0.6)] transition-colors duration-500 ${viewMode === "private" ? "bg-[#1C6048]" : "bg-[#48B084]"}`}
+                  />
+                  <div className="w-full">
+                    <p
+                      className={`text-[10px] min-h-[28px] font-bold mb-2 transition-colors duration-300 ${viewMode === "private" ? "text-[#48B084]" : "text-[#48B084]"}`}
+                    >
+                      {viewMode === "moh"
+                        ? "Meets MoH minimum 8%"
+                        : "High-margin intensive revenue center"}
+                    </p>
+                    <ul className="space-y-1.5 text-[11px] text-white/80 w-full">
+                      <li className="flex justify-between border-b border-white/10 pb-1">
+                        <span>General:</span>
+                        <b className="text-white">6</b>
+                      </li>
+                      <li className="flex justify-between border-b border-white/10 pb-1">
+                        <span>HCU:</span>
+                        <b className="text-white">4</b>
+                      </li>
+                      <li className="flex justify-between">
+                        <span>Isolation:</span>
+                        <b className="text-white">2</b>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </div>
 
               {/* OTs Column (Span 3) */}
               <div className="lg:col-span-3 flex flex-col lg:border-l border-white/20 pt-6 lg:pt-0 lg:pl-6 border-t lg:border-t-0 mt-2 lg:mt-0">
-                <h3 className="text-sm font-bold text-white mb-3 uppercase tracking-wider border-l-2 border-[#9B8B70] pl-3">Operating Theaters</h3>
-                <p className="text-[11px] text-white/70 font-medium leading-relaxed mb-3">Target: 3-4 Major OTs.</p>
+                <h3 className="text-sm font-bold text-white mb-3 uppercase tracking-wider border-l-2 border-[#9B8B70] pl-3">
+                  Operating Theaters
+                </h3>
+                <p className="text-[11px] text-white/70 font-medium leading-relaxed mb-3">
+                  Target: 3-4 Major OTs.
+                </p>
                 <ul className="text-[11px] space-y-2 text-white/80 list-disc pl-4">
                   <li>Oncology/General Surgery OT</li>
                   <li>Minimally Invasive / Endoscopy Suite</li>
@@ -5807,1429 +6187,1590 @@ const ClinicalProgrammingView = memo(() => {
               <span>* MoH (Ministry of Health)</span>
             </div>
           </BentoBox>
-
         </div>
       </div>
     </div>
   );
 });
 
-const StudyView = memo(({ isPresenting, info, activeMiniTab, setActiveMiniTab }) => {
-  return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-12 relative">
-      {/* Dynamic Content Rendering */}
-      {activeMiniTab === "clinicalRooms" && <ClinicalProgrammingView />}
+const StudyView = memo(
+  ({ isPresenting, info, activeMiniTab, setActiveMiniTab }) => {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-500 pb-12 relative">
+        {/* Dynamic Content Rendering */}
+        {activeMiniTab === "clinicalRooms" && <ClinicalProgrammingView />}
 
-      {activeMiniTab === "opportunities" && (
-        <div className="space-y-10 animate-in fade-in zoom-in-95 duration-300">
-          <div>
-            <div className="border-b border-[#D8D8D8] pb-4 mb-6">
-              <h2 className="text-2xl font-black text-[#1E2F31] tracking-tight">Funnel Validation</h2>
-              <p className="text-[12px] text-[#4C4A4B] font-medium mt-1">Waitlist capture strategy and high-margin premium catchment sizing.</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          {/* Radiation Queues & Waitlist Capture (Replaced Travel-Time Moat) */}
-          <BentoBox
-            colSpan="md:col-span-12 lg:col-span-7"
-            className="bg-white border-[#D8D8D8]"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <Timer size={24} className="text-[#1C6048]" />
-                <div className="flex items-start gap-2">
-                  <div>
-                    <h2 className="text-lg font-black text-[#1E2F31] tracking-tight">
-                      Radiation Queues & Waitlist Capture
-                    </h2>
-                    <p className="text-[10px] text-[#4C4A4B] font-medium mt-0.5">
-                      Bridging the gap between diagnosis and LINAC therapy
-                    </p>
-                  </div>
-                  <StatefulTooltipIcon tooltip="Sources & Data Validation
-• LINAC Waitlist (Kemenkes): Standard public hospital LINAC routing queues routinely average 3-6 months.
-• PET-CT Deficit (WHO): WHO recommends 1 PET-CT device per 1 million people; Indonesia operates far below this, driving multi-month nationwide staging delays." align="left" />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-               <div className="p-5 bg-white border border-[#1C6048]/20 rounded-xl flex flex-col items-start gap-4 transition-transform hover:-translate-y-0.5 shadow-sm">
-                 <div className="bg-[#E8EFEA] p-3 rounded-xl shrink-0">
-                   <ShieldAlert className="text-[#1C6048]" size={24} />
-                 </div>
-                 <div>
-                   <p className="text-sm font-bold text-[#1E2F31] mb-2 tracking-wide leading-tight">National Waitlist Overflow</p>
-                   <p className="text-xs text-[#4C4A4B] font-medium leading-relaxed">Public reference hospitals currently experience 3-6 month backlogs for LINAC radiotherapy. Vasanta targets these immediate "spill-over" patients who require urgent intervention and possess private insurance or self-pay capability.</p>
-                 </div>
-               </div>
-               <div className="p-5 bg-white border border-[#D8D8D8] rounded-xl flex flex-col items-start gap-4 transition-transform hover:-translate-y-0.5 shadow-sm">
-                 <div className="bg-[#F9F8F6] p-3 rounded-xl shrink-0">
-                   <Zap className="text-[#9B8B70]" size={24} />
-                 </div>
-                 <div>
-                   <p className="text-sm font-bold text-[#1E2F31] mb-2 tracking-wide leading-tight">Speed-to-Therapy</p>
-                   <p className="text-xs text-[#4C4A4B] font-medium leading-relaxed">For oncology outpatients, treatment velocity is the ultimate differentiator. The facility is structured to cut diagnostic-to-radiation intervals from months down to a matter of days.</p>
-                 </div>
-               </div>
-               <div className="p-5 bg-white border border-[#D8D8D8] rounded-xl flex flex-col items-start gap-4 transition-transform hover:-translate-y-0.5 shadow-sm">
-                 <div className="bg-[#F9F8F6] p-3 rounded-xl shrink-0">
-                   <CheckCircle2 className="text-[#1C6048]" size={24} />
-                 </div>
-                 <div>
-                   <p className="text-sm font-bold text-[#1E2F31] mb-2 tracking-wide leading-tight">Private Sector Absorption</p>
-                   <p className="text-xs text-[#4C4A4B] font-medium leading-relaxed">Class B general hospitals often lack capital-intensive dedicated radiotherapy bunkers. Vasanta will serve as the natural secondary referral hub for cancer patients diagnosed at surrounding middle-tier hospitals.</p>
-                 </div>
-               </div>
-            </div>
-          </BentoBox>
-
-          {/* Concept 3: TAM-to-SOM Premium Funnel */}
-          <BentoBox
-            colSpan="md:col-span-12 lg:col-span-5"
-            className="!bg-[#EFEBE7] border-transparent"
-          >
-            <div className="flex items-start gap-3 mb-6">
-              <Users size={24} className="text-[#9B8B70]" />
-              <div className="flex items-start gap-2">
-                <div>
-                  <h2 className="text-lg font-black text-[#1E2F31] tracking-tight">
-                    Premium Market Funnel
-                  </h2>
-                  <p className="text-[10px] text-[#4C4A4B] font-medium mt-0.5">
-                    Isolating self-pay and private insurance lives (SES A & B).
-                  </p>
-                </div>
-                <StatefulTooltipIcon tooltip="Sources & Validation
-SES A&B penetration (approx. 18-20% in Greater Jakarta) is estimated by mapping BPS 2024 regional expenditure demographics against Nielsen's SES classification matrix. The high regional GDP per capita strongly correlates with deeper pools of commercial insurance adoption." align="right" />
-              </div>
-            </div>
-
-            <div className="space-y-4 flex-1">
-              {/* Stage 1: TAM */}
-              <div className="relative">
-                <div className="w-full h-11 bg-white border border-[#D8D8D8] rounded-xl flex items-center justify-between px-4 shadow-sm">
-                  <span className="text-[10px] font-bold text-[#4C4A4B] uppercase tracking-wider">
-                    1. TAM (Total Catchment)
-                  </span>
-                  <span className="font-mono text-sm font-black text-[#1E2F31]">
-                    7,379,532
-                  </span>
-                </div>
-                <div className="w-full flex justify-center py-0.5">
-                  <div className="w-px h-3.5 border-l-2 border-dashed border-[#9B8B70]"></div>
-                </div>
-              </div>
-
-              {/* Stage 2: SAM */}
-              <div className="relative">
-                <div className="w-[85%] mx-auto h-11 bg-[#99B6AA]/20 border border-[#99B6AA] rounded-xl flex items-center justify-between px-4 shadow-sm">
-                  <span className="text-[10px] font-bold text-[#1E2F31] uppercase tracking-wider">
-                    2. SAM (SES A & B - 18%)
-                  </span>
-                  <span className="font-mono text-sm font-black text-[#1E2F31]">
-                    1,332,000
-                  </span>
-                </div>
-                <div className="w-full flex justify-center py-0.5">
-                  <div className="w-px h-3.5 border-l-2 border-dashed border-[#1C6048]"></div>
-                </div>
-              </div>
-
-              {/* Stage 3: SOM */}
-              <div>
-                <div className="w-[70%] mx-auto h-11 bg-[#1C6048] text-white rounded-xl flex items-center justify-between px-4 shadow-md border border-[#18533E]">
-                  <span className="text-[10px] font-black uppercase tracking-wider">
-                    3. SOM (Insured Target - 40%)
-                  </span>
-                  <span className="font-mono text-sm font-black text-white">
-                    532,800
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-[#D8D8D8]">
-              <p className="text-[10px] text-[#4C4A4B] leading-relaxed font-medium">
-                By filtering the regional demographic to strictly isolate <strong>SES
-                A & B (18%)</strong> and capturing those with <strong>Private Commercial
-                Insurance (40%)</strong>, we establish a core addressable market of
-                <strong>230.4k high-margin premium lives</strong>, heavily de-risking our
-                revenue-per-bed targets.
-              </p>
-            </div>
-          </BentoBox>
-
-          {/* Concept 4: The Interactive Geographic Spillover (The Leaflet Map) */}
-          <BentoBox
-            colSpan="md:col-span-12"
-            className="bg-white border-[#D8D8D8]"
-          >
-            <div className="flex items-center gap-3 mb-6">
-              <Map size={24} className="text-[#1C6048]" />
-              <div>
-                <h2 className="text-lg font-black text-[#1E2F31] tracking-tight">
-                  Interactive Catchment Boundary
+        {activeMiniTab === "opportunities" && (
+          <div className="space-y-10 animate-in fade-in zoom-in-95 duration-300">
+            <div>
+              <div className="border-b border-[#D8D8D8] pb-4 mb-6">
+                <h2 className="text-2xl font-black text-[#1E2F31] tracking-tight">
+                  Funnel Validation
                 </h2>
-                <p className="text-[10px] text-[#4C4A4B] font-medium mt-0.5">
-                  Visualizing the West Jakarta structural spillover into our
-                  localized Tangerang monopoly.
+                <p className="text-[12px] text-[#4C4A4B] font-medium mt-1">
+                  Waitlist capture strategy and high-margin premium catchment
+                  sizing.
                 </p>
               </div>
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                {/* Radiation Queues & Waitlist Capture (Replaced Travel-Time Moat) */}
+                <BentoBox
+                  colSpan="md:col-span-12 lg:col-span-7"
+                  className="bg-white border-[#D8D8D8]"
+                >
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <Timer size={24} className="text-[#1C6048]" />
+                      <div className="flex items-start gap-2">
+                        <div>
+                          <h2 className="text-lg font-black text-[#1E2F31] tracking-tight">
+                            Radiation Queues & Waitlist Capture
+                          </h2>
+                          <p className="text-[10px] text-[#4C4A4B] font-medium mt-0.5">
+                            Bridging the gap between diagnosis and LINAC therapy
+                          </p>
+                        </div>
+                        <StatefulTooltipIcon
+                          tooltip="Sources & Data Validation
+• LINAC Waitlist (Kemenkes): Standard public hospital LINAC routing queues routinely average 3-6 months.
+• PET-CT Deficit (WHO): WHO recommends 1 PET-CT device per 1 million people; Indonesia operates far below this, driving multi-month nationwide staging delays."
+                          align="left"
+                        />
+                      </div>
+                    </div>
+                  </div>
 
-            <div className="w-full">
-              <InteractiveDemographicMap />
-            </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-5 bg-white border border-[#1C6048]/20 rounded-xl flex flex-col items-start gap-4 transition-transform hover:-translate-y-0.5 shadow-sm">
+                      <div className="bg-[#E8EFEA] p-3 rounded-xl shrink-0">
+                        <ShieldAlert className="text-[#1C6048]" size={24} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-[#1E2F31] mb-2 tracking-wide leading-tight">
+                          National Waitlist Overflow
+                        </p>
+                        <p className="text-xs text-[#4C4A4B] font-medium leading-relaxed">
+                          Public reference hospitals currently experience 3-6
+                          month backlogs for LINAC radiotherapy. Vasanta targets
+                          these immediate "spill-over" patients who require
+                          urgent intervention and possess private insurance or
+                          self-pay capability.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="p-5 bg-white border border-[#D8D8D8] rounded-xl flex flex-col items-start gap-4 transition-transform hover:-translate-y-0.5 shadow-sm">
+                      <div className="bg-[#F9F8F6] p-3 rounded-xl shrink-0">
+                        <Zap className="text-[#9B8B70]" size={24} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-[#1E2F31] mb-2 tracking-wide leading-tight">
+                          Speed-to-Therapy
+                        </p>
+                        <p className="text-xs text-[#4C4A4B] font-medium leading-relaxed">
+                          For oncology outpatients, treatment velocity is the
+                          ultimate differentiator. The facility is structured to
+                          cut diagnostic-to-radiation intervals from months down
+                          to a matter of days.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="p-5 bg-white border border-[#D8D8D8] rounded-xl flex flex-col items-start gap-4 transition-transform hover:-translate-y-0.5 shadow-sm">
+                      <div className="bg-[#F9F8F6] p-3 rounded-xl shrink-0">
+                        <CheckCircle2 className="text-[#1C6048]" size={24} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-[#1E2F31] mb-2 tracking-wide leading-tight">
+                          Private Sector Absorption
+                        </p>
+                        <p className="text-xs text-[#4C4A4B] font-medium leading-relaxed">
+                          Class B general hospitals often lack capital-intensive
+                          dedicated radiotherapy bunkers. Vasanta will serve as
+                          the natural secondary referral hub for cancer patients
+                          diagnosed at surrounding middle-tier hospitals.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </BentoBox>
 
-            <p className="text-[11px] text-[#4C4A4B] leading-relaxed font-medium mt-6 bg-[#EFEBE7] p-4 rounded-xl border border-[#D8D8D8]">
-              <strong className="text-[#1E2F31]">Strategic Note:</strong> Notice
-              how the primary catchment area directly borders the highly
-              affluent West Jakarta corridor. Because our model strictly
-              underwrites using only Tangerang's population, any spillover from
-              the 2.6M West Jakarta residents (who face a much faster commute to
-              Vasanta than to South Jakarta) represents pure, un-modeled upside
-              to our base-case returns.
-            </p>
-          </BentoBox>
+                {/* Concept 3: TAM-to-SOM Premium Funnel */}
+                <BentoBox
+                  colSpan="md:col-span-12 lg:col-span-5"
+                  className="!bg-[#EFEBE7] border-transparent"
+                >
+                  <div className="flex items-start gap-3 mb-6">
+                    <Users size={24} className="text-[#9B8B70]" />
+                    <div className="flex items-start gap-2">
+                      <div>
+                        <h2 className="text-lg font-black text-[#1E2F31] tracking-tight">
+                          Premium Market Funnel
+                        </h2>
+                        <p className="text-[10px] text-[#4C4A4B] font-medium mt-0.5">
+                          Isolating self-pay and private insurance lives (SES A
+                          & B).
+                        </p>
+                      </div>
+                      <StatefulTooltipIcon
+                        tooltip="Sources & Validation
+SES A&B penetration (approx. 18-20% in Greater Jakarta) is estimated by mapping BPS 2024 regional expenditure demographics against Nielsen's SES classification matrix. The high regional GDP per capita strongly correlates with deeper pools of commercial insurance adoption."
+                        align="right"
+                      />
+                    </div>
+                  </div>
 
-          {/* Key Regional Infrastructure Context */}
-          <BentoBox colSpan="md:col-span-12">
-            <div className="flex items-center gap-4 mb-6">
-              <BentoIcon
-                icon={<Map size={24} />}
-                color="indigo"
-                className="mb-0 w-12 h-12 rounded-xl"
-              />
-              <h2 className="text-lg font-black text-[#1E2F31] tracking-tight">
-                Feasibility Framework: Defending the Premium Moat
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-[#F9F8F6] p-5 rounded-2xl border border-[#D8D8D8]">
-                <h4 className="font-bold text-[#1E2F31] mb-2 text-sm">
-                  Geographic Inelasticity
-                </h4>
-                <p className="text-xs text-[#4C4A4B] leading-relaxed font-medium">
-                  Radiotherapy patients require consecutive daily treatments for
-                  4–6 weeks. Traveling outside Tangerang is logistically
-                  unfeasible, guaranteeing high local retention.
-                </p>
-              </div>
-              <div className="bg-[#F9F8F6] p-5 rounded-2xl border border-[#D8D8D8]">
-                <h4 className="font-bold text-[#1E2F31] mb-2 text-sm">
-                  Affluent Middle Class
-                </h4>
-                <p className="text-xs text-[#4C4A4B] leading-relaxed font-medium">
-                  Tangerang’s rapid middle-class growth translates directly to
-                  commercial insurance adoption, shifting clinical volume away
-                  from low-margin BPJS public plans.
-                </p>
-              </div>
-              <div className="bg-[#F9F8F6] p-5 rounded-2xl border border-[#D8D8D8]">
-                <h4 className="font-bold text-[#1E2F31] mb-2 text-sm">
-                  The "First-Mover" Advantage
-                </h4>
-                <p className="text-xs text-[#4C4A4B] leading-relaxed font-medium">
-                  By securing local nuclear licensing (BAPETEN) and building the
-                  LINAC/PET-CT bunkers upfront, Vasanta pre-empts competitor
-                  entry, creating an operational monopoly.
-                </p>
-              </div>
-            </div>
-          </BentoBox>
-        </div>
-        </div>
-        </div>
-      )}
+                  <div className="space-y-4 flex-1">
+                    {/* Stage 1: TAM */}
+                    <div className="relative">
+                      <div className="w-full h-11 bg-white border border-[#D8D8D8] rounded-xl flex items-center justify-between px-4 shadow-sm">
+                        <span className="text-[10px] font-bold text-[#4C4A4B] uppercase tracking-wider">
+                          1. TAM (Total Catchment)
+                        </span>
+                        <span className="font-mono text-sm font-black text-[#1E2F31]">
+                          7,379,532
+                        </span>
+                      </div>
+                      <div className="w-full flex justify-center py-0.5">
+                        <div className="w-px h-3.5 border-l-2 border-dashed border-[#9B8B70]"></div>
+                      </div>
+                    </div>
 
-      {activeMiniTab === "marketAnalysis" && (
-        <div className="space-y-10 animate-in fade-in zoom-in-95 duration-300">
-          <div>
-            <div className="border-b border-[#D8D8D8] pb-4 mb-6">
-              <h2 className="text-2xl font-black text-[#1E2F31] tracking-tight">Market Gap & Deficits</h2>
-              <p className="text-[12px] text-[#4C4A4B] font-medium mt-1">Systemic frictions across inpatient beds, physician ratios, and technological mismatch.</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          {/* Supply & Demand Bento (Rebuilt to match slide ratio) */}
-          <BentoBox colSpan="md:col-span-12">
-            <div className="flex flex-col md:flex-row items-center gap-8">
-              <div className="flex-1 text-center md:text-left">
-                <div className="flex items-center justify-center md:justify-start gap-4 mb-4">
-                  <BentoIcon
-                    icon={<CustomBedIcon size={80} />}
-                    color="transparent"
-                    className="mb-0 text-[#1E2F31]"
-                  />
-                  <h2 className="text-xl font-black text-[#1E2F31] tracking-tight">
-                    Hospital Beds Shortage
-                  </h2>
-                </div>
-                <p className="text-[13px] text-[#4C4A4B] leading-relaxed font-medium">
-                  Indonesia currently operates with a severe deficit in
-                  healthcare infrastructure compared to global benchmarks,
-                  indicating massive unfulfilled demand for modern inpatient
-                  facilities.
-                </p>
-              </div>
-              <div className="flex-1 w-full flex flex-col items-center justify-center gap-1 p-6 lg:p-8 bg-[#F9F8F6] border border-[#D8D8D8] rounded-[24px]">
-                <span className="text-[9px] font-black text-[#9B8B70] uppercase tracking-widest mb-2 whitespace-nowrap">
-                  Hospital Beds per 1,000 Citizens
-                </span>
-                <div className="flex items-center justify-center gap-4 lg:gap-8 w-full">
-                  <div className="text-center">
-                    <p className="text-5xl lg:text-6xl font-black text-[#1E2F31]">
-                      1.4
-                    </p>
-                    <p className="text-[10px] font-bold text-[#4C4A4B] uppercase tracking-widest mt-3">
-                      Indonesia
+                    {/* Stage 2: SAM */}
+                    <div className="relative">
+                      <div className="w-[85%] mx-auto h-11 bg-[#99B6AA]/20 border border-[#99B6AA] rounded-xl flex items-center justify-between px-4 shadow-sm">
+                        <span className="text-[10px] font-bold text-[#1E2F31] uppercase tracking-wider">
+                          2. SAM (SES A & B - 18%)
+                        </span>
+                        <span className="font-mono text-sm font-black text-[#1E2F31]">
+                          1,332,000
+                        </span>
+                      </div>
+                      <div className="w-full flex justify-center py-0.5">
+                        <div className="w-px h-3.5 border-l-2 border-dashed border-[#1C6048]"></div>
+                      </div>
+                    </div>
+
+                    {/* Stage 3: SOM */}
+                    <div>
+                      <div className="w-[70%] mx-auto h-11 bg-[#1C6048] text-white rounded-xl flex items-center justify-between px-4 shadow-md border border-[#18533E]">
+                        <span className="text-[10px] font-black uppercase tracking-wider">
+                          3. SOM (Insured Target - 40%)
+                        </span>
+                        <span className="font-mono text-sm font-black text-white">
+                          532,800
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-[#D8D8D8]">
+                    <p className="text-[10px] text-[#4C4A4B] leading-relaxed font-medium">
+                      By filtering the regional demographic to strictly isolate{" "}
+                      <strong>SES A & B (18%)</strong> and capturing those with{" "}
+                      <strong>Private Commercial Insurance (40%)</strong>, we
+                      establish a core addressable market of
+                      <strong>230.4k high-margin premium lives</strong>, heavily
+                      de-risking our revenue-per-bed targets.
                     </p>
                   </div>
-                  <div className="text-6xl lg:text-7xl font-black text-[#1E2F31] px-4 opacity-80">
-                    &lt;
-                  </div>
-                  <div className="text-center">
-                    <p className="text-5xl lg:text-6xl font-black text-[#1C6048]">
-                      4.5
-                    </p>
-                    <p className="text-[10px] font-bold text-[#4C4A4B] uppercase tracking-widest mt-3">
-                      Average Standard
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </BentoBox>
+                </BentoBox>
 
-          {/* Systemic Frictions Bento Grid (Matches Image: 8-4 Row / 3-6-3 Row) */}
+                {/* Concept 4: The Interactive Geographic Spillover (The Leaflet Map) */}
+                <BentoBox
+                  colSpan="md:col-span-12"
+                  className="bg-white border-[#D8D8D8]"
+                >
+                  <div className="flex items-center gap-3 mb-6">
+                    <Map size={24} className="text-[#1C6048]" />
+                    <div>
+                      <h2 className="text-lg font-black text-[#1E2F31] tracking-tight">
+                        Interactive Catchment Boundary
+                      </h2>
+                      <p className="text-[10px] text-[#4C4A4B] font-medium mt-0.5">
+                        Visualizing the West Jakarta structural spillover into
+                        our localized Tangerang monopoly.
+                      </p>
+                    </div>
+                  </div>
 
-          {/* Card 1: Physician (Wide 8-Col) */}
-          <BentoBox
-            colSpan="md:col-span-12 lg:col-span-8"
-            className="!bg-[#EFEBE7] border-transparent"
-          >
-            <h3 className="font-black text-[15px] text-[#1E2F31] mb-6 text-center">
-              Physician-to-Population Ratio
-            </h3>
-            <div className="flex flex-col md:flex-row items-center justify-center gap-6 lg:gap-16 flex-1">
-              <div className="flex items-end justify-center gap-6">
-                <div className="flex flex-col items-center">
-                  <BentoIcon
-                    icon={<CustomPhysicianIcon size={80} />}
-                    color="transparent"
-                    className="mb-0 text-[#1C6048]"
-                  />
-                  <p className="text-5xl font-black text-[#1E2F31] mt-2">1</p>
-                </div>
-                <p className="text-4xl font-black text-[#1E2F31] pb-1 opacity-80">
-                  :
-                </p>
-                <div className="flex flex-col items-center">
-                  <BentoIcon
-                    icon={<CustomPopulationIcon size={80} />}
-                    color="transparent"
-                    className="mb-0 text-[#1C6048]"
-                  />
-                  <p className="text-5xl font-black text-[#1E2F31] mt-2">
-                    2000
+                  <div className="w-full">
+                    <InteractiveDemographicMap />
+                  </div>
+
+                  <p className="text-[11px] text-[#4C4A4B] leading-relaxed font-medium mt-6 bg-[#EFEBE7] p-4 rounded-xl border border-[#D8D8D8]">
+                    <strong className="text-[#1E2F31]">Strategic Note:</strong>{" "}
+                    Notice how the primary catchment area directly borders the
+                    highly affluent West Jakarta corridor. Because our model
+                    strictly underwrites using only Tangerang's population, any
+                    spillover from the 2.6M West Jakarta residents (who face a
+                    much faster commute to Vasanta than to South Jakarta)
+                    represents pure, un-modeled upside to our base-case returns.
                   </p>
-                </div>
-              </div>
-              <div className="text-center md:text-left flex flex-col items-center md:items-start border-t md:border-t-0 md:border-l border-[#D8D8D8] pt-6 md:pt-0 md:pl-10">
-                <p className="text-[10px] font-bold text-[#1E2F31] tracking-widest mb-4 bg-white/60 px-3 py-1.5 rounded-lg border border-[#D8D8D8]">
-                  WHO Standard 1 : 1000
-                </p>
-                <p className="text-xs text-[#4C4A4B] leading-relaxed font-medium max-w-[200px]">
-                  Operating at <strong className="text-[#1E2F31]">50%</strong>{" "}
-                  physician capacity.
-                  <br />
-                  <br />A chronic shortage demands{" "}
-                  <strong className="text-[#1E2F31]">digital-first</strong>{" "}
-                  clinical support.
-                </p>
-              </div>
-            </div>
-          </BentoBox>
+                </BentoBox>
 
-          {/* Card 2: Quality Mismatch (Square 4-Col) */}
-          <BentoBox
-            colSpan="md:col-span-12 lg:col-span-4"
-            className="bg-[#F9F8F6] border-[#D8D8D8] items-center text-center"
-          >
-            <h3 className="font-black text-[15px] text-[#1E2F31] mb-6">
-              Price vs Quality Mismatch
-            </h3>
-            <BentoIcon
-              icon={<CustomScaleIcon size={100} />}
-              color="transparent"
-              className="mb-6 text-[#1C6048]"
-            />
-            <p className="text-xs text-[#4C4A4B] leading-relaxed font-medium mt-auto">
-              High out-of-pocket costs{" "}
-              <strong className="text-[#1E2F31]">failing</strong> to deliver a{" "}
-              <strong className="text-[#1E2F31]">Tier-A</strong> patient
-              experience.
-            </p>
-          </BentoBox>
-
-          {/* Card 3: Fragmented (Square 3-Col) */}
-          <BentoBox
-            colSpan="md:col-span-6 lg:col-span-3"
-            className="bg-[#F9F8F6] border-[#D8D8D8] items-center text-center"
-          >
-            <h3 className="font-black text-[15px] text-[#1E2F31] mb-6">
-              Fragmented Operation
-            </h3>
-            <BentoIcon
-              icon={<CustomKnotIcon size={100} />}
-              color="transparent"
-              className="mb-6 text-[#1C6048]"
-            />
-            <p className="text-[11px] text-[#4C4A4B] leading-relaxed font-medium mt-auto">
-              <strong className="text-[#1E2F31]">Inefficient</strong> unified
-              digital backbone, error-prone, and disconnected operations.
-            </p>
-          </BentoBox>
-
-          {/* Card 4: Admin Bottleneck (Wide 6-Col) */}
-          <BentoBox
-            colSpan="md:col-span-12 lg:col-span-6"
-            className="bg-white border-[#D8D8D8] items-center md:items-start text-center md:text-left flex-row flex-wrap md:flex-nowrap"
-          >
-            <div className="w-full flex flex-col items-center md:items-start h-full">
-              <h3 className="font-black text-[15px] text-[#1E2F31] mb-6 w-full text-center md:text-left">
-                Administrative Bottleneck per Patient Visit
-              </h3>
-              <div className="flex flex-col md:flex-row items-center justify-center gap-6 lg:gap-8 flex-1 w-full">
-                <div className="flex flex-col items-center justify-center shrink-0">
-                  <BentoIcon
-                    icon={<Timer size={100} strokeWidth={1.5} />}
-                    color="transparent"
-                    className="mb-4 text-[#1C6048]"
-                  />
-                  <p className="text-4xl font-black text-[#1E2F31] whitespace-nowrap">
-                    &gt; 2 Hours
-                  </p>
-                </div>
-                <p className="text-xs text-[#4C4A4B] leading-relaxed font-medium max-w-[260px] border-t md:border-t-0 md:border-l border-[#EFEBE7] pt-4 md:pt-0 md:pl-6 text-center md:text-left">
-                  Administrative friction paralyzes the patient journey and
-                  experience.
-                  <br />
-                  <br />A <strong className="text-[#1E2F31]">
-                    2-hour
-                  </strong>{" "}
-                  wait for a{" "}
-                  <strong className="text-[#1E2F31]">15-minute</strong>{" "}
-                  consultation proves that Indonesia current "manual" hospital
-                  model is no longer viable.
-                </p>
+                {/* Key Regional Infrastructure Context */}
+                <BentoBox colSpan="md:col-span-12">
+                  <div className="flex items-center gap-4 mb-6">
+                    <BentoIcon
+                      icon={<Map size={24} />}
+                      color="indigo"
+                      className="mb-0 w-12 h-12 rounded-xl"
+                    />
+                    <h2 className="text-lg font-black text-[#1E2F31] tracking-tight">
+                      Feasibility Framework: Defending the Premium Moat
+                    </h2>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="bg-[#F9F8F6] p-5 rounded-2xl border border-[#D8D8D8]">
+                      <h4 className="font-bold text-[#1E2F31] mb-2 text-sm">
+                        Geographic Inelasticity
+                      </h4>
+                      <p className="text-xs text-[#4C4A4B] leading-relaxed font-medium">
+                        Radiotherapy patients require consecutive daily
+                        treatments for 4–6 weeks. Traveling outside Tangerang is
+                        logistically unfeasible, guaranteeing high local
+                        retention.
+                      </p>
+                    </div>
+                    <div className="bg-[#F9F8F6] p-5 rounded-2xl border border-[#D8D8D8]">
+                      <h4 className="font-bold text-[#1E2F31] mb-2 text-sm">
+                        Affluent Middle Class
+                      </h4>
+                      <p className="text-xs text-[#4C4A4B] leading-relaxed font-medium">
+                        Tangerang’s rapid middle-class growth translates
+                        directly to commercial insurance adoption, shifting
+                        clinical volume away from low-margin BPJS public plans.
+                      </p>
+                    </div>
+                    <div className="bg-[#F9F8F6] p-5 rounded-2xl border border-[#D8D8D8]">
+                      <h4 className="font-bold text-[#1E2F31] mb-2 text-sm">
+                        The "First-Mover" Advantage
+                      </h4>
+                      <p className="text-xs text-[#4C4A4B] leading-relaxed font-medium">
+                        By securing local nuclear licensing (BAPETEN) and
+                        building the LINAC/PET-CT bunkers upfront, Vasanta
+                        pre-empts competitor entry, creating an operational
+                        monopoly.
+                      </p>
+                    </div>
+                  </div>
+                </BentoBox>
               </div>
             </div>
-          </BentoBox>
-
-          {/* Card 5: Preventative (Square 3-Col) */}
-          <BentoBox
-            colSpan="md:col-span-6 lg:col-span-3"
-            className="!bg-[#EFEBE7] border-transparent items-center text-center"
-          >
-            <h3 className="font-black text-[15px] text-[#1E2F31] mb-6">
-              Lack of Preventative Screening
-            </h3>
-            <BentoIcon
-              icon={<CustomStethoscopeIcon size={100} />}
-              color="transparent"
-              className="mb-6 text-[#9B8B70]"
-            />
-            <p className="text-[11px] text-[#4C4A4B] leading-relaxed font-medium mt-auto">
-              Only <strong className="text-[#1E2F31] text-sm">17.44%</strong> of
-              Indonesian underwent preventive health screenings regularly.
-            </p>
-          </BentoBox>
-        </div>
-
           </div>
+        )}
 
-        {/* Section 2: Market Study */}
-        <div>
-          <div className="border-b border-[#D8D8D8] pb-4 mb-6">
-            <h2 className="text-2xl font-black text-[#1E2F31] tracking-tight">Demographics & Coverage</h2>
-            <p className="text-[12px] text-[#4C4A4B] font-medium mt-1">National health insurance distribution and specialized oncology provider tiers.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          {/* Target Demographics Bento */}
-          <BentoBox
-            colSpan="md:col-span-4"
-            className="bg-white border-[#D8D8D8] flex flex-col"
-          >
-            <BentoIcon icon={<Users size={28} />} color="emerald" />
-            <h2 className="text-xl font-black text-[#1E2F31] tracking-tight mb-6">
-              Target Demographics
-            </h2>
-
-            <div className="flex-1 flex flex-col bg-[#F9F8F6] rounded-2xl border border-[#D8D8D8] p-5 relative overflow-hidden mb-4">
-              <h3 className="text-[11px] text-[#1C6048] font-bold uppercase tracking-wider text-center mb-2">
-                Premium Addressable Market
-              </h3>
-
-              <div className="flex-1 min-h-[180px] relative w-full flex items-center justify-center my-4">
-                <LazyResponsiveContainer width="100%" height="100%">
-                  <PieChart style={{ outline: 'none' }}>
-                    <Pie
-                      data={PREM_MKT_PIE_DATA}
-                      cx="50%"
-                      cy="50%"
-                      startAngle={90}
-                      endAngle={-270}
-                      innerRadius="40%"
-                      outerRadius="60%"
-                      dataKey="value"
-                      stroke="none"
-                      label={renderPieLabel}
-                      labelLine={{ stroke: "#D8D8D8", strokeWidth: 1 }}
-                      className="outline-none focus:outline-none"
-                    >
-                      <Cell fill="#9B8B70" className="outline-none focus:outline-none" />
-                      <Cell fill="#294043" className="outline-none focus:outline-none" />
-                    </Pie>
-                  </PieChart>
-                </LazyResponsiveContainer>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 w-full border-t border-[#D8D8D8] pt-5 mt-auto">
-                <div className="flex flex-col justify-between text-center border-r border-[#D8D8D8] h-full">
-                  <p className="text-[10px] text-[#4C4A4B] font-bold uppercase tracking-wider mb-2">
-                    Total Catchment
-                  </p>
-                  <p className="text-xl font-black text-[#1E2F31] leading-none">
-                    7,379,532
-                  </p>
-                </div>
-                <div className="flex flex-col justify-between text-center h-full">
-                  <p className="text-[10px] text-[#9B8B70] font-bold uppercase tracking-wider mb-2">
-                    SES A & B
-                  </p>
-                  <p className="text-xl font-black text-[#9B8B70] leading-none">
-                    1.33M
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-[#EFEBE7] p-4 rounded-xl border border-[#D8D8D8] space-y-3 mt-auto">
-              <div>
-                <p className="text-[10px] font-bold text-[#1E2F31] uppercase tracking-widest mb-1">
-                  What is SES A & B?
-                </p>
-                <p className="text-[10px] text-[#4C4A4B] leading-relaxed font-medium">
-                  Socio-Economic Status (SES) A & B represents the upper-middle
-                  to affluent class, highly correlated with private health
-                  insurance and medical tourism spending.
+        {activeMiniTab === "marketAnalysis" && (
+          <div className="space-y-10 animate-in fade-in zoom-in-95 duration-300">
+            <div>
+              <div className="border-b border-[#D8D8D8] pb-4 mb-6">
+                <h2 className="text-2xl font-black text-[#1E2F31] tracking-tight">
+                  Market Gap & Deficits
+                </h2>
+                <p className="text-[12px] text-[#4C4A4B] font-medium mt-1">
+                  Systemic frictions across inpatient beds, physician ratios,
+                  and technological mismatch.
                 </p>
               </div>
-              <div className="w-full h-px bg-[#D8D8D8]"></div>
-              <div>
-                <p className="text-[10px] font-bold text-[#1C6048] uppercase tracking-widest mb-1">
-                  Deriving 1.33M Lives
-                </p>
-                <p className="text-[10px] text-[#4C4A4B] leading-relaxed font-medium">
-                  Calculated directly by capturing exactly{" "}
-                  <strong className="text-[#1E2F31]">18%</strong> of the{" "}
-                  <strong className="text-[#1E2F31]">7.4 Million</strong> combined
-                  West, Central, North Jakarta & Tangerang catchment.
-                </p>
-              </div>
-            </div>
-          </BentoBox>
-
-          {/* Regulatory Matrix Bento (Moved up and resized to 8 columns) */}
-          <BentoBox
-            colSpan="md:col-span-8"
-            className="bg-white border-[#D8D8D8]"
-          >
-            <div className="flex items-center gap-4 mb-10">
-              <BentoIcon
-                icon={<Scale size={28} />}
-                color="amber"
-                className="mb-0"
-              />
-              <h2 className="text-xl font-black text-[#1E2F31] tracking-tight">
-                Regulatory Baseline{" "}
-                <span className="font-medium text-[#4C4A4B] text-sm ml-2 hidden xl:inline">
-                  (Bed Capacity Requirements)
-                </span>
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-12 lg:gap-8">
-              {/* Diagram 1: Hospital Type */}
-              <div className="flex flex-col items-center">
-                <div className="px-6 py-2 bg-[#F9F8F6] border border-[#D8D8D8] text-[#4C4A4B] text-[13px] font-medium shadow-sm">
-                  Hospital Type
-                </div>
-                <div className="w-px h-6 bg-[#A0A0A0]"></div>
-                <div className="w-full max-w-[260px] h-px bg-[#A0A0A0]"></div>
-                <div className="w-full max-w-[260px] flex justify-between">
-                  <div className="w-px h-6 bg-[#A0A0A0]"></div>
-                  <div className="w-px h-6 bg-[#A0A0A0]"></div>
-                </div>
-                <div className="w-full max-w-[340px] grid grid-cols-2 gap-4 lg:gap-8">
-                  <div className="flex flex-col items-center">
-                    <div className="w-full py-2 bg-[#99B6AA] text-white text-center text-xs font-bold mb-4">
-                      General
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                {/* Supply & Demand Bento (Rebuilt to match slide ratio) */}
+                <BentoBox colSpan="md:col-span-12">
+                  <div className="flex flex-col md:flex-row items-center gap-8">
+                    <div className="flex-1 text-center md:text-left">
+                      <div className="flex items-center justify-center md:justify-start gap-4 mb-4">
+                        <BentoIcon
+                          icon={<CustomBedIcon size={80} />}
+                          color="transparent"
+                          className="mb-0 text-[#1E2F31]"
+                        />
+                        <h2 className="text-xl font-black text-[#1E2F31] tracking-tight">
+                          Hospital Beds Shortage
+                        </h2>
+                      </div>
+                      <p className="text-[13px] text-[#4C4A4B] leading-relaxed font-medium">
+                        Indonesia currently operates with a severe deficit in
+                        healthcare infrastructure compared to global benchmarks,
+                        indicating massive unfulfilled demand for modern
+                        inpatient facilities.
+                      </p>
                     </div>
-                    <ul className="text-xs text-[#4C4A4B] space-y-1.5 w-full pl-2">
-                      <li>
-                        <strong className="text-[#1E2F31] font-black text-[13px]">
-                          A &ge; 250 beds
-                        </strong>
-                      </li>
-                      <li>
-                        <strong className="text-[#1E2F31] font-black text-[13px]">
-                          B &ge; 200 beds
-                        </strong>
-                      </li>
-                      <li>
-                        <span className="opacity-60 font-medium">
-                          C &ge; 100 beds
-                        </span>
-                      </li>
-                      <li>
-                        <span className="opacity-60 font-medium">
-                          D &ge; 50 beds
-                        </span>
-                      </li>
-                    </ul>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <div className="w-full py-2 bg-[#1C6048] text-white text-center text-xs font-bold mb-4 shadow-md">
-                      Specialized
-                    </div>
-                    <ul className="text-xs text-[#4C4A4B] space-y-1.5 w-full pl-2">
-                      <li>
-                        <strong className="text-[#1E2F31] font-black text-[13px]">
-                          A &ge; 100 beds
-                        </strong>
-                      </li>
-                      <li>
-                        <span className="opacity-60 font-medium">
-                          B &ge; 75 beds
-                        </span>
-                      </li>
-                      <li>
-                        <span className="opacity-60 font-medium">
-                          C &ge; 25 beds
-                        </span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-                <div className="mt-8 text-xs text-[#4C4A4B] italic text-center">
-                  Permenkes No.3 Tahun 2020
-                </div>
-              </div>
-
-              {/* Diagram 2: Private Hospital */}
-              <div className="flex flex-col items-center">
-                <div className="px-6 py-2 bg-[#F9F8F6] border border-[#D8D8D8] text-[#4C4A4B] text-[13px] font-medium shadow-sm">
-                  Private Hospital
-                </div>
-                <div className="w-px h-6 bg-[#A0A0A0]"></div>
-                <div className="w-full max-w-[260px] h-px bg-[#A0A0A0]"></div>
-                <div className="w-full max-w-[260px] flex justify-between">
-                  <div className="w-px h-6 bg-[#A0A0A0]"></div>
-                  <div className="w-px h-6 bg-[#A0A0A0]"></div>
-                </div>
-                <div className="w-full max-w-[340px] grid grid-cols-2 gap-4 lg:gap-8">
-                  <div className="flex flex-col items-center">
-                    <div className="w-full py-2 bg-[#99B6AA] text-white text-center text-xs font-bold mb-4">
-                      Domestic
-                    </div>
-                  </div>
-                  <div className="flex flex-col">
-                    <div className="w-full py-2 bg-[#1C6048] text-white text-center text-xs font-bold mb-4 shadow-md">
-                      Foreign
-                    </div>
-                    <div className="text-[11px] text-[#4C4A4B] w-full">
-                      <p className="mb-2 font-medium">Min. requirements:</p>
-                      <ul className="space-y-2">
-                        <li className="flex items-start gap-2">
-                          <span className="text-[#4C4A4B] text-[8px] mt-1">
-                            &#9642;
-                          </span>
-                          <span>
-                            <strong className="text-[#1E2F31] font-black text-[12px]">
-                              50 beds
-                            </strong>{" "}
-                            &{" "}
-                            <strong className="text-[#1E2F31] font-black text-[12px]">
-                              1
-                            </strong>{" "}
-                            top-tier service
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="text-[#4C4A4B] text-[8px] mt-1">
-                            &#9642;
-                          </span>
-                          <span>
-                            <strong className="text-[#1E2F31] font-black text-[12px]">
-                              200 beds
-                            </strong>{" "}
-                            &{" "}
-                            <strong className="text-[#1E2F31] font-black text-[12px]">
-                              2
-                            </strong>{" "}
-                            top-tier services
-                          </span>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-8 text-xs text-[#4C4A4B] italic text-center mt-auto pt-6">
-                  Permenkes No.11 Tahun 2025
-                </div>
-              </div>
-            </div>
-          </BentoBox>
-
-          {/* Strategic Angle: Dedicated Speed Moat */}
-          <BentoBox
-            colSpan="md:col-span-12"
-            className="!bg-[#1C6048] !border-transparent !text-white items-center md:items-start text-center md:text-left flex-col md:flex-col flex-wrap md:flex-nowrap px-8 py-10 shadow-lg relative overflow-hidden"
-          >
-            <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none text-white">
-              <svg
-                width="240"
-                height="240"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="m12 14 4-4" />
-                <path d="M3.34 19a10 10 0 1 1 17.32 0" />
-              </svg>
-            </div>
-            <div className="w-full flex justify-between flex-col lg:flex-row items-center gap-8 relative z-10 text-white mb-8">
-              <div className="flex flex-col lg:flex-row items-center gap-6">
-                <div className="bg-white/10 p-5 rounded-2xl flex-shrink-0">
-                  <Timer size={48} className="text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-black tracking-tight mb-3 text-white">
-                    The "Dedicated Speed" Moat
-                  </h2>
-                  <p className="text-sm font-medium text-white/85 leading-relaxed max-w-3xl">
-                    Positioning Vasanta not just on clinical capability, but on{" "}
-                    <strong className="text-white font-bold">
-                      Time-to-Treatment
-                    </strong>
-                    . While public and general hospitals suffer from heavy wait
-                    lists and fragmented scheduling, Vasanta offers a
-                    streamlined, single-specialty hub built purely for velocity.
-                    Speed is the ultimate differentiator for oncology
-                    outpatients.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full relative z-10 w-full">
-              <div className="bg-white/10 border border-white/20 p-5 rounded-xl flex flex-col items-center md:items-start text-center md:text-left">
-                <Activity className="text-white mb-3" size={24} />
-                <h3 className="font-bold text-[13px] text-white tracking-wide uppercase mb-2">
-                  High-Throughput OPD
-                </h3>
-                <p className="text-xs text-white/70 leading-relaxed font-medium">
-                  Streamlined outpatient pathways eliminating administrative
-                  friction and accelerating doctor-patient contact.
-                </p>
-              </div>
-              <div className="bg-white/10 border border-white/20 p-5 rounded-xl flex flex-col items-center md:items-start text-center md:text-left">
-                <HeartPulse className="text-white mb-3" size={24} />
-                <h3 className="font-bold text-[13px] text-white tracking-wide uppercase mb-2">
-                  Day-Care Chemo Pods
-                </h3>
-                <p className="text-xs text-white/70 leading-relaxed font-medium">
-                  Highly efficient, private chemotherapy pods built for rapid
-                  turnover without requiring inpatient overnight stays.
-                </p>
-              </div>
-              <div className="bg-white/10 border border-white/20 p-5 rounded-xl flex flex-col items-center md:items-start text-center md:text-left">
-                <Zap className="text-white mb-3" size={24} />
-                <h3 className="font-bold text-[13px] text-white tracking-wide uppercase mb-2">
-                  Rapid PET-CT Imaging
-                </h3>
-                <p className="text-xs text-white/70 leading-relaxed font-medium">
-                  In-house advanced diagnostic imaging immediately capturing
-                  patient staging, avoiding long waitlists at diagnostic
-                  centers.
-                </p>
-              </div>
-              <div className="bg-white/10 border border-white/20 p-5 rounded-xl flex flex-col items-center md:items-start text-center md:text-left">
-                <ShieldAlert className="text-white mb-3" size={24} />
-                <h3 className="font-bold text-[13px] text-white tracking-wide uppercase mb-2">
-                  Dedicated LINAC Bunkers
-                </h3>
-                <p className="text-xs text-white/70 leading-relaxed font-medium">
-                  Capital-intensive radiotherapy bunkers secured in-house,
-                  bypassing the months-long national queues.
-                </p>
-              </div>
-            </div>
-          </BentoBox>
-
-          {/* Comprehensive Competitor Matrix Bento */}
-          <BentoBox colSpan="md:col-span-12">
-            <div className="flex items-center gap-4 mb-6">
-              <BentoIcon
-                icon={<Layers size={28} />}
-                color="purple"
-                className="mb-0"
-              />
-              <h2 className="text-xl font-black text-[#1E2F31] tracking-tight">
-                Competitor Landscape & Service Gap Analysis
-              </h2>
-            </div>
-            <div className="overflow-x-auto pb-4">
-              <table className="w-full text-left border-collapse min-w-[1000px]">
-                <thead>
-                  <tr>
-                    <th className="p-3 border-b-2 border-[#D8D8D8] text-[11px] font-bold text-[#4C4A4B] uppercase tracking-widest bg-white sticky left-0 z-10 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
-                      Facility Name
-                    </th>
-                    <th className="p-3 border-b-2 border-[#D8D8D8] text-[11px] font-bold text-[#4C4A4B] uppercase tracking-widest text-center bg-[#F9F8F6]">
-                      Tier / Class
-                    </th>
-                    <th className="p-3 border-b-2 border-[#D8D8D8] text-[11px] font-bold text-[#4C4A4B] uppercase tracking-widest text-center bg-[#F9F8F6]">
-                      Target SES
-                    </th>
-                    <th className="p-3 border-b-2 border-[#D8D8D8] text-[11px] font-bold text-[#4C4A4B] uppercase tracking-widest text-center bg-[#F9F8F6]">
-                      Distance
-                    </th>
-                    <th className="p-3 border-b-2 border-[#D8D8D8] text-[11px] font-bold text-[#4C4A4B] uppercase tracking-widest text-center bg-white">
-                      Basic Chemo
-                    </th>
-                    <th className="p-3 border-b-2 border-[#D8D8D8] text-[11px] font-bold text-[#4C4A4B] uppercase tracking-widest text-center bg-white">
-                      Surgical Oncology
-                    </th>
-                    <th className="p-3 border-b-2 border-[#D8D8D8] text-[11px] font-bold text-[#4C4A4B] uppercase tracking-widest text-center bg-white">
-                      PET-CT
-                    </th>
-                    <th className="p-3 border-b-2 border-[#D8D8D8] text-[11px] font-bold text-[#4C4A4B] uppercase tracking-widest text-center bg-white border-r border-[#D8D8D8]">
-                      LINAC (Radiotherapy)
-                    </th>
-                    <th className="p-3 border-b-2 border-[#1C6048] text-[11px] font-black text-[#1C6048] uppercase tracking-widest bg-[#E8EFEA] rounded-t-xl text-center">
-                      Strategic Weakness
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="text-[13px]">
-                  <tr className="border-b border-[#D8D8D8]">
-                    <td className="p-4 font-bold text-[#1E2F31] bg-white sticky left-0 z-10 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
-                      RS Pondok Indah - Puri Indah
-                    </td>
-                    <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
-                      Type B
-                    </td>
-                    <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
-                      A & B (Premium)
-                    </td>
-                    <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
-                      4 km
-                    </td>
-                    <td className="p-4 text-center bg-white">
-                      <Check size={20} className="mx-auto text-[#9B8B70]" />
-                    </td>
-                    <td className="p-4 text-center bg-white">
-                      <Check size={20} className="mx-auto text-[#9B8B70]" />
-                    </td>
-                    <td className="p-4 text-center bg-white">
-                      <X size={20} className="mx-auto text-[#D8D8D8]" />
-                    </td>
-                    <td className="p-4 text-center bg-white border-r border-[#D8D8D8]">
-                      <X size={20} className="mx-auto text-[#D8D8D8]" />
-                    </td>
-                    <td className="p-4 text-center bg-[#E8EFEA] text-[#4C4A4B] font-medium">
-                      Generalist focus; lacks radiotherapy (LINAC) bunkers
-                    </td>
-                  </tr>
-                  <tr className="border-b border-[#D8D8D8]">
-                    <td className="p-4 font-bold text-[#1E2F31] bg-white sticky left-0 z-10 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
-                      Tzu Chi Hospital - PIK
-                    </td>
-                    <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
-                      Type B
-                    </td>
-                    <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
-                      A++ (Luxury)
-                    </td>
-                    <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
-                      9 km
-                    </td>
-                    <td className="p-4 text-center bg-white">
-                      <Check size={20} className="mx-auto text-[#9B8B70]" />
-                    </td>
-                    <td className="p-4 text-center bg-white">
-                      <Check size={20} className="mx-auto text-[#9B8B70]" />
-                    </td>
-                    <td className="p-4 text-center bg-white">
-                      <Check size={20} className="mx-auto text-[#9B8B70]" />
-                    </td>
-                    <td className="p-4 text-center bg-white border-r border-[#D8D8D8]">
-                      <Check size={20} className="mx-auto text-[#9B8B70]" />
-                    </td>
-                    <td className="p-4 text-center bg-[#E8EFEA] text-[#4C4A4B] font-medium">
-                      Geographically isolated to PIK; exceedingly high pricing
-                      tier
-                    </td>
-                  </tr>
-                  <tr className="border-b border-[#D8D8D8]">
-                    <td className="p-4 font-bold text-[#1E2F31] bg-white sticky left-0 z-10 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
-                      Dharmais National Cancer Center
-                    </td>
-                    <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
-                      Type A
-                    </td>
-                    <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
-                      B & C (BPJS)
-                    </td>
-                    <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
-                      8.5 km
-                    </td>
-                    <td className="p-4 text-center bg-white">
-                      <Check size={20} className="mx-auto text-[#9B8B70]" />
-                    </td>
-                    <td className="p-4 text-center bg-white">
-                      <Check size={20} className="mx-auto text-[#9B8B70]" />
-                    </td>
-                    <td className="p-4 text-center bg-white">
-                      <Check size={20} className="mx-auto text-[#9B8B70]" />
-                    </td>
-                    <td className="p-4 text-center bg-white border-r border-[#D8D8D8]">
-                      <Check size={20} className="mx-auto text-[#9B8B70]" />
-                    </td>
-                    <td className="p-4 text-center bg-[#E8EFEA] text-[#4C4A4B] font-medium">
-                      Severe overcrowding & massive wait lists (3-6+ months)
-                    </td>
-                  </tr>
-                  <tr className="border-b border-[#D8D8D8]">
-                    <td className="p-4 font-bold text-[#1E2F31] bg-white sticky left-0 z-10 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
-                      RS EMC Grha Kedoya
-                    </td>
-                    <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
-                      Type B
-                    </td>
-                    <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
-                      A & B (Premium)
-                    </td>
-                    <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
-                      4.5 km
-                    </td>
-                    <td className="p-4 text-center bg-white">
-                      <Check size={20} className="mx-auto text-[#9B8B70]" />
-                    </td>
-                    <td className="p-4 text-center bg-white">
-                      <Check size={20} className="mx-auto text-[#9B8B70]" />
-                    </td>
-                    <td className="p-4 text-center bg-white">
-                      <X size={20} className="mx-auto text-[#D8D8D8]" />
-                    </td>
-                    <td className="p-4 text-center bg-white border-r border-[#D8D8D8]">
-                      <X size={20} className="mx-auto text-[#D8D8D8]" />
-                    </td>
-                    <td className="p-4 text-center bg-[#E8EFEA] text-[#4C4A4B] font-medium">
-                      Generalist bottlenecks; lacks heavy radiotherapy buffers
-                    </td>
-                  </tr>
-                  <tr className="border-b border-[#D8D8D8]">
-                    <td className="p-4 font-bold text-[#1E2F31] bg-white sticky left-0 z-10 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
-                      Mandaya Royal Hospital Puri
-                    </td>
-                    <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
-                      Type B
-                    </td>
-                    <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
-                      A++ (Luxury)
-                    </td>
-                    <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
-                      6.5 km
-                    </td>
-                    <td className="p-4 text-center bg-white">
-                      <Check size={20} className="mx-auto text-[#9B8B70]" />
-                    </td>
-                    <td className="p-4 text-center bg-white">
-                      <Check size={20} className="mx-auto text-[#9B8B70]" />
-                    </td>
-                    <td className="p-4 text-center bg-white">
-                      <Check size={20} className="mx-auto text-[#9B8B70]" />
-                    </td>
-                    <td className="p-4 text-center bg-white border-r border-[#D8D8D8]">
-                      <Check size={20} className="mx-auto text-[#9B8B70]" />
-                    </td>
-                    <td className="p-4 text-center bg-[#E8EFEA] text-[#4C4A4B] font-medium">
-                      Multi-specialty drift; loss of agility in patient
-                      coordination
-                    </td>
-                  </tr>
-                  <tr className="border-b border-[#D8D8D8]">
-                    <td className="p-4 font-bold text-[#1E2F31] bg-white sticky left-0 z-10 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
-                      RSUPN Dr. Cipto Mangunkusumo (RSCM)
-                    </td>
-                    <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
-                      Type A
-                    </td>
-                    <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
-                      BPJS / General
-                    </td>
-                    <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
-                      12.5 km
-                    </td>
-                    <td className="p-4 text-center bg-white">
-                      <Check size={20} className="mx-auto text-[#9B8B70]" />
-                    </td>
-                    <td className="p-4 text-center bg-white">
-                      <Check size={20} className="mx-auto text-[#9B8B70]" />
-                    </td>
-                    <td className="p-4 text-center bg-white">
-                      <Check size={20} className="mx-auto text-[#9B8B70]" />
-                    </td>
-                    <td className="p-4 text-center bg-white border-r border-[#D8D8D8]">
-                      <Check size={20} className="mx-auto text-[#9B8B70]" />
-                    </td>
-                    <td className="p-4 text-center bg-[#E8EFEA] text-[#4C4A4B] font-medium">
-                      Massive waitlists (months-long delays for LINAC/PET-CT)
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="p-4 font-black text-[#1C6048] bg-[#F4F9F6] sticky left-0 z-10 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] border-t border-[#1C6048]/20">
-                      Vasanta Oncology (Proposed)
-                    </td>
-                    <td className="p-4 text-center bg-[#F4F9F6] font-bold text-[#1E2F31] border-t border-[#1C6048]/20">
-                      Type B
-                    </td>
-                    <td className="p-4 text-center bg-[#F4F9F6] font-bold text-[#1E2F31] border-t border-[#1C6048]/20">
-                      A & B
-                    </td>
-                    <td className="p-4 text-center bg-[#F4F9F6] font-bold text-[#1E2F31] border-t border-[#1C6048]/20">
-                      <span className="bg-[#1C6048] text-white px-2 py-0.5 rounded text-[11px]">
-                        0 km
+                    <div className="flex-1 w-full flex flex-col items-center justify-center gap-1 p-6 lg:p-8 bg-[#F9F8F6] border border-[#D8D8D8] rounded-[24px]">
+                      <span className="text-[9px] font-black text-[#9B8B70] uppercase tracking-widest mb-2 whitespace-nowrap">
+                        Hospital Beds per 1,000 Citizens
                       </span>
-                    </td>
-                    <td className="p-4 text-center bg-[#F4F9F6] border-t border-[#1C6048]/20">
-                      <Check size={20} className="mx-auto text-[#1C6048]" />
-                    </td>
-                    <td className="p-4 text-center bg-[#F4F9F6] border-t border-[#1C6048]/20">
-                      <Check size={20} className="mx-auto text-[#1C6048]" />
-                    </td>
-                    <td className="p-4 text-center bg-[#F4F9F6] border-t border-[#1C6048]/20">
-                      <Check size={20} className="mx-auto text-[#1C6048]" />
-                    </td>
-                    <td className="p-4 text-center bg-[#F4F9F6] border-r border-t border-[#1C6048]/20">
-                      <Check size={20} className="mx-auto text-[#1C6048]" />
-                    </td>
-                    <td className="p-4 text-center bg-[#E8EFEA] text-[#1C6048] font-bold rounded-br-xl border-t border-white">
-                      —
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <p className="text-[11px] text-[#4C4A4B] leading-relaxed font-medium mt-4 bg-[#EFEBE7] p-4 rounded-xl border border-[#D8D8D8]">
-              <strong className="text-[#1E2F31]">
-                The Dedicated Speed Moat:
-              </strong>{" "}
-              While general hospitals like Mandaya or Grha Kedoya dilute their
-              focus across multiple specialties, and RSCM drowns in massive
-              public queues, Vasanta operates a{" "}
-              <strong className="text-[#1C6048]">
-                dedicated, streamlined oncology clinical pathway
-              </strong>
-              . By controlling the entire journey (Diagnostics &rarr; Surgery
-              &rarr; Radiotherapy) internally with heavy CapEx upfront, Vasanta
-              eliminates wait times—creating an insurmountable advantage for
-              premium patients where speed dictates survival.
-            </p>
-          </BentoBox>
-
-          {/* Center of Excellence (CoE) Options (Empty State Matrix) */}
-          <BentoBox
-            colSpan="md:col-span-12"
-            className="bg-white border-[#D8D8D8]"
-          >
-            <div className="flex items-center gap-4 mb-6 pt-2">
-              <BentoIcon
-                icon={<Microscope size={28} />}
-                color="indigo"
-                className="mb-0"
-              />
-              <h2 className="text-xl font-black text-[#1E2F31] tracking-tight">
-                Center of Excellence (CoE) Options
-              </h2>
-            </div>
-
-            <div className="overflow-x-auto pb-6 pt-6 px-2 -mx-2">
-              <div className="min-w-[800px] grid grid-cols-5 gap-3 lg:gap-4">
-                {/* Column 1: Row Labels (Frozen Sticky Column) */}
-                <div className="flex flex-col justify-end sticky left-0 bg-white z-20 pr-4 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.15)]">
-                  <div className="h-20 bg-white"></div>
-                  <div className="h-16 flex items-center border-b border-[#D8D8D8] pr-2 bg-white">
-                    <p className="text-[10px] font-bold text-[#4C4A4B] uppercase tracking-widest leading-tight">
-                      120-Bed Unit Economics
-                    </p>
-                  </div>
-                  <div className="h-16 flex items-center border-b border-[#D8D8D8] pr-2 bg-white">
-                    <p className="text-[10px] font-bold text-[#4C4A4B] uppercase tracking-widest leading-tight">
-                      Competitive Moat
-                    </p>
-                  </div>
-                  <div className="h-16 flex items-center border-b border-[#D8D8D8] pr-2 bg-white">
-                    <p className="text-[10px] font-bold text-[#4C4A4B] uppercase tracking-widest leading-tight">
-                      Inpatient Utilization
-                    </p>
-                  </div>
-                  <div className="h-16 bg-white"></div>
-                </div>
-
-                {/* Column 2: Oncology (The Winner Highlight) */}
-                <div className="bg-[#1C6048] rounded-2xl flex flex-col shadow-sm transform transition-all duration-300 hover:-translate-y-4 hover:shadow-2xl border border-[#1C6048] z-10 relative cursor-pointer">
-                  <div className="h-20 flex flex-col items-center justify-center border-b border-white/20">
-                    <Dna
-                      size={28}
-                      className="text-white mb-1.5"
-                      strokeWidth={1.5}
-                    />
-                    <h4 className="font-bold text-white text-base tracking-wide">
-                      Oncology
-                    </h4>
-                  </div>
-                  <div className="h-16 flex flex-col items-center justify-center border-b border-white/20 text-center px-1">
-                    <p className="font-black text-white text-[13px]">
-                      Highly Scalable
-                    </p>
-                    <p className="text-[9px] text-white/80 leading-tight mt-0.5">
-                      Recurring multi-modality revenue
-                    </p>
-                  </div>
-                  <div className="h-16 flex flex-col items-center justify-center border-b border-white/20 text-center px-1">
-                    <p className="font-black text-white text-[13px]">
-                      Extreme Moat
-                    </p>
-                    <p className="text-[9px] text-white/80 leading-tight mt-0.5">
-                      BAPETEN Bunkers & LINAC
-                    </p>
-                  </div>
-                  <div className="h-16 flex flex-col items-center justify-center border-b border-white/20 text-center px-1">
-                    <p className="font-black text-white text-[13px]">
-                      High Volume
-                    </p>
-                    <p className="text-[9px] text-white/80 leading-tight mt-0.5">
-                      Diagnostics, Chemo, Surgical, Palliative
-                    </p>
-                  </div>
-                  <div className="h-16 flex items-center justify-center bg-[#18533E] rounded-b-2xl">
-                    <div className="bg-white text-[#1C6048] p-1.5 rounded-full shadow-md">
-                      <Check size={20} strokeWidth={4} />
+                      <div className="flex items-center justify-center gap-4 lg:gap-8 w-full">
+                        <div className="text-center">
+                          <p className="text-5xl lg:text-6xl font-black text-[#1E2F31]">
+                            1.4
+                          </p>
+                          <p className="text-[10px] font-bold text-[#4C4A4B] uppercase tracking-widest mt-3">
+                            Indonesia
+                          </p>
+                        </div>
+                        <div className="text-6xl lg:text-7xl font-black text-[#1E2F31] px-4 opacity-80">
+                          &lt;
+                        </div>
+                        <div className="text-center">
+                          <p className="text-5xl lg:text-6xl font-black text-[#1C6048]">
+                            4.5
+                          </p>
+                          <p className="text-[10px] font-bold text-[#4C4A4B] uppercase tracking-widest mt-3">
+                            Average Standard
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </BentoBox>
 
-                {/* Column 3: Orthopedic */}
-                <div className="bg-[#F9F8F6] rounded-2xl flex flex-col border border-[#D8D8D8] opacity-90 transition-all hover:opacity-100 hover:shadow-md cursor-pointer group">
-                  <div className="h-20 flex flex-col items-center justify-center border-b border-[#D8D8D8]">
-                    <Bone
-                      size={24}
-                      className="text-[#1E2F31] mb-1.5 group-hover:text-[#1C6048] transition-colors"
-                      strokeWidth={1.5}
-                    />
-                    <h4 className="font-bold text-[#1E2F31] text-sm group-hover:text-[#1C6048] transition-colors">
-                      Orthopedic
-                    </h4>
-                  </div>
-                  <div className="h-16 flex flex-col items-center justify-center border-b border-[#D8D8D8] text-center px-1 group-hover:bg-white transition-colors">
-                    <p className="font-bold text-[#1E2F31] text-[13px] group-hover:text-[#1C6048] transition-colors">
-                      Moderate
-                    </p>
-                    <p className="text-[9px] text-[#4C4A4B] leading-tight mt-0.5">
-                      High-margin surgical interventions
-                    </p>
-                  </div>
-                  <div className="h-16 flex flex-col items-center justify-center border-b border-[#D8D8D8] text-center px-1 group-hover:bg-white transition-colors">
-                    <p className="font-bold text-[#1E2F31] text-[13px] group-hover:text-[#1C6048] transition-colors">
-                      Moderate
-                    </p>
-                    <p className="text-[9px] text-[#4C4A4B] leading-tight mt-0.5">
-                      Standardized Surgical Equipment
-                    </p>
-                  </div>
-                  <div className="h-16 flex flex-col items-center justify-center border-b border-[#D8D8D8] text-center px-1 group-hover:bg-white transition-colors">
-                    <p className="font-bold text-[#1E2F31] text-[13px] group-hover:text-[#1C6048] transition-colors">
-                      Moderate
-                    </p>
-                    <p className="text-[9px] text-[#4C4A4B] leading-tight mt-0.5">
-                      Standard Post-Op recovery
-                    </p>
-                  </div>
-                  <div className="h-16 flex items-center justify-center rounded-b-2xl group-hover:bg-white transition-colors">
-                    <X size={24} strokeWidth={3} className="text-[#9B8B70]" />
-                  </div>
-                </div>
+                {/* Systemic Frictions Bento Grid (Matches Image: 8-4 Row / 3-6-3 Row) */}
 
-                {/* Column 4: Maternity */}
-                <div className="bg-[#F9F8F6] rounded-2xl flex flex-col border border-[#D8D8D8] opacity-90 transition-all hover:opacity-100 hover:shadow-md cursor-pointer group">
-                  <div className="h-20 flex flex-col items-center justify-center border-b border-[#D8D8D8]">
-                    <Baby
-                      size={24}
-                      className="text-[#1E2F31] mb-1.5 group-hover:text-[#1C6048] transition-colors"
-                      strokeWidth={1.5}
-                    />
-                    <h4 className="font-bold text-[#1E2F31] text-sm group-hover:text-[#1C6048] transition-colors">
-                      Maternity & IVF
-                    </h4>
+                {/* Card 1: Physician (Wide 8-Col) */}
+                <BentoBox
+                  colSpan="md:col-span-12 lg:col-span-8"
+                  className="!bg-[#EFEBE7] border-transparent"
+                >
+                  <h3 className="font-black text-[15px] text-[#1E2F31] mb-6 text-center">
+                    Physician-to-Population Ratio
+                  </h3>
+                  <div className="flex flex-col md:flex-row items-center justify-center gap-6 lg:gap-16 flex-1">
+                    <div className="flex items-end justify-center gap-6">
+                      <div className="flex flex-col items-center">
+                        <BentoIcon
+                          icon={<CustomPhysicianIcon size={80} />}
+                          color="transparent"
+                          className="mb-0 text-[#1C6048]"
+                        />
+                        <p className="text-5xl font-black text-[#1E2F31] mt-2">
+                          1
+                        </p>
+                      </div>
+                      <p className="text-4xl font-black text-[#1E2F31] pb-1 opacity-80">
+                        :
+                      </p>
+                      <div className="flex flex-col items-center">
+                        <BentoIcon
+                          icon={<CustomPopulationIcon size={80} />}
+                          color="transparent"
+                          className="mb-0 text-[#1C6048]"
+                        />
+                        <p className="text-5xl font-black text-[#1E2F31] mt-2">
+                          2000
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-center md:text-left flex flex-col items-center md:items-start border-t md:border-t-0 md:border-l border-[#D8D8D8] pt-6 md:pt-0 md:pl-10">
+                      <p className="text-[10px] font-bold text-[#1E2F31] tracking-widest mb-4 bg-white/60 px-3 py-1.5 rounded-lg border border-[#D8D8D8]">
+                        WHO Standard 1 : 1000
+                      </p>
+                      <p className="text-xs text-[#4C4A4B] leading-relaxed font-medium max-w-[200px]">
+                        Operating at{" "}
+                        <strong className="text-[#1E2F31]">50%</strong>{" "}
+                        physician capacity.
+                        <br />
+                        <br />A chronic shortage demands{" "}
+                        <strong className="text-[#1E2F31]">
+                          digital-first
+                        </strong>{" "}
+                        clinical support.
+                      </p>
+                    </div>
                   </div>
-                  <div className="h-16 flex flex-col items-center justify-center border-b border-[#D8D8D8] text-center px-1 group-hover:bg-white transition-colors">
-                    <p className="font-bold text-[#1E2F31] text-[13px] group-hover:text-[#1C6048] transition-colors">
-                      Low
-                    </p>
-                    <p className="text-[9px] text-[#4C4A4B] leading-tight mt-0.5">
-                      Insufficient premium birth volume
-                    </p>
-                  </div>
-                  <div className="h-16 flex flex-col items-center justify-center border-b border-[#D8D8D8] text-center px-1 group-hover:bg-white transition-colors">
-                    <p className="font-bold text-[#1E2F31] text-[13px] group-hover:text-[#1C6048] transition-colors">
-                      Low
-                    </p>
-                    <p className="text-[9px] text-[#4C4A4B] leading-tight mt-0.5">
-                      High local clinic density
-                    </p>
-                  </div>
-                  <div className="h-16 flex flex-col items-center justify-center border-b border-[#D8D8D8] text-center px-1 group-hover:bg-white transition-colors">
-                    <p className="font-bold text-[#1E2F31] text-[13px] group-hover:text-[#1C6048] transition-colors">
-                      Low/Moderate
-                    </p>
-                    <p className="text-[9px] text-[#4C4A4B] leading-tight mt-0.5">
-                      Short stay
-                    </p>
-                  </div>
-                  <div className="h-16 flex items-center justify-center rounded-b-2xl group-hover:bg-white transition-colors">
-                    <X size={24} strokeWidth={3} className="text-[#9B8B70]" />
-                  </div>
-                </div>
+                </BentoBox>
 
-                {/* Column 5: Specialized Eye */}
-                <div className="bg-[#F9F8F6] rounded-2xl flex flex-col border border-[#D8D8D8] opacity-90 transition-all hover:opacity-100 hover:shadow-md cursor-pointer group">
-                  <div className="h-20 flex flex-col items-center justify-center border-b border-[#D8D8D8]">
-                    <Eye
-                      size={24}
-                      className="text-[#1E2F31] mb-1.5 group-hover:text-[#1C6048] transition-colors"
-                      strokeWidth={1.5}
-                    />
-                    <h4 className="font-bold text-[#1E2F31] text-sm group-hover:text-[#1C6048] transition-colors">
-                      Specialized Eye
-                    </h4>
+                {/* Card 2: Quality Mismatch (Square 4-Col) */}
+                <BentoBox
+                  colSpan="md:col-span-12 lg:col-span-4"
+                  className="bg-[#F9F8F6] border-[#D8D8D8] items-center text-center"
+                >
+                  <h3 className="font-black text-[15px] text-[#1E2F31] mb-6">
+                    Price vs Quality Mismatch
+                  </h3>
+                  <BentoIcon
+                    icon={<CustomScaleIcon size={100} />}
+                    color="transparent"
+                    className="mb-6 text-[#1C6048]"
+                  />
+                  <p className="text-xs text-[#4C4A4B] leading-relaxed font-medium mt-auto">
+                    High out-of-pocket costs{" "}
+                    <strong className="text-[#1E2F31]">failing</strong> to
+                    deliver a <strong className="text-[#1E2F31]">Tier-A</strong>{" "}
+                    patient experience.
+                  </p>
+                </BentoBox>
+
+                {/* Card 3: Fragmented (Square 3-Col) */}
+                <BentoBox
+                  colSpan="md:col-span-6 lg:col-span-3"
+                  className="bg-[#F9F8F6] border-[#D8D8D8] items-center text-center"
+                >
+                  <h3 className="font-black text-[15px] text-[#1E2F31] mb-6">
+                    Fragmented Operation
+                  </h3>
+                  <BentoIcon
+                    icon={<CustomKnotIcon size={100} />}
+                    color="transparent"
+                    className="mb-6 text-[#1C6048]"
+                  />
+                  <p className="text-[11px] text-[#4C4A4B] leading-relaxed font-medium mt-auto">
+                    <strong className="text-[#1E2F31]">Inefficient</strong>{" "}
+                    unified digital backbone, error-prone, and disconnected
+                    operations.
+                  </p>
+                </BentoBox>
+
+                {/* Card 4: Admin Bottleneck (Wide 6-Col) */}
+                <BentoBox
+                  colSpan="md:col-span-12 lg:col-span-6"
+                  className="bg-white border-[#D8D8D8] items-center md:items-start text-center md:text-left flex-row flex-wrap md:flex-nowrap"
+                >
+                  <div className="w-full flex flex-col items-center md:items-start h-full">
+                    <h3 className="font-black text-[15px] text-[#1E2F31] mb-6 w-full text-center md:text-left">
+                      Administrative Bottleneck per Patient Visit
+                    </h3>
+                    <div className="flex flex-col md:flex-row items-center justify-center gap-6 lg:gap-8 flex-1 w-full">
+                      <div className="flex flex-col items-center justify-center shrink-0">
+                        <BentoIcon
+                          icon={<Timer size={100} strokeWidth={1.5} />}
+                          color="transparent"
+                          className="mb-4 text-[#1C6048]"
+                        />
+                        <p className="text-4xl font-black text-[#1E2F31] whitespace-nowrap">
+                          &gt; 2 Hours
+                        </p>
+                      </div>
+                      <p className="text-xs text-[#4C4A4B] leading-relaxed font-medium max-w-[260px] border-t md:border-t-0 md:border-l border-[#EFEBE7] pt-4 md:pt-0 md:pl-6 text-center md:text-left">
+                        Administrative friction paralyzes the patient journey
+                        and experience.
+                        <br />
+                        <br />A{" "}
+                        <strong className="text-[#1E2F31]">2-hour</strong> wait
+                        for a{" "}
+                        <strong className="text-[#1E2F31]">15-minute</strong>{" "}
+                        consultation proves that Indonesia current "manual"
+                        hospital model is no longer viable.
+                      </p>
+                    </div>
                   </div>
-                  <div className="h-16 flex flex-col items-center justify-center border-b border-[#D8D8D8] text-center px-1 group-hover:bg-white transition-colors">
-                    <p className="font-bold text-[#1E2F31] text-[13px] group-hover:text-[#1C6048] transition-colors">
-                      Low
-                    </p>
-                    <p className="text-[9px] text-[#4C4A4B] leading-tight mt-0.5">
-                      Excess facility overhead
-                    </p>
-                  </div>
-                  <div className="h-16 flex flex-col items-center justify-center border-b border-[#D8D8D8] text-center px-1 group-hover:bg-white transition-colors">
-                    <p className="font-bold text-[#1E2F31] text-[13px] group-hover:text-[#1C6048] transition-colors">
-                      Weak
-                    </p>
-                    <p className="text-[9px] text-[#4C4A4B] leading-tight mt-0.5">
-                      High local clinic density
-                    </p>
-                  </div>
-                  <div className="h-16 flex flex-col items-center justify-center border-b border-[#D8D8D8] text-center px-1 group-hover:bg-white transition-colors">
-                    <p className="font-bold text-[#1E2F31] text-[13px] group-hover:text-[#1C6048] transition-colors">
-                      Low
-                    </p>
-                    <p className="text-[9px] text-[#4C4A4B] leading-tight mt-0.5">
-                      Outpatient heavy
-                    </p>
-                  </div>
-                  <div className="h-16 flex items-center justify-center rounded-b-2xl group-hover:bg-white transition-colors">
-                    <X size={24} strokeWidth={3} className="text-[#9B8B70]" />
-                  </div>
-                </div>
+                </BentoBox>
+
+                {/* Card 5: Preventative (Square 3-Col) */}
+                <BentoBox
+                  colSpan="md:col-span-6 lg:col-span-3"
+                  className="!bg-[#EFEBE7] border-transparent items-center text-center"
+                >
+                  <h3 className="font-black text-[15px] text-[#1E2F31] mb-6">
+                    Lack of Preventative Screening
+                  </h3>
+                  <BentoIcon
+                    icon={<CustomStethoscopeIcon size={100} />}
+                    color="transparent"
+                    className="mb-6 text-[#9B8B70]"
+                  />
+                  <p className="text-[11px] text-[#4C4A4B] leading-relaxed font-medium mt-auto">
+                    Only{" "}
+                    <strong className="text-[#1E2F31] text-sm">17.44%</strong>{" "}
+                    of Indonesian underwent preventive health screenings
+                    regularly.
+                  </p>
+                </BentoBox>
               </div>
             </div>
-          </BentoBox>
-        </div>
-        </div>
-        </div>
-      )}
 
-      {activeMiniTab === "opportunities" && (
-        <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] p-8 lg:p-12 animate-in fade-in zoom-in-95 duration-300 mt-6">
-          {/* Slide Header */}
-          <div className="mb-12 border-b border-[#D8D8D8] pb-8">
-            <h2 className="text-3xl lg:text-4xl font-black text-[#4C4A4B] tracking-tight uppercase leading-tight">
-              Capturing Multi-Billion Dollar{" "}
-              <span className="font-light text-[#9B8B70]">Medical Tourism</span>
-              <br />
-              <span className="font-light text-[#9B8B70]">Flight</span>
-            </h2>
-            <p className="text-[14px] text-[#4C4A4B] leading-relaxed font-medium mt-4 max-w-4xl">
-              Indonesia's escalating oncology burden and rising private health
-              insurance penetration are driving a massive, addressable capital
-              outflow to regional competitors
-            </p>
-          </div>
-
-          {/* 3 Column Pitch Layout */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 lg:gap-16">
-            {/* Column 1: Cancer Cases */}
-            <div className="flex flex-col h-full">
-              <h3 className="text-[13px] text-center text-[#4C4A4B] font-medium mb-10">
-                Indonesia Annual Cancer Cases
-              </h3>
-              <div className="h-48 w-full mb-8">
-                <LazyResponsiveContainer width="100%" height="100%">
-                  <BarChart data={CANCER_DATA} margin={CHART_MARGINS_BAR}>
-                    <XAxis
-                      dataKey="name"
-                      axisLine={true}
-                      stroke="#EFEBE7"
-                      tickLine={false}
-                      tick={TICK_STYLE}
-                      dy={10}
-                    />
-                    <Tooltip allowEscapeViewBox={{ x: true, y: true }}
-                      contentStyle={TOOLTIP_STYLE}
-                      formatter={formatCancerCases}
-                    />
-                    <Bar dataKey="cases" radius={[2, 2, 0, 0]} barSize={30}>
-                      {CANCER_DATA.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </LazyResponsiveContainer>
+            {/* Section 2: Market Study */}
+            <div>
+              <div className="border-b border-[#D8D8D8] pb-4 mb-6">
+                <h2 className="text-2xl font-black text-[#1E2F31] tracking-tight">
+                  Demographics & Coverage
+                </h2>
+                <p className="text-[12px] text-[#4C4A4B] font-medium mt-1">
+                  National health insurance distribution and specialized
+                  oncology provider tiers.
+                </p>
               </div>
-              <p className="text-[11px] text-[#4C4A4B] mt-auto text-left leading-relaxed">
-                Breast, cervical, lung, colorectal, and liver cancers are the
-                most frequent cases in Indonesia. Together, these top 5 cancers
-                account for{" "}
-                <strong className="font-bold">50% of total 400,000+</strong>{" "}
-                annual oncology burden.
-              </p>
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                {/* Target Demographics Bento */}
+                <BentoBox
+                  colSpan="md:col-span-4"
+                  className="bg-white border-[#D8D8D8] flex flex-col"
+                >
+                  <BentoIcon icon={<Users size={28} />} color="emerald" />
+                  <h2 className="text-xl font-black text-[#1E2F31] tracking-tight mb-6">
+                    Target Demographics
+                  </h2>
 
-            {/* Column 2: Insurance Growth */}
-            <div className="flex flex-col h-full">
-              <h3 className="text-[13px] text-center text-[#4C4A4B] font-medium mb-1">
-                Commercial Insurance Growth
-              </h3>
-              <p className="text-[9px] text-center text-[#9B8B70] mb-8">
-                (in IDR Trillions)
-              </p>
+                  <div className="flex-1 flex flex-col bg-[#F9F8F6] rounded-2xl border border-[#D8D8D8] p-5 relative overflow-hidden mb-4">
+                    <h3 className="text-[11px] text-[#1C6048] font-bold uppercase tracking-wider text-center mb-2">
+                      Premium Addressable Market
+                    </h3>
 
-              <div className="h-48 w-full mb-8 relative">
-                <div className="absolute top-8 left-1/4 transform -rotate-[22deg] flex flex-col items-center z-10">
-                  <span className="text-[11px] font-bold text-[#1C6048] tracking-widest mb-1">
-                    CAGR 13.72%
-                  </span>
-                  <svg
-                    width="90"
-                    height="12"
-                    viewBox="0 0 90 12"
-                    fill="none"
-                    className="text-[#1C6048]"
-                  >
-                    <path
-                      d="M2 6H88M88 6L82 2M88 6L82 10"
+                    <div className="flex-1 min-h-[180px] relative w-full flex items-center justify-center my-4">
+                      <LazyResponsiveContainer width="100%" height="100%">
+                        <PieChart style={{ outline: "none" }}>
+                          <Pie
+                            data={PREM_MKT_PIE_DATA}
+                            cx="50%"
+                            cy="50%"
+                            startAngle={90}
+                            endAngle={-270}
+                            innerRadius="40%"
+                            outerRadius="60%"
+                            dataKey="value"
+                            stroke="none"
+                            label={renderPieLabel}
+                            labelLine={{ stroke: "#D8D8D8", strokeWidth: 1 }}
+                            className="outline-none focus:outline-none"
+                          >
+                            <Cell
+                              fill="#9B8B70"
+                              className="outline-none focus:outline-none"
+                            />
+                            <Cell
+                              fill="#294043"
+                              className="outline-none focus:outline-none"
+                            />
+                          </Pie>
+                        </PieChart>
+                      </LazyResponsiveContainer>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 w-full border-t border-[#D8D8D8] pt-5 mt-auto">
+                      <div className="flex flex-col justify-between text-center border-r border-[#D8D8D8] h-full">
+                        <p className="text-[10px] text-[#4C4A4B] font-bold uppercase tracking-wider mb-2">
+                          Total Catchment
+                        </p>
+                        <p className="text-xl font-black text-[#1E2F31] leading-none">
+                          7,379,532
+                        </p>
+                      </div>
+                      <div className="flex flex-col justify-between text-center h-full">
+                        <p className="text-[10px] text-[#9B8B70] font-bold uppercase tracking-wider mb-2">
+                          SES A & B
+                        </p>
+                        <p className="text-xl font-black text-[#9B8B70] leading-none">
+                          1.33M
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#EFEBE7] p-4 rounded-xl border border-[#D8D8D8] space-y-3 mt-auto">
+                    <div>
+                      <p className="text-[10px] font-bold text-[#1E2F31] uppercase tracking-widest mb-1">
+                        What is SES A & B?
+                      </p>
+                      <p className="text-[10px] text-[#4C4A4B] leading-relaxed font-medium">
+                        Socio-Economic Status (SES) A & B represents the
+                        upper-middle to affluent class, highly correlated with
+                        private health insurance and medical tourism spending.
+                      </p>
+                    </div>
+                    <div className="w-full h-px bg-[#D8D8D8]"></div>
+                    <div>
+                      <p className="text-[10px] font-bold text-[#1C6048] uppercase tracking-widest mb-1">
+                        Deriving 1.33M Lives
+                      </p>
+                      <p className="text-[10px] text-[#4C4A4B] leading-relaxed font-medium">
+                        Calculated directly by capturing exactly{" "}
+                        <strong className="text-[#1E2F31]">18%</strong> of the{" "}
+                        <strong className="text-[#1E2F31]">7.4 Million</strong>{" "}
+                        combined West, Central, North Jakarta & Tangerang
+                        catchment.
+                      </p>
+                    </div>
+                  </div>
+                </BentoBox>
+
+                {/* Regulatory Matrix Bento (Moved up and resized to 8 columns) */}
+                <BentoBox
+                  colSpan="md:col-span-8"
+                  className="bg-white border-[#D8D8D8]"
+                >
+                  <div className="flex items-center gap-4 mb-10">
+                    <BentoIcon
+                      icon={<Scale size={28} />}
+                      color="amber"
+                      className="mb-0"
+                    />
+                    <h2 className="text-xl font-black text-[#1E2F31] tracking-tight">
+                      Regulatory Baseline{" "}
+                      <span className="font-medium text-[#4C4A4B] text-sm ml-2 hidden xl:inline">
+                        (Bed Capacity Requirements)
+                      </span>
+                    </h2>
+                  </div>
+
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-12 lg:gap-8">
+                    {/* Diagram 1: Hospital Type */}
+                    <div className="flex flex-col items-center">
+                      <div className="px-6 py-2 bg-[#F9F8F6] border border-[#D8D8D8] text-[#4C4A4B] text-[13px] font-medium shadow-sm">
+                        Hospital Type
+                      </div>
+                      <div className="w-px h-6 bg-[#A0A0A0]"></div>
+                      <div className="w-full max-w-[260px] h-px bg-[#A0A0A0]"></div>
+                      <div className="w-full max-w-[260px] flex justify-between">
+                        <div className="w-px h-6 bg-[#A0A0A0]"></div>
+                        <div className="w-px h-6 bg-[#A0A0A0]"></div>
+                      </div>
+                      <div className="w-full max-w-[340px] grid grid-cols-2 gap-4 lg:gap-8">
+                        <div className="flex flex-col items-center">
+                          <div className="w-full py-2 bg-[#99B6AA] text-white text-center text-xs font-bold mb-4">
+                            General
+                          </div>
+                          <ul className="text-xs text-[#4C4A4B] space-y-1.5 w-full pl-2">
+                            <li>
+                              <strong className="text-[#1E2F31] font-black text-[13px]">
+                                A &ge; 250 beds
+                              </strong>
+                            </li>
+                            <li>
+                              <strong className="text-[#1E2F31] font-black text-[13px]">
+                                B &ge; 200 beds
+                              </strong>
+                            </li>
+                            <li>
+                              <span className="opacity-60 font-medium">
+                                C &ge; 100 beds
+                              </span>
+                            </li>
+                            <li>
+                              <span className="opacity-60 font-medium">
+                                D &ge; 50 beds
+                              </span>
+                            </li>
+                          </ul>
+                        </div>
+                        <div className="flex flex-col items-center">
+                          <div className="w-full py-2 bg-[#1C6048] text-white text-center text-xs font-bold mb-4 shadow-md">
+                            Specialized
+                          </div>
+                          <ul className="text-xs text-[#4C4A4B] space-y-1.5 w-full pl-2">
+                            <li>
+                              <strong className="text-[#1E2F31] font-black text-[13px]">
+                                A &ge; 100 beds
+                              </strong>
+                            </li>
+                            <li>
+                              <span className="opacity-60 font-medium">
+                                B &ge; 75 beds
+                              </span>
+                            </li>
+                            <li>
+                              <span className="opacity-60 font-medium">
+                                C &ge; 25 beds
+                              </span>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                      <div className="mt-8 text-xs text-[#4C4A4B] italic text-center">
+                        Permenkes No.3 Tahun 2020
+                      </div>
+                    </div>
+
+                    {/* Diagram 2: Private Hospital */}
+                    <div className="flex flex-col items-center">
+                      <div className="px-6 py-2 bg-[#F9F8F6] border border-[#D8D8D8] text-[#4C4A4B] text-[13px] font-medium shadow-sm">
+                        Private Hospital
+                      </div>
+                      <div className="w-px h-6 bg-[#A0A0A0]"></div>
+                      <div className="w-full max-w-[260px] h-px bg-[#A0A0A0]"></div>
+                      <div className="w-full max-w-[260px] flex justify-between">
+                        <div className="w-px h-6 bg-[#A0A0A0]"></div>
+                        <div className="w-px h-6 bg-[#A0A0A0]"></div>
+                      </div>
+                      <div className="w-full max-w-[340px] grid grid-cols-2 gap-4 lg:gap-8">
+                        <div className="flex flex-col items-center">
+                          <div className="w-full py-2 bg-[#99B6AA] text-white text-center text-xs font-bold mb-4">
+                            Domestic
+                          </div>
+                        </div>
+                        <div className="flex flex-col">
+                          <div className="w-full py-2 bg-[#1C6048] text-white text-center text-xs font-bold mb-4 shadow-md">
+                            Foreign
+                          </div>
+                          <div className="text-[11px] text-[#4C4A4B] w-full">
+                            <p className="mb-2 font-medium">
+                              Min. requirements:
+                            </p>
+                            <ul className="space-y-2">
+                              <li className="flex items-start gap-2">
+                                <span className="text-[#4C4A4B] text-[8px] mt-1">
+                                  &#9642;
+                                </span>
+                                <span>
+                                  <strong className="text-[#1E2F31] font-black text-[12px]">
+                                    50 beds
+                                  </strong>{" "}
+                                  &{" "}
+                                  <strong className="text-[#1E2F31] font-black text-[12px]">
+                                    1
+                                  </strong>{" "}
+                                  top-tier service
+                                </span>
+                              </li>
+                              <li className="flex items-start gap-2">
+                                <span className="text-[#4C4A4B] text-[8px] mt-1">
+                                  &#9642;
+                                </span>
+                                <span>
+                                  <strong className="text-[#1E2F31] font-black text-[12px]">
+                                    200 beds
+                                  </strong>{" "}
+                                  &{" "}
+                                  <strong className="text-[#1E2F31] font-black text-[12px]">
+                                    2
+                                  </strong>{" "}
+                                  top-tier services
+                                </span>
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-8 text-xs text-[#4C4A4B] italic text-center mt-auto pt-6">
+                        Permenkes No.11 Tahun 2025
+                      </div>
+                    </div>
+                  </div>
+                </BentoBox>
+
+                {/* Strategic Angle: Dedicated Speed Moat */}
+                <BentoBox
+                  colSpan="md:col-span-12"
+                  className="!bg-[#1C6048] !border-transparent !text-white items-center md:items-start text-center md:text-left flex-col md:flex-col flex-wrap md:flex-nowrap px-8 py-10 shadow-lg relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none text-white">
+                    <svg
+                      width="240"
+                      height="240"
+                      viewBox="0 0 24 24"
+                      fill="none"
                       stroke="currentColor"
-                      strokeWidth="2"
+                      strokeWidth="1"
                       strokeLinecap="round"
                       strokeLinejoin="round"
+                    >
+                      <path d="m12 14 4-4" />
+                      <path d="M3.34 19a10 10 0 1 1 17.32 0" />
+                    </svg>
+                  </div>
+                  <div className="w-full flex justify-between flex-col lg:flex-row items-center gap-8 relative z-10 text-white mb-8">
+                    <div className="flex flex-col lg:flex-row items-center gap-6">
+                      <div className="bg-white/10 p-5 rounded-2xl flex-shrink-0">
+                        <Timer size={48} className="text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-black tracking-tight mb-3 text-white">
+                          The "Dedicated Speed" Moat
+                        </h2>
+                        <p className="text-sm font-medium text-white/85 leading-relaxed max-w-3xl">
+                          Positioning Vasanta not just on clinical capability,
+                          but on{" "}
+                          <strong className="text-white font-bold">
+                            Time-to-Treatment
+                          </strong>
+                          . While public and general hospitals suffer from heavy
+                          wait lists and fragmented scheduling, Vasanta offers a
+                          streamlined, single-specialty hub built purely for
+                          velocity. Speed is the ultimate differentiator for
+                          oncology outpatients.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full relative z-10 w-full">
+                    <div className="bg-white/10 border border-white/20 p-5 rounded-xl flex flex-col items-center md:items-start text-center md:text-left">
+                      <Activity className="text-white mb-3" size={24} />
+                      <h3 className="font-bold text-[13px] text-white tracking-wide uppercase mb-2">
+                        High-Throughput OPD
+                      </h3>
+                      <p className="text-xs text-white/70 leading-relaxed font-medium">
+                        Streamlined outpatient pathways eliminating
+                        administrative friction and accelerating doctor-patient
+                        contact.
+                      </p>
+                    </div>
+                    <div className="bg-white/10 border border-white/20 p-5 rounded-xl flex flex-col items-center md:items-start text-center md:text-left">
+                      <HeartPulse className="text-white mb-3" size={24} />
+                      <h3 className="font-bold text-[13px] text-white tracking-wide uppercase mb-2">
+                        Day-Care Chemo Pods
+                      </h3>
+                      <p className="text-xs text-white/70 leading-relaxed font-medium">
+                        Highly efficient, private chemotherapy pods built for
+                        rapid turnover without requiring inpatient overnight
+                        stays.
+                      </p>
+                    </div>
+                    <div className="bg-white/10 border border-white/20 p-5 rounded-xl flex flex-col items-center md:items-start text-center md:text-left">
+                      <Zap className="text-white mb-3" size={24} />
+                      <h3 className="font-bold text-[13px] text-white tracking-wide uppercase mb-2">
+                        Rapid PET-CT Imaging
+                      </h3>
+                      <p className="text-xs text-white/70 leading-relaxed font-medium">
+                        In-house advanced diagnostic imaging immediately
+                        capturing patient staging, avoiding long waitlists at
+                        diagnostic centers.
+                      </p>
+                    </div>
+                    <div className="bg-white/10 border border-white/20 p-5 rounded-xl flex flex-col items-center md:items-start text-center md:text-left">
+                      <ShieldAlert className="text-white mb-3" size={24} />
+                      <h3 className="font-bold text-[13px] text-white tracking-wide uppercase mb-2">
+                        Dedicated LINAC Bunkers
+                      </h3>
+                      <p className="text-xs text-white/70 leading-relaxed font-medium">
+                        Capital-intensive radiotherapy bunkers secured in-house,
+                        bypassing the months-long national queues.
+                      </p>
+                    </div>
+                  </div>
+                </BentoBox>
+
+                {/* Comprehensive Competitor Matrix Bento */}
+                <BentoBox colSpan="md:col-span-12">
+                  <div className="flex items-center gap-4 mb-6">
+                    <BentoIcon
+                      icon={<Layers size={28} />}
+                      color="purple"
+                      className="mb-0"
                     />
-                  </svg>
+                    <h2 className="text-xl font-black text-[#1E2F31] tracking-tight">
+                      Competitor Landscape & Service Gap Analysis
+                    </h2>
+                  </div>
+                  <div className="overflow-x-auto pb-4">
+                    <table className="w-full text-left border-collapse min-w-[1000px]">
+                      <thead>
+                        <tr>
+                          <th className="p-3 border-b-2 border-[#D8D8D8] text-[11px] font-bold text-[#4C4A4B] uppercase tracking-widest bg-white sticky left-0 z-10 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
+                            Facility Name
+                          </th>
+                          <th className="p-3 border-b-2 border-[#D8D8D8] text-[11px] font-bold text-[#4C4A4B] uppercase tracking-widest text-center bg-[#F9F8F6]">
+                            Tier / Class
+                          </th>
+                          <th className="p-3 border-b-2 border-[#D8D8D8] text-[11px] font-bold text-[#4C4A4B] uppercase tracking-widest text-center bg-[#F9F8F6]">
+                            Target SES
+                          </th>
+                          <th className="p-3 border-b-2 border-[#D8D8D8] text-[11px] font-bold text-[#4C4A4B] uppercase tracking-widest text-center bg-[#F9F8F6]">
+                            Distance
+                          </th>
+                          <th className="p-3 border-b-2 border-[#D8D8D8] text-[11px] font-bold text-[#4C4A4B] uppercase tracking-widest text-center bg-white">
+                            Basic Chemo
+                          </th>
+                          <th className="p-3 border-b-2 border-[#D8D8D8] text-[11px] font-bold text-[#4C4A4B] uppercase tracking-widest text-center bg-white">
+                            Surgical Oncology
+                          </th>
+                          <th className="p-3 border-b-2 border-[#D8D8D8] text-[11px] font-bold text-[#4C4A4B] uppercase tracking-widest text-center bg-white">
+                            PET-CT
+                          </th>
+                          <th className="p-3 border-b-2 border-[#D8D8D8] text-[11px] font-bold text-[#4C4A4B] uppercase tracking-widest text-center bg-white border-r border-[#D8D8D8]">
+                            LINAC (Radiotherapy)
+                          </th>
+                          <th className="p-3 border-b-2 border-[#1C6048] text-[11px] font-black text-[#1C6048] uppercase tracking-widest bg-[#E8EFEA] rounded-t-xl text-center">
+                            Strategic Weakness
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-[13px]">
+                        <tr className="border-b border-[#D8D8D8]">
+                          <td className="p-4 font-bold text-[#1E2F31] bg-white sticky left-0 z-10 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
+                            RS Pondok Indah - Puri Indah
+                          </td>
+                          <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
+                            Type B
+                          </td>
+                          <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
+                            A & B (Premium)
+                          </td>
+                          <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
+                            4 km
+                          </td>
+                          <td className="p-4 text-center bg-white">
+                            <Check
+                              size={20}
+                              className="mx-auto text-[#9B8B70]"
+                            />
+                          </td>
+                          <td className="p-4 text-center bg-white">
+                            <Check
+                              size={20}
+                              className="mx-auto text-[#9B8B70]"
+                            />
+                          </td>
+                          <td className="p-4 text-center bg-white">
+                            <X size={20} className="mx-auto text-[#D8D8D8]" />
+                          </td>
+                          <td className="p-4 text-center bg-white border-r border-[#D8D8D8]">
+                            <X size={20} className="mx-auto text-[#D8D8D8]" />
+                          </td>
+                          <td className="p-4 text-center bg-[#E8EFEA] text-[#4C4A4B] font-medium">
+                            Generalist focus; lacks radiotherapy (LINAC) bunkers
+                          </td>
+                        </tr>
+                        <tr className="border-b border-[#D8D8D8]">
+                          <td className="p-4 font-bold text-[#1E2F31] bg-white sticky left-0 z-10 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
+                            Tzu Chi Hospital - PIK
+                          </td>
+                          <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
+                            Type B
+                          </td>
+                          <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
+                            A++ (Luxury)
+                          </td>
+                          <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
+                            9 km
+                          </td>
+                          <td className="p-4 text-center bg-white">
+                            <Check
+                              size={20}
+                              className="mx-auto text-[#9B8B70]"
+                            />
+                          </td>
+                          <td className="p-4 text-center bg-white">
+                            <Check
+                              size={20}
+                              className="mx-auto text-[#9B8B70]"
+                            />
+                          </td>
+                          <td className="p-4 text-center bg-white">
+                            <Check
+                              size={20}
+                              className="mx-auto text-[#9B8B70]"
+                            />
+                          </td>
+                          <td className="p-4 text-center bg-white border-r border-[#D8D8D8]">
+                            <Check
+                              size={20}
+                              className="mx-auto text-[#9B8B70]"
+                            />
+                          </td>
+                          <td className="p-4 text-center bg-[#E8EFEA] text-[#4C4A4B] font-medium">
+                            Geographically isolated to PIK; exceedingly high
+                            pricing tier
+                          </td>
+                        </tr>
+                        <tr className="border-b border-[#D8D8D8]">
+                          <td className="p-4 font-bold text-[#1E2F31] bg-white sticky left-0 z-10 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
+                            Dharmais National Cancer Center
+                          </td>
+                          <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
+                            Type A
+                          </td>
+                          <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
+                            B & C (BPJS)
+                          </td>
+                          <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
+                            8.5 km
+                          </td>
+                          <td className="p-4 text-center bg-white">
+                            <Check
+                              size={20}
+                              className="mx-auto text-[#9B8B70]"
+                            />
+                          </td>
+                          <td className="p-4 text-center bg-white">
+                            <Check
+                              size={20}
+                              className="mx-auto text-[#9B8B70]"
+                            />
+                          </td>
+                          <td className="p-4 text-center bg-white">
+                            <Check
+                              size={20}
+                              className="mx-auto text-[#9B8B70]"
+                            />
+                          </td>
+                          <td className="p-4 text-center bg-white border-r border-[#D8D8D8]">
+                            <Check
+                              size={20}
+                              className="mx-auto text-[#9B8B70]"
+                            />
+                          </td>
+                          <td className="p-4 text-center bg-[#E8EFEA] text-[#4C4A4B] font-medium">
+                            Severe overcrowding & massive wait lists (3-6+
+                            months)
+                          </td>
+                        </tr>
+                        <tr className="border-b border-[#D8D8D8]">
+                          <td className="p-4 font-bold text-[#1E2F31] bg-white sticky left-0 z-10 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
+                            RS EMC Grha Kedoya
+                          </td>
+                          <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
+                            Type B
+                          </td>
+                          <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
+                            A & B (Premium)
+                          </td>
+                          <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
+                            4.5 km
+                          </td>
+                          <td className="p-4 text-center bg-white">
+                            <Check
+                              size={20}
+                              className="mx-auto text-[#9B8B70]"
+                            />
+                          </td>
+                          <td className="p-4 text-center bg-white">
+                            <Check
+                              size={20}
+                              className="mx-auto text-[#9B8B70]"
+                            />
+                          </td>
+                          <td className="p-4 text-center bg-white">
+                            <X size={20} className="mx-auto text-[#D8D8D8]" />
+                          </td>
+                          <td className="p-4 text-center bg-white border-r border-[#D8D8D8]">
+                            <X size={20} className="mx-auto text-[#D8D8D8]" />
+                          </td>
+                          <td className="p-4 text-center bg-[#E8EFEA] text-[#4C4A4B] font-medium">
+                            Generalist bottlenecks; lacks heavy radiotherapy
+                            buffers
+                          </td>
+                        </tr>
+                        <tr className="border-b border-[#D8D8D8]">
+                          <td className="p-4 font-bold text-[#1E2F31] bg-white sticky left-0 z-10 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
+                            Mandaya Royal Hospital Puri
+                          </td>
+                          <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
+                            Type B
+                          </td>
+                          <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
+                            A++ (Luxury)
+                          </td>
+                          <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
+                            6.5 km
+                          </td>
+                          <td className="p-4 text-center bg-white">
+                            <Check
+                              size={20}
+                              className="mx-auto text-[#9B8B70]"
+                            />
+                          </td>
+                          <td className="p-4 text-center bg-white">
+                            <Check
+                              size={20}
+                              className="mx-auto text-[#9B8B70]"
+                            />
+                          </td>
+                          <td className="p-4 text-center bg-white">
+                            <Check
+                              size={20}
+                              className="mx-auto text-[#9B8B70]"
+                            />
+                          </td>
+                          <td className="p-4 text-center bg-white border-r border-[#D8D8D8]">
+                            <Check
+                              size={20}
+                              className="mx-auto text-[#9B8B70]"
+                            />
+                          </td>
+                          <td className="p-4 text-center bg-[#E8EFEA] text-[#4C4A4B] font-medium">
+                            Multi-specialty drift; loss of agility in patient
+                            coordination
+                          </td>
+                        </tr>
+                        <tr className="border-b border-[#D8D8D8]">
+                          <td className="p-4 font-bold text-[#1E2F31] bg-white sticky left-0 z-10 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
+                            RSUPN Dr. Cipto Mangunkusumo (RSCM)
+                          </td>
+                          <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
+                            Type A
+                          </td>
+                          <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
+                            BPJS / General
+                          </td>
+                          <td className="p-4 text-center bg-[#F9F8F6] text-[#4C4A4B] font-medium">
+                            12.5 km
+                          </td>
+                          <td className="p-4 text-center bg-white">
+                            <Check
+                              size={20}
+                              className="mx-auto text-[#9B8B70]"
+                            />
+                          </td>
+                          <td className="p-4 text-center bg-white">
+                            <Check
+                              size={20}
+                              className="mx-auto text-[#9B8B70]"
+                            />
+                          </td>
+                          <td className="p-4 text-center bg-white">
+                            <Check
+                              size={20}
+                              className="mx-auto text-[#9B8B70]"
+                            />
+                          </td>
+                          <td className="p-4 text-center bg-white border-r border-[#D8D8D8]">
+                            <Check
+                              size={20}
+                              className="mx-auto text-[#9B8B70]"
+                            />
+                          </td>
+                          <td className="p-4 text-center bg-[#E8EFEA] text-[#4C4A4B] font-medium">
+                            Massive waitlists (months-long delays for
+                            LINAC/PET-CT)
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="p-4 font-black text-[#1C6048] bg-[#F4F9F6] sticky left-0 z-10 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] border-t border-[#1C6048]/20">
+                            Vasanta Oncology (Proposed)
+                          </td>
+                          <td className="p-4 text-center bg-[#F4F9F6] font-bold text-[#1E2F31] border-t border-[#1C6048]/20">
+                            Type B
+                          </td>
+                          <td className="p-4 text-center bg-[#F4F9F6] font-bold text-[#1E2F31] border-t border-[#1C6048]/20">
+                            A & B
+                          </td>
+                          <td className="p-4 text-center bg-[#F4F9F6] font-bold text-[#1E2F31] border-t border-[#1C6048]/20">
+                            <span className="bg-[#1C6048] text-white px-2 py-0.5 rounded text-[11px]">
+                              0 km
+                            </span>
+                          </td>
+                          <td className="p-4 text-center bg-[#F4F9F6] border-t border-[#1C6048]/20">
+                            <Check
+                              size={20}
+                              className="mx-auto text-[#1C6048]"
+                            />
+                          </td>
+                          <td className="p-4 text-center bg-[#F4F9F6] border-t border-[#1C6048]/20">
+                            <Check
+                              size={20}
+                              className="mx-auto text-[#1C6048]"
+                            />
+                          </td>
+                          <td className="p-4 text-center bg-[#F4F9F6] border-t border-[#1C6048]/20">
+                            <Check
+                              size={20}
+                              className="mx-auto text-[#1C6048]"
+                            />
+                          </td>
+                          <td className="p-4 text-center bg-[#F4F9F6] border-r border-t border-[#1C6048]/20">
+                            <Check
+                              size={20}
+                              className="mx-auto text-[#1C6048]"
+                            />
+                          </td>
+                          <td className="p-4 text-center bg-[#E8EFEA] text-[#1C6048] font-bold rounded-br-xl border-t border-white">
+                            —
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="text-[11px] text-[#4C4A4B] leading-relaxed font-medium mt-4 bg-[#EFEBE7] p-4 rounded-xl border border-[#D8D8D8]">
+                    <strong className="text-[#1E2F31]">
+                      The Dedicated Speed Moat:
+                    </strong>{" "}
+                    While general hospitals like Mandaya or Grha Kedoya dilute
+                    their focus across multiple specialties, and RSCM drowns in
+                    massive public queues, Vasanta operates a{" "}
+                    <strong className="text-[#1C6048]">
+                      dedicated, streamlined oncology clinical pathway
+                    </strong>
+                    . By controlling the entire journey (Diagnostics &rarr;
+                    Surgery &rarr; Radiotherapy) internally with heavy CapEx
+                    upfront, Vasanta eliminates wait times—creating an
+                    insurmountable advantage for premium patients where speed
+                    dictates survival.
+                  </p>
+                </BentoBox>
+
+                {/* Center of Excellence (CoE) Options (Empty State Matrix) */}
+                <BentoBox
+                  colSpan="md:col-span-12"
+                  className="bg-white border-[#D8D8D8]"
+                >
+                  <div className="flex items-center gap-4 mb-6 pt-2">
+                    <BentoIcon
+                      icon={<Microscope size={28} />}
+                      color="indigo"
+                      className="mb-0"
+                    />
+                    <h2 className="text-xl font-black text-[#1E2F31] tracking-tight">
+                      Center of Excellence (CoE) Options
+                    </h2>
+                  </div>
+
+                  <div className="overflow-x-auto pb-6 pt-6 px-2 -mx-2">
+                    <div className="min-w-[800px] grid grid-cols-5 gap-3 lg:gap-4">
+                      {/* Column 1: Row Labels (Frozen Sticky Column) */}
+                      <div className="flex flex-col justify-end sticky left-0 bg-white z-20 pr-4 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.15)]">
+                        <div className="h-20 bg-white"></div>
+                        <div className="h-16 flex items-center border-b border-[#D8D8D8] pr-2 bg-white">
+                          <p className="text-[10px] font-bold text-[#4C4A4B] uppercase tracking-widest leading-tight">
+                            120-Bed Unit Economics
+                          </p>
+                        </div>
+                        <div className="h-16 flex items-center border-b border-[#D8D8D8] pr-2 bg-white">
+                          <p className="text-[10px] font-bold text-[#4C4A4B] uppercase tracking-widest leading-tight">
+                            Competitive Moat
+                          </p>
+                        </div>
+                        <div className="h-16 flex items-center border-b border-[#D8D8D8] pr-2 bg-white">
+                          <p className="text-[10px] font-bold text-[#4C4A4B] uppercase tracking-widest leading-tight">
+                            Inpatient Utilization
+                          </p>
+                        </div>
+                        <div className="h-16 bg-white"></div>
+                      </div>
+
+                      {/* Column 2: Oncology (The Winner Highlight) */}
+                      <div className="bg-[#1C6048] rounded-2xl flex flex-col shadow-sm transform transition-all duration-300 hover:-translate-y-4 hover:shadow-2xl border border-[#1C6048] z-10 relative cursor-pointer">
+                        <div className="h-20 flex flex-col items-center justify-center border-b border-white/20">
+                          <Dna
+                            size={28}
+                            className="text-white mb-1.5"
+                            strokeWidth={1.5}
+                          />
+                          <h4 className="font-bold text-white text-base tracking-wide">
+                            Oncology
+                          </h4>
+                        </div>
+                        <div className="h-16 flex flex-col items-center justify-center border-b border-white/20 text-center px-1">
+                          <p className="font-black text-white text-[13px]">
+                            Highly Scalable
+                          </p>
+                          <p className="text-[9px] text-white/80 leading-tight mt-0.5">
+                            Recurring multi-modality revenue
+                          </p>
+                        </div>
+                        <div className="h-16 flex flex-col items-center justify-center border-b border-white/20 text-center px-1">
+                          <p className="font-black text-white text-[13px]">
+                            Extreme Moat
+                          </p>
+                          <p className="text-[9px] text-white/80 leading-tight mt-0.5">
+                            BAPETEN Bunkers & LINAC
+                          </p>
+                        </div>
+                        <div className="h-16 flex flex-col items-center justify-center border-b border-white/20 text-center px-1">
+                          <p className="font-black text-white text-[13px]">
+                            High Volume
+                          </p>
+                          <p className="text-[9px] text-white/80 leading-tight mt-0.5">
+                            Diagnostics, Chemo, Surgical, Palliative
+                          </p>
+                        </div>
+                        <div className="h-16 flex items-center justify-center bg-[#18533E] rounded-b-2xl">
+                          <div className="bg-white text-[#1C6048] p-1.5 rounded-full shadow-md">
+                            <Check size={20} strokeWidth={4} />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Column 3: Orthopedic */}
+                      <div className="bg-[#F9F8F6] rounded-2xl flex flex-col border border-[#D8D8D8] opacity-90 transition-all hover:opacity-100 hover:shadow-md cursor-pointer group">
+                        <div className="h-20 flex flex-col items-center justify-center border-b border-[#D8D8D8]">
+                          <Bone
+                            size={24}
+                            className="text-[#1E2F31] mb-1.5 group-hover:text-[#1C6048] transition-colors"
+                            strokeWidth={1.5}
+                          />
+                          <h4 className="font-bold text-[#1E2F31] text-sm group-hover:text-[#1C6048] transition-colors">
+                            Orthopedic
+                          </h4>
+                        </div>
+                        <div className="h-16 flex flex-col items-center justify-center border-b border-[#D8D8D8] text-center px-1 group-hover:bg-white transition-colors">
+                          <p className="font-bold text-[#1E2F31] text-[13px] group-hover:text-[#1C6048] transition-colors">
+                            Moderate
+                          </p>
+                          <p className="text-[9px] text-[#4C4A4B] leading-tight mt-0.5">
+                            High-margin surgical interventions
+                          </p>
+                        </div>
+                        <div className="h-16 flex flex-col items-center justify-center border-b border-[#D8D8D8] text-center px-1 group-hover:bg-white transition-colors">
+                          <p className="font-bold text-[#1E2F31] text-[13px] group-hover:text-[#1C6048] transition-colors">
+                            Moderate
+                          </p>
+                          <p className="text-[9px] text-[#4C4A4B] leading-tight mt-0.5">
+                            Standardized Surgical Equipment
+                          </p>
+                        </div>
+                        <div className="h-16 flex flex-col items-center justify-center border-b border-[#D8D8D8] text-center px-1 group-hover:bg-white transition-colors">
+                          <p className="font-bold text-[#1E2F31] text-[13px] group-hover:text-[#1C6048] transition-colors">
+                            Moderate
+                          </p>
+                          <p className="text-[9px] text-[#4C4A4B] leading-tight mt-0.5">
+                            Standard Post-Op recovery
+                          </p>
+                        </div>
+                        <div className="h-16 flex items-center justify-center rounded-b-2xl group-hover:bg-white transition-colors">
+                          <X
+                            size={24}
+                            strokeWidth={3}
+                            className="text-[#9B8B70]"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Column 4: Maternity */}
+                      <div className="bg-[#F9F8F6] rounded-2xl flex flex-col border border-[#D8D8D8] opacity-90 transition-all hover:opacity-100 hover:shadow-md cursor-pointer group">
+                        <div className="h-20 flex flex-col items-center justify-center border-b border-[#D8D8D8]">
+                          <Baby
+                            size={24}
+                            className="text-[#1E2F31] mb-1.5 group-hover:text-[#1C6048] transition-colors"
+                            strokeWidth={1.5}
+                          />
+                          <h4 className="font-bold text-[#1E2F31] text-sm group-hover:text-[#1C6048] transition-colors">
+                            Maternity & IVF
+                          </h4>
+                        </div>
+                        <div className="h-16 flex flex-col items-center justify-center border-b border-[#D8D8D8] text-center px-1 group-hover:bg-white transition-colors">
+                          <p className="font-bold text-[#1E2F31] text-[13px] group-hover:text-[#1C6048] transition-colors">
+                            Low
+                          </p>
+                          <p className="text-[9px] text-[#4C4A4B] leading-tight mt-0.5">
+                            Insufficient premium birth volume
+                          </p>
+                        </div>
+                        <div className="h-16 flex flex-col items-center justify-center border-b border-[#D8D8D8] text-center px-1 group-hover:bg-white transition-colors">
+                          <p className="font-bold text-[#1E2F31] text-[13px] group-hover:text-[#1C6048] transition-colors">
+                            Low
+                          </p>
+                          <p className="text-[9px] text-[#4C4A4B] leading-tight mt-0.5">
+                            High local clinic density
+                          </p>
+                        </div>
+                        <div className="h-16 flex flex-col items-center justify-center border-b border-[#D8D8D8] text-center px-1 group-hover:bg-white transition-colors">
+                          <p className="font-bold text-[#1E2F31] text-[13px] group-hover:text-[#1C6048] transition-colors">
+                            Low/Moderate
+                          </p>
+                          <p className="text-[9px] text-[#4C4A4B] leading-tight mt-0.5">
+                            Short stay
+                          </p>
+                        </div>
+                        <div className="h-16 flex items-center justify-center rounded-b-2xl group-hover:bg-white transition-colors">
+                          <X
+                            size={24}
+                            strokeWidth={3}
+                            className="text-[#9B8B70]"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Column 5: Specialized Eye */}
+                      <div className="bg-[#F9F8F6] rounded-2xl flex flex-col border border-[#D8D8D8] opacity-90 transition-all hover:opacity-100 hover:shadow-md cursor-pointer group">
+                        <div className="h-20 flex flex-col items-center justify-center border-b border-[#D8D8D8]">
+                          <Eye
+                            size={24}
+                            className="text-[#1E2F31] mb-1.5 group-hover:text-[#1C6048] transition-colors"
+                            strokeWidth={1.5}
+                          />
+                          <h4 className="font-bold text-[#1E2F31] text-sm group-hover:text-[#1C6048] transition-colors">
+                            Specialized Eye
+                          </h4>
+                        </div>
+                        <div className="h-16 flex flex-col items-center justify-center border-b border-[#D8D8D8] text-center px-1 group-hover:bg-white transition-colors">
+                          <p className="font-bold text-[#1E2F31] text-[13px] group-hover:text-[#1C6048] transition-colors">
+                            Low
+                          </p>
+                          <p className="text-[9px] text-[#4C4A4B] leading-tight mt-0.5">
+                            Excess facility overhead
+                          </p>
+                        </div>
+                        <div className="h-16 flex flex-col items-center justify-center border-b border-[#D8D8D8] text-center px-1 group-hover:bg-white transition-colors">
+                          <p className="font-bold text-[#1E2F31] text-[13px] group-hover:text-[#1C6048] transition-colors">
+                            Weak
+                          </p>
+                          <p className="text-[9px] text-[#4C4A4B] leading-tight mt-0.5">
+                            High local clinic density
+                          </p>
+                        </div>
+                        <div className="h-16 flex flex-col items-center justify-center border-b border-[#D8D8D8] text-center px-1 group-hover:bg-white transition-colors">
+                          <p className="font-bold text-[#1E2F31] text-[13px] group-hover:text-[#1C6048] transition-colors">
+                            Low
+                          </p>
+                          <p className="text-[9px] text-[#4C4A4B] leading-tight mt-0.5">
+                            Outpatient heavy
+                          </p>
+                        </div>
+                        <div className="h-16 flex items-center justify-center rounded-b-2xl group-hover:bg-white transition-colors">
+                          <X
+                            size={24}
+                            strokeWidth={3}
+                            className="text-[#9B8B70]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </BentoBox>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeMiniTab === "opportunities" && (
+          <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] p-8 lg:p-12 animate-in fade-in zoom-in-95 duration-300 mt-6">
+            {/* Slide Header */}
+            <div className="mb-12 border-b border-[#D8D8D8] pb-8">
+              <h2 className="text-3xl lg:text-4xl font-black text-[#4C4A4B] tracking-tight uppercase leading-tight">
+                Capturing Multi-Billion Dollar{" "}
+                <span className="font-light text-[#9B8B70]">
+                  Medical Tourism
+                </span>
+                <br />
+                <span className="font-light text-[#9B8B70]">Flight</span>
+              </h2>
+              <p className="text-[14px] text-[#4C4A4B] leading-relaxed font-medium mt-4 max-w-4xl">
+                Indonesia's escalating oncology burden and rising private health
+                insurance penetration are driving a massive, addressable capital
+                outflow to regional competitors
+              </p>
+            </div>
+
+            {/* 3 Column Pitch Layout */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 lg:gap-16">
+              {/* Column 1: Cancer Cases */}
+              <div className="flex flex-col h-full">
+                <h3 className="text-[13px] text-center text-[#4C4A4B] font-medium mb-10">
+                  Indonesia Annual Cancer Cases
+                </h3>
+                <div className="h-48 w-full mb-8">
+                  <LazyResponsiveContainer width="100%" height="100%">
+                    <BarChart data={CANCER_DATA} margin={CHART_MARGINS_BAR}>
+                      <XAxis
+                        dataKey="name"
+                        axisLine={true}
+                        stroke="#EFEBE7"
+                        tickLine={false}
+                        tick={TICK_STYLE}
+                        dy={10}
+                      />
+                      <Tooltip
+                        allowEscapeViewBox={{ x: true, y: true }}
+                        contentStyle={TOOLTIP_STYLE}
+                        formatter={formatCancerCases}
+                      />
+                      <Bar dataKey="cases" radius={[2, 2, 0, 0]} barSize={30}>
+                        {CANCER_DATA.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </LazyResponsiveContainer>
                 </div>
-                <LazyResponsiveContainer width="100%" height="100%">
-                  <LineChart data={INSURANCE_DATA} margin={CHART_MARGINS_LINE}>
-                    <XAxis
-                      dataKey="year"
-                      axisLine={true}
-                      stroke="#EFEBE7"
-                      tickLine={false}
-                      tick={TICK_STYLE}
-                      dy={10}
-                    />
-                    <YAxis hide domain={["auto", "auto"]} />
-                    <Tooltip allowEscapeViewBox={{ x: true, y: true }}
-                      contentStyle={TOOLTIP_STYLE}
-                      formatter={formatInsuranceTooltip}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="value"
-                      stroke="#99B6AA"
-                      strokeWidth={3}
-                      dot={{
-                        r: 4,
-                        strokeWidth: 2,
-                        fill: "#fff",
-                        stroke: "#99B6AA",
-                      }}
-                      label={LINE_LABEL_STYLE}
-                    />
-                  </LineChart>
-                </LazyResponsiveContainer>
+                <p className="text-[11px] text-[#4C4A4B] mt-auto text-left leading-relaxed">
+                  Breast, cervical, lung, colorectal, and liver cancers are the
+                  most frequent cases in Indonesia. Together, these top 5
+                  cancers account for{" "}
+                  <strong className="font-bold">50% of total 400,000+</strong>{" "}
+                  annual oncology burden.
+                </p>
               </div>
 
-              <p className="text-[11px] text-[#4C4A4B] mt-auto text-left leading-relaxed">
-                Double-digit growth in commercial health insurance for{" "}
-                <strong className="font-bold">
-                  'Socio-Economic Status (SES) A'
-                </strong>{" "}
-                demographics
-              </p>
+              {/* Column 2: Insurance Growth */}
+              <div className="flex flex-col h-full">
+                <h3 className="text-[13px] text-center text-[#4C4A4B] font-medium mb-1">
+                  Commercial Insurance Growth
+                </h3>
+                <p className="text-[9px] text-center text-[#9B8B70] mb-8">
+                  (in IDR Trillions)
+                </p>
+
+                <div className="h-48 w-full mb-8 relative">
+                  <div className="absolute top-8 left-1/4 transform -rotate-[22deg] flex flex-col items-center z-10">
+                    <span className="text-[11px] font-bold text-[#1C6048] tracking-widest mb-1">
+                      CAGR 13.72%
+                    </span>
+                    <svg
+                      width="90"
+                      height="12"
+                      viewBox="0 0 90 12"
+                      fill="none"
+                      className="text-[#1C6048]"
+                    >
+                      <path
+                        d="M2 6H88M88 6L82 2M88 6L82 10"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <LazyResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={INSURANCE_DATA}
+                      margin={CHART_MARGINS_LINE}
+                    >
+                      <XAxis
+                        dataKey="year"
+                        axisLine={true}
+                        stroke="#EFEBE7"
+                        tickLine={false}
+                        tick={TICK_STYLE}
+                        dy={10}
+                      />
+                      <YAxis hide domain={["auto", "auto"]} />
+                      <Tooltip
+                        allowEscapeViewBox={{ x: true, y: true }}
+                        contentStyle={TOOLTIP_STYLE}
+                        formatter={formatInsuranceTooltip}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="value"
+                        stroke="#99B6AA"
+                        strokeWidth={3}
+                        dot={{
+                          r: 4,
+                          strokeWidth: 2,
+                          fill: "#fff",
+                          stroke: "#99B6AA",
+                        }}
+                        label={LINE_LABEL_STYLE}
+                      />
+                    </LineChart>
+                  </LazyResponsiveContainer>
+                </div>
+
+                <p className="text-[11px] text-[#4C4A4B] mt-auto text-left leading-relaxed">
+                  Double-digit growth in commercial health insurance for{" "}
+                  <strong className="font-bold">
+                    'Socio-Economic Status (SES) A'
+                  </strong>{" "}
+                  demographics
+                </p>
+              </div>
+
+              {/* Column 3: Capital Outflow */}
+              <div className="flex flex-col h-full items-center">
+                <h3 className="text-[13px] text-center text-[#4C4A4B] font-medium mb-10">
+                  Annual Capital Outflow
+                </h3>
+
+                <Plane
+                  size={64}
+                  className="text-[#1C6048] mb-4 transform -rotate-[2deg]"
+                  strokeWidth={1.5}
+                />
+                <div className="w-20 h-[3px] bg-[#1C6048] mb-12"></div>
+
+                <p className="text-4xl lg:text-5xl font-black text-[#4C4A4B] tracking-tighter mb-8">
+                  $11.5 Billion
+                </p>
+
+                <p className="text-[11px] text-[#4C4A4B] italic text-center leading-relaxed px-4 mt-auto">
+                  to Malaysia, Singapore, Japan,
+                  <br />
+                  US, Germany, and others
+                </p>
+              </div>
             </div>
 
-            {/* Column 3: Capital Outflow */}
-            <div className="flex flex-col h-full items-center">
-              <h3 className="text-[13px] text-center text-[#4C4A4B] font-medium mb-10">
-                Annual Capital Outflow
-              </h3>
-
-              <Plane
-                size={64}
-                className="text-[#1C6048] mb-4 transform -rotate-[2deg]"
-                strokeWidth={1.5}
-              />
-              <div className="w-20 h-[3px] bg-[#1C6048] mb-12"></div>
-
-              <p className="text-4xl lg:text-5xl font-black text-[#4C4A4B] tracking-tighter mb-8">
-                $11.5 Billion
-              </p>
-
-              <p className="text-[11px] text-[#4C4A4B] italic text-center leading-relaxed px-4 mt-auto">
-                to Malaysia, Singapore, Japan,
-                <br />
-                US, Germany, and others
+            <div className="mt-10 pt-5 border-t border-[#EFEBE7]">
+              <p className="text-[9px] text-[#9B8B70] italic text-center md:text-left">
+                Sources: GLOBOCAN 2022 (Cancer Incidence); Asosiasi Asuransi
+                Jiwa Indonesia / AAJI (Premium Growth); Indonesia Ministry of
+                Health / MoH Medical Tourism Data (Capital Outflow)
               </p>
             </div>
           </div>
-
-          <div className="mt-10 pt-5 border-t border-[#EFEBE7]">
-            <p className="text-[9px] text-[#9B8B70] italic text-center md:text-left">
-              Sources: GLOBOCAN 2022 (Cancer Incidence); Asosiasi Asuransi Jiwa
-              Indonesia / AAJI (Premium Growth); Indonesia Ministry of Health /
-              MoH Medical Tourism Data (Capital Outflow)
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-});
+        )}
+      </div>
+    );
+  },
+);
 
 // ==========================================
 // 5. MAJOR VIEW COMPONENTS (FINANCIAL ENGINES)
@@ -7248,8 +7789,14 @@ const OpCoDashboardView = memo(
   }) => {
     const [returnsTab, setReturnsTab] = useState("all");
 
-    const totalEquityVal = data.totalEquity || (assumptions.partnerAEquity + assumptions.partnerBEquity) || 1;
-    const projectAvgYield = ((data.partnerA.avgYield * assumptions.partnerAEquity) + (data.partnerB.avgYield * assumptions.partnerBEquity)) / totalEquityVal;
+    const totalEquityVal =
+      data.totalEquity ||
+      assumptions.partnerAEquity + assumptions.partnerBEquity ||
+      1;
+    const projectAvgYield =
+      (data.partnerA.avgYield * assumptions.partnerAEquity +
+        data.partnerB.avgYield * assumptions.partnerBEquity) /
+      totalEquityVal;
 
     // Option 1: True Combined Distributed Partner Cash Flow IRR
     const combinedCfs = useMemo(() => {
@@ -7263,907 +7810,1078 @@ const OpCoDashboardView = memo(
       return combined;
     }, [data.partnerACfsMonthly, data.partnerBCfsMonthly]);
 
-    const projectIrrVal = useMemo(() => calculateIRR(combinedCfs, 'monthly'), [combinedCfs]);
-    const projectPaybackVal = useMemo(() => calculatePayback(combinedCfs, 'monthly'), [combinedCfs]);
+    const projectIrrVal = useMemo(
+      () => calculateIRR(combinedCfs, "monthly"),
+      [combinedCfs],
+    );
+    const projectPaybackVal = useMemo(
+      () => calculatePayback(combinedCfs, "monthly"),
+      [combinedCfs],
+    );
     const projectMoic = useMemo(() => {
-      return totalEquityVal > 0 ? (data.partnerA.totalCash + data.partnerB.totalCash) / totalEquityVal : 0;
+      return totalEquityVal > 0
+        ? (data.partnerA.totalCash + data.partnerB.totalCash) / totalEquityVal
+        : 0;
     }, [data.partnerA.totalCash, data.partnerB.totalCash, totalEquityVal]);
 
-    const projectMetrics = useMemo(() => ({
-      avgYield: projectAvgYield,
-      irr: projectIrrVal,
-      payback: projectPaybackVal,
-      totalCash: data.partnerA.totalCash + data.partnerB.totalCash,
-      moic: projectMoic,
-    }), [projectAvgYield, projectIrrVal, projectPaybackVal, data.partnerA.totalCash, data.partnerB.totalCash, projectMoic]);
+    const projectMetrics = useMemo(
+      () => ({
+        avgYield: projectAvgYield,
+        irr: projectIrrVal,
+        payback: projectPaybackVal,
+        totalCash: data.partnerA.totalCash + data.partnerB.totalCash,
+        moic: projectMoic,
+      }),
+      [
+        projectAvgYield,
+        projectIrrVal,
+        projectPaybackVal,
+        data.partnerA.totalCash,
+        data.partnerB.totalCash,
+        projectMoic,
+      ],
+    );
 
-    const operatingYears = data.annualData.filter(d => (d.totalRev || 0) > 0);
-    const avgEbitdarMargin = operatingYears.length > 0
-      ? operatingYears.reduce((acc, d) => acc + (d.ebitdarMargin || 0), 0) / operatingYears.length
-      : 0;
-    const avgNetMargin = operatingYears.length > 0
-      ? operatingYears.reduce((acc, d) => acc + (d.netMargin || 0), 0) / operatingYears.length
-      : 0;
+    const operatingYears = data.annualData.filter((d) => (d.totalRev || 0) > 0);
+    const avgEbitdarMargin =
+      operatingYears.length > 0
+        ? operatingYears.reduce((acc, d) => acc + (d.ebitdarMargin || 0), 0) /
+          operatingYears.length
+        : 0;
+    const avgNetMargin =
+      operatingYears.length > 0
+        ? operatingYears.reduce((acc, d) => acc + (d.netMargin || 0), 0) /
+          operatingYears.length
+        : 0;
 
     const blendedEbitdarMargin = data.totals.ebitdarMargin || 0;
     const blendedNetMargin = data.totals.netMargin || 0;
 
-    const revPabTooltip = useMemo(() => ({
-      desc: `Specific revenue metrics per clinical bed:\n• Stabilized RevPAB: ${formatNumber(data.opsMetrics?.revPab, 1)} B IDR\n• Starting RevPAB: ${formatNumber(data.opsMetrics?.startingRevPab, 1)} B IDR\n• Average RevPAB: ${formatNumber(data.opsMetrics?.averageRevPab, 1)} B IDR`,
-      formula: "RevPAB = Annual Revenue / Operating Beds (in B IDR)"
-    }), [data.opsMetrics?.revPab, data.opsMetrics?.startingRevPab, data.opsMetrics?.averageRevPab]);
+    const revPabTooltip = useMemo(
+      () => ({
+        desc: `Specific revenue metrics per clinical bed:\n• Stabilized RevPAB: ${formatNumber(data.opsMetrics?.revPab, 1)} B IDR\n• Starting RevPAB: ${formatNumber(data.opsMetrics?.startingRevPab, 1)} B IDR\n• Average RevPAB: ${formatNumber(data.opsMetrics?.averageRevPab, 1)} B IDR`,
+        formula: "RevPAB = Annual Revenue / Operating Beds (in B IDR)",
+      }),
+      [
+        data.opsMetrics?.revPab,
+        data.opsMetrics?.startingRevPab,
+        data.opsMetrics?.averageRevPab,
+      ],
+    );
 
-    const { tooltipState: revPabTs, setTooltipState: setRevPabTs } = useTooltip(revPabTooltip);
+    const { tooltipState: revPabTs, setTooltipState: setRevPabTs } =
+      useTooltip(revPabTooltip);
 
     return (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in">
-      {/* LEFT PANEL: Executive & Returns (Spans 4 columns) */}
-      <div className="space-y-6 lg:col-span-4 w-full">
-        <div className="flex justify-between items-center bg-white p-3 rounded-2xl shadow-sm border border-[#D8D8D8]">
-          <h2 className="text-sm font-bold text-[#1E2F31] ml-2">
-            Executive Overview
-          </h2>
-          <button
-            disabled={true}
-            title="Temporarily disabled"
-            className="bg-[#D8D8D8] text-[#8A8175] cursor-not-allowed text-xs font-bold px-4 py-2 rounded-xl shadow-sm flex items-center gap-2 transition-colors opacity-70"
-          >
-            <Sparkles size={14} />
-            ✨ Pitch Teaser
-          </button>
-        </div>
-
-        {showTeaser && (
-          <div className="bg-white p-6 rounded-2xl border-l-4 border-l-[#1C6048] shadow-sm relative">
+        {/* LEFT PANEL: Executive & Returns (Spans 4 columns) */}
+        <div className="space-y-6 lg:col-span-4 w-full">
+          <div className="flex justify-between items-center bg-white p-3 rounded-2xl shadow-sm border border-[#D8D8D8]">
+            <h2 className="text-sm font-bold text-[#1E2F31] ml-2">
+              Executive Overview
+            </h2>
             <button
-              onClick={() => setShowTeaser(false)}
-              className="absolute top-4 right-4 bg-[#EFEBE7] p-1 rounded-full"
+              disabled={true}
+              title="Temporarily disabled"
+              className="bg-[#D8D8D8] text-[#8A8175] cursor-not-allowed text-xs font-bold px-4 py-2 rounded-xl shadow-sm flex items-center gap-2 transition-colors opacity-70"
             >
-              <X size={16} />
+              <Sparkles size={14} />✨ Pitch Teaser
             </button>
-            <h3 className="font-bold text-[#1E2F31] mb-2 flex items-center gap-2">
-              <FileText size={18} /> AI Pitch Teaser
-            </h3>
-            <MarkdownRenderer content={teaserContent} />
           </div>
-        )}
 
-        <div className="grid grid-cols-2 gap-4">
-          <KPICard
-            title="Project NPV"
-            value={formatCurrency(data.projectNPV)}
-            icon={<TrendingUp size={18} />}
-            color="blue"
-            subtitle={`@${String(assumptions.discountRate)}% Disc Rate`}
-          />
-          <KPICard
-            title="Cash Multiple"
-            value={`${data.totalEquity > 0 ? (data.totals.fcf / data.totalEquity).toFixed(2) : "0"}x`}
-            icon={<BarChart3 size={18} />}
-            color="emerald"
-            subtitle="Project MOIC"
-            tooltip={{
-              desc: "Indicates absolute wealth creation. While IRR measures compounding speed over time, the Cash Multiple (MOIC) shows the absolute magnitude of your cash return. A typical healthcare infrastructure target is 2.5x - 3.0x+.",
-              formula: "Total Project Free Cash Flow ÷ Cumulative Partner Equity Invested"
-            }}
-          />
-          <KPICard
-            title="Project IRR"
-            value={`${formatNumber((data.projectIRR || 0) * 100, 2)}%`}
-            icon={<Activity size={18} />}
-            color="blue"
-            subtitle="Compounded Return"
-          />
-          <KPICard
-            title="Avg Div. Yield"
-            value={`${formatNumber(data.partnerA.avgYield, 1)}%`}
-            icon={<Coins size={18} />}
-            color="indigo"
-            subtitle="Mean Operating Yield"
-            tooltip={{
-              desc: "The average annual cash distribution yield. It acts as the steady engine driving the overall Cash Multiple over the asset's lifecycle.",
-              formula: "Average of (Annual Cash Flow ÷ Invested Equity) across operating years"
-            }}
-          />
-        </div>
-
-        <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8] relative transition-all hover:shadow-md">
-          {/* Card Title & Stateful Toggle Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-[#EFEBE7] pb-4">
-            <div>
-              <h3 className="text-sm font-bold text-[#1E2F31] flex items-center gap-1.5 font-sans">
-                <TrendingUp size={16} className="text-[#1C6048]" /> Return Metric
+          {showTeaser && (
+            <div className="bg-white p-6 rounded-2xl border-l-4 border-l-[#1C6048] shadow-sm relative">
+              <button
+                onClick={() => setShowTeaser(false)}
+                className="absolute top-4 right-4 bg-[#EFEBE7] p-1 rounded-full"
+              >
+                <X size={16} />
+              </button>
+              <h3 className="font-bold text-[#1E2F31] mb-2 flex items-center gap-2">
+                <FileText size={18} /> AI Pitch Teaser
               </h3>
+              <MarkdownRenderer content={teaserContent} />
             </div>
-            <div className="flex bg-[#EFEBE7] p-1 rounded-xl border border-[#D8D8D8]">
-              <button
-                type="button"
-                onClick={() => setReturnsTab("all")}
-                className={`px-3 py-1 text-[10px] font-bold transition-all rounded-lg select-none cursor-pointer ${
-                  returnsTab === "all"
-                    ? "bg-[#1C6048] text-white shadow"
-                    : "text-[#4C4A4B] hover:text-[#1E2F31]"
-                }`}
-              >
-                Project
-              </button>
-              <button
-                type="button"
-                onClick={() => setReturnsTab("partner")}
-                className={`px-3 py-1 text-[10px] font-bold transition-all rounded-lg select-none cursor-pointer ${
-                  returnsTab === "partner"
-                    ? "bg-[#1C6048] text-white shadow"
-                    : "text-[#4C4A4B] hover:text-[#1E2F31]"
-                }`}
-              >
-                Partner
-              </button>
-              <button
-                type="button"
-                onClick={() => setReturnsTab("vasanta")}
-                className={`px-3 py-1 text-[10px] font-bold transition-all rounded-lg select-none cursor-pointer ${
-                  returnsTab === "vasanta"
-                    ? "bg-[#1C6048] text-white shadow"
-                    : "text-[#4C4A4B] hover:text-[#1E2F31]"
-                }`}
-              >
-                Vasanta
-              </button>
-            </div>
-          </div>
+          )}
 
-          {/* Render Active Option */}
-          {returnsTab === "all" && (
-            <PartnerReturnCard
-              name="Project"
-              metrics={projectMetrics}
-              equity={totalEquityVal}
-              share={100}
+          <div className="grid grid-cols-2 gap-4">
+            <KPICard
+              title="Project NPV"
+              value={formatCurrency(data.projectNPV)}
+              icon={<TrendingUp size={18} />}
               color="blue"
-              isUnifiedCard={true}
+              subtitle={`@${String(assumptions.discountRate)}% Disc Rate`}
             />
-          )}
-          {returnsTab === "partner" && (
-            <PartnerReturnCard
-              name={`Strategic Partner`}
-              metrics={data.partnerA}
-              equity={assumptions.partnerAEquity}
-              share={assumptions.sharingPercentA}
+            <KPICard
+              title="Cash Multiple"
+              value={`${data.totalEquity > 0 ? (data.totals.fcf / data.totalEquity).toFixed(2) : "0"}x`}
+              icon={<BarChart3 size={18} />}
+              color="emerald"
+              subtitle="Project MOIC"
+              tooltip={{
+                desc: "Indicates absolute wealth creation. While IRR measures compounding speed over time, the Cash Multiple (MOIC) shows the absolute magnitude of your cash return. A typical healthcare infrastructure target is 2.5x - 3.0x+.",
+                formula:
+                  "Total Project Free Cash Flow ÷ Cumulative Partner Equity Invested",
+              }}
+            />
+            <KPICard
+              title="Project IRR"
+              value={`${formatNumber((data.projectIRR || 0) * 100, 2)}%`}
+              icon={<Activity size={18} />}
               color="blue"
-              isUnifiedCard={true}
+              subtitle="Compounded Return"
             />
-          )}
-          {returnsTab === "vasanta" && (
-            <PartnerReturnCard
-              name={`Vasanta`}
-              metrics={data.partnerB}
-              equity={assumptions.partnerBEquity}
-              share={100 - assumptions.sharingPercentA}
+            <KPICard
+              title="Avg Div. Yield"
+              value={`${formatNumber(data.partnerA.avgYield, 1)}%`}
+              icon={<Coins size={18} />}
               color="indigo"
-              isUnifiedCard={true}
+              subtitle="Mean Operating Yield"
+              tooltip={{
+                desc: "The average annual cash distribution yield. It acts as the steady engine driving the overall Cash Multiple over the asset's lifecycle.",
+                formula:
+                  "Average of (Annual Cash Flow ÷ Invested Equity) across operating years",
+              }}
             />
-          )}
+          </div>
+
+          <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8] relative transition-all hover:shadow-md">
+            {/* Card Title & Stateful Toggle Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-[#EFEBE7] pb-4">
+              <div>
+                <h3 className="text-sm font-bold text-[#1E2F31] flex items-center gap-1.5 font-sans">
+                  <TrendingUp size={16} className="text-[#1C6048]" /> Return
+                  Metric
+                </h3>
+              </div>
+              <div className="flex bg-[#EFEBE7] p-1 rounded-xl border border-[#D8D8D8]">
+                <button
+                  type="button"
+                  onClick={() => setReturnsTab("all")}
+                  className={`px-3 py-1 text-[10px] font-bold transition-all rounded-lg select-none cursor-pointer ${
+                    returnsTab === "all"
+                      ? "bg-[#1C6048] text-white shadow"
+                      : "text-[#4C4A4B] hover:text-[#1E2F31]"
+                  }`}
+                >
+                  Project
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReturnsTab("partner")}
+                  className={`px-3 py-1 text-[10px] font-bold transition-all rounded-lg select-none cursor-pointer ${
+                    returnsTab === "partner"
+                      ? "bg-[#1C6048] text-white shadow"
+                      : "text-[#4C4A4B] hover:text-[#1E2F31]"
+                  }`}
+                >
+                  Partner
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReturnsTab("vasanta")}
+                  className={`px-3 py-1 text-[10px] font-bold transition-all rounded-lg select-none cursor-pointer ${
+                    returnsTab === "vasanta"
+                      ? "bg-[#1C6048] text-white shadow"
+                      : "text-[#4C4A4B] hover:text-[#1E2F31]"
+                  }`}
+                >
+                  Vasanta
+                </button>
+              </div>
+            </div>
+
+            {/* Render Active Option */}
+            {returnsTab === "all" && (
+              <PartnerReturnCard
+                name="Project"
+                metrics={projectMetrics}
+                equity={totalEquityVal}
+                share={100}
+                color="blue"
+                isUnifiedCard={true}
+              />
+            )}
+            {returnsTab === "partner" && (
+              <PartnerReturnCard
+                name={`Strategic Partner`}
+                metrics={data.partnerA}
+                equity={assumptions.partnerAEquity}
+                share={assumptions.sharingPercentA}
+                color="blue"
+                isUnifiedCard={true}
+              />
+            )}
+            {returnsTab === "vasanta" && (
+              <PartnerReturnCard
+                name={`Vasanta`}
+                metrics={data.partnerB}
+                equity={assumptions.partnerBEquity}
+                share={100 - assumptions.sharingPercentA}
+                color="indigo"
+                isUnifiedCard={true}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT PANEL: Operations & Trajectory (Spans 8 columns) */}
+        <div className="space-y-6 lg:col-span-8 w-full">
+          {/* Unified Stabilization Scorecard Container (Option 2A) */}
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#D8D8D8] relative">
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-[#EFEBE7]">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#1E2F31] flex items-center gap-1.5 font-sans">
+                <Activity size={15} className="text-[#1C6048]" /> Clinical
+                Benchmarks at Stabilization
+              </h3>
+              <span className="text-[9px] text-[#9B8B70] font-mono bg-[#EFEBE7] px-2 py-0.5 rounded font-bold uppercase">
+                Operational Peaks
+              </span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 divide-y sm:divide-y-0 sm:divide-x divide-[#D8D8D8]/60">
+              {/* Metric 1 */}
+              <div className="flex flex-col justify-between p-2">
+                <span className="text-[10px] text-[#4C4A4B] font-bold uppercase tracking-tight">
+                  Stabilized Vol.
+                </span>
+                <p className="text-[22px] font-black text-[#1E2F31] my-1 font-sans">
+                  {formatNumber(data.opsMetrics.stabilizedVolume, 0)}
+                </p>
+                <span className="text-[9px] text-[#99B6AA] font-bold uppercase tracking-tight">
+                  Peak Yr Patients
+                </span>
+              </div>
+              {/* Metric 2 */}
+              <div className="flex flex-col justify-between p-2 sm:pl-4 pt-4 sm:pt-2">
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-[#4C4A4B] font-bold uppercase tracking-tight">
+                    Rev. Per Bed
+                  </span>
+                  <KPITooltipIcon
+                    tooltip={revPabTooltip}
+                    tooltipState={revPabTs}
+                    setTooltipState={setRevPabTs}
+                    align="left"
+                  />
+                </div>
+                <p className="text-[22px] font-black text-[#1C6048] my-1 font-sans">
+                  {formatNumber(data.opsMetrics.revPab, 1)} B
+                </p>
+                <span className="text-[9px] text-[#99B6AA] font-bold uppercase tracking-tight">
+                  Inflow Base
+                </span>
+              </div>
+              {/* Metric 3 */}
+              <div className="flex flex-col justify-between p-2 sm:pl-4 pt-4 sm:pt-2">
+                <span className="text-[10px] text-[#4C4A4B] font-bold uppercase tracking-tight">
+                  EBITDA Per Bed
+                </span>
+                <p className="text-[22px] font-black text-[#1E2F31] my-1 font-sans">
+                  {formatNumber(data.opsMetrics.ebitdaPerBed, 1)} B
+                </p>
+                <span className="text-[9px] text-[#99B6AA] font-bold uppercase tracking-tight">
+                  Operating Base
+                </span>
+              </div>
+              {/* Metric 4 */}
+              <div className="flex flex-col justify-between p-2 sm:pl-4 pt-4 sm:pt-2">
+                <span className="text-[10px] text-[#4C4A4B] font-bold uppercase tracking-tight">
+                  Fixed Cost Ratio
+                </span>
+                <p className="text-[22px] font-black text-[#9B8B70] my-1 font-sans">
+                  {formatNumber(data.opsMetrics.fixedCostPct, 1)}%
+                </p>
+                <span className="text-[9px] text-[#99B6AA] font-bold uppercase tracking-tight">
+                  Fixed vs Var OPEX
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Consolidated Blended Margins Card (Option 1B) */}
+          <div className="bg-[#1C6048] p-5 rounded-2xl border border-[#164c39] shadow-md relative overflow-hidden group">
+            {/* Ambient accent element */}
+            <div className="absolute right-0 bottom-0 translate-x-4 translate-y-4 w-32 h-32 rounded-full bg-white/[0.02] pointer-events-none group-hover:scale-110 transition-transform duration-700" />
+
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10 relative z-10">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-1.5 font-sans">
+                <Coins size={15} className="text-[#99B6AA]" /> Project Margins
+              </h3>
+              <span className="text-[9px] bg-white/10 px-2 py-0.5 rounded text-white tracking-normal font-semibold font-mono">
+                Look-Through Metrics
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+              {/* EBITDAR */}
+              <div className="flex flex-col">
+                <p className="text-[10px] text-[#EFEBE7]/80 font-bold uppercase tracking-wider mb-1 font-mono">
+                  EBITDAR Margin
+                </p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl lg:text-4xl font-black text-white leading-none font-sans">
+                    {formatNumber(avgEbitdarMargin, 1)}%
+                  </span>
+                  <span className="text-[10px] text-[#EFEBE7]/60 font-mono">
+                    Active Years Average
+                  </span>
+                </div>
+              </div>
+
+              {/* Net Profit */}
+              <div className="flex flex-col border-t md:border-t-0 md:border-l border-white/10 pt-4 md:pt-0 md:pl-6">
+                <p className="text-[10px] text-[#EFEBE7]/80 font-bold uppercase tracking-wider mb-1 font-mono">
+                  Net Profit Margin
+                </p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl lg:text-4xl font-black text-white leading-none font-sans">
+                    {formatNumber(avgNetMargin, 1)}%
+                  </span>
+                  <span className="text-[10px] text-[#EFEBE7]/60 font-mono">
+                    Active Years Average
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8]">
+              <h3 className="font-bold text-[#1E2F31] mb-6 flex items-center gap-2">
+                <BarChart3 size={18} className="text-[#1C6048]" /> Operating
+                Cash Flow Trajectory
+              </h3>
+              <div className="h-72">
+                <LazyResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={data.operatingData}>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="#D8D8D8"
+                    />
+                    <XAxis
+                      dataKey="year"
+                      tick={{ fontSize: 10, fill: "#4C4A4B" }}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      yAxisId="left"
+                      tick={{ fontSize: 10, fill: "#4C4A4B" }}
+                      axisLine={false}
+                      tickFormatter={(val) => `${val}B`}
+                    />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      tick={{ fontSize: 10, fill: "#1E2F31" }}
+                      axisLine={false}
+                      tickFormatter={(val) => `${val}%`}
+                    />
+                    <Tooltip
+                      allowEscapeViewBox={{ x: true, y: true }}
+                      contentStyle={TOOLTIP_STYLE}
+                      formatter={(val, name) =>
+                        formatNumber(val, 1) +
+                        (name === "Occupancy (BOR)" ? "%" : "B")
+                      }
+                    />
+                    <Legend iconType="circle" wrapperStyle={LEGEND_STYLE} />
+
+                    <Bar
+                      yAxisId="left"
+                      dataKey="totalRev"
+                      name="Net Revenue"
+                      fill="#1C6048"
+                      radius={[4, 4, 0, 0]}
+                      barSize={18}
+                    />
+                    <Line
+                      yAxisId="left"
+                      type="monotone"
+                      dataKey="ebitda"
+                      name="EBITDA"
+                      stroke="#1E2F31"
+                      strokeWidth={3}
+                      dot={{
+                        r: 4,
+                        fill: "#1E2F31",
+                        strokeWidth: 2,
+                        stroke: "#fff",
+                      }}
+                    />
+                    <Line
+                      yAxisId="left"
+                      type="monotone"
+                      dataKey="netIncome"
+                      name="Net Income"
+                      stroke="#9B8B70"
+                      strokeWidth={3}
+                      dot={{
+                        r: 4,
+                        fill: "#9B8B70",
+                        strokeWidth: 2,
+                        stroke: "#fff",
+                      }}
+                    />
+                    <Line
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="bor"
+                      name="Occupancy (BOR)"
+                      stroke="#99B6AA"
+                      strokeWidth={2}
+                      strokeDasharray="5 5"
+                      dot={false}
+                    />
+                  </ComposedChart>
+                </LazyResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8]">
+              <h3 className="font-bold text-[#1E2F31] mb-6 flex items-center gap-2">
+                <Target size={18} className="text-[#99B6AA]" /> Breakeven Audit
+              </h3>
+              <div className="h-72">
+                <LazyResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={data.operatingData}>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="#D8D8D8"
+                    />
+                    <XAxis
+                      dataKey="year"
+                      tick={{ fontSize: 10, fill: "#4C4A4B" }}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 10, fill: "#4C4A4B" }}
+                      axisLine={false}
+                      tickFormatter={(val) => `${val}%`}
+                    />
+                    <Tooltip
+                      allowEscapeViewBox={{ x: true, y: true }}
+                      contentStyle={TOOLTIP_STYLE}
+                      formatter={(val) => formatNumber(val, 1) + "%"}
+                    />
+                    <Legend iconType="circle" wrapperStyle={LEGEND_STYLE} />
+                    <Bar
+                      dataKey="breakEvenBor"
+                      name="Breakeven BOR required"
+                      fill="#D8D8D8"
+                      radius={[4, 4, 0, 0]}
+                      barSize={18}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="bor"
+                      name="Actual Projected BOR"
+                      stroke="#1E2F31"
+                      strokeWidth={3}
+                      dot={{ r: 3, strokeWidth: 2 }}
+                    />
+                  </ComposedChart>
+                </LazyResponsiveContainer>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* RIGHT PANEL: Operations & Trajectory (Spans 8 columns) */}
-      <div className="space-y-6 lg:col-span-8 w-full">
-        {/* Unified Stabilization Scorecard Container (Option 2A) */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#D8D8D8] relative">
-          <div className="flex items-center justify-between mb-4 pb-2 border-b border-[#EFEBE7]">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#1E2F31] flex items-center gap-1.5 font-sans">
-              <Activity size={15} className="text-[#1C6048]" /> Clinical Benchmarks at Stabilization
-            </h3>
-            <span className="text-[9px] text-[#9B8B70] font-mono bg-[#EFEBE7] px-2 py-0.5 rounded font-bold uppercase">
-              Operational Peaks
-            </span>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 divide-y sm:divide-y-0 sm:divide-x divide-[#D8D8D8]/60">
-            {/* Metric 1 */}
-            <div className="flex flex-col justify-between p-2">
-              <span className="text-[10px] text-[#4C4A4B] font-bold uppercase tracking-tight">Stabilized Vol.</span>
-              <p className="text-[22px] font-black text-[#1E2F31] my-1 font-sans">
-                {formatNumber(data.opsMetrics.stabilizedVolume, 0)}
-              </p>
-              <span className="text-[9px] text-[#99B6AA] font-bold uppercase tracking-tight">Peak Yr Patients</span>
-            </div>
-            {/* Metric 2 */}
-            <div className="flex flex-col justify-between p-2 sm:pl-4 pt-4 sm:pt-2">
-              <div className="flex items-center gap-1">
-                <span className="text-[10px] text-[#4C4A4B] font-bold uppercase tracking-tight">Rev. Per Bed</span>
-                <KPITooltipIcon tooltip={revPabTooltip} tooltipState={revPabTs} setTooltipState={setRevPabTs} align="left" />
-              </div>
-              <p className="text-[22px] font-black text-[#1C6048] my-1 font-sans">
-                {formatNumber(data.opsMetrics.revPab, 1)} B
-              </p>
-              <span className="text-[9px] text-[#99B6AA] font-bold uppercase tracking-tight">Inflow Base</span>
-            </div>
-            {/* Metric 3 */}
-            <div className="flex flex-col justify-between p-2 sm:pl-4 pt-4 sm:pt-2">
-              <span className="text-[10px] text-[#4C4A4B] font-bold uppercase tracking-tight">EBITDA Per Bed</span>
-              <p className="text-[22px] font-black text-[#1E2F31] my-1 font-sans">
-                {formatNumber(data.opsMetrics.ebitdaPerBed, 1)} B
-              </p>
-              <span className="text-[9px] text-[#99B6AA] font-bold uppercase tracking-tight">Operating Base</span>
-            </div>
-            {/* Metric 4 */}
-            <div className="flex flex-col justify-between p-2 sm:pl-4 pt-4 sm:pt-2">
-              <span className="text-[10px] text-[#4C4A4B] font-bold uppercase tracking-tight">Fixed Cost Ratio</span>
-              <p className="text-[22px] font-black text-[#9B8B70] my-1 font-sans">
-                {formatNumber(data.opsMetrics.fixedCostPct, 1)}%
-              </p>
-              <span className="text-[9px] text-[#99B6AA] font-bold uppercase tracking-tight">Fixed vs Var OPEX</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Consolidated Blended Margins Card (Option 1B) */}
-        <div className="bg-[#1C6048] p-5 rounded-2xl border border-[#164c39] shadow-md relative overflow-hidden group">
-          {/* Ambient accent element */}
-          <div className="absolute right-0 bottom-0 translate-x-4 translate-y-4 w-32 h-32 rounded-full bg-white/[0.02] pointer-events-none group-hover:scale-110 transition-transform duration-700" />
-          
-          <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10 relative z-10">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-1.5 font-sans">
-              <Coins size={15} className="text-[#99B6AA]" /> Project Margins
-            </h3>
-            <span className="text-[9px] bg-white/10 px-2 py-0.5 rounded text-white tracking-normal font-semibold font-mono">
-              Look-Through Metrics
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
-            {/* EBITDAR */}
-            <div className="flex flex-col">
-              <p className="text-[10px] text-[#EFEBE7]/80 font-bold uppercase tracking-wider mb-1 font-mono">
-                EBITDAR Margin
-              </p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl lg:text-4xl font-black text-white leading-none font-sans">
-                  {formatNumber(avgEbitdarMargin, 1)}%
-                </span>
-                <span className="text-[10px] text-[#EFEBE7]/60 font-mono">Active Years Average</span>
-              </div>
-            </div>
-
-            {/* Net Profit */}
-            <div className="flex flex-col border-t md:border-t-0 md:border-l border-white/10 pt-4 md:pt-0 md:pl-6">
-              <p className="text-[10px] text-[#EFEBE7]/80 font-bold uppercase tracking-wider mb-1 font-mono">
-                Net Profit Margin
-              </p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl lg:text-4xl font-black text-white leading-none font-sans">
-                  {formatNumber(avgNetMargin, 1)}%
-                </span>
-                <span className="text-[10px] text-[#EFEBE7]/60 font-mono">Active Years Average</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8]">
-            <h3 className="font-bold text-[#1E2F31] mb-6 flex items-center gap-2">
-              <BarChart3 size={18} className="text-[#1C6048]" /> Operating Cash
-              Flow Trajectory
-            </h3>
-            <div className="h-72">
-              <LazyResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={data.operatingData}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke="#D8D8D8"
-                  />
-                  <XAxis
-                    dataKey="year"
-                    tick={{ fontSize: 10, fill: "#4C4A4B" }}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    yAxisId="left"
-                    tick={{ fontSize: 10, fill: "#4C4A4B" }}
-                    axisLine={false}
-                    tickFormatter={(val) => `${val}B`}
-                  />
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    tick={{ fontSize: 10, fill: "#1E2F31" }}
-                    axisLine={false}
-                    tickFormatter={(val) => `${val}%`}
-                  />
-                  <Tooltip allowEscapeViewBox={{ x: true, y: true }}
-                    contentStyle={TOOLTIP_STYLE}
-                    formatter={(val, name) =>
-                      formatNumber(val, 1) +
-                      (name === "Occupancy (BOR)" ? "%" : "B")
-                    }
-                  />
-                  <Legend iconType="circle" wrapperStyle={LEGEND_STYLE} />
-
-                  <Bar
-                    yAxisId="left"
-                    dataKey="totalRev"
-                    name="Net Revenue"
-                    fill="#1C6048"
-                    radius={[4, 4, 0, 0]}
-                    barSize={18}
-                  />
-                  <Line
-                    yAxisId="left"
-                    type="monotone"
-                    dataKey="ebitda"
-                    name="EBITDA"
-                    stroke="#1E2F31"
-                    strokeWidth={3}
-                    dot={{
-                      r: 4,
-                      fill: "#1E2F31",
-                      strokeWidth: 2,
-                      stroke: "#fff",
-                    }}
-                  />
-                  <Line
-                    yAxisId="left"
-                    type="monotone"
-                    dataKey="netIncome"
-                    name="Net Income"
-                    stroke="#9B8B70"
-                    strokeWidth={3}
-                    dot={{
-                      r: 4,
-                      fill: "#9B8B70",
-                      strokeWidth: 2,
-                      stroke: "#fff",
-                    }}
-                  />
-                  <Line
-                    yAxisId="right"
-                    type="monotone"
-                    dataKey="bor"
-                    name="Occupancy (BOR)"
-                    stroke="#99B6AA"
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                    dot={false}
-                  />
-                </ComposedChart>
-              </LazyResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8]">
-            <h3 className="font-bold text-[#1E2F31] mb-6 flex items-center gap-2">
-              <Target size={18} className="text-[#99B6AA]" /> Breakeven Audit
-            </h3>
-            <div className="h-72">
-              <LazyResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={data.operatingData}>
-                  <CartesianGrid
-                     strokeDasharray="3 3"
-                     vertical={false}
-                     stroke="#D8D8D8"
-                  />
-                  <XAxis
-                    dataKey="year"
-                    tick={{ fontSize: 10, fill: "#4C4A4B" }}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 10, fill: "#4C4A4B" }}
-                    axisLine={false}
-                    tickFormatter={(val) => `${val}%`}
-                  />
-                  <Tooltip allowEscapeViewBox={{ x: true, y: true }}
-                    contentStyle={TOOLTIP_STYLE}
-                    formatter={(val) => formatNumber(val, 1) + "%"}
-                  />
-                  <Legend iconType="circle" wrapperStyle={LEGEND_STYLE} />
-                  <Bar
-                    dataKey="breakEvenBor"
-                    name="Breakeven BOR required"
-                    fill="#D8D8D8"
-                    radius={[4, 4, 0, 0]}
-                    barSize={18}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="bor"
-                    name="Actual Projected BOR"
-                    stroke="#1E2F31"
-                    strokeWidth={3}
-                    dot={{ r: 3, strokeWidth: 2 }}
-                  />
-                </ComposedChart>
-              </LazyResponsiveContainer>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
     );
-  }
+  },
 );
 
-const OpCoCascadeView = memo(({ data, assumptions, viewResolution, setViewResolution }) => {
-  const { columns, expandedYears, toggleYear } = useMonthlyColumns(data.annualData, viewResolution);
-  const scrollRef = useRef(null);
-  const [showSetupBudget, setShowSetupBudget] = useState(true);
-  const [isFullScreen, setIsFullScreen] = useState(false);
-  const [viewMode, setViewMode] = useState("all"); // 'all' | 'pl' | 'cf'
-  
-  const overallSetup = (assumptions?.jvaOpex ?? 2.5) + (assumptions?.commOpex ?? 15.0) + (assumptions?.workingCapitalOpex ?? 64.671175);
+const OpCoCascadeView = memo(
+  ({ data, assumptions, viewResolution, setViewResolution }) => {
+    const { columns, expandedYears, toggleYear } = useMonthlyColumns(
+      data.annualData,
+      viewResolution,
+    );
+    const scrollRef = useRef(null);
+    const [showSetupBudget, setShowSetupBudget] = useState(true);
+    const [isFullScreen, setIsFullScreen] = useState(false);
+    const [viewMode, setViewMode] = useState("all"); // 'all' | 'pl' | 'cf'
 
-  return (
-  <div className={`space-y-6 ${isFullScreen ? 'fixed inset-0 z-[150] bg-[#F9F8F6] p-4 lg:p-6 overflow-hidden flex flex-col' : ''}`}>
-    <div className={`grid grid-cols-1 gap-6 animate-in slide-in-from-bottom-4 duration-500 ${isFullScreen ? 'flex-1 overflow-hidden' : ''} ${showSetupBudget && !isFullScreen ? 'md:grid-cols-3' : 'md:grid-cols-1'}`}>
-      {showSetupBudget && !isFullScreen && (
-        <div className="md:col-span-1 bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8] h-[calc(100vh-240px)] overflow-y-auto custom-scrollbar flex flex-col">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-[#1E2F31] flex items-center gap-2">
-              <Briefcase size={18} className="text-[#1C6048]" /> OpCo Setup Budget
-            </h3>
-            <button 
-              onClick={() => setShowSetupBudget(false)} 
-              className="text-[#8A8175] hover:text-[#1E2F31] text-[10px] uppercase font-bold tracking-wider"
-            >
-              Hide
-            </button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-[11px] text-left border-collapse">
-              <thead>
-                <tr className="bg-[#EFEBE7]">
-                  <th className="px-3 py-1.5 border border-[#D8D8D8] text-[#1E2F31] font-bold rounded-tl">
-                    Component
-                  </th>
-                  <th className="px-3 py-1.5 border border-[#D8D8D8] text-[#1E2F31] font-bold text-right">
-                    Cost (B)
-                  </th>
-                  <th className="px-3 py-1.5 border border-[#D8D8D8] text-[#1E2F31] font-bold text-right rounded-tr">
-                    %
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <CapexRow
-                  label="1. JVA Setup"
-                  amount={assumptions?.jvaOpex ?? 2.5}
-                  total={overallSetup}
-                  isIndent
-                />
-                <CapexRow
-                  label="2. Pre-operating"
-                  amount={assumptions?.commOpex ?? 15.0}
-                  total={overallSetup}
-                  isIndent
-                />
-                <CapexRow
-                  label="3. Clinical Working Capital"
-                  amount={assumptions?.workingCapitalOpex ?? 64.671175}
-                  total={overallSetup}
-                  isIndent
-                />
-                <CapexRow
-                  label="TOTAL OPCO INVESTMENT"
-                  amount={overallSetup}
-                  total={overallSetup}
-                  isSubtotal
-                />
-              </tbody>
-            </table>
-          </div>
-          <div className="mt-1.5 p-2 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8] shrink-0">
-            <div className="text-[8.5px] text-[#4C4A4B] leading-relaxed space-y-1">
-              <p><strong>JVA Setup</strong>: Represents the cost of establishing the Foreign Investment Company (PMA).</p>
-              <p><strong>Pre-operating</strong>: Incurred during the 6-month period preceding the Commercial Opening.</p>
-              <p><strong>Clinical Working Capital</strong>: Establishes a 6-month operational buffer during the Year 1 opening phase.</p>
+    const overallSetup =
+      (assumptions?.jvaOpex ?? 2.5) +
+      (assumptions?.commOpex ?? 15.0) +
+      (assumptions?.workingCapitalOpex ?? 64.671175);
+
+    return (
+      <div
+        className={`space-y-6 ${isFullScreen ? "fixed inset-0 z-[150] bg-[#F9F8F6] p-4 lg:p-6 overflow-hidden flex flex-col" : ""}`}
+      >
+        <div
+          className={`grid grid-cols-1 gap-6 animate-in slide-in-from-bottom-4 duration-500 ${isFullScreen ? "flex-1 overflow-hidden" : ""} ${showSetupBudget && !isFullScreen ? "md:grid-cols-3" : "md:grid-cols-1"}`}
+        >
+          {showSetupBudget && !isFullScreen && (
+            <div className="md:col-span-1 bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8] h-[calc(100vh-240px)] overflow-y-auto custom-scrollbar flex flex-col">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold text-[#1E2F31] flex items-center gap-2">
+                  <Briefcase size={18} className="text-[#1C6048]" /> OpCo Setup
+                  Budget
+                </h3>
+                <button
+                  onClick={() => setShowSetupBudget(false)}
+                  className="text-[#8A8175] hover:text-[#1E2F31] text-[10px] uppercase font-bold tracking-wider"
+                >
+                  Hide
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-[11px] text-left border-collapse">
+                  <thead>
+                    <tr className="bg-[#EFEBE7]">
+                      <th className="px-3 py-1.5 border border-[#D8D8D8] text-[#1E2F31] font-bold rounded-tl">
+                        Component
+                      </th>
+                      <th className="px-3 py-1.5 border border-[#D8D8D8] text-[#1E2F31] font-bold text-right">
+                        Cost (B)
+                      </th>
+                      <th className="px-3 py-1.5 border border-[#D8D8D8] text-[#1E2F31] font-bold text-right rounded-tr">
+                        %
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <CapexRow
+                      label="1. JVA Setup"
+                      amount={assumptions?.jvaOpex ?? 2.5}
+                      total={overallSetup}
+                      isIndent
+                    />
+                    <CapexRow
+                      label="2. Pre-operating"
+                      amount={assumptions?.commOpex ?? 15.0}
+                      total={overallSetup}
+                      isIndent
+                    />
+                    <CapexRow
+                      label="3. Clinical Working Capital"
+                      amount={assumptions?.workingCapitalOpex ?? 64.671175}
+                      total={overallSetup}
+                      isIndent
+                    />
+                    <CapexRow
+                      label="TOTAL OPCO INVESTMENT"
+                      amount={overallSetup}
+                      total={overallSetup}
+                      isSubtotal
+                    />
+                  </tbody>
+                </table>
+              </div>
+              <div className="mt-1.5 p-2 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8] shrink-0">
+                <div className="text-[8.5px] text-[#4C4A4B] leading-relaxed space-y-1">
+                  <p>
+                    <strong>JVA Setup</strong>: Represents the cost of
+                    establishing the Foreign Investment Company (PMA).
+                  </p>
+                  <p>
+                    <strong>Pre-operating</strong>: Incurred during the 6-month
+                    period preceding the Commercial Opening.
+                  </p>
+                  <p>
+                    <strong>Clinical Working Capital</strong>: Establishes a
+                    6-month operational buffer during the Year 1 opening phase.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div
+            className={`${showSetupBudget && !isFullScreen ? "md:col-span-2" : "md:col-span-1"} bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden ${isFullScreen ? "h-full" : "h-[calc(100vh-240px)]"} flex flex-col`}
+          >
+            <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
+                <List size={14} /> OpCo P&L & Cash Flow
+                {!showSetupBudget && (
+                  <button
+                    onClick={() => setShowSetupBudget(true)}
+                    className="ml-2 px-2 py-0.5 border border-[#D8D8D8] bg-white rounded text-[#8A8175] hover:text-[#1E2F31] text-[9px] tracking-wider font-bold shadow-sm leading-tight inline-block flex-shrink-0"
+                  >
+                    Show Setup Budget
+                  </button>
+                )}
+              </h3>
+              <div className="flex items-center gap-2">
+                <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
+                  <button
+                    onClick={() => setViewMode("all")}
+                    className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "all" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                  >
+                    All
+                  </button>
+                  <button
+                    onClick={() => setViewMode("pl")}
+                    className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "pl" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                  >
+                    P&L
+                  </button>
+                  <button
+                    onClick={() => setViewMode("cf")}
+                    className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "cf" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                  >
+                    CF
+                  </button>
+                </div>
+                <button
+                  onClick={() => setIsFullScreen(!isFullScreen)}
+                  className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6] transition-colors"
+                  title={isFullScreen ? "Minimize" : "Maximize"}
+                >
+                  {isFullScreen ? (
+                    <Minimize2 size={13} strokeWidth={2.5} />
+                  ) : (
+                    <Maximize2 size={13} strokeWidth={2.5} />
+                  )}
+                </button>
+                <div className="flex items-center bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
+                  <button
+                    onClick={() => setViewResolution("annual")}
+                    className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${viewResolution === "annual" ? "bg-[#1C6048] text-white" : "text-[#8A8175] hover:text-[#1E2F31] hover:bg-[#F9F8F6]"}`}
+                  >
+                    Annual
+                  </button>
+                  <button
+                    onClick={() => setViewResolution("monthly")}
+                    className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${viewResolution === "monthly" ? "bg-[#9B8B70] text-white" : "text-[#8A8175] hover:text-[#1E2F31] hover:bg-[#F9F8F6]"}`}
+                  >
+                    Monthly
+                  </button>
+                </div>
+                <button
+                  onClick={() =>
+                    scrollRef.current?.scrollBy({
+                      left: -300,
+                      behavior: "smooth",
+                    })
+                  }
+                  className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6]"
+                >
+                  <ChevronLeft size={13} strokeWidth={2.5} />
+                </button>
+                <button
+                  onClick={() =>
+                    scrollRef.current?.scrollBy({
+                      left: 300,
+                      behavior: "smooth",
+                    })
+                  }
+                  className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6]"
+                >
+                  <ChevronRight size={13} strokeWidth={2.5} />
+                </button>
+                <span className="text-[10px] bg-white text-[#4C4A4B] border border-[#D8D8D8] px-2 py-1 rounded font-bold uppercase shadow-sm">
+                  IDR Billions
+                </span>
+              </div>
+            </div>
+            <div ref={scrollRef} className="overflow-auto min-h-0 flex-1">
+              <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
+                <thead className="bg-white font-bold sticky top-0 z-[50] shadow-md">
+                  <tr>
+                    <th className="px-4 py-3 border-b-2 border-r border-[#D8D8D8] sticky left-0 top-0 bg-white z-[60] w-[260px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-[#1E2F31]">
+                      Line Item
+                    </th>
+                    {columns.map((col, i) => (
+                      <th
+                        key={i}
+                        onClick={
+                          col.colType === "year"
+                            ? () => toggleYear(col.defaultLabel)
+                            : undefined
+                        }
+                        className={`px-3 py-3 text-right border-b-2 border-r border-[#D8D8D8] ${
+                          col.colType === "year"
+                            ? "cursor-pointer hover:bg-[#EFEBE7] font-black underline decoration-dashed underline-offset-4 "
+                            : "font-medium text-[10px] "
+                        } ${!col.isOperating ? "bg-[#F9F8F6] text-[#9B8B70]" : "bg-white text-[#1E2F31]"} ${col.isMonth ? "min-w-[65px] whitespace-nowrap" : "min-w-[90px]"}`}
+                      >
+                        {col.colType === "year" ? (
+                          <div className="flex items-center justify-end gap-1">
+                            {expandedYears[col.defaultLabel] ? "-" : "+"}
+                            {String(col.defaultLabel)}
+                          </div>
+                        ) : (
+                          <div className="text-center w-full">
+                            {String(col.defaultLabel)}
+                          </div>
+                        )}
+                      </th>
+                    ))}
+                    <th className="px-4 py-3 text-right bg-[#EFEBE7] text-[#1E2F31] sticky right-0 top-0 z-[60] border-l border-b-2 border-[#D8D8D8] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                      Total
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(viewMode === "all" || viewMode === "pl") && (
+                    <>
+                      <TableSection
+                        title="A. Operating Volume"
+                        colSpan={columns.length + 2}
+                      />
+                      <TableRow
+                        label="Bed Occupancy Rate (BOR)"
+                        data={columns}
+                        dk="bor"
+                        tooltip={OPCO_FORMULAS.bor}
+                      />
+                      <TableRow
+                        label="Inpatient Cases"
+                        data={columns}
+                        dk="ipCases"
+                        tooltip={OPCO_FORMULAS.ipCases}
+                      />
+                      <TableRow
+                        label="Outpatient Visits"
+                        data={columns}
+                        dk="opVisits"
+                        tooltip={OPCO_FORMULAS.opVisits}
+                      />
+
+                      <TableSection
+                        title="B. Revenue"
+                        colSpan={columns.length + 2}
+                      />
+                      <TableRow
+                        label="Inpatient Revenue"
+                        data={columns}
+                        dk="ipRev"
+                        total={data.totals.ipRev}
+                        isIndent
+                        tooltip={OPCO_FORMULAS.ipRev}
+                      />
+                      <TableRow
+                        label="Outpatient Revenue"
+                        data={columns}
+                        dk="opRev"
+                        total={data.totals.opRev}
+                        isIndent
+                        tooltip={OPCO_FORMULAS.opRev}
+                      />
+                      <TableRow
+                        label="NET REVENUE"
+                        data={columns}
+                        dk="totalRev"
+                        total={data.totals.totalRev}
+                        highlight
+                        tooltip={OPCO_FORMULAS.totalRev}
+                      />
+
+                      <TableSection
+                        title="C. Cost of Goods Sold"
+                        colSpan={columns.length + 2}
+                      />
+                      <TableRow
+                        label="Medical Supplies"
+                        data={columns}
+                        dk="totalMedSupp"
+                        total={data.totals.totalMedSupp}
+                        isIndent
+                        tooltip={OPCO_FORMULAS.totalMedSupp}
+                        isSubtractor
+                      />
+                      <TableRow
+                        label="Doctor Fees"
+                        data={columns}
+                        dk="totalDocFee"
+                        total={data.totals.totalDocFee}
+                        isIndent
+                        tooltip={OPCO_FORMULAS.totalDocFee}
+                        isSubtractor
+                      />
+                      <TableRow
+                        label="GROSS PROFIT"
+                        data={columns}
+                        dk="grossProfit"
+                        total={data.totals.grossProfit}
+                        highlight
+                        tooltip={OPCO_FORMULAS.grossProfit}
+                      />
+
+                      <TableSection
+                        title="D. Operating Expenses"
+                        colSpan={columns.length + 2}
+                      />
+                      <TableRow
+                        label="Staffing & Labor"
+                        data={columns}
+                        dk="staffCost"
+                        isIndent
+                        tooltip={OPCO_FORMULAS.staffCost}
+                        isSubtractor
+                      />
+                      <ExpandableDataRowGroup
+                        parentLabel="Other OpEx"
+                        parentDk="otherOpex"
+                        parentTotal={data.totals.otherOpex}
+                        data={columns}
+                        parentTooltip={OPCO_FORMULAS.recurringOpex}
+                        isSubtractor
+                        childrenData={[
+                          {
+                            label: "Administrative Expense",
+                            dk: "adminOpex",
+                            total: data?.totals?.adminOpex,
+                            tooltip: {
+                              desc: "Administrative support overhead calculated based on administrative expense rate assumptions.",
+                              formula:
+                                "Admin Exp = adminExpRate% * Net Revenue",
+                            },
+                          },
+                          {
+                            label: "Utilities Expense",
+                            dk: "utilOpex",
+                            total: data?.totals?.utilOpex,
+                            tooltip: {
+                              desc: "Clinic utilities expense based on utility expense rate assumptions.",
+                              formula:
+                                "Utilities Exp = utilExpRate% * Net Revenue",
+                            },
+                          },
+                          {
+                            label: "Marketing Expense",
+                            dk: "mktgOpex",
+                            total: data?.totals?.mktgOpex,
+                            tooltip: {
+                              desc: "Marketing expenditures aligned with marketing expense rate assumptions.",
+                              formula:
+                                "Marketing Exp = marketingExpRate% * Net Revenue",
+                            },
+                          },
+                          {
+                            label: "Hospital Operator Fee",
+                            dk: "operatorOpex",
+                            total: data?.totals?.operatorOpex,
+                            tooltip: {
+                              desc: "Hospital management and operator fees.",
+                              formula:
+                                "Operator Fee = operatorFeeRate% * Net Revenue",
+                            },
+                          },
+                          {
+                            label: "Operational Insurance",
+                            dk: "insOpex",
+                            total: data?.totals?.insOpex,
+                            tooltip: {
+                              desc: "Annual facility, equipment, and liability insurance expenditures.",
+                              formula: "Insurance = insuranceMonthly * 12",
+                            },
+                          },
+                        ]}
+                      />
+                      <TableRow
+                        label="EBITDAR"
+                        data={columns}
+                        dk="ebitdar"
+                        total={data.totals.ebitdar}
+                        highlight
+                        tooltip={OPCO_FORMULAS.ebitdar}
+                      />
+                      <TableRow
+                        label="EBITDAR MARGIN"
+                        data={columns}
+                        dk="ebitdarMargin"
+                        total={data.totals.ebitdarMargin}
+                        highlight
+                        isPercent
+                        tooltip={OPCO_FORMULAS.ebitdarMargin}
+                      />
+
+                      <TableSection
+                        title="E. Rent & Taxes"
+                        colSpan={columns.length + 2}
+                      />
+                      <TableRow
+                        label="Building Rental"
+                        data={columns}
+                        dk="rent"
+                        total={data.totals.rent}
+                        isIndent
+                        tooltip={OPCO_FORMULAS.rent}
+                        isSubtractor
+                      />
+                      <TableRow
+                        label="EBITDA"
+                        data={columns}
+                        dk="ebitda"
+                        total={data.totals.ebitda}
+                        highlight
+                        tooltip={OPCO_FORMULAS.ebitda}
+                      />
+                      <TableRow
+                        label="Corporate Tax"
+                        data={columns}
+                        dk="tax"
+                        total={data.totals.tax}
+                        isIndent
+                        tooltip={OPCO_FORMULAS.tax}
+                        isSubtractor
+                      />
+                      <TableRow
+                        label="NET INCOME"
+                        data={columns}
+                        dk="netIncome"
+                        total={data.totals.netIncome}
+                        highlight
+                        emerald
+                        tooltip={OPCO_FORMULAS.netIncome}
+                      />
+                      <TableRow
+                        label="NET PROFIT MARGIN"
+                        data={columns}
+                        dk="netMargin"
+                        total={data.totals.netMargin}
+                        highlight
+                        emerald
+                        isPercent
+                        tooltip={OPCO_FORMULAS.netMargin}
+                      />
+                    </>
+                  )}
+
+                  {(viewMode === "all" || viewMode === "cf") && (
+                    <>
+                      <TableSection
+                        title="F. Free Cash Flow & Retained Earnings"
+                        colSpan={columns.length + 2}
+                        type="emerald"
+                      />
+                      <TableRow
+                        label="Cumulative Net Income"
+                        data={columns}
+                        dk="cumNI"
+                        highlight
+                        crossover
+                        bold
+                        indigo
+                        tooltip={OPCO_FORMULAS.cumNI}
+                      />
+                      <TableRow
+                        label={`Distributable Profit (${assumptions.dividendPayoutRatio ?? 100}%)`}
+                        data={columns}
+                        dk="distributableProfit"
+                        total={data.totals.distributableProfit}
+                        highlight
+                        tooltip={OPCO_FORMULAS.distributableProfit}
+                      />
+                      <TableRow
+                        label={`Retained Earnings (${100 - (assumptions.dividendPayoutRatio ?? 100)}%)`}
+                        data={columns}
+                        dk="retainedThisYear"
+                        total={data.totals.retainedThisYear}
+                        isIndent
+                        tooltip={OPCO_FORMULAS.retainedThisYear}
+                      />
+                      <TableRow
+                        label="Cumulative Retained Cash"
+                        data={columns}
+                        dk="cumulativeRetainedEarnings"
+                        highlight
+                        crossover
+                        bold
+                        indigo
+                        tooltip={OPCO_FORMULAS.cumulativeRetainedEarnings}
+                      />
+
+                      <TableSection
+                        title="G. Terminal Value (Exit)"
+                        colSpan={columns.length + 2}
+                      />
+                      <TableRow
+                        label="OpCo Enterprise Value (EV)"
+                        data={columns}
+                        dk="ev"
+                        total={data.totals.ev}
+                        highlight
+                        tooltip={OPCO_FORMULAS.ev}
+                      />
+                      <TableRow
+                        label="+ Retained Cash Sweep"
+                        data={columns}
+                        dk="cumulativeRetainedEarnings"
+                        total={data.totals.retainedThisYear}
+                        isIndent
+                        tooltip={OPCO_FORMULAS.cumulativeRetainedEarnings}
+                      />
+                      <TableRow
+                        label="Total Exit Equity Value"
+                        data={columns}
+                        dk="opCoExit"
+                        total={data.totals.opCoExit}
+                        highlight
+                        tooltip={OPCO_FORMULAS.opCoExit}
+                      />
+                      <TableRow
+                        label="Strategic Ptnr Proceeds (51%)"
+                        data={columns}
+                        dk="pA_Exit"
+                        total={data.totals.pA_Exit}
+                        isIndent
+                        tooltip={OPCO_FORMULAS.pA_Exit}
+                      />
+                      <TableRow
+                        label="Vasanta Proceeds (49%)"
+                        data={columns}
+                        dk="pB_Exit"
+                        total={data.totals.pB_Exit}
+                        isIndent
+                        tooltip={OPCO_FORMULAS.pB_Exit}
+                      />
+
+                      <TableSection
+                        title="H. Vasanta Returns (49%)"
+                        colSpan={columns.length + 2}
+                        type="emerald"
+                      />
+                      <TableRow
+                        label="Partner B Investment"
+                        data={columns}
+                        dk="pB_Outlay"
+                        total={data.totals.pB_Outlay}
+                        isIndent
+                        tooltip={OPCO_FORMULAS.pB_Outlay}
+                      />
+                      <TableRow
+                        label="Partner B Dividend"
+                        data={columns}
+                        dk="shareB"
+                        total={data.totals.shareB}
+                        isIndent
+                        tooltip={OPCO_FORMULAS.shareB}
+                      />
+                      <TableRow
+                        label="Terminal Exit Proceeds"
+                        data={columns}
+                        dk="pB_Exit"
+                        total={data.totals.pB_Exit}
+                        isIndent
+                        tooltip={OPCO_FORMULAS.pB_Exit}
+                      />
+                      <TableRow
+                        label="VG NET CASH FLOW"
+                        data={columns}
+                        dk="pB_Net"
+                        total={data.totals.pB_Net}
+                        highlight
+                        emerald
+                        tooltip={OPCO_FORMULAS.pB_Net}
+                      />
+                    </>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
-        </div>
-      )}
-
-      <div className={`${showSetupBudget && !isFullScreen ? 'md:col-span-2' : 'md:col-span-1'} bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden ${isFullScreen ? 'h-full' : 'h-[calc(100vh-240px)]'} flex flex-col`}>
-        <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
-            <List size={14} /> OpCo P&L & Cash Flow
-            {!showSetupBudget && (
-              <button 
-                onClick={() => setShowSetupBudget(true)}
-                className="ml-2 px-2 py-0.5 border border-[#D8D8D8] bg-white rounded text-[#8A8175] hover:text-[#1E2F31] text-[9px] tracking-wider font-bold shadow-sm leading-tight inline-block flex-shrink-0"
-              >
-                Show Setup Budget
-              </button>
-            )}
-          </h3>
-          <div className="flex items-center gap-2">
-            <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
-              <button onClick={() => setViewMode("all")} className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === 'all' ? 'bg-[#9B8B70] text-white shadow-sm' : 'text-[#4C4A4B] hover:text-[#1E2F31]'}`}>All</button>
-              <button onClick={() => setViewMode("pl")} className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === 'pl' ? 'bg-[#9B8B70] text-white shadow-sm' : 'text-[#4C4A4B] hover:text-[#1E2F31]'}`}>P&L</button>
-              <button onClick={() => setViewMode("cf")} className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === 'cf' ? 'bg-[#9B8B70] text-white shadow-sm' : 'text-[#4C4A4B] hover:text-[#1E2F31]'}`}>CF</button>
-            </div>
-            <button
-              onClick={() => setIsFullScreen(!isFullScreen)}
-              className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6] transition-colors"
-              title={isFullScreen ? "Minimize" : "Maximize"}
-            >
-              {isFullScreen ? <Minimize2 size={13} strokeWidth={2.5} /> : <Maximize2 size={13} strokeWidth={2.5} />}
-            </button>
-            <div className="flex items-center bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
-            <button
-              onClick={() => setViewResolution('annual')}
-              className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${viewResolution === 'annual' ? 'bg-[#1C6048] text-white' : 'text-[#8A8175] hover:text-[#1E2F31] hover:bg-[#F9F8F6]'}`}
-            >
-              Annual
-            </button>
-            <button
-              onClick={() => setViewResolution('monthly')}
-              className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${viewResolution === 'monthly' ? 'bg-[#9B8B70] text-white' : 'text-[#8A8175] hover:text-[#1E2F31] hover:bg-[#F9F8F6]'}`}
-            >
-              Monthly
-            </button>
-          </div>
-          <button onClick={() => scrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })} className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6]">
-            <ChevronLeft size={13} strokeWidth={2.5} />
-          </button>
-          <button onClick={() => scrollRef.current?.scrollBy({ left: 300, behavior: 'smooth' })} className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6]">
-            <ChevronRight size={13} strokeWidth={2.5} />
-          </button>
-          <span className="text-[10px] bg-white text-[#4C4A4B] border border-[#D8D8D8] px-2 py-1 rounded font-bold uppercase shadow-sm">
-            IDR Billions
-          </span>
         </div>
       </div>
-      <div ref={scrollRef} className="overflow-auto min-h-0 flex-1">
-        <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
-          <thead className="bg-white font-bold sticky top-0 z-[50] shadow-md">
-            <tr>
-              <th className="px-4 py-3 border-b-2 border-r border-[#D8D8D8] sticky left-0 top-0 bg-white z-[60] w-[260px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-[#1E2F31]">
-                Line Item
-              </th>
-              {columns.map((col, i) => (
-                <th
-                  key={i}
-                  onClick={col.colType === 'year' ? () => toggleYear(col.defaultLabel) : undefined}
-                  className={`px-3 py-3 text-right border-b-2 border-r border-[#D8D8D8] ${
-                    col.colType === 'year' ? 'cursor-pointer hover:bg-[#EFEBE7] font-black underline decoration-dashed underline-offset-4 ' : 'font-medium text-[10px] '
-                  } ${!col.isOperating ? "bg-[#F9F8F6] text-[#9B8B70]" : "bg-white text-[#1E2F31]"} ${col.isMonth ? 'min-w-[65px] whitespace-nowrap' : 'min-w-[90px]'}`}
-                >
-                  {col.colType === 'year' ? (
-                     <div className="flex items-center justify-end gap-1">
-                       {expandedYears[col.defaultLabel] ? "-" : "+"}
-                       {String(col.defaultLabel)}
-                     </div>
-                  ) : (
-                     <div className="text-center w-full">{String(col.defaultLabel)}</div>
-                  )}
-                </th>
-              ))}
-              <th className="px-4 py-3 text-right bg-[#EFEBE7] text-[#1E2F31] sticky right-0 top-0 z-[60] border-l border-b-2 border-[#D8D8D8] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">
-                Total
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {(viewMode === "all" || viewMode === "pl") && (
-              <>
-                <TableSection
-                  title="A. Operating Volume"
-                  colSpan={columns.length + 2}
-                />
-                <TableRow
-                  label="Bed Occupancy Rate (BOR)"
-                  data={columns}
-                  dk="bor"
-                  tooltip={OPCO_FORMULAS.bor}
-                />
-                <TableRow
-                  label="Inpatient Cases"
-                  data={columns}
-                  dk="ipCases"
-                  tooltip={OPCO_FORMULAS.ipCases}
-                />
-                <TableRow
-                  label="Outpatient Visits"
-                  data={columns}
-                  dk="opVisits"
-                  tooltip={OPCO_FORMULAS.opVisits}
-                />
-
-                <TableSection
-                  title="B. Revenue"
-                  colSpan={columns.length + 2}
-                />
-                <TableRow
-                  label="Inpatient Revenue"
-                  data={columns}
-                  dk="ipRev"
-                  total={data.totals.ipRev}
-                  isIndent
-                  tooltip={OPCO_FORMULAS.ipRev}
-                />
-                <TableRow
-                  label="Outpatient Revenue"
-                  data={columns}
-                  dk="opRev"
-                  total={data.totals.opRev}
-                  isIndent
-                  tooltip={OPCO_FORMULAS.opRev}
-                />
-                <TableRow
-                  label="NET REVENUE"
-                  data={columns}
-                  dk="totalRev"
-                  total={data.totals.totalRev}
-                  highlight
-                  tooltip={OPCO_FORMULAS.totalRev}
-                />
-
-                <TableSection
-                  title="C. Cost of Goods Sold"
-                  colSpan={columns.length + 2}
-                />
-                <TableRow
-                  label="Medical Supplies"
-                  data={columns}
-                  dk="totalMedSupp"
-                  total={data.totals.totalMedSupp}
-                  isIndent
-                  tooltip={OPCO_FORMULAS.totalMedSupp}
-                  isSubtractor
-                />
-                <TableRow
-                  label="Doctor Fees"
-                  data={columns}
-                  dk="totalDocFee"
-                  total={data.totals.totalDocFee}
-                  isIndent
-                  tooltip={OPCO_FORMULAS.totalDocFee}
-                  isSubtractor
-                />
-                <TableRow
-                  label="GROSS PROFIT"
-                  data={columns}
-                  dk="grossProfit"
-                  total={data.totals.grossProfit}
-                  highlight
-                  tooltip={OPCO_FORMULAS.grossProfit}
-                />
-
-                <TableSection
-                  title="D. Operating Expenses"
-                  colSpan={columns.length + 2}
-                />
-                <TableRow
-                  label="Staffing & Labor"
-                  data={columns}
-                  dk="staffCost"
-                  isIndent
-                  tooltip={OPCO_FORMULAS.staffCost}
-                  isSubtractor
-                />
-                <ExpandableDataRowGroup
-                  parentLabel="Other OpEx"
-                  parentDk="otherOpex"
-                  parentTotal={data.totals.otherOpex}
-                  data={columns}
-                  parentTooltip={OPCO_FORMULAS.recurringOpex}
-                  isSubtractor
-                  childrenData={[
-                    { label: "Administrative Expense", dk: "adminOpex", total: data?.totals?.adminOpex, tooltip: { desc: "Administrative support overhead calculated based on administrative expense rate assumptions.", formula: "Admin Exp = adminExpRate% * Net Revenue" } },
-                    { label: "Utilities Expense", dk: "utilOpex", total: data?.totals?.utilOpex, tooltip: { desc: "Clinic utilities expense based on utility expense rate assumptions.", formula: "Utilities Exp = utilExpRate% * Net Revenue" } },
-                    { label: "Marketing Expense", dk: "mktgOpex", total: data?.totals?.mktgOpex, tooltip: { desc: "Marketing expenditures aligned with marketing expense rate assumptions.", formula: "Marketing Exp = marketingExpRate% * Net Revenue" } },
-                    { label: "Hospital Operator Fee", dk: "operatorOpex", total: data?.totals?.operatorOpex, tooltip: { desc: "Hospital management and operator fees.", formula: "Operator Fee = operatorFeeRate% * Net Revenue" } },
-                    { label: "Operational Insurance", dk: "insOpex", total: data?.totals?.insOpex, tooltip: { desc: "Annual facility, equipment, and liability insurance expenditures.", formula: "Insurance = insuranceMonthly * 12" } }
-                  ]}
-                />
-              <TableRow
-                label="EBITDAR"
-                data={columns}
-                dk="ebitdar"
-                total={data.totals.ebitdar}
-                highlight
-                tooltip={OPCO_FORMULAS.ebitdar}
-              />
-              <TableRow
-                label="EBITDAR MARGIN"
-                data={columns}
-                dk="ebitdarMargin"
-                total={data.totals.ebitdarMargin}
-                highlight
-                isPercent
-                tooltip={OPCO_FORMULAS.ebitdarMargin}
-              />
-
-              <TableSection
-                title="E. Rent & Taxes"
-                colSpan={columns.length + 2}
-              />
-              <TableRow
-                label="Building Rental"
-                data={columns}
-                dk="rent"
-                total={data.totals.rent}
-                isIndent
-                tooltip={OPCO_FORMULAS.rent}
-                isSubtractor
-              />
-              <TableRow
-                label="EBITDA"
-                data={columns}
-                dk="ebitda"
-                total={data.totals.ebitda}
-                highlight
-                tooltip={OPCO_FORMULAS.ebitda}
-              />
-              <TableRow
-                label="Corporate Tax"
-                data={columns}
-                dk="tax"
-                total={data.totals.tax}
-                isIndent
-                tooltip={OPCO_FORMULAS.tax}
-                isSubtractor
-              />
-              <TableRow
-                label="NET INCOME"
-                data={columns}
-                dk="netIncome"
-                total={data.totals.netIncome}
-                highlight
-                emerald
-                tooltip={OPCO_FORMULAS.netIncome}
-              />
-              <TableRow
-                label="NET PROFIT MARGIN"
-                data={columns}
-                dk="netMargin"
-                total={data.totals.netMargin}
-                highlight
-                emerald
-                isPercent
-                tooltip={OPCO_FORMULAS.netMargin}
-              />
-            </>
-          )}
-
-          {(viewMode === "all" || viewMode === "cf") && (
-            <>
-              <TableSection
-                title="F. Free Cash Flow & Retained Earnings"
-                colSpan={columns.length + 2}
-                type="emerald"
-              />
-          <TableRow
-            label="Cumulative Net Income"
-            data={columns}
-            dk="cumNI"
-            highlight
-            crossover
-            bold
-            indigo
-            tooltip={OPCO_FORMULAS.cumNI}
-          />
-          <TableRow
-            label={`Distributable Profit (${assumptions.dividendPayoutRatio ?? 100}%)`}
-            data={columns}
-            dk="distributableProfit"
-            total={data.totals.distributableProfit}
-            highlight
-            tooltip={OPCO_FORMULAS.distributableProfit}
-          />
-          <TableRow
-            label={`Retained Earnings (${100 - (assumptions.dividendPayoutRatio ?? 100)}%)`}
-            data={columns}
-            dk="retainedThisYear"
-            total={data.totals.retainedThisYear}
-            isIndent
-            tooltip={OPCO_FORMULAS.retainedThisYear}
-          />
-          <TableRow
-            label="Cumulative Retained Cash"
-            data={columns}
-            dk="cumulativeRetainedEarnings"
-            highlight
-            crossover
-            bold
-            indigo
-            tooltip={OPCO_FORMULAS.cumulativeRetainedEarnings}
-          />
-
-          <TableSection
-            title="G. Terminal Value (Exit)"
-            colSpan={columns.length + 2}
-          />
-          <TableRow
-            label="OpCo Enterprise Value (EV)"
-            data={columns}
-            dk="ev"
-            total={data.totals.ev}
-            highlight
-            tooltip={OPCO_FORMULAS.ev}
-          />
-          <TableRow
-            label="+ Retained Cash Sweep"
-            data={columns}
-            dk="cumulativeRetainedEarnings"
-            total={data.totals.retainedThisYear}
-            isIndent
-            tooltip={OPCO_FORMULAS.cumulativeRetainedEarnings}
-          />
-          <TableRow
-            label="Total Exit Equity Value"
-            data={columns}
-            dk="opCoExit"
-            total={data.totals.opCoExit}
-            highlight
-            tooltip={OPCO_FORMULAS.opCoExit}
-          />
-          <TableRow
-            label="Strategic Ptnr Proceeds (51%)"
-            data={columns}
-            dk="pA_Exit"
-            total={data.totals.pA_Exit}
-            isIndent
-            tooltip={OPCO_FORMULAS.pA_Exit}
-          />
-          <TableRow
-            label="Vasanta Proceeds (49%)"
-            data={columns}
-            dk="pB_Exit"
-            total={data.totals.pB_Exit}
-            isIndent
-            tooltip={OPCO_FORMULAS.pB_Exit}
-          />
-          
-          <TableSection
-            title="H. Vasanta Returns (49%)"
-            colSpan={columns.length + 2}
-            type="emerald"
-          />
-          <TableRow
-            label="Partner B Investment"
-            data={columns}
-            dk="pB_Outlay"
-            total={data.totals.pB_Outlay}
-            isIndent
-            tooltip={OPCO_FORMULAS.pB_Outlay}
-          />
-          <TableRow
-            label="Partner B Dividend"
-            data={columns}
-            dk="shareB"
-            total={data.totals.shareB}
-            isIndent
-            tooltip={OPCO_FORMULAS.shareB}
-          />
-          <TableRow
-            label="Terminal Exit Proceeds"
-            data={columns}
-            dk="pB_Exit"
-            total={data.totals.pB_Exit}
-            isIndent
-            tooltip={OPCO_FORMULAS.pB_Exit}
-          />
-          <TableRow
-            label="VG NET CASH FLOW"
-            data={columns}
-            dk="pB_Net"
-            total={data.totals.pB_Net}
-            highlight
-            emerald
-            tooltip={OPCO_FORMULAS.pB_Net}
-          />
-            </>
-          )}
-        </tbody>
-      </table>
-    </div>
-  </div>
-  </div>
-  </div>
-  );
-});
+    );
+  },
+);
 
 const PropCoDashboardView = memo(
   ({
@@ -8178,13 +8896,23 @@ const PropCoDashboardView = memo(
     isPresenting,
   }) => {
     const pieData = useMemo(() => {
-      const leasedMedEq = assumptions.medEqProcurement === "lease" ? data.capexDetails.medEqCost : 0;
+      const leasedMedEq =
+        assumptions.medEqProcurement === "lease"
+          ? data.capexDetails.medEqCost
+          : 0;
       return [
         { name: "Equity", value: data.metrics.totalEquity },
         { name: "Bank Loan", value: data.metrics.totalDebt },
-        ...(leasedMedEq > 0 ? [{ name: "Equipment Lease", value: leasedMedEq }] : [])
+        ...(leasedMedEq > 0
+          ? [{ name: "Equipment Lease", value: leasedMedEq }]
+          : []),
       ];
-    }, [data.metrics.totalEquity, data.metrics.totalDebt, data.capexDetails.medEqCost, assumptions.medEqProcurement]);
+    }, [
+      data.metrics.totalEquity,
+      data.metrics.totalDebt,
+      data.capexDetails.medEqCost,
+      assumptions.medEqProcurement,
+    ]);
 
     const [chartMode, setChartMode] = useState("full");
     const chartData =
@@ -8202,21 +8930,33 @@ const PropCoDashboardView = memo(
     let irrExLandTooltip = "";
 
     if (!hasDebt && !hasLandCost) {
-      leveredIrrTooltip = "Return on Equity.\n• Financing: Fully Equity\n• Land: Excluded";
-      unleveredIrrTooltip = "Project Return (Pre-Financing). Assumes 100% Equity funding.\n• Financing: Unlevered (All Equity)\n• Land: Excluded";
-      irrExLandTooltip = "Core Asset Return.\n• Financing: Unlevered\n• Structural Impact: No Land impact";
+      leveredIrrTooltip =
+        "Return on Equity.\n• Financing: Fully Equity\n• Land: Excluded";
+      unleveredIrrTooltip =
+        "Project Return (Pre-Financing). Assumes 100% Equity funding.\n• Financing: Unlevered (All Equity)\n• Land: Excluded";
+      irrExLandTooltip =
+        "Core Asset Return.\n• Financing: Unlevered\n• Structural Impact: No Land impact";
     } else if (!hasDebt && hasLandCost) {
-      leveredIrrTooltip = "Return on Equity.\n• Financing: Fully Equity\n• Land: Included upfront";
-      unleveredIrrTooltip = "Project Return (Pre-Financing). Assumes 100% Equity funding.\n• Financing: Unlevered (All Equity)\n• Land: Included upfront";
-      irrExLandTooltip = "Core Asset Return.\n• Financing: Unlevered\n• Structural Impact: Land Cost stripped from capex & exit";
+      leveredIrrTooltip =
+        "Return on Equity.\n• Financing: Fully Equity\n• Land: Included upfront";
+      unleveredIrrTooltip =
+        "Project Return (Pre-Financing). Assumes 100% Equity funding.\n• Financing: Unlevered (All Equity)\n• Land: Included upfront";
+      irrExLandTooltip =
+        "Core Asset Return.\n• Financing: Unlevered\n• Structural Impact: Land Cost stripped from capex & exit";
     } else if (hasDebt && hasLandCost) {
-      leveredIrrTooltip = "Return on Equity.\n• Financing: Equity + Debt\n• Land: Included upfront";
-      unleveredIrrTooltip = "Project Return (Pre-Financing). Assumes 100% Equity funding.\n• Financing: Unlevered (All Equity)\n• Land: Included upfront";
-      irrExLandTooltip = "Core Asset Return.\n• Financing: Levered\n• Structural Impact: Land Cost stripped from capex & exit";
+      leveredIrrTooltip =
+        "Return on Equity.\n• Financing: Equity + Debt\n• Land: Included upfront";
+      unleveredIrrTooltip =
+        "Project Return (Pre-Financing). Assumes 100% Equity funding.\n• Financing: Unlevered (All Equity)\n• Land: Included upfront";
+      irrExLandTooltip =
+        "Core Asset Return.\n• Financing: Levered\n• Structural Impact: Land Cost stripped from capex & exit";
     } else if (hasDebt && !hasLandCost) {
-      leveredIrrTooltip = "Return on Equity.\n• Financing: Equity + Debt\n• Land: Excluded";
-      unleveredIrrTooltip = "Project Return (Pre-Financing). Assumes 100% Equity funding.\n• Financing: Unlevered (All Equity)\n• Land: Excluded";
-      irrExLandTooltip = "Core Asset Return.\n• Financing: Levered\n• Structural Impact: No Land impact";
+      leveredIrrTooltip =
+        "Return on Equity.\n• Financing: Equity + Debt\n• Land: Excluded";
+      unleveredIrrTooltip =
+        "Project Return (Pre-Financing). Assumes 100% Equity funding.\n• Financing: Unlevered (All Equity)\n• Land: Excluded";
+      irrExLandTooltip =
+        "Core Asset Return.\n• Financing: Levered\n• Structural Impact: No Land impact";
     }
 
     return (
@@ -8237,8 +8977,7 @@ const PropCoDashboardView = memo(
               title="Temporarily disabled"
               className="bg-[#D8D8D8] text-[#8A8175] cursor-not-allowed text-xs font-bold px-4 py-2 rounded-xl shadow-sm flex items-center gap-2 transition-colors opacity-70"
             >
-              <Sparkles size={14} />
-              ✨ Pitch Teaser
+              <Sparkles size={14} />✨ Pitch Teaser
             </button>
           </div>
 
@@ -8296,7 +9035,8 @@ const PropCoDashboardView = memo(
               color1="teal"
               tooltip1={{
                 desc: "The average annual cash distribution yield generated from PropCo's operations, reflecting the stable income generation capacity of the standalone infrastructure.",
-                formula: "Average of (Annual Operating FCFE ÷ Total PropCo Equity) across operating years"
+                formula:
+                  "Average of (Annual Operating FCFE ÷ Total PropCo Equity) across operating years",
               }}
               title2="YOC (ex-Land)"
               value2={`${formatNumber((data.metrics.yocExLand || 0) * 100, 1)}%`}
@@ -8304,6 +9044,26 @@ const PropCoDashboardView = memo(
               icon={<Coins size={18} />}
             />
           </div>
+
+          {data.totals?.shortfallEquity > 0 && (
+            <div className="bg-[#FEF2F2] p-5 rounded-2xl border border-[#FECACA] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in">
+              <div className="flex items-start md:items-center gap-4">
+                <div className="bg-white p-2.5 rounded-xl text-[#EF4444] shadow-sm shrink-0">
+                  <AlertTriangle size={24} />
+                </div>
+                <div>
+                  <h4 className="text-[#991B1B] font-bold text-base">Working Capital Shortfall Detected</h4>
+                  <p className="text-sm text-[#B91C1C] mt-1 pr-4">
+                    Projected operating cash flow is insufficient to cover early expenditures or debt service. Additional equity injection is required during operations.
+                  </p>
+                </div>
+              </div>
+              <div className="text-left md:text-right shrink-0 bg-white/60 p-3 rounded-xl border border-[#FECACA]/50">
+                <p className="text-[10px] text-[#B91C1C] font-bold uppercase tracking-widest opacity-80 mb-1">Total Shortfall Equity</p>
+                <div className="text-xl font-bold text-[#991B1B]">{formatCurrency(data.totals.shortfallEquity)}</div>
+              </div>
+            </div>
+          )}
 
           <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8]">
             <div className="flex justify-between items-center mb-6">
@@ -8329,7 +9089,7 @@ const PropCoDashboardView = memo(
                   className={`w-full relative flex justify-center ${isPresenting ? "h-40" : "h-36"}`}
                 >
                   <LazyResponsiveContainer width="100%" height="100%">
-                    <PieChart style={{ outline: 'none' }}>
+                    <PieChart style={{ outline: "none" }}>
                       <Pie
                         data={pieData}
                         cx="50%"
@@ -8344,7 +9104,13 @@ const PropCoDashboardView = memo(
                         {pieData.map((entry, index) => (
                           <Cell
                             key={`cell-src-${index}`}
-                            fill={index === 0 ? "#1C6048" : index === 1 ? "#D8D8D8" : "#9B8B70"}
+                            fill={
+                              index === 0
+                                ? "#1C6048"
+                                : index === 1
+                                  ? "#D8D8D8"
+                                  : "#9B8B70"
+                            }
                             className="outline-none focus:outline-none"
                           />
                         ))}
@@ -8357,13 +9123,21 @@ const PropCoDashboardView = memo(
                     </span>
                   </div>
                 </div>
-                <div className={`w-full grid ${assumptions.medEqProcurement === "lease" && data.capexDetails.medEqCost > 0 ? "grid-cols-3" : "grid-cols-2"} gap-2 mt-4 text-center`}>
+                <div
+                  className={`w-full grid ${assumptions.medEqProcurement === "lease" && data.capexDetails.medEqCost > 0 ? "grid-cols-3" : "grid-cols-2"} gap-2 mt-4 text-center`}
+                >
                   <div className="bg-[#EFEBE7] p-2 rounded border border-[#D8D8D8]">
                     <p className="text-[9px] font-bold uppercase text-[#4C4A4B] mb-1">
                       Total Equity
                     </p>
                     <p className="font-black text-[#1E2F31]">
-                      {formatCurrency(Math.abs(data.annualData.filter(d => !d.isOperating).reduce((acc, d) => acc + (d.fcfe || 0), 0)))}
+                      {formatCurrency(
+                        Math.abs(
+                          data.annualData
+                            .filter((d) => !d.isOperating)
+                            .reduce((acc, d) => acc + (d.fcfe || 0), 0),
+                        ),
+                      )}
                     </p>
                   </div>
                   <div className="bg-[#D8D8D8]/30 p-2 rounded border border-[#D8D8D8]">
@@ -8374,16 +9148,19 @@ const PropCoDashboardView = memo(
                       {formatCurrency(data.metrics.totalDebt)}
                     </p>
                   </div>
-                  {assumptions.medEqProcurement === "lease" && data.capexDetails.medEqCost > 0 && (
-                    <div className="bg-[#9B8B70]/10 p-2 rounded border border-[#D8D8D8]">
-                      <p className="text-[9px] font-bold uppercase text-[#9B8B70] mb-1 leading-tight">
-                        Equip.<br/>Lease
-                      </p>
-                      <p className="font-black text-[#1E2F31]">
-                        {formatCurrency(data.capexDetails.medEqCost)}
-                      </p>
-                    </div>
-                  )}
+                  {assumptions.medEqProcurement === "lease" &&
+                    data.capexDetails.medEqCost > 0 && (
+                      <div className="bg-[#9B8B70]/10 p-2 rounded border border-[#D8D8D8]">
+                        <p className="text-[9px] font-bold uppercase text-[#9B8B70] mb-1 leading-tight">
+                          Equip.
+                          <br />
+                          Lease
+                        </p>
+                        <p className="font-black text-[#1E2F31]">
+                          {formatCurrency(data.capexDetails.medEqCost)}
+                        </p>
+                      </div>
+                    )}
                 </div>
               </div>
 
@@ -8402,7 +9179,11 @@ const PropCoDashboardView = memo(
                   <ExpandableCapexRow
                     icon={<Building2 size={16} className="text-[#1E2F31]" />}
                     title="Hard Costs"
-                    amount={data.capexDetails.buildCost + data.capexDetails.infraCost + data.capexDetails.ffeCost}
+                    amount={
+                      data.capexDetails.buildCost +
+                      data.capexDetails.infraCost +
+                      data.capexDetails.ffeCost
+                    }
                     totalCapex={data.metrics.totalCapex}
                     details={[
                       {
@@ -8556,7 +9337,8 @@ const PropCoDashboardView = memo(
                     axisLine={false}
                     tickFormatter={(val) => `${val}B`}
                   />
-                  <Tooltip allowEscapeViewBox={{ x: true, y: true }}
+                  <Tooltip
+                    allowEscapeViewBox={{ x: true, y: true }}
                     contentStyle={TOOLTIP_STYLE}
                     formatter={(val) => formatNumber(val, 1) + "B"}
                   />
@@ -8604,649 +9386,802 @@ const PropCoDashboardView = memo(
   },
 );
 
-const PropCoCascadeView = memo(({ data, onExport, viewResolution, setViewResolution }) => {
-  const { columns, expandedYears, toggleYear } = useMonthlyColumns(data.annualData, viewResolution);
-  const scrollRef = useRef(null);
-  const [showDevBudget, setShowDevBudget] = useState(true);
-  const [isFullScreen, setIsFullScreen] = useState(false);
-  const [viewMode, setViewMode] = useState("all"); // 'all' | 'pl' | 'cf'
+const PropCoCascadeView = memo(
+  ({ data, onExport, viewResolution, setViewResolution }) => {
+    const { columns, expandedYears, toggleYear } = useMonthlyColumns(
+      data.annualData,
+      viewResolution,
+    );
+    const scrollRef = useRef(null);
+    const [showDevBudget, setShowDevBudget] = useState(true);
+    const [isFullScreen, setIsFullScreen] = useState(false);
+    const [viewMode, setViewMode] = useState("all"); // 'all' | 'pl' | 'cf'
 
-  return (
-  <div className={`space-y-6 ${isFullScreen ? 'fixed inset-0 z-[150] bg-[#F9F8F6] p-4 lg:p-6 overflow-hidden flex flex-col' : ''}`}>
-    <div className={`grid grid-cols-1 gap-6 animate-in slide-in-from-bottom-4 duration-500 ${isFullScreen ? 'flex-1 overflow-hidden' : ''} ${showDevBudget && !isFullScreen ? 'md:grid-cols-3' : 'md:grid-cols-1'}`}>
-      {showDevBudget && !isFullScreen && (
-        <div className="md:col-span-1 bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8] h-[calc(100vh-240px)] overflow-y-auto custom-scrollbar">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-[#1E2F31] flex items-center gap-2">
-              <Map size={18} className="text-[#1C6048]" /> Development Budget
-            </h3>
-            <button 
-              onClick={() => setShowDevBudget(false)} 
-              className="text-[#8A8175] hover:text-[#1E2F31] text-[10px] uppercase font-bold tracking-wider"
-            >
-              Hide
-            </button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-[11px] text-left border-collapse">
-              <thead>
-                <tr className="bg-[#EFEBE7]">
-                  <th className="px-4 py-2 border border-[#D8D8D8] text-[#1E2F31] font-bold rounded-tl">
-                    Component
-                  </th>
-                  <th className="px-4 py-2 border border-[#D8D8D8] text-[#1E2F31] font-bold text-right">
-                    Cost (B)
-                  </th>
-                  <th className="px-4 py-2 border border-[#D8D8D8] text-[#1E2F31] font-bold text-right rounded-tr">
-                    %
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <CapexRow
-                label="Land Cost"
-                amount={data.capexDetails.landCost}
-                total={data.metrics.totalCapex}
-                isHeader
-              />
+    return (
+      <div
+        className={`space-y-6 ${isFullScreen ? "fixed inset-0 z-[150] bg-[#F9F8F6] p-4 lg:p-6 overflow-hidden flex flex-col" : ""}`}
+      >
+        <div
+          className={`grid grid-cols-1 gap-6 animate-in slide-in-from-bottom-4 duration-500 ${isFullScreen ? "flex-1 overflow-hidden" : ""} ${showDevBudget && !isFullScreen ? "md:grid-cols-3" : "md:grid-cols-1"}`}
+        >
+          {showDevBudget && !isFullScreen && (
+            <div className="md:col-span-1 bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8] h-[calc(100vh-240px)] overflow-y-auto custom-scrollbar">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold text-[#1E2F31] flex items-center gap-2">
+                  <Map size={18} className="text-[#1C6048]" /> Development
+                  Budget
+                </h3>
+                <button
+                  onClick={() => setShowDevBudget(false)}
+                  className="text-[#8A8175] hover:text-[#1E2F31] text-[10px] uppercase font-bold tracking-wider"
+                >
+                  Hide
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-[11px] text-left border-collapse">
+                  <thead>
+                    <tr className="bg-[#EFEBE7]">
+                      <th className="px-4 py-2 border border-[#D8D8D8] text-[#1E2F31] font-bold rounded-tl">
+                        Component
+                      </th>
+                      <th className="px-4 py-2 border border-[#D8D8D8] text-[#1E2F31] font-bold text-right">
+                        Cost (B)
+                      </th>
+                      <th className="px-4 py-2 border border-[#D8D8D8] text-[#1E2F31] font-bold text-right rounded-tr">
+                        %
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <CapexRow
+                      label="Land Cost"
+                      amount={data.capexDetails.landCost}
+                      total={data.metrics.totalCapex}
+                      isHeader
+                    />
 
-              <CapexRow
-                label="Total Hard Costs"
-                amount={data.capexDetails.totalHardCosts}
-                total={data.metrics.totalCapex}
-                isHeader
-              />
-              <CapexRow
-                label="Construction"
-                amount={data.capexDetails.buildCost}
-                total={data.metrics.totalCapex}
-                isIndent
-              />
-              <CapexRow
-                label="Medical Equip."
-                amount={data.capexDetails.medEqCost}
-                total={data.metrics.totalCapex}
-                isIndent
-              />
-              <CapexRow
-                label="Infrastructure"
-                amount={data.capexDetails.infraCost}
-                total={data.metrics.totalCapex}
-                isIndent
-              />
-              <CapexRow
-                label="FF&E"
-                amount={data.capexDetails.ffeCost}
-                total={data.metrics.totalCapex}
-                isIndent
-              />
-              <CapexRow
-                label="Sharing Dev."
-                amount={data.capexDetails.sharingDevCost}
-                total={data.metrics.totalCapex}
-                isIndent
-              />
+                    <CapexRow
+                      label="Total Hard Costs"
+                      amount={data.capexDetails.totalHardCosts}
+                      total={data.metrics.totalCapex}
+                      isHeader
+                    />
+                    <CapexRow
+                      label="Construction"
+                      amount={data.capexDetails.buildCost}
+                      total={data.metrics.totalCapex}
+                      isIndent
+                    />
+                    <CapexRow
+                      label="Medical Equip."
+                      amount={data.capexDetails.medEqCost}
+                      total={data.metrics.totalCapex}
+                      isIndent
+                    />
+                    <CapexRow
+                      label="Infrastructure"
+                      amount={data.capexDetails.infraCost}
+                      total={data.metrics.totalCapex}
+                      isIndent
+                    />
+                    <CapexRow
+                      label="FF&E"
+                      amount={data.capexDetails.ffeCost}
+                      total={data.metrics.totalCapex}
+                      isIndent
+                    />
+                    <CapexRow
+                      label="Sharing Dev."
+                      amount={data.capexDetails.sharingDevCost}
+                      total={data.metrics.totalCapex}
+                      isIndent
+                    />
 
-              <CapexRow
-                label="Total Soft Costs"
-                amount={data.capexDetails.totalSoftCosts}
-                total={data.metrics.totalCapex}
-                isHeader
-              />
-              <CapexRow
-                label="Consultant"
-                amount={data.capexDetails.consultantCost}
-                total={data.metrics.totalCapex}
-                isIndent
-              />
-              <CapexRow
-                label="License"
-                amount={data.capexDetails.licenseCost}
-                total={data.metrics.totalCapex}
-                isIndent
-              />
-              <CapexRow
-                label="VAT"
-                amount={data.capexDetails.vatCost}
-                total={data.metrics.totalCapex}
-                isIndent
-              />
-              <CapexRow
-                label="Contingency"
-                amount={data.capexDetails.contingencyCost}
-                total={data.metrics.totalCapex}
-                isIndent
-              />
-              <CapexRow
-                label="Dev. G&A"
-                amount={data.capexDetails.devGaCost}
-                total={data.metrics.totalCapex}
-                isIndent
-              />
-              <CapexRow
-                label="Dev. CAR"
-                amount={data.capexDetails.devCarCost}
-                total={data.metrics.totalCapex}
-                isIndent
-              />
+                    <CapexRow
+                      label="Total Soft Costs"
+                      amount={data.capexDetails.totalSoftCosts}
+                      total={data.metrics.totalCapex}
+                      isHeader
+                    />
+                    <CapexRow
+                      label="Consultant"
+                      amount={data.capexDetails.consultantCost}
+                      total={data.metrics.totalCapex}
+                      isIndent
+                    />
+                    <CapexRow
+                      label="License"
+                      amount={data.capexDetails.licenseCost}
+                      total={data.metrics.totalCapex}
+                      isIndent
+                    />
+                    <CapexRow
+                      label="VAT"
+                      amount={data.capexDetails.vatCost}
+                      total={data.metrics.totalCapex}
+                      isIndent
+                    />
+                    <CapexRow
+                      label="Contingency"
+                      amount={data.capexDetails.contingencyCost}
+                      total={data.metrics.totalCapex}
+                      isIndent
+                    />
+                    <CapexRow
+                      label="Dev. G&A"
+                      amount={data.capexDetails.devGaCost}
+                      total={data.metrics.totalCapex}
+                      isIndent
+                    />
+                    <CapexRow
+                      label="Dev. CAR"
+                      amount={data.capexDetails.devCarCost}
+                      total={data.metrics.totalCapex}
+                      isIndent
+                    />
 
-              <CapexRow
-                label="TOTAL PROPCO INVESTMENT"
-                amount={data.metrics.totalCapex}
-                total={data.metrics.totalCapex}
-                isSubtotal
-              />
-            </tbody>
-          </table>
-        </div>
-      </div>
-      )}
-
-      <div className={`${showDevBudget && !isFullScreen ? 'md:col-span-2' : 'md:col-span-1'} bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden ${isFullScreen ? 'h-full' : 'h-[calc(100vh-240px)]'} flex flex-col`}>
-        <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
-            <List size={14} /> PropCo P&L & Cash Flow
-            {!showDevBudget && (
-              <button 
-                onClick={() => setShowDevBudget(true)}
-                className="ml-2 px-2 py-0.5 border border-[#D8D8D8] bg-white rounded text-[#8A8175] hover:text-[#1E2F31] text-[9px] tracking-wider font-bold shadow-sm leading-tight inline-block flex-shrink-0"
-              >
-                Show Dev Budget
-              </button>
-            )}
-          </h3>
-          <div className="flex items-center gap-2">
-            <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
-              <button onClick={() => setViewMode("all")} className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === 'all' ? 'bg-[#9B8B70] text-white shadow-sm' : 'text-[#4C4A4B] hover:text-[#1E2F31]'}`}>All</button>
-              <button onClick={() => setViewMode("pl")} className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === 'pl' ? 'bg-[#9B8B70] text-white shadow-sm' : 'text-[#4C4A4B] hover:text-[#1E2F31]'}`}>P&L</button>
-              <button onClick={() => setViewMode("cf")} className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === 'cf' ? 'bg-[#9B8B70] text-white shadow-sm' : 'text-[#4C4A4B] hover:text-[#1E2F31]'}`}>CF</button>
+                    <CapexRow
+                      label="TOTAL PROPCO INVESTMENT"
+                      amount={data.metrics.totalCapex}
+                      total={data.metrics.totalCapex}
+                      isSubtotal
+                    />
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <button
-               onClick={() => setIsFullScreen(!isFullScreen)}
-               className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6] transition-colors"
-               title={isFullScreen ? "Minimize" : "Maximize"}
-            >
-               {isFullScreen ? <Minimize2 size={13} strokeWidth={2.5} /> : <Maximize2 size={13} strokeWidth={2.5} />}
-            </button>
-            <div className="flex items-center bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
-              <button
-                onClick={() => setViewResolution('annual')}
-                className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${viewResolution === 'annual' ? 'bg-[#1C6048] text-white' : 'text-[#8A8175] hover:text-[#1E2F31] hover:bg-[#F9F8F6]'}`}
-              >
-                Annual
-              </button>
-              <button
-                onClick={() => setViewResolution('monthly')}
-                className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${viewResolution === 'monthly' ? 'bg-[#9B8B70] text-white' : 'text-[#8A8175] hover:text-[#1E2F31] hover:bg-[#F9F8F6]'}`}
-              >
-                Monthly
-              </button>
-            </div>
-            <button onClick={() => scrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })} className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6]">
-              <ChevronLeft size={13} strokeWidth={2.5} />
-            </button>
-            <button onClick={() => scrollRef.current?.scrollBy({ left: 300, behavior: 'smooth' })} className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6]">
-              <ChevronRight size={13} strokeWidth={2.5} />
-            </button>
-            <span className="text-[10px] bg-white text-[#4C4A4B] border border-[#D8D8D8] px-2 py-1 rounded font-bold uppercase shadow-sm">
-              IDR Billions
-            </span>
-          </div>
-        </div>
-        <div ref={scrollRef} className="overflow-auto min-h-0 flex-1">
-          <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
-            <thead className="bg-[#EFEBE7] font-bold sticky top-0 z-[50] shadow-md">
-              <tr>
-                <th className="px-4 py-3 border-b-2 border-r border-[#D8D8D8] sticky left-0 top-0 bg-[#EFEBE7] z-[60] w-[260px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-[#1E2F31]">
-                  Line Item
-                </th>
-                {columns.map((col, i) => (
-                  <th
-                    key={i}
-                    onClick={col.colType === 'year' ? () => toggleYear(col.defaultLabel) : undefined}
-                    className={`px-3 py-3 text-right border-b-2 border-r border-[#D8D8D8] ${
-                      col.colType === 'year' ? 'cursor-pointer hover:bg-white font-black underline decoration-dashed underline-offset-4 ' : 'font-medium text-[10px] '
-                    } bg-[#EFEBE7] ${!col.isOperating ? "text-[#9B8B70]" : "text-[#1E2F31]"} ${col.isMonth ? 'min-w-[65px] whitespace-nowrap' : 'min-w-[90px]'}`}
+          )}
+
+          <div
+            className={`${showDevBudget && !isFullScreen ? "md:col-span-2" : "md:col-span-1"} bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden ${isFullScreen ? "h-full" : "h-[calc(100vh-240px)]"} flex flex-col`}
+          >
+            <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
+                <List size={14} /> PropCo P&L & Cash Flow
+                {!showDevBudget && (
+                  <button
+                    onClick={() => setShowDevBudget(true)}
+                    className="ml-2 px-2 py-0.5 border border-[#D8D8D8] bg-white rounded text-[#8A8175] hover:text-[#1E2F31] text-[9px] tracking-wider font-bold shadow-sm leading-tight inline-block flex-shrink-0"
                   >
-                    {col.colType === 'year' ? (
-                       <div className="flex items-center justify-end gap-1">
-                         {expandedYears[col.defaultLabel] ? "-" : "+"}
-                         {String(col.defaultLabel)}
-                       </div>
-                    ) : (
-                       <div className="text-center w-full">{String(col.defaultLabel)}</div>
-                    )}
-                  </th>
-                ))}
-                <th className="px-4 py-3 text-right bg-[#EFEBE7] text-[#1E2F31] sticky right-0 top-0 z-[60] border-l border-b-2 border-[#D8D8D8] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">
-                  Total
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {(viewMode === "all" || viewMode === "cf") && (
-                <>
-                  <TableSection
-                    title="A. Project Development Spending"
-                    colSpan={columns.length + 2}
-                    type="indigo"
-                  />
-                  <TableRow
-                    label="Land Cost"
-                    data={columns}
-                    dk="landSpend"
-                    total={data.totals.landSpend}
-                    isIndent
-                    tooltip={PROPCO_FORMULAS.landSpend}
-                  />
-                  <ExpandableDataRowGroup
-                    parentLabel="Total Hard Costs"
-                    parentDk="hardSpend"
-                    parentTotal={data.totals.hardSpend}
-                    data={columns}
-                    parentTooltip={PROPCO_FORMULAS.hardSpend}
-                    childrenData={[
-                      { label: "Construction", dk: "buildSpend", total: data.totals.buildSpend },
-                      { label: "Medical Equip.", dk: "eqSpend", total: data.totals.eqSpend },
-                      { label: "Infrastructure", dk: "infraSpend", total: data.totals.infraSpend },
-                      { label: "FF&E", dk: "ffeSpend", total: data.totals.ffeSpend },
-                      { label: "Sharing Dev.", dk: "sharingSpend", total: data.totals.sharingSpend },
-                    ]}
-                  />
-                  <ExpandableDataRowGroup
-                    parentLabel="Total Soft Costs"
-                    parentDk="softSpend"
-                    parentTotal={data.totals.softSpend}
-                    data={columns}
-                    parentTooltip={PROPCO_FORMULAS.softSpend}
-                    childrenData={[
-                      { label: "Consultant", dk: "consultantSpend", total: data.totals.consultantSpend },
-                      { label: "License", dk: "licenseSpend", total: data.totals.licenseSpend },
-                      { label: "VAT", dk: "vatSpend", total: data.totals.vatSpend },
-                      { label: "Contingency", dk: "contingencySpend", total: data.totals.contingencySpend },
-                      { label: "Dev. G&A", dk: "devGa", total: data.totals.devGa },
-                      { label: "Dev. CAR", dk: "devCar", total: data.totals.devCar },
-                    ]}
-                  />
-                  <TableRow
-                    label="PROJECT DEVELOPMENT SPEND"
-                    data={columns}
-                    dk="totalSpend"
-                    total={data.totals.totalSpend}
-                    highlight
-                    tooltip={PROPCO_FORMULAS.totalSpend}
-                  />
-                  <TableRow
-                    label="Debt Drawdown"
-                    data={columns}
-                    dk="debtDraw"
-                    total={data.totals.debtDraw}
-                    isIndent
-                    tooltip={PROPCO_FORMULAS.debtDraw}
-                  />
-                </>
-              )}
-
-              {(viewMode === "all" || viewMode === "pl") && (
-                <>
-                  <TableSection
-                    title="B. Operating Revenue & Expense"
-                    colSpan={columns.length + 2}
-                  />
-                  <TableRow
-                    label="Net Rent Revenue / NOR"
-                    data={columns}
-                    dk="revenue"
-                    total={data.totals.revenue}
-                    highlight
-                    tooltip={PROPCO_FORMULAS.revenue}
-                  />
-                  
-                  <tr className="group">
-                    <td className="px-3 py-1.5 sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap transition-colors shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-[#EFEBE7] font-bold text-[#1E2F31] text-[11px]">
-                      Operating Expenses (OpEx)
-                    </td>
-                    {columns.map((_, idx) => (
-                      <td
-                        key={idx}
-                        className="px-2 py-1.5 text-right border-r border-b border-[#D8D8D8] font-mono transition-colors bg-[#EFEBE7]/50"
-                      />
+                    Show Dev Budget
+                  </button>
+                )}
+              </h3>
+              <div className="flex items-center gap-2">
+                <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
+                  <button
+                    onClick={() => setViewMode("all")}
+                    className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "all" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                  >
+                    All
+                  </button>
+                  <button
+                    onClick={() => setViewMode("pl")}
+                    className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "pl" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                  >
+                    P&L
+                  </button>
+                  <button
+                    onClick={() => setViewMode("cf")}
+                    className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "cf" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                  >
+                    CF
+                  </button>
+                </div>
+                <button
+                  onClick={() => setIsFullScreen(!isFullScreen)}
+                  className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6] transition-colors"
+                  title={isFullScreen ? "Minimize" : "Maximize"}
+                >
+                  {isFullScreen ? (
+                    <Minimize2 size={13} strokeWidth={2.5} />
+                  ) : (
+                    <Maximize2 size={13} strokeWidth={2.5} />
+                  )}
+                </button>
+                <div className="flex items-center bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
+                  <button
+                    onClick={() => setViewResolution("annual")}
+                    className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${viewResolution === "annual" ? "bg-[#1C6048] text-white" : "text-[#8A8175] hover:text-[#1E2F31] hover:bg-[#F9F8F6]"}`}
+                  >
+                    Annual
+                  </button>
+                  <button
+                    onClick={() => setViewResolution("monthly")}
+                    className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${viewResolution === "monthly" ? "bg-[#9B8B70] text-white" : "text-[#8A8175] hover:text-[#1E2F31] hover:bg-[#F9F8F6]"}`}
+                  >
+                    Monthly
+                  </button>
+                </div>
+                <button
+                  onClick={() =>
+                    scrollRef.current?.scrollBy({
+                      left: -300,
+                      behavior: "smooth",
+                    })
+                  }
+                  className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6]"
+                >
+                  <ChevronLeft size={13} strokeWidth={2.5} />
+                </button>
+                <button
+                  onClick={() =>
+                    scrollRef.current?.scrollBy({
+                      left: 300,
+                      behavior: "smooth",
+                    })
+                  }
+                  className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6]"
+                >
+                  <ChevronRight size={13} strokeWidth={2.5} />
+                </button>
+                <span className="text-[10px] bg-white text-[#4C4A4B] border border-[#D8D8D8] px-2 py-1 rounded font-bold uppercase shadow-sm">
+                  IDR Billions
+                </span>
+              </div>
+            </div>
+            <div ref={scrollRef} className="overflow-auto min-h-0 flex-1">
+              <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
+                <thead className="bg-[#EFEBE7] font-bold sticky top-0 z-[50] shadow-md">
+                  <tr>
+                    <th className="px-4 py-3 border-b-2 border-r border-[#D8D8D8] sticky left-0 top-0 bg-[#EFEBE7] z-[60] w-[260px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-[#1E2F31]">
+                      Line Item
+                    </th>
+                    {columns.map((col, i) => (
+                      <th
+                        key={i}
+                        onClick={
+                          col.colType === "year"
+                            ? () => toggleYear(col.defaultLabel)
+                            : undefined
+                        }
+                        className={`px-3 py-3 text-right border-b-2 border-r border-[#D8D8D8] ${
+                          col.colType === "year"
+                            ? "cursor-pointer hover:bg-white font-black underline decoration-dashed underline-offset-4 "
+                            : "font-medium text-[10px] "
+                        } bg-[#EFEBE7] ${!col.isOperating ? "text-[#9B8B70]" : "text-[#1E2F31]"} ${col.isMonth ? "min-w-[65px] whitespace-nowrap" : "min-w-[90px]"}`}
+                      >
+                        {col.colType === "year" ? (
+                          <div className="flex items-center justify-end gap-1">
+                            {expandedYears[col.defaultLabel] ? "-" : "+"}
+                            {String(col.defaultLabel)}
+                          </div>
+                        ) : (
+                          <div className="text-center w-full">
+                            {String(col.defaultLabel)}
+                          </div>
+                        )}
+                      </th>
                     ))}
-                    <td className="px-2 py-1.5 text-right font-bold font-mono border-l border-b border-[#D8D8D8] sticky right-0 z-[40] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-[#EFEBE7] font-bold text-[#1E2F31] text-[11px]">
-                      &nbsp;
-                    </td>
+                    <th className="px-4 py-3 text-right bg-[#EFEBE7] text-[#1E2F31] sticky right-0 top-0 z-[60] border-l border-b-2 border-[#D8D8D8] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                      Total
+                    </th>
                   </tr>
-
-                  <ExpandableDataRowGroup
-                    parentLabel="Pre-Opening & Dev Expenses"
-                    parentDk="preOpeningDev"
-                    parentTotal={data.totals.preOpeningDev}
-                    data={columns}
-                    parentTooltip={PROPCO_FORMULAS.preOpeningDev}
-                    isSubtractor
-                    childrenData={[
-                      { label: "Dev. G&A Expense", dk: "devGa", total: data.totals.devGa },
-                      { label: "Dev. CAR Expense", dk: "devCar", total: data.totals.devCar }
-                    ]}
-                  />
-
-                  <TableRow
-                    label="Facility Maintenance OPEX"
-                    data={columns}
-                    dk="maintOpex"
-                    total={data.totals.maintOpex}
-                    isIndent
-                    tooltip={PROPCO_FORMULAS.maintOpex}
-                    isSubtractor
-                  />
-                  <TableRow
-                    label="Property Tax"
-                    data={columns}
-                    dk="taxOpex"
-                    total={data.totals.taxOpex}
-                    isIndent
-                    tooltip={PROPCO_FORMULAS.taxOpex}
-                    isSubtractor
-                  />
-                  <TableRow
-                    label="Management / Overhead OPEX"
-                    data={columns}
-                    dk="overheadOpex"
-                    total={data.totals.overheadOpex}
-                    isIndent
-                    tooltip={PROPCO_FORMULAS.overheadOpex}
-                    isSubtractor
-                  />
-                  <TableRow
-                    label="Equipment Lease OPEX"
-                    data={columns}
-                    dk="medEqLeaseOpex"
-                    total={data.totals.medEqLeaseOpex}
-                    isIndent
-                    tooltip={PROPCO_FORMULAS.medEqLeaseOpex}
-                    isSubtractor
-                  />
-                  
-                  <TableRow
-                    label="Gross Operating Profit (GOP)"
-                    data={columns}
-                    dk="gop"
-                    total={data.totals.gop}
-                    highlight
-                    tooltip={PROPCO_FORMULAS.gop}
-                  />
-
-                  <tr className="group">
-                    <td className="px-3 py-1.5 sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap transition-colors shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-[#EFEBE7] font-bold text-[#1E2F31] text-[11px]">
-                      Finance & Reserves
-                    </td>
-                    {columns.map((_, idx) => (
-                      <td
-                        key={idx}
-                        className="px-2 py-1.5 text-right border-r border-b border-[#D8D8D8] font-mono transition-colors bg-[#EFEBE7]/50"
+                </thead>
+                <tbody>
+                  {(viewMode === "all" || viewMode === "cf") && (
+                    <>
+                      <TableSection
+                        title="A. Project Development Spending"
+                        colSpan={columns.length + 2}
+                        type="indigo"
                       />
-                    ))}
-                    <td className="px-2 py-1.5 text-right font-bold font-mono border-l border-b border-[#D8D8D8] sticky right-0 z-[40] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-[#EFEBE7] font-bold text-[#1E2F31] text-[11px]">
-                      &nbsp;
-                    </td>
-                  </tr>
+                      <TableRow
+                        label="Land Cost"
+                        data={columns}
+                        dk="landSpend"
+                        total={data.totals.landSpend}
+                        isIndent
+                        tooltip={PROPCO_FORMULAS.landSpend}
+                      />
+                      <ExpandableDataRowGroup
+                        parentLabel="Total Hard Costs"
+                        parentDk="hardSpend"
+                        parentTotal={data.totals.hardSpend}
+                        data={columns}
+                        parentTooltip={PROPCO_FORMULAS.hardSpend}
+                        childrenData={[
+                          {
+                            label: "Construction",
+                            dk: "buildSpend",
+                            total: data.totals.buildSpend,
+                          },
+                          {
+                            label: "Medical Equip.",
+                            dk: "eqSpend",
+                            total: data.totals.eqSpend,
+                          },
+                          {
+                            label: "Infrastructure",
+                            dk: "infraSpend",
+                            total: data.totals.infraSpend,
+                          },
+                          {
+                            label: "FF&E",
+                            dk: "ffeSpend",
+                            total: data.totals.ffeSpend,
+                          },
+                          {
+                            label: "Sharing Dev.",
+                            dk: "sharingSpend",
+                            total: data.totals.sharingSpend,
+                          },
+                        ]}
+                      />
+                      <ExpandableDataRowGroup
+                        parentLabel="Total Soft Costs"
+                        parentDk="softSpend"
+                        parentTotal={data.totals.softSpend}
+                        data={columns}
+                        parentTooltip={PROPCO_FORMULAS.softSpend}
+                        childrenData={[
+                          {
+                            label: "Consultant",
+                            dk: "consultantSpend",
+                            total: data.totals.consultantSpend,
+                          },
+                          {
+                            label: "License",
+                            dk: "licenseSpend",
+                            total: data.totals.licenseSpend,
+                          },
+                          {
+                            label: "VAT",
+                            dk: "vatSpend",
+                            total: data.totals.vatSpend,
+                          },
+                          {
+                            label: "Contingency",
+                            dk: "contingencySpend",
+                            total: data.totals.contingencySpend,
+                          },
+                          {
+                            label: "Dev. G&A",
+                            dk: "devGa",
+                            total: data.totals.devGa,
+                          },
+                          {
+                            label: "Dev. CAR",
+                            dk: "devCar",
+                            total: data.totals.devCar,
+                          },
+                        ]}
+                      />
+                      <TableRow
+                        label="PROJECT DEVELOPMENT SPEND"
+                        data={columns}
+                        dk="totalSpend"
+                        total={data.totals.totalSpend}
+                        highlight
+                        tooltip={PROPCO_FORMULAS.totalSpend}
+                      />
+                      <TableRow
+                        label="Debt Drawdown"
+                        data={columns}
+                        dk="debtDraw"
+                        total={data.totals.debtDraw}
+                        isIndent
+                        tooltip={PROPCO_FORMULAS.debtDraw}
+                      />
+                    </>
+                  )}
 
-                  <TableRow
-                    label="FF&E Reserve Allocation"
-                    data={columns}
-                    dk="ffeReserve"
-                    total={data.totals.ffeReserve}
-                    isIndent
-                    tooltip={PROPCO_FORMULAS.ffeReserve}
-                    isSubtractor
-                  />
-                  <TableRow
-                    label="EBITDA"
-                    data={columns}
-                    dk="ebitda"
-                    total={data.totals.ebitda}
-                    highlight
-                    tooltip={PROPCO_FORMULAS.ebitda}
-                  />
-                </>
-              )}
+                  {(viewMode === "all" || viewMode === "pl") && (
+                    <>
+                      <TableSection
+                        title="B. Operating Revenue & Expense"
+                        colSpan={columns.length + 2}
+                      />
+                      <TableRow
+                        label="Net Rent Revenue / NOR"
+                        data={columns}
+                        dk="revenue"
+                        total={data.totals.revenue}
+                        highlight
+                        tooltip={PROPCO_FORMULAS.revenue}
+                      />
 
-              {(viewMode === "all" || viewMode === "pl" || viewMode === "cf") && (
-                <>
-                  <ExpandableDataRowGroup
-                    parentLabel="Depreciation (D&A)"
-                    parentDk="dep"
-                    parentTotal={data.totals.dep}
-                    data={columns}
-                    parentTooltip={PROPCO_FORMULAS.dep}
-                    isSubtractor
-                    childrenData={[
-                      { label: "Construction", dk: "depBuild", total: data.totals.depBuild },
-                      { label: "Medical Equipment", dk: "depMedEq", total: data.totals.depMedEq },
-                      { label: "Infrastructure", dk: "depInfra", total: data.totals.depInfra },
-                      { label: "FF&E", dk: "depFfe", total: data.totals.depFfe },
-                      { label: "Sharing Dev.", dk: "depSharing", total: data.totals.depSharing },
-                      { label: "Consultant", dk: "depConsultant", total: data.totals.depConsultant },
-                      { label: "License", dk: "depLicense", total: data.totals.depLicense },
-                      { label: "VAT", dk: "depVat", total: data.totals.depVat },
-                      { label: "Contingency", dk: "depContingency", total: data.totals.depContingency },
-                    ]}
-                  />
-                  <TableRow
-                    label="EBIT"
-                    data={columns}
-                    dk="ebit"
-                    total={data.totals.ebit}
-                    highlight
-                    tooltip={PROPCO_FORMULAS.ebit}
-                  />
-                  <TableRow
-                    label="Interest Expense (Debt)"
-                    data={columns}
-                    dk="interest"
-                    total={data.totals.interest}
-                    isIndent
-                    tooltip={PROPCO_FORMULAS.interest}
-                    isSubtractor
-                  />
-                  <TableRow
-                    label="Earnings Before Tax (EBT)"
-                    data={columns}
-                    dk="ebt"
-                    total={data.totals.ebt}
-                    highlight
-                    tooltip={PROPCO_FORMULAS.ebt}
-                  />
-                  <TableRow
-                    label="Corporate Income Tax"
-                    data={columns}
-                    dk="corpTax"
-                    total={data.totals.corpTax}
-                    isIndent
-                    tooltip={PROPCO_FORMULAS.corpTax}
-                    isSubtractor
-                  />
-                  <TableRow
-                    label="Net Profit"
-                    data={columns}
-                    dk="netIncome"
-                    total={data.totals.netIncome}
-                    highlight
-                    tooltip={PROPCO_FORMULAS.netIncome}
-                  />
-                  <TableSection
-                    title="C. Debt Service & Exit"
-                    colSpan={columns.length + 2}
-                  />
-                  <TableRow
-                    label="Principal Repayment"
-                    data={columns}
-                    dk="principal"
-                    total={data.totals.principal}
-                    isIndent
-                    tooltip={PROPCO_FORMULAS.principal}
-                    isSubtractor
-                  />
-                  <TableRow
-                    label="DSCR (Coverage Ratio)"
-                    data={columns}
-                    dk="dscr"
-                    tooltip={PROPCO_FORMULAS.dscr}
-                  />
-                </>
-              )}
+                      <tr className="group">
+                        <td className="px-3 py-1.5 sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap transition-colors shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-[#EFEBE7] font-bold text-[#1E2F31] text-[11px]">
+                          Operating Expenses (OpEx)
+                        </td>
+                        {columns.map((_, idx) => (
+                          <td
+                            key={idx}
+                            className="px-2 py-1.5 text-right border-r border-b border-[#D8D8D8] font-mono transition-colors bg-[#EFEBE7]/50"
+                          />
+                        ))}
+                        <td className="px-2 py-1.5 text-right font-bold font-mono border-l border-b border-[#D8D8D8] sticky right-0 z-[40] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-[#EFEBE7] font-bold text-[#1E2F31] text-[11px]">
+                          &nbsp;
+                        </td>
+                      </tr>
 
-              {(viewMode === "all" || viewMode === "cf") && (
-                <>
-              <TableSection
-                title="D. Return Metrics"
-                colSpan={columns.length + 2}
-                type="emerald"
-              />
-              <TableRow
-                label="Deferred MedEq Purchase"
-                data={columns}
-                dk="deferredCapex"
-                total={data.totals.deferredCapex}
-                isIndent
-                tooltip={PROPCO_FORMULAS.deferredCapex}
-              />
-              <TableRow
-                label="FCFE (Operating)"
-                data={columns}
-                dk="opFcfe"
-                total={data.totals.opFcfe}
-                isIndent
-                tooltip={PROPCO_FORMULAS.opFcfe}
-              />
-              <TableRow
-                label="Gross Exit Proceeds"
-                data={columns}
-                dk="grossExitValue"
-                total={data.totals.grossExitValue}
-                isIndent
-                tooltip={PROPCO_FORMULAS.grossExitValue}
-              />
-              <TableRow
-                label="Loan Settlement at Exit"
-                data={columns}
-                dk="loanSettledAtExit"
-                total={data.totals.loanSettledAtExit}
-                isIndent
-                tooltip={PROPCO_FORMULAS.loanSettledAtExit}
-              />
-              <TableRow
-                label="Net Exit Proceeds"
-                data={columns}
-                dk="netExitProceeds"
-                total={data.totals.netExitProceeds}
-                highlight
-                tooltip={PROPCO_FORMULAS.netExitProceeds}
-              />
-              <TableRow
-                label="FCFE (Levered)"
-                data={columns}
-                dk="fcfe"
-                highlight
-                emerald
-                total={data.totals.fcfe}
-                tooltip={PROPCO_FORMULAS.fcfe}
-              />
-              <TableRow
-                label="Cumulative FCFE"
-                data={columns}
-                dk="cumFcfe"
-                highlight
-                crossover
-                bold
-                indigo
-                tooltip={PROPCO_FORMULAS.cumFcfe}
-              />
+                      <ExpandableDataRowGroup
+                        parentLabel="Pre-Opening & Dev Expenses"
+                        parentDk="preOpeningDev"
+                        parentTotal={data.totals.preOpeningDev}
+                        data={columns}
+                        parentTooltip={PROPCO_FORMULAS.preOpeningDev}
+                        isSubtractor
+                        childrenData={[
+                          {
+                            label: "Dev. G&A Expense",
+                            dk: "devGa",
+                            total: data.totals.devGa,
+                          },
+                          {
+                            label: "Dev. CAR Expense",
+                            dk: "devCar",
+                            total: data.totals.devCar,
+                          },
+                        ]}
+                      />
 
-              <TableSection
-                title="E. Ex-Land Cash Flows (Optional)"
-                colSpan={columns.length + 2}
-              />
-              <TableRow
-                label="Interest (Ex-Land)"
-                data={columns}
-                dk="interestExLand"
-                total={data.totals.interestExLand}
-                isIndent
-                tooltip={PROPCO_FORMULAS.interestExLand}
-                isSubtractor
-              />
-              <TableRow
-                label="Principal (Ex-Land)"
-                data={columns}
-                dk="principalExLand"
-                total={data.totals.principalExLand}
-                isIndent
-                tooltip={PROPCO_FORMULAS.principalExLand}
-                isSubtractor
-              />
-              <TableRow
-                label="EBT (Ex-Land)"
-                data={columns}
-                dk="ebtExLand"
-                total={data.totals.ebtExLand}
-                highlight
-                tooltip={PROPCO_FORMULAS.ebtExLand}
-              />
-              <TableRow
-                label="Corporate Tax (Ex-Land)"
-                data={columns}
-                dk="corpTaxExLand"
-                total={data.totals.corpTaxExLand}
-                isIndent
-                tooltip={PROPCO_FORMULAS.corpTaxExLand}
-                isSubtractor
-              />
-              <TableRow
-                label="FCFE Op (Ex-Land)"
-                data={columns}
-                dk="opFcfeExLand"
-                total={data.totals.opFcfeExLand}
-                isIndent
-                tooltip={PROPCO_FORMULAS.opFcfeExLand}
-              />
-              <TableRow
-                label="Net Exit Proceeds (Ex-Land)"
-                data={columns}
-                dk="netExitProceedsExLand"
-                total={data.totals.netExitProceedsExLand}
-                highlight
-                tooltip={PROPCO_FORMULAS.netExitProceedsExLand}
-              />
-              <TableRow
-                label="FCFE (EX-LAND)"
-                data={columns}
-                dk="fcfeExLand"
-                highlight
-                emerald
-                total={data.totals.fcfeExLand}
-                tooltip={PROPCO_FORMULAS.fcfeExLand}
-              />
-              <TableRow
-                label="Cumulative FCFE (Ex-Land)"
-                data={columns}
-                dk="cumFcfeExLand"
-                highlight
-                crossover
-                bold
-                indigo
-                tooltip={PROPCO_FORMULAS.cumFcfeExLand}
-              />
-                </>
-              )}
-            </tbody>
-          </table>
+                      <TableRow
+                        label="Facility Maintenance OPEX"
+                        data={columns}
+                        dk="maintOpex"
+                        total={data.totals.maintOpex}
+                        isIndent
+                        tooltip={PROPCO_FORMULAS.maintOpex}
+                        isSubtractor
+                      />
+                      <TableRow
+                        label="Property Tax"
+                        data={columns}
+                        dk="taxOpex"
+                        total={data.totals.taxOpex}
+                        isIndent
+                        tooltip={PROPCO_FORMULAS.taxOpex}
+                        isSubtractor
+                      />
+                      <TableRow
+                        label="Management / Overhead OPEX"
+                        data={columns}
+                        dk="overheadOpex"
+                        total={data.totals.overheadOpex}
+                        isIndent
+                        tooltip={PROPCO_FORMULAS.overheadOpex}
+                        isSubtractor
+                      />
+                      <TableRow
+                        label="Equipment Lease OPEX"
+                        data={columns}
+                        dk="medEqLeaseOpex"
+                        total={data.totals.medEqLeaseOpex}
+                        isIndent
+                        tooltip={PROPCO_FORMULAS.medEqLeaseOpex}
+                        isSubtractor
+                      />
+
+                      <TableRow
+                        label="Gross Operating Profit (GOP)"
+                        data={columns}
+                        dk="gop"
+                        total={data.totals.gop}
+                        highlight
+                        tooltip={PROPCO_FORMULAS.gop}
+                      />
+
+                      <tr className="group">
+                        <td className="px-3 py-1.5 sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap transition-colors shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-[#EFEBE7] font-bold text-[#1E2F31] text-[11px]">
+                          Finance & Reserves
+                        </td>
+                        {columns.map((_, idx) => (
+                          <td
+                            key={idx}
+                            className="px-2 py-1.5 text-right border-r border-b border-[#D8D8D8] font-mono transition-colors bg-[#EFEBE7]/50"
+                          />
+                        ))}
+                        <td className="px-2 py-1.5 text-right font-bold font-mono border-l border-b border-[#D8D8D8] sticky right-0 z-[40] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-[#EFEBE7] font-bold text-[#1E2F31] text-[11px]">
+                          &nbsp;
+                        </td>
+                      </tr>
+
+                      <TableRow
+                        label="FF&E Reserve Allocation"
+                        data={columns}
+                        dk="ffeReserve"
+                        total={data.totals.ffeReserve}
+                        isIndent
+                        tooltip={PROPCO_FORMULAS.ffeReserve}
+                        isSubtractor
+                      />
+                      <TableRow
+                        label="EBITDA"
+                        data={columns}
+                        dk="ebitda"
+                        total={data.totals.ebitda}
+                        highlight
+                        tooltip={PROPCO_FORMULAS.ebitda}
+                      />
+                    </>
+                  )}
+
+                  {(viewMode === "all" ||
+                    viewMode === "pl" ||
+                    viewMode === "cf") && (
+                    <>
+                      <ExpandableDataRowGroup
+                        parentLabel="Depreciation (D&A)"
+                        parentDk="dep"
+                        parentTotal={data.totals.dep}
+                        data={columns}
+                        parentTooltip={PROPCO_FORMULAS.dep}
+                        isSubtractor
+                        childrenData={[
+                          {
+                            label: "Construction",
+                            dk: "depBuild",
+                            total: data.totals.depBuild,
+                          },
+                          {
+                            label: "Medical Equipment",
+                            dk: "depMedEq",
+                            total: data.totals.depMedEq,
+                          },
+                          {
+                            label: "Infrastructure",
+                            dk: "depInfra",
+                            total: data.totals.depInfra,
+                          },
+                          {
+                            label: "FF&E",
+                            dk: "depFfe",
+                            total: data.totals.depFfe,
+                          },
+                          {
+                            label: "Sharing Dev.",
+                            dk: "depSharing",
+                            total: data.totals.depSharing,
+                          },
+                          {
+                            label: "Consultant",
+                            dk: "depConsultant",
+                            total: data.totals.depConsultant,
+                          },
+                          {
+                            label: "License",
+                            dk: "depLicense",
+                            total: data.totals.depLicense,
+                          },
+                          {
+                            label: "VAT",
+                            dk: "depVat",
+                            total: data.totals.depVat,
+                          },
+                          {
+                            label: "Contingency",
+                            dk: "depContingency",
+                            total: data.totals.depContingency,
+                          },
+                        ]}
+                      />
+                      <TableRow
+                        label="EBIT"
+                        data={columns}
+                        dk="ebit"
+                        total={data.totals.ebit}
+                        highlight
+                        tooltip={PROPCO_FORMULAS.ebit}
+                      />
+                      <TableRow
+                        label="Interest Expense (Debt)"
+                        data={columns}
+                        dk="interest"
+                        total={data.totals.interest}
+                        isIndent
+                        tooltip={PROPCO_FORMULAS.interest}
+                        isSubtractor
+                      />
+                      <TableRow
+                        label="Earnings Before Tax (EBT)"
+                        data={columns}
+                        dk="ebt"
+                        total={data.totals.ebt}
+                        highlight
+                        tooltip={PROPCO_FORMULAS.ebt}
+                      />
+                      <TableRow
+                        label="Corporate Income Tax"
+                        data={columns}
+                        dk="corpTax"
+                        total={data.totals.corpTax}
+                        isIndent
+                        tooltip={PROPCO_FORMULAS.corpTax}
+                        isSubtractor
+                      />
+                      <TableRow
+                        label="Net Profit"
+                        data={columns}
+                        dk="netIncome"
+                        total={data.totals.netIncome}
+                        highlight
+                        tooltip={PROPCO_FORMULAS.netIncome}
+                      />
+                      <TableSection
+                        title="C. Debt Service & Exit"
+                        colSpan={columns.length + 2}
+                      />
+                      <TableRow
+                        label="Principal Repayment"
+                        data={columns}
+                        dk="principal"
+                        total={data.totals.principal}
+                        isIndent
+                        tooltip={PROPCO_FORMULAS.principal}
+                        isSubtractor
+                      />
+                      <TableRow
+                        label="DSCR (Coverage Ratio)"
+                        data={columns}
+                        dk="dscr"
+                        tooltip={PROPCO_FORMULAS.dscr}
+                      />
+                    </>
+                  )}
+
+                  {(viewMode === "all" || viewMode === "cf") && (
+                    <>
+                      <TableSection
+                        title="D. Return Metrics"
+                        colSpan={columns.length + 2}
+                        type="emerald"
+                      />
+                      <TableRow
+                        label="Deferred MedEq Purchase"
+                        data={columns}
+                        dk="deferredCapex"
+                        total={data.totals.deferredCapex}
+                        isIndent
+                        tooltip={PROPCO_FORMULAS.deferredCapex}
+                      />
+                      <TableRow
+                        label="FCFE (Operating)"
+                        data={columns}
+                        dk="opFcfe"
+                        total={data.totals.opFcfe}
+                        isIndent
+                        tooltip={PROPCO_FORMULAS.opFcfe}
+                      />
+                      <TableRow
+                        label="Shortfall Equity"
+                        data={columns}
+                        dk="shortfallEquity"
+                        total={data.totals.shortfallEquity}
+                        isIndent
+                        tooltip="Dynamic Operating Shortfall (The Pay As You Go Method). Injected equity to cover negative operating free cash flow to equity."
+                      />
+                      <TableRow
+                        label="Gross Exit Proceeds"
+                        data={columns}
+                        dk="grossExitValue"
+                        total={data.totals.grossExitValue}
+                        isIndent
+                        tooltip={PROPCO_FORMULAS.grossExitValue}
+                      />
+                      <TableRow
+                        label="Loan Settlement at Exit"
+                        data={columns}
+                        dk="loanSettledAtExit"
+                        total={data.totals.loanSettledAtExit}
+                        isIndent
+                        tooltip={PROPCO_FORMULAS.loanSettledAtExit}
+                      />
+                      <TableRow
+                        label="Net Exit Proceeds"
+                        data={columns}
+                        dk="netExitProceeds"
+                        total={data.totals.netExitProceeds}
+                        highlight
+                        tooltip={PROPCO_FORMULAS.netExitProceeds}
+                      />
+                      <TableRow
+                        label="FCFE (Levered)"
+                        data={columns}
+                        dk="fcfe"
+                        highlight
+                        emerald
+                        total={data.totals.fcfe}
+                        tooltip={PROPCO_FORMULAS.fcfe}
+                      />
+                      <TableRow
+                        label="Cumulative FCFE"
+                        data={columns}
+                        dk="cumFcfe"
+                        highlight
+                        crossover
+                        bold
+                        indigo
+                        tooltip={PROPCO_FORMULAS.cumFcfe}
+                      />
+
+                      <TableSection
+                        title="E. Ex-Land Cash Flows (Optional)"
+                        colSpan={columns.length + 2}
+                      />
+                      <TableRow
+                        label="Interest (Ex-Land)"
+                        data={columns}
+                        dk="interestExLand"
+                        total={data.totals.interestExLand}
+                        isIndent
+                        tooltip={PROPCO_FORMULAS.interestExLand}
+                        isSubtractor
+                      />
+                      <TableRow
+                        label="Principal (Ex-Land)"
+                        data={columns}
+                        dk="principalExLand"
+                        total={data.totals.principalExLand}
+                        isIndent
+                        tooltip={PROPCO_FORMULAS.principalExLand}
+                        isSubtractor
+                      />
+                      <TableRow
+                        label="EBT (Ex-Land)"
+                        data={columns}
+                        dk="ebtExLand"
+                        total={data.totals.ebtExLand}
+                        highlight
+                        tooltip={PROPCO_FORMULAS.ebtExLand}
+                      />
+                      <TableRow
+                        label="Corporate Tax (Ex-Land)"
+                        data={columns}
+                        dk="corpTaxExLand"
+                        total={data.totals.corpTaxExLand}
+                        isIndent
+                        tooltip={PROPCO_FORMULAS.corpTaxExLand}
+                        isSubtractor
+                      />
+                      <TableRow
+                        label="FCFE Op (Ex-Land)"
+                        data={columns}
+                        dk="opFcfeExLand"
+                        total={data.totals.opFcfeExLand}
+                        isIndent
+                        tooltip={PROPCO_FORMULAS.opFcfeExLand}
+                      />
+                      <TableRow
+                        label="Net Exit Proceeds (Ex-Land)"
+                        data={columns}
+                        dk="netExitProceedsExLand"
+                        total={data.totals.netExitProceedsExLand}
+                        highlight
+                        tooltip={PROPCO_FORMULAS.netExitProceedsExLand}
+                      />
+                      <TableRow
+                        label="FCFE (EX-LAND)"
+                        data={columns}
+                        dk="fcfeExLand"
+                        highlight
+                        emerald
+                        total={data.totals.fcfeExLand}
+                        tooltip={PROPCO_FORMULAS.fcfeExLand}
+                      />
+                      <TableRow
+                        label="Cumulative FCFE (Ex-Land)"
+                        data={columns}
+                        dk="cumFcfeExLand"
+                        highlight
+                        crossover
+                        bold
+                        indigo
+                        tooltip={PROPCO_FORMULAS.cumFcfeExLand}
+                      />
+                    </>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
+    );
+  },
 );
-});
 
 const ConsolidatedDashboardView = memo(
   ({
@@ -9322,17 +10257,19 @@ const ConsolidatedDashboardView = memo(
                 onClick={() => setHoldCoScenario("debt_free")}
                 disabled={!propCoAssumptions.includeFinancing}
                 className={`w-full px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
-                  !propCoAssumptions.includeFinancing 
-                    ? "bg-[#F3F4F6] text-[#D1D5DB] cursor-not-allowed border border-[#E5E7EB]" 
-                    : holdCoScenario === "debt_free" 
-                      ? "bg-[#9B8B70] shadow-sm border border-[#9B8B70] text-white" 
+                  !propCoAssumptions.includeFinancing
+                    ? "bg-[#F3F4F6] text-[#D1D5DB] cursor-not-allowed border border-[#E5E7EB]"
+                    : holdCoScenario === "debt_free"
+                      ? "bg-[#9B8B70] shadow-sm border border-[#9B8B70] text-white"
                       : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"
                 }`}
               >
                 Exit Post-Debt
               </button>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
-                {!propCoAssumptions.includeFinancing ? "Requires debt financing to be enabled" : "Exits only after operational breakeven is reached and all debt is fully paid off"}
+                {!propCoAssumptions.includeFinancing
+                  ? "Requires debt financing to be enabled"
+                  : "Exits only after operational breakeven is reached and all debt is fully paid off"}
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
               </div>
             </div>
@@ -9345,7 +10282,8 @@ const ConsolidatedDashboardView = memo(
                 No Exit (Yield)
               </button>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
-                No exit is calculated; evaluates pure operating yield over a long period
+                No exit is calculated; evaluates pure operating yield over a
+                long period
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
               </div>
             </div>
@@ -9370,7 +10308,8 @@ const ConsolidatedDashboardView = memo(
             </div>
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold text-[#4C4A4B] flex items-center gap-1.5">
-                <Map size={14} className="text-[#9B8B70]" /> Include Land Cost (PropCo Level)
+                <Map size={14} className="text-[#9B8B70]" /> Include Land Cost
+                (PropCo Level)
               </span>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -9403,7 +10342,8 @@ const ConsolidatedDashboardView = memo(
             subtitle="Consolidated MOIC"
             tooltip={{
               desc: "Consolidated MOIC representing the aggregate wealth creation for the entire HoldCo. It combines both the Strategic Hospital Operator and Financial Partner cash profiles into a single unified multiple.",
-              formula: "Total HoldCo Distributions ÷ Cumulative Equity Contribution"
+              formula:
+                "Total HoldCo Distributions ÷ Cumulative Equity Contribution",
             }}
           />
           <KPICard
@@ -9434,7 +10374,10 @@ const ConsolidatedDashboardView = memo(
             color="amber"
             subtitle="HoldCo Debt Coverage"
             tooltip="Consolidated Debt Service Coverage Ratio: Cash available distributed to HoldCo divided by HoldCo's share of debt service. Benchmark: > 1.25x is standard."
-            disabled={!propCoAssumptions?.includeFinancing || holdCoScenario === "debt_free"}
+            disabled={
+              !propCoAssumptions?.includeFinancing ||
+              holdCoScenario === "debt_free"
+            }
           />
         </div>
 
@@ -9519,7 +10462,8 @@ const ConsolidatedDashboardView = memo(
                   axisLine={false}
                   tickFormatter={(val) => `${val}%`}
                 />
-                <Tooltip allowEscapeViewBox={{ x: true, y: true }}
+                <Tooltip
+                  allowEscapeViewBox={{ x: true, y: true }}
                   contentStyle={TOOLTIP_STYLE}
                   formatter={(val, name) =>
                     formatNumber(val, 1) + (name.includes("Margin") ? "%" : "B")
@@ -9593,7 +10537,8 @@ const ConsolidatedDashboardView = memo(
                   axisLine={false}
                   tickFormatter={(val) => `${val}B`}
                 />
-                <Tooltip allowEscapeViewBox={{ x: true, y: true }}
+                <Tooltip
+                  allowEscapeViewBox={{ x: true, y: true }}
                   contentStyle={TOOLTIP_STYLE}
                   formatter={(val) => formatNumber(val, 1) + "B"}
                 />
@@ -9657,461 +10602,575 @@ const ConsolidatedDashboardView = memo(
   ),
 );
 
-const ConsolidatedCascadeView = memo(({ data, viewResolution, setViewResolution }) => {
-  const { columns, expandedYears, toggleYear } = useMonthlyColumns(data.annualData, viewResolution);
-  const scrollRef = useRef(null);
-  const [isFullScreen, setIsFullScreen] = useState(false);
-  const [viewMode, setViewMode] = useState("all"); // 'all' | 'pl' | 'cf'
-  const [expandedPropCo, setExpandedPropCo] = useState(false);
-  const [expandedOpCo, setExpandedOpCo] = useState(false);
+const ConsolidatedCascadeView = memo(
+  ({ data, viewResolution, setViewResolution }) => {
+    const { columns, expandedYears, toggleYear } = useMonthlyColumns(
+      data.annualData,
+      viewResolution,
+    );
+    const scrollRef = useRef(null);
+    const [isFullScreen, setIsFullScreen] = useState(false);
+    const [viewMode, setViewMode] = useState("all"); // 'all' | 'pl' | 'cf'
+    const [expandedPropCo, setExpandedPropCo] = useState(false);
+    const [expandedOpCo, setExpandedOpCo] = useState(false);
 
-  const chartData = useMemo(() => {
-    let cumInflow = 0;
-    let cumOutflow = 0;
-    
-    return data.annualData.map((d) => {
-      const year = d.year;
-      
-      // Calculate inflows (positive occurrences of individual cash flow items)
-      const propCoIn = d.propCoFlow > 0 ? d.propCoFlow : 0;
-      const opCoOpIn = d.opCoOperatingFlow > 0 ? d.opCoOperatingFlow : 0;
-      const opCoExitIn = d.opCoExitFlow > 0 ? d.opCoExitFlow : 0;
-      const yrInflow = propCoIn + opCoOpIn + opCoExitIn;
-      
-      // Calculate outflows (negative occurrences of individual cash flow items, converted to positive number for heights)
-      const propCoOut = d.propCoFlow < 0 ? Math.abs(d.propCoFlow) : 0;
-      const opCoOpOut = d.opCoOperatingFlow < 0 ? Math.abs(d.opCoOperatingFlow) : 0;
-      const opCoExitOut = d.opCoExitFlow < 0 ? Math.abs(d.opCoExitFlow) : 0;
-      const yrOutflow = propCoOut + opCoOpOut + opCoExitOut;
-      
-      cumInflow += yrInflow;
-      cumOutflow += yrOutflow;
-      
+    const chartData = useMemo(() => {
+      let cumInflow = 0;
+      let cumOutflow = 0;
+
+      return data.annualData.map((d) => {
+        const year = d.year;
+
+        // Calculate inflows (positive occurrences of individual cash flow items)
+        const propCoIn = d.propCoFlow > 0 ? d.propCoFlow : 0;
+        const opCoOpIn = d.opCoOperatingFlow > 0 ? d.opCoOperatingFlow : 0;
+        const opCoExitIn = d.opCoExitFlow > 0 ? d.opCoExitFlow : 0;
+        const yrInflow = propCoIn + opCoOpIn + opCoExitIn;
+
+        // Calculate outflows (negative occurrences of individual cash flow items, converted to positive number for heights)
+        const propCoOut = d.propCoFlow < 0 ? Math.abs(d.propCoFlow) : 0;
+        const opCoOpOut =
+          d.opCoOperatingFlow < 0 ? Math.abs(d.opCoOperatingFlow) : 0;
+        const opCoExitOut = d.opCoExitFlow < 0 ? Math.abs(d.opCoExitFlow) : 0;
+        const yrOutflow = propCoOut + opCoOpOut + opCoExitOut;
+
+        cumInflow += yrInflow;
+        cumOutflow += yrOutflow;
+
+        return {
+          year,
+          inflow: Number(yrInflow.toFixed(2)),
+          outflow: Number(yrOutflow.toFixed(2)),
+          cumInflow: Number(cumInflow.toFixed(2)),
+          cumOutflow: Number(cumOutflow.toFixed(2)),
+          netFlow: Number(d.netFlow.toFixed(2)),
+        };
+      });
+    }, [data.annualData]);
+
+    const stats = useMemo(() => {
+      let totalInjections = 0;
+      let totalReturns = 0;
+
+      data.annualData.forEach((d) => {
+        const propCoIn = d.propCoFlow > 0 ? d.propCoFlow : 0;
+        const opCoOpIn = d.opCoOperatingFlow > 0 ? d.opCoOperatingFlow : 0;
+        const opCoExitIn = d.opCoExitFlow > 0 ? d.opCoExitFlow : 0;
+        totalReturns += propCoIn + opCoOpIn + opCoExitIn;
+
+        const propCoOut = d.propCoFlow < 0 ? Math.abs(d.propCoFlow) : 0;
+        const opCoOpOut =
+          d.opCoOperatingFlow < 0 ? Math.abs(d.opCoOperatingFlow) : 0;
+        const opCoExitOut = d.opCoExitFlow < 0 ? Math.abs(d.opCoExitFlow) : 0;
+        totalInjections += propCoOut + opCoOpOut + opCoExitOut;
+      });
+
+      // Fallback if zero to avoid dividing by 0
+      const ratio = totalInjections > 0 ? totalReturns / totalInjections : 0;
+      const netSurplus = totalReturns - totalInjections;
+
       return {
-        year,
-        inflow: Number(yrInflow.toFixed(2)),
-        outflow: Number(yrOutflow.toFixed(2)),
-        cumInflow: Number(cumInflow.toFixed(2)),
-        cumOutflow: Number(cumOutflow.toFixed(2)),
-        netFlow: Number(d.netFlow.toFixed(2)),
+        totalInjections,
+        totalReturns,
+        ratio,
+        netSurplus,
       };
-    });
-  }, [data.annualData]);
+    }, [data.annualData]);
 
-  const stats = useMemo(() => {
-    let totalInjections = 0;
-    let totalReturns = 0;
-    
-    data.annualData.forEach((d) => {
-      const propCoIn = d.propCoFlow > 0 ? d.propCoFlow : 0;
-      const opCoOpIn = d.opCoOperatingFlow > 0 ? d.opCoOperatingFlow : 0;
-      const opCoExitIn = d.opCoExitFlow > 0 ? d.opCoExitFlow : 0;
-      totalReturns += (propCoIn + opCoOpIn + opCoExitIn);
-      
-      const propCoOut = d.propCoFlow < 0 ? Math.abs(d.propCoFlow) : 0;
-      const opCoOpOut = d.opCoOperatingFlow < 0 ? Math.abs(d.opCoOperatingFlow) : 0;
-      const opCoExitOut = d.opCoExitFlow < 0 ? Math.abs(d.opCoExitFlow) : 0;
-      totalInjections += (propCoOut + opCoOpOut + opCoExitOut);
-    });
-    
-    // Fallback if zero to avoid dividing by 0
-    const ratio = totalInjections > 0 ? (totalReturns / totalInjections) : 0;
-    const netSurplus = totalReturns - totalInjections;
-    
-    return {
-      totalInjections,
-      totalReturns,
-      ratio,
-      netSurplus
-    };
-  }, [data.annualData]);
-
-  return (
-    <div className={`space-y-6 ${isFullScreen ? 'fixed inset-0 z-[150] bg-[#F9F8F6] p-4 lg:p-6 pb-24 overflow-y-auto flex flex-col' : ''}`}>
-      {/* Detailed HoldCo Waterfall Panel */}
-      <div className={`bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden flex flex-col ${isFullScreen ? 'flex-1 overflow-hidden min-h-0 h-full' : 'max-h-[calc(100vh-240px)] h-fit'}`}>
-        <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
-            <List size={14} /> Consolidated P&L & Cash Flow
-          </h3>
-          <div className="flex items-center gap-2">
-            <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
-              <button onClick={() => setViewMode("all")} className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === 'all' ? 'bg-[#9B8B70] text-white shadow-sm' : 'text-[#4C4A4B] hover:text-[#1E2F31]'}`}>All</button>
-              <button onClick={() => setViewMode("pl")} className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === 'pl' ? 'bg-[#9B8B70] text-white shadow-sm' : 'text-[#4C4A4B] hover:text-[#1E2F31]'}`}>P&L</button>
-              <button onClick={() => setViewMode("cf")} className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === 'cf' ? 'bg-[#9B8B70] text-white shadow-sm' : 'text-[#4C4A4B] hover:text-[#1E2F31]'}`}>CF</button>
-            </div>
-            <button
-               onClick={() => setIsFullScreen(!isFullScreen)}
-               className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6] transition-colors"
-               title={isFullScreen ? "Minimize" : "Maximize"}
-            >
-               {isFullScreen ? <Minimize2 size={13} strokeWidth={2.5} /> : <Maximize2 size={13} strokeWidth={2.5} />}
-            </button>
-            <div className="flex items-center bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
-              <button
-                onClick={() => setViewResolution('annual')}
-                className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${viewResolution === 'annual' ? 'bg-[#1C6048] text-white' : 'text-[#8A8175] hover:text-[#1E2F31] hover:bg-[#F9F8F6]'}`}
-              >
-                Annual
-              </button>
-              <button
-                onClick={() => setViewResolution('monthly')}
-                className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${viewResolution === 'monthly' ? 'bg-[#9B8B70] text-white' : 'text-[#8A8175] hover:text-[#1E2F31] hover:bg-[#F9F8F6]'}`}
-              >
-                Monthly
-              </button>
-            </div>
-            <button onClick={() => scrollRef.current?.scrollBy({ left: -300, behavior: 'smooth' })} className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6]">
-              <ChevronLeft size={13} strokeWidth={2.5} />
-            </button>
-            <button onClick={() => scrollRef.current?.scrollBy({ left: 300, behavior: 'smooth' })} className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6]">
-              <ChevronRight size={13} strokeWidth={2.5} />
-            </button>
-            <span className="text-[10px] bg-white text-[#4C4A4B] border border-[#D8D8D8] px-2 py-1 rounded font-bold uppercase shadow-sm">
-              IDR Billions
-            </span>
-          </div>
-        </div>
-        <div ref={scrollRef} className="overflow-auto min-h-0 flex-1">
-          <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
-            <thead className="bg-[#EFEBE7] font-bold sticky top-0 z-[50] shadow-md">
-              <tr>
-                <th className="px-4 py-3 border-b-2 border-r border-[#D8D8D8] sticky left-0 top-0 bg-[#EFEBE7] z-[60] w-[260px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-[#1E2F31]">
-                  Line Item
-                </th>
-                {columns.map((col, i) => (
-                  <th
-                    key={i}
-                    onClick={col.colType === 'year' ? () => toggleYear(col.defaultLabel) : undefined}
-                    className={`px-3 py-3 text-right border-b-2 border-r border-[#D8D8D8] ${
-                      col.colType === 'year' ? 'cursor-pointer hover:bg-white font-black underline decoration-dashed underline-offset-4 ' : 'font-medium text-[10px] '
-                    } bg-[#EFEBE7] ${!col.isOperating ? "text-[#9B8B70]" : "text-[#1E2F31]"} ${col.isMonth ? 'min-w-[65px] whitespace-nowrap' : 'min-w-[90px]'}`}
-                  >
-                    {col.colType === 'year' ? (
-                       <div className="flex items-center justify-end gap-1">
-                         {expandedYears[col.defaultLabel] ? "-" : "+"}
-                         {String(col.defaultLabel)}
-                       </div>
-                    ) : (
-                       <div className="text-center w-full">{String(col.defaultLabel)}</div>
-                    )}
-                  </th>
-                ))}
-                <th className="px-4 py-3 text-right bg-[#EFEBE7] text-[#1E2F31] sticky right-0 top-0 z-[60] border-l border-b-2 border-[#D8D8D8] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">
-                  Total
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {(viewMode === "all" || viewMode === "cf") && (
-                <>
-                  <TableSection
-                    title="A. Component Cash Flows"
-                    colSpan={columns.length + 2}
-                  />
-                  <TableRow
-                    label="PropCo Asset Cascade (100%)"
-                    data={columns}
-                    dk="propCoFlow"
-                    total={data.totals.propCoFlow}
-                    isHeader
-                    isExpandable
-                    isExpanded={expandedPropCo}
-                    onExpand={() => setExpandedPropCo(!expandedPropCo)}
-                    tooltip={CONSOLIDATED_FORMULAS.propCoFlow}
-                  />
-                  {expandedPropCo && (
-                    <>
-                      <TableRow
-                        label="PropCo Investment"
-                        data={columns}
-                        dk="propCoInvestmentFlow"
-                        total={data.totals.propCoInvestmentFlow}
-                        isIndent
-                        hasConnector
-                        tooltip={CONSOLIDATED_FORMULAS.propCoInvestmentFlow}
-                      />
-                      <TableRow
-                        label="PropCo Operating FCFE"
-                        data={columns}
-                        dk="propCoOperatingFlow"
-                        total={data.totals.propCoOperatingFlow}
-                        isIndent
-                        hasConnector
-                        tooltip={CONSOLIDATED_FORMULAS.propCoOperatingFlow}
-                      />
-                      <TableRow
-                        label="PropCo Exit Proceeds"
-                        data={columns}
-                        dk="propCoExitFlow"
-                        total={data.totals.propCoExitFlow}
-                        isIndent
-                        hasConnector
-                        tooltip={CONSOLIDATED_FORMULAS.propCoExitFlow}
-                      />
-                    </>
-                  )}
-
-                  <TableRow
-                    label="OpCo Clinical Cascade (49%)"
-                    data={columns}
-                    dk="opCoFlow"
-                    total={data.totals.opCoFlow}
-                    isHeader
-                    isExpandable
-                    isExpanded={expandedOpCo}
-                    onExpand={() => setExpandedOpCo(!expandedOpCo)}
-                    tooltip={CONSOLIDATED_FORMULAS.opCoFlow}
-                  />
-                  {expandedOpCo && (
-                    <>
-                      <TableRow
-                        label="OpCo Investment"
-                        data={columns}
-                        dk="opCoInvestmentFlow"
-                        total={data.totals.opCoInvestmentFlow}
-                        isIndent
-                        hasConnector
-                        tooltip={CONSOLIDATED_FORMULAS.opCoInvestmentFlow}
-                      />
-                      <TableRow
-                        label="OpCo Operating Dividend"
-                        data={columns}
-                        dk="opCoOperatingDividendFlow"
-                        total={data.totals.opCoOperatingDividendFlow}
-                        isIndent
-                        hasConnector
-                        tooltip={CONSOLIDATED_FORMULAS.opCoOperatingDividendFlow}
-                      />
-                      <TableRow
-                        label="OpCo Exit Proceeds"
-                        data={columns}
-                        dk="opCoExitFlow"
-                        total={data.totals.opCoExitFlow}
-                        isIndent
-                        hasConnector
-                        tooltip={CONSOLIDATED_FORMULAS.opCoExitFlow}
-                      />
-                    </>
-                  )}
-
-                  <TableSection
-                    title="B. Consolidated Position"
-                    colSpan={columns.length + 2}
-                    type="emerald"
-                  />
-                  <TableRow
-                    label="NET COMBINED CASH FLOW"
-                    data={columns}
-                    dk="netFlow"
-                    total={data.totals.netFlow}
-                    highlight
-                    emerald
-                    tooltip={CONSOLIDATED_FORMULAS.netFlow}
-                  />
-                  <TableRow
-                    label="Cumulative Net Position"
-                    data={columns}
-                    dk="cumCf"
-                    highlight
-                    crossover
-                    bold
-                    indigo
-                    tooltip={CONSOLIDATED_FORMULAS.cumCf}
-                  />
-                </>
-              )}
-
-              {(viewMode === "all" || viewMode === "pl") && (
-                <>
-                  <TableSection
-                    title="C. Managerial Look-Through PnL"
-                    colSpan={columns.length + 2}
-                  />
-                  <TableRow
-                    label="Look-Through Revenue"
-                    data={columns}
-                    dk="lookThroughRevenue"
-                    total={data.totals.lookThroughRevenue}
-                    isIndent
-                    tooltip={CONSOLIDATED_FORMULAS.lookThroughRevenue}
-                  />
-                  <TableRow
-                    label="Look-Through EBITDA"
-                    data={columns}
-                    dk="lookThroughEbitda"
-                    total={data.totals.lookThroughEbitda}
-                    isIndent
-                    tooltip={CONSOLIDATED_FORMULAS.lookThroughEbitda}
-                  />
-                  <TableRow
-                    label="Look-Through Net Income"
-                    data={columns}
-                    dk="lookThroughNetIncome"
-                    total={data.totals.lookThroughNetIncome}
-                    highlight
-                    tooltip={CONSOLIDATED_FORMULAS.lookThroughNetIncome}
-                  />
-                  <TableRow
-                    label="Blended Net Margin (%)"
-                    data={columns}
-                    dk="lookThroughMargin"
-                    total={data.totals.lookThroughMargin}
-                    highlight
-                    indigo
-                    tooltip={CONSOLIDATED_FORMULAS.lookThroughMargin}
-                  />
-                </>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Mini-Bento Visual Summary Widget */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Grid: Group Cumulative Flow Tracker Chart */}
-        <div className="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-[#D8D8D8] flex flex-col justify-between">
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] mb-1 flex items-center gap-2">
-              <TrendingUp size={14} className="text-[#1C6048]" /> Group Cumulative Flow Tracker
-            </h4>
-            <p className="text-[10px] text-[#4C4A4B] font-medium leading-relaxed mb-4">
-              Tracks year-on-year cumulative capital inflows (dividends + proceeds) relative to capital outflows (equity outlays) alongside yearly net cash flows.
-            </p>
-          </div>
-
-          <div className="h-[210px] w-full mt-2">
-            <LazyResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F1F1F1" vertical={false} />
-                <XAxis 
-                  dataKey="year" 
-                  tickLine={false} 
-                  axisLine={false} 
-                  tick={{ fontSize: 9, fill: "#8A8175", fontWeight: "bold", fontFamily: "JetBrains Mono" }} 
-                />
-                <YAxis 
-                  tickLine={false} 
-                  axisLine={false} 
-                  tick={{ fontSize: 9, fill: "#8A8175", fontWeight: "bold", fontFamily: "JetBrains Mono" }}
-                  tickFormatter={(v) => `Rp${Math.abs(v).toFixed(0)}B`}
-                />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: "#1E2F31", borderRadius: "12px", border: "none", color: "#FFF", fontSize: "10px", fontFamily: "JetBrains Mono" }}
-                  formatter={(value, name) => {
-                    const formattedVal = `IDR ${Number(value).toFixed(2)}B`;
-                    if (name === "cumInflow") return [formattedVal, "Cumulative Inflow"];
-                    if (name === "cumOutflow") return [formattedVal, "Cumulative Outflow"];
-                    return [formattedVal, "Net Year Flow"];
-                  }}
-                  labelFormatter={(label) => `Year: ${label}`}
-                />
-                <Legend 
-                  verticalAlign="top" 
-                  height={28} 
-                  iconSize={7}
-                  iconType="circle"
-                  wrapperStyle={{ fontSize: "9px", fontWeight: "bold", color: "#4C4A4B", textTransform: "uppercase" }}
-                />
-                <Bar 
-                  name="netFlow" 
-                  dataKey="netFlow" 
-                  barSize={12} 
-                  radius={[3, 3, 0, 0]}
+    return (
+      <div
+        className={`space-y-6 ${isFullScreen ? "fixed inset-0 z-[150] bg-[#F9F8F6] p-4 lg:p-6 pb-24 overflow-y-auto flex flex-col" : ""}`}
+      >
+        {/* Detailed HoldCo Waterfall Panel */}
+        <div
+          className={`bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden flex flex-col ${isFullScreen ? "flex-1 overflow-hidden min-h-0 h-full" : "max-h-[calc(100vh-240px)] h-fit"}`}
+        >
+          <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
+              <List size={14} /> Consolidated P&L & Cash Flow
+            </h3>
+            <div className="flex items-center gap-2">
+              <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
+                <button
+                  onClick={() => setViewMode("all")}
+                  className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "all" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
                 >
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.netFlow >= 0 ? "#1C6048" : "#B85A38"} />
+                  All
+                </button>
+                <button
+                  onClick={() => setViewMode("pl")}
+                  className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "pl" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                >
+                  P&L
+                </button>
+                <button
+                  onClick={() => setViewMode("cf")}
+                  className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "cf" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                >
+                  CF
+                </button>
+              </div>
+              <button
+                onClick={() => setIsFullScreen(!isFullScreen)}
+                className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6] transition-colors"
+                title={isFullScreen ? "Minimize" : "Maximize"}
+              >
+                {isFullScreen ? (
+                  <Minimize2 size={13} strokeWidth={2.5} />
+                ) : (
+                  <Maximize2 size={13} strokeWidth={2.5} />
+                )}
+              </button>
+              <div className="flex items-center bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
+                <button
+                  onClick={() => setViewResolution("annual")}
+                  className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${viewResolution === "annual" ? "bg-[#1C6048] text-white" : "text-[#8A8175] hover:text-[#1E2F31] hover:bg-[#F9F8F6]"}`}
+                >
+                  Annual
+                </button>
+                <button
+                  onClick={() => setViewResolution("monthly")}
+                  className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${viewResolution === "monthly" ? "bg-[#9B8B70] text-white" : "text-[#8A8175] hover:text-[#1E2F31] hover:bg-[#F9F8F6]"}`}
+                >
+                  Monthly
+                </button>
+              </div>
+              <button
+                onClick={() =>
+                  scrollRef.current?.scrollBy({
+                    left: -300,
+                    behavior: "smooth",
+                  })
+                }
+                className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6]"
+              >
+                <ChevronLeft size={13} strokeWidth={2.5} />
+              </button>
+              <button
+                onClick={() =>
+                  scrollRef.current?.scrollBy({ left: 300, behavior: "smooth" })
+                }
+                className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6]"
+              >
+                <ChevronRight size={13} strokeWidth={2.5} />
+              </button>
+              <span className="text-[10px] bg-white text-[#4C4A4B] border border-[#D8D8D8] px-2 py-1 rounded font-bold uppercase shadow-sm">
+                IDR Billions
+              </span>
+            </div>
+          </div>
+          <div ref={scrollRef} className="overflow-auto min-h-0 flex-1">
+            <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
+              <thead className="bg-[#EFEBE7] font-bold sticky top-0 z-[50] shadow-md">
+                <tr>
+                  <th className="px-4 py-3 border-b-2 border-r border-[#D8D8D8] sticky left-0 top-0 bg-[#EFEBE7] z-[60] w-[260px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-[#1E2F31]">
+                    Line Item
+                  </th>
+                  {columns.map((col, i) => (
+                    <th
+                      key={i}
+                      onClick={
+                        col.colType === "year"
+                          ? () => toggleYear(col.defaultLabel)
+                          : undefined
+                      }
+                      className={`px-3 py-3 text-right border-b-2 border-r border-[#D8D8D8] ${
+                        col.colType === "year"
+                          ? "cursor-pointer hover:bg-white font-black underline decoration-dashed underline-offset-4 "
+                          : "font-medium text-[10px] "
+                      } bg-[#EFEBE7] ${!col.isOperating ? "text-[#9B8B70]" : "text-[#1E2F31]"} ${col.isMonth ? "min-w-[65px] whitespace-nowrap" : "min-w-[90px]"}`}
+                    >
+                      {col.colType === "year" ? (
+                        <div className="flex items-center justify-end gap-1">
+                          {expandedYears[col.defaultLabel] ? "-" : "+"}
+                          {String(col.defaultLabel)}
+                        </div>
+                      ) : (
+                        <div className="text-center w-full">
+                          {String(col.defaultLabel)}
+                        </div>
+                      )}
+                    </th>
                   ))}
-                </Bar>
-                <Line 
-                  type="monotone" 
-                  name="cumInflow" 
-                  dataKey="cumInflow" 
-                  stroke="#9B8B70" 
-                  strokeWidth={2.5} 
-                  dot={{ r: 2.5, stroke: "#9B8B70", fill: "#FFF", strokeWidth: 1.5 }} 
-                  activeDot={{ r: 4 }} 
-                />
-                <Line 
-                  type="monotone" 
-                  name="cumOutflow" 
-                  dataKey="cumOutflow" 
-                  stroke="#1E2F31" 
-                  strokeWidth={2.5} 
-                  strokeDasharray="4 4"
-                  dot={{ r: 2.5, stroke: "#1E2F31", fill: "#FFF", strokeWidth: 1.5 }} 
-                  activeDot={{ r: 4 }} 
-                />
-              </ComposedChart>
-            </LazyResponsiveContainer>
+                  <th className="px-4 py-3 text-right bg-[#EFEBE7] text-[#1E2F31] sticky right-0 top-0 z-[60] border-l border-b-2 border-[#D8D8D8] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                    Total
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {(viewMode === "all" || viewMode === "cf") && (
+                  <>
+                    <TableSection
+                      title="A. Component Cash Flows"
+                      colSpan={columns.length + 2}
+                    />
+                    <TableRow
+                      label="PropCo Asset Cascade (100%)"
+                      data={columns}
+                      dk="propCoFlow"
+                      total={data.totals.propCoFlow}
+                      isHeader
+                      isExpandable
+                      isExpanded={expandedPropCo}
+                      onExpand={() => setExpandedPropCo(!expandedPropCo)}
+                      tooltip={CONSOLIDATED_FORMULAS.propCoFlow}
+                    />
+                    {expandedPropCo && (
+                      <>
+                        <TableRow
+                          label="PropCo Investment"
+                          data={columns}
+                          dk="propCoInvestmentFlow"
+                          total={data.totals.propCoInvestmentFlow}
+                          isIndent
+                          hasConnector
+                          tooltip={CONSOLIDATED_FORMULAS.propCoInvestmentFlow}
+                        />
+                        <TableRow
+                          label="PropCo Operating FCFE"
+                          data={columns}
+                          dk="propCoOperatingFlow"
+                          total={data.totals.propCoOperatingFlow}
+                          isIndent
+                          hasConnector
+                          tooltip={CONSOLIDATED_FORMULAS.propCoOperatingFlow}
+                        />
+                        <TableRow
+                          label="PropCo Exit Proceeds"
+                          data={columns}
+                          dk="propCoExitFlow"
+                          total={data.totals.propCoExitFlow}
+                          isIndent
+                          hasConnector
+                          tooltip={CONSOLIDATED_FORMULAS.propCoExitFlow}
+                        />
+                      </>
+                    )}
+
+                    <TableRow
+                      label="OpCo Clinical Cascade (49%)"
+                      data={columns}
+                      dk="opCoFlow"
+                      total={data.totals.opCoFlow}
+                      isHeader
+                      isExpandable
+                      isExpanded={expandedOpCo}
+                      onExpand={() => setExpandedOpCo(!expandedOpCo)}
+                      tooltip={CONSOLIDATED_FORMULAS.opCoFlow}
+                    />
+                    {expandedOpCo && (
+                      <>
+                        <TableRow
+                          label="OpCo Investment"
+                          data={columns}
+                          dk="opCoInvestmentFlow"
+                          total={data.totals.opCoInvestmentFlow}
+                          isIndent
+                          hasConnector
+                          tooltip={CONSOLIDATED_FORMULAS.opCoInvestmentFlow}
+                        />
+                        <TableRow
+                          label="OpCo Operating Dividend"
+                          data={columns}
+                          dk="opCoOperatingDividendFlow"
+                          total={data.totals.opCoOperatingDividendFlow}
+                          isIndent
+                          hasConnector
+                          tooltip={
+                            CONSOLIDATED_FORMULAS.opCoOperatingDividendFlow
+                          }
+                        />
+                        <TableRow
+                          label="OpCo Exit Proceeds"
+                          data={columns}
+                          dk="opCoExitFlow"
+                          total={data.totals.opCoExitFlow}
+                          isIndent
+                          hasConnector
+                          tooltip={CONSOLIDATED_FORMULAS.opCoExitFlow}
+                        />
+                      </>
+                    )}
+
+                    <TableSection
+                      title="B. Consolidated Position"
+                      colSpan={columns.length + 2}
+                      type="emerald"
+                    />
+                    <TableRow
+                      label="NET COMBINED CASH FLOW"
+                      data={columns}
+                      dk="netFlow"
+                      total={data.totals.netFlow}
+                      highlight
+                      emerald
+                      tooltip={CONSOLIDATED_FORMULAS.netFlow}
+                    />
+                    <TableRow
+                      label="Cumulative Net Position"
+                      data={columns}
+                      dk="cumCf"
+                      highlight
+                      crossover
+                      bold
+                      indigo
+                      tooltip={CONSOLIDATED_FORMULAS.cumCf}
+                    />
+                  </>
+                )}
+
+                {(viewMode === "all" || viewMode === "pl") && (
+                  <>
+                    <TableSection
+                      title="C. Managerial Look-Through PnL"
+                      colSpan={columns.length + 2}
+                    />
+                    <TableRow
+                      label="Look-Through Revenue"
+                      data={columns}
+                      dk="lookThroughRevenue"
+                      total={data.totals.lookThroughRevenue}
+                      isIndent
+                      tooltip={CONSOLIDATED_FORMULAS.lookThroughRevenue}
+                    />
+                    <TableRow
+                      label="Look-Through EBITDA"
+                      data={columns}
+                      dk="lookThroughEbitda"
+                      total={data.totals.lookThroughEbitda}
+                      isIndent
+                      tooltip={CONSOLIDATED_FORMULAS.lookThroughEbitda}
+                    />
+                    <TableRow
+                      label="Look-Through Net Income"
+                      data={columns}
+                      dk="lookThroughNetIncome"
+                      total={data.totals.lookThroughNetIncome}
+                      highlight
+                      tooltip={CONSOLIDATED_FORMULAS.lookThroughNetIncome}
+                    />
+                    <TableRow
+                      label="Blended Net Margin (%)"
+                      data={columns}
+                      dk="lookThroughMargin"
+                      total={data.totals.lookThroughMargin}
+                      highlight
+                      indigo
+                      tooltip={CONSOLIDATED_FORMULAS.lookThroughMargin}
+                    />
+                  </>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
 
-        {/* Right Grid: Bento Metrics Yield Audit Card */}
-        <div className="bg-[#1E2F31] text-[#EFEBE7] p-5 rounded-2xl shadow-sm flex flex-col justify-between border border-[#1E2F31]">
-          <div className="space-y-4">
+        {/* Mini-Bento Visual Summary Widget */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Grid: Group Cumulative Flow Tracker Chart */}
+          <div className="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-[#D8D8D8] flex flex-col justify-between">
             <div>
-              <h4 className="text-xs font-bold uppercase tracking-widest text-[#9B8B70] mb-1">
-                Yield Cascade Audit
+              <h4 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] mb-1 flex items-center gap-2">
+                <TrendingUp size={14} className="text-[#1C6048]" /> Group
+                Cumulative Flow Tracker
               </h4>
-              <p className="text-[10px] text-white/60 font-medium leading-relaxed">
-                Look-through combined position capturing clinical profits & estate asset distributions.
+              <p className="text-[10px] text-[#4C4A4B] font-medium leading-relaxed mb-4">
+                Tracks year-on-year cumulative capital inflows (dividends +
+                proceeds) relative to capital outflows (equity outlays)
+                alongside yearly net cash flows.
               </p>
             </div>
 
-            <div className="space-y-4 pt-4 border-t border-white/10">
-              <div className="flex justify-between items-center">
-                <div>
-                  <span className="text-[9px] uppercase tracking-wider text-[#9B8B70] font-bold block">Equity Outlay (Outflow)</span>
-                  <span className="text-sm font-bold font-mono text-white">
-                    IDR {formatNumber(stats.totalInjections, 2)}B
-                  </span>
-                </div>
-                <div className="text-right">
-                  <span className="text-[9px] uppercase tracking-wider text-[#9B8B70] font-bold block">Distributions (Inflow)</span>
-                  <span className="text-sm font-bold font-mono text-[#99B6AA]">
-                    IDR {formatNumber(stats.totalReturns, 2)}B
-                  </span>
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-white/5">
-                <span className="text-[9px] uppercase tracking-wider text-[#9B8B70] font-bold block">Look-Through Multiple</span>
-                <div className="flex items-baseline gap-2 mt-0.5">
-                  <span className="text-xl font-black text-white font-mono">
-                    {formatNumber(stats.ratio, 2)}x
-                  </span>
-                  <span className="text-[9px] font-medium text-white/50">Cumulative Factor</span>
-                </div>
-                <div className="w-full bg-white/10 h-1 rounded-full overflow-hidden mt-1.5">
-                  <div 
-                    className="bg-[#1C6048] h-full rounded-full transition-all duration-1000" 
-                    style={{ width: `${Math.min(100, stats.ratio * 33)}%` }}
+            <div className="h-[210px] w-full mt-2">
+              <LazyResponsiveContainer width="100%" height="100%">
+                <ComposedChart
+                  data={chartData}
+                  margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="#F1F1F1"
+                    vertical={false}
                   />
-                </div>
-              </div>
+                  <XAxis
+                    dataKey="year"
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{
+                      fontSize: 9,
+                      fill: "#8A8175",
+                      fontWeight: "bold",
+                      fontFamily: "JetBrains Mono",
+                    }}
+                  />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{
+                      fontSize: 9,
+                      fill: "#8A8175",
+                      fontWeight: "bold",
+                      fontFamily: "JetBrains Mono",
+                    }}
+                    tickFormatter={(v) => `Rp${Math.abs(v).toFixed(0)}B`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#1E2F31",
+                      borderRadius: "12px",
+                      border: "none",
+                      color: "#FFF",
+                      fontSize: "10px",
+                      fontFamily: "JetBrains Mono",
+                    }}
+                    formatter={(value, name) => {
+                      const formattedVal = `IDR ${Number(value).toFixed(2)}B`;
+                      if (name === "cumInflow")
+                        return [formattedVal, "Cumulative Inflow"];
+                      if (name === "cumOutflow")
+                        return [formattedVal, "Cumulative Outflow"];
+                      return [formattedVal, "Net Year Flow"];
+                    }}
+                    labelFormatter={(label) => `Year: ${label}`}
+                  />
+                  <Legend
+                    verticalAlign="top"
+                    height={28}
+                    iconSize={7}
+                    iconType="circle"
+                    wrapperStyle={{
+                      fontSize: "9px",
+                      fontWeight: "bold",
+                      color: "#4C4A4B",
+                      textTransform: "uppercase",
+                    }}
+                  />
+                  <Bar
+                    name="netFlow"
+                    dataKey="netFlow"
+                    barSize={12}
+                    radius={[3, 3, 0, 0]}
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={entry.netFlow >= 0 ? "#1C6048" : "#B85A38"}
+                      />
+                    ))}
+                  </Bar>
+                  <Line
+                    type="monotone"
+                    name="cumInflow"
+                    dataKey="cumInflow"
+                    stroke="#9B8B70"
+                    strokeWidth={2.5}
+                    dot={{
+                      r: 2.5,
+                      stroke: "#9B8B70",
+                      fill: "#FFF",
+                      strokeWidth: 1.5,
+                    }}
+                    activeDot={{ r: 4 }}
+                  />
+                  <Line
+                    type="monotone"
+                    name="cumOutflow"
+                    dataKey="cumOutflow"
+                    stroke="#1E2F31"
+                    strokeWidth={2.5}
+                    strokeDasharray="4 4"
+                    dot={{
+                      r: 2.5,
+                      stroke: "#1E2F31",
+                      fill: "#FFF",
+                      strokeWidth: 1.5,
+                    }}
+                    activeDot={{ r: 4 }}
+                  />
+                </ComposedChart>
+              </LazyResponsiveContainer>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-white/10">
-            <div className="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/5">
+          {/* Right Grid: Bento Metrics Yield Audit Card */}
+          <div className="bg-[#1E2F31] text-[#EFEBE7] p-5 rounded-2xl shadow-sm flex flex-col justify-between border border-[#1E2F31]">
+            <div className="space-y-4">
               <div>
-                <span className="text-[9px] uppercase tracking-wider text-white/50 font-bold block">Net Lifetime Surplus</span>
-                <span className="text-xs font-bold font-mono text-[#99B6AA]">
-                  {stats.netSurplus >= 0 ? "+" : "-"}IDR {formatNumber(Math.abs(stats.netSurplus), 2)}B
-                </span>
+                <h4 className="text-xs font-bold uppercase tracking-widest text-[#9B8B70] mb-1">
+                  Yield Cascade Audit
+                </h4>
+                <p className="text-[10px] text-white/60 font-medium leading-relaxed">
+                  Look-through combined position capturing clinical profits &
+                  estate asset distributions.
+                </p>
               </div>
-              <div className={`p-1.5 rounded-lg ${stats.netSurplus >= 0 ? "bg-[#1C6048]/20 text-[#99B6AA]" : "bg-red-500/20 text-red-400"}`}>
-                <TrendingUp size={13} />
+
+              <div className="space-y-4 pt-4 border-t border-white/10">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <span className="text-[9px] uppercase tracking-wider text-[#9B8B70] font-bold block">
+                      Equity Outlay (Outflow)
+                    </span>
+                    <span className="text-sm font-bold font-mono text-white">
+                      IDR {formatNumber(stats.totalInjections, 2)}B
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[9px] uppercase tracking-wider text-[#9B8B70] font-bold block">
+                      Distributions (Inflow)
+                    </span>
+                    <span className="text-sm font-bold font-mono text-[#99B6AA]">
+                      IDR {formatNumber(stats.totalReturns, 2)}B
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-white/5">
+                  <span className="text-[9px] uppercase tracking-wider text-[#9B8B70] font-bold block">
+                    Look-Through Multiple
+                  </span>
+                  <div className="flex items-baseline gap-2 mt-0.5">
+                    <span className="text-xl font-black text-white font-mono">
+                      {formatNumber(stats.ratio, 2)}x
+                    </span>
+                    <span className="text-[9px] font-medium text-white/50">
+                      Cumulative Factor
+                    </span>
+                  </div>
+                  <div className="w-full bg-white/10 h-1 rounded-full overflow-hidden mt-1.5">
+                    <div
+                      className="bg-[#1C6048] h-full rounded-full transition-all duration-1000"
+                      style={{ width: `${Math.min(100, stats.ratio * 33)}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-white/10">
+              <div className="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/5">
+                <div>
+                  <span className="text-[9px] uppercase tracking-wider text-white/50 font-bold block">
+                    Net Lifetime Surplus
+                  </span>
+                  <span className="text-xs font-bold font-mono text-[#99B6AA]">
+                    {stats.netSurplus >= 0 ? "+" : "-"}IDR{" "}
+                    {formatNumber(Math.abs(stats.netSurplus), 2)}B
+                  </span>
+                </div>
+                <div
+                  className={`p-1.5 rounded-lg ${stats.netSurplus >= 0 ? "bg-[#1C6048]/20 text-[#99B6AA]" : "bg-red-500/20 text-red-400"}`}
+                >
+                  <TrendingUp size={13} />
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-});
+    );
+  },
+);
 
 const OpCoSettingsView = memo(
   ({
@@ -10502,7 +11561,10 @@ const PropCoSettingsView = memo(
     const medEqFullValueUi = assumptions.includeMedEq
       ? (assumptions.capexMedEqQty * assumptions.capexMedEqPrice) / 1000
       : 0;
-    const medEqCostForUi = (assumptions.medEqProcurement || "lease_operating") === "lease_operating" ? 0 : medEqFullValueUi;
+    const medEqCostForUi =
+      (assumptions.medEqProcurement || "lease_operating") === "lease_operating"
+        ? 0
+        : medEqFullValueUi;
     const infraCostForUi =
       (assumptions.capexInfraQty * assumptions.capexInfraPrice) / 1000;
     const ffeCostForUi = assumptions.includeFFE
@@ -10511,9 +11573,10 @@ const PropCoSettingsView = memo(
     const sharingDevCostForUi =
       (assumptions.capexSharingDevQty * assumptions.capexSharingDevPrice) /
       1000;
-    const consultantBaseUi = buildCostForUi + ffeCostForUi + infraCostForUi + medEqFullValueUi;
+    const consultantBaseUi =
+      buildCostForUi + ffeCostForUi + infraCostForUi + medEqFullValueUi;
     const licenseBaseUi = consultantBaseUi;
-    
+
     const consultantCostUi =
       consultantBaseUi * ((assumptions.capexConsultantPct || 0) / 100);
     const licenseCostUi =
@@ -10710,14 +11773,19 @@ const PropCoSettingsView = memo(
                     </button>
                     <button
                       disabled={isLocked}
-                      onClick={() => onChange("medEqProcurement", "lease_operating")}
+                      onClick={() =>
+                        onChange("medEqProcurement", "lease_operating")
+                      }
                       className={`px-1.5 py-0.5 text-[9px] font-bold rounded disabled:opacity-50 disabled:cursor-not-allowed ${(assumptions.medEqProcurement || "lease_operating") === "lease_operating" ? "bg-white text-[#1E2F31] shadow-sm border border-[#D8D8D8]" : "text-[#4C4A4B]"}`}
                     >
                       Pure Lease
                     </button>
                   </div>
                 </div>
-                {((assumptions.medEqProcurement || "lease_operating") === "lease" || (assumptions.medEqProcurement || "lease_operating") === "lease_operating") && (
+                {((assumptions.medEqProcurement || "lease_operating") ===
+                  "lease" ||
+                  (assumptions.medEqProcurement || "lease_operating") ===
+                    "lease_operating") && (
                   <>
                     <AssumptionRow
                       label="Lease Cost (Mo)"
@@ -10743,14 +11811,18 @@ const PropCoSettingsView = memo(
                             <span className="text-xs font-black text-[#1E2F31]">
                               {formatNumber(medEqCostForUi * 1000, 0)}
                             </span>
-                            <span className="text-[10px] text-[#8A8175] font-bold">M</span>
+                            <span className="text-[10px] text-[#8A8175] font-bold">
+                              M
+                            </span>
                           </div>
                         </div>
                       </>
                     )}
-                    {(assumptions.medEqProcurement || "lease_operating") === "lease_operating" && (
+                    {(assumptions.medEqProcurement || "lease_operating") ===
+                      "lease_operating" && (
                       <div className="bg-[#1C6048]/5 p-2 rounded border border-[#1C6048]/20 text-[9px] text-[#1C6048] font-bold italic text-center">
-                        Pure operating lease (indefinite lease) with zero buyout capex.
+                        Pure operating lease (indefinite lease) with zero buyout
+                        capex.
                       </div>
                     )}
                   </>
@@ -10816,14 +11888,20 @@ const PropCoSettingsView = memo(
               <>
                 <div className="flex justify-between items-center bg-[#EFEBE7] p-2 rounded mb-2">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-[#8A8175] mr-2">Debt Calculation Basis</span>
-                    <p className="text-[8px] text-[#8A8175]/80 font-medium leading-tight mt-0.5">LTV applies solely to non-land capex</p>
+                    <span className="text-[10px] uppercase font-bold text-[#8A8175] mr-2">
+                      Debt Calculation Basis
+                    </span>
+                    <p className="text-[8px] text-[#8A8175]/80 font-medium leading-tight mt-0.5">
+                      LTV applies solely to non-land capex
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-black text-[#1E2F31]">
                       {formatNumber(data?.metrics?.totalCapexExLand || 0, 1)}
                     </span>
-                    <span className="text-[10px] text-[#8A8175] font-bold">B</span>
+                    <span className="text-[10px] text-[#8A8175] font-bold">
+                      B
+                    </span>
                   </div>
                 </div>
                 <div className="flex justify-between items-center bg-white p-2 border border-[#D8D8D8] rounded mb-2 shadow-sm">
@@ -10848,7 +11926,8 @@ const PropCoSettingsView = memo(
                   </div>
                 </div>
 
-                {(assumptions.drawdownScenario || "tranches") === "tranches" && (
+                {(assumptions.drawdownScenario || "tranches") ===
+                  "tranches" && (
                   <div className="bg-white p-2 border border-[#D8D8D8] rounded mb-2 shadow-sm space-y-1">
                     <div className="flex justify-between items-center mb-1">
                       <label className="text-[10px] font-bold uppercase text-[#4C4A4B]">
@@ -10857,7 +11936,11 @@ const PropCoSettingsView = memo(
                       <button
                         disabled={isLocked}
                         onClick={() => {
-                          const newT = [...(assumptions.drawdownTranches || [20, 40, 60, 80, 100])];
+                          const newT = [
+                            ...(assumptions.drawdownTranches || [
+                              20, 40, 60, 80, 100,
+                            ]),
+                          ];
                           newT.push(100);
                           onChange("drawdownTranches", newT);
                         }}
@@ -10867,10 +11950,13 @@ const PropCoSettingsView = memo(
                       </button>
                     </div>
                     <p className="text-[8px] text-[#8A8175]/80 font-medium leading-tight mb-2">
-                      Set construction progress thresholds at which debt is evenly drawn.
+                      Set construction progress thresholds at which debt is
+                      evenly drawn.
                     </p>
                     <div className="space-y-1">
-                      {(assumptions.drawdownTranches || [20, 40, 60, 80, 100]).map((tranche, idx, arr) => (
+                      {(
+                        assumptions.drawdownTranches || [20, 40, 60, 80, 100]
+                      ).map((tranche, idx, arr) => (
                         <div key={idx} className="flex items-center gap-2">
                           <span className="text-[9px] font-bold text-[#8A8175] w-12 shrink-0">
                             Tranche {idx + 1}
@@ -10888,9 +11974,15 @@ const PropCoSettingsView = memo(
                             }}
                             className="flex-1 px-1.5 py-0.5 text-[10px] border border-[#D8D8D8] rounded font-mono font-medium outline-none focus:border-[#1C6048] disabled:opacity-50"
                           />
-                          <span className="text-[9px] font-bold text-[#8A8175]">%</span>
+                          <span className="text-[9px] font-bold text-[#8A8175]">
+                            %
+                          </span>
                           <button
-                            disabled={isLocked || idx === arr.length - 1 || arr.length <= 1}
+                            disabled={
+                              isLocked ||
+                              idx === arr.length - 1 ||
+                              arr.length <= 1
+                            }
                             onClick={() => {
                               const newT = arr.filter((_, i) => i !== idx);
                               onChange("drawdownTranches", newT);
@@ -11115,7 +12207,7 @@ const PropCoSettingsView = memo(
               </>
             )}
           </div>
-          
+
           {/* NEW EQUIPMENT LIST TABLE COLUMN */}
           <div className="space-y-4 lg:col-span-2">
             <SectionTitle
@@ -11127,71 +12219,154 @@ const PropCoSettingsView = memo(
               <table className="w-full text-left text-[10px]">
                 <thead className="bg-[#EFEBE7] border-b border-[#D8D8D8]">
                   <tr>
-                    <th className="px-3 py-2 font-bold text-[#1E2F31]">Category / Item</th>
-                    <th className="px-3 py-2 font-bold text-[#1E2F31] text-center">Qty</th>
-                    <th className="px-3 py-2 font-bold text-[#1E2F31] text-right">Est. Unit (B)</th>
-                    <th className="px-3 py-2 font-bold text-[#1E2F31] text-right">Total (B)</th>
+                    <th className="px-3 py-2 font-bold text-[#1E2F31]">
+                      Category / Item
+                    </th>
+                    <th className="px-3 py-2 font-bold text-[#1E2F31] text-center">
+                      Qty
+                    </th>
+                    <th className="px-3 py-2 font-bold text-[#1E2F31] text-right">
+                      Est. Unit (B)
+                    </th>
+                    <th className="px-3 py-2 font-bold text-[#1E2F31] text-right">
+                      Total (B)
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white">
                   {assumptions.includeMedEq ? (
                     <>
                       <tr className="border-b border-[#EFEBE7] hover:bg-[#F9F8F6]">
-                        <td className="px-3 py-2 font-bold text-[#4C4A4B]">Diagnostic Imaging (MRI & CT)</td>
-                        <td className="px-3 py-2 text-center text-[#4C4A4B]">2</td>
-                        <td className="px-3 py-2 text-right text-[#4C4A4B]">12.5</td>
-                        <td className="px-3 py-2 text-right text-[#4C4A4B]">25.0</td>
+                        <td className="px-3 py-2 font-bold text-[#4C4A4B]">
+                          Diagnostic Imaging (MRI & CT)
+                        </td>
+                        <td className="px-3 py-2 text-center text-[#4C4A4B]">
+                          2
+                        </td>
+                        <td className="px-3 py-2 text-right text-[#4C4A4B]">
+                          12.5
+                        </td>
+                        <td className="px-3 py-2 text-right text-[#4C4A4B]">
+                          25.0
+                        </td>
                       </tr>
                       <tr className="border-b border-[#EFEBE7] hover:bg-[#F9F8F6]">
-                        <td className="px-3 py-2 font-bold text-[#4C4A4B]">PET-CT Scanner (Oncology Staging)</td>
-                        <td className="px-3 py-2 text-center text-[#4C4A4B]">1</td>
-                        <td className="px-3 py-2 text-right text-[#4C4A4B]">20.0</td>
-                        <td className="px-3 py-2 text-right text-[#4C4A4B]">20.0</td>
+                        <td className="px-3 py-2 font-bold text-[#4C4A4B]">
+                          PET-CT Scanner (Oncology Staging)
+                        </td>
+                        <td className="px-3 py-2 text-center text-[#4C4A4B]">
+                          1
+                        </td>
+                        <td className="px-3 py-2 text-right text-[#4C4A4B]">
+                          20.0
+                        </td>
+                        <td className="px-3 py-2 text-right text-[#4C4A4B]">
+                          20.0
+                        </td>
                       </tr>
                       <tr className="border-b border-[#EFEBE7] hover:bg-[#F9F8F6]">
-                        <td className="px-3 py-2 font-bold text-[#4C4A4B]">LINAC (Radiotherapy Systems)</td>
-                        <td className="px-3 py-2 text-center text-[#4C4A4B]">1</td>
-                        <td className="px-3 py-2 text-right text-[#4C4A4B]">25.0</td>
-                        <td className="px-3 py-2 text-right text-[#4C4A4B]">25.0</td>
+                        <td className="px-3 py-2 font-bold text-[#4C4A4B]">
+                          LINAC (Radiotherapy Systems)
+                        </td>
+                        <td className="px-3 py-2 text-center text-[#4C4A4B]">
+                          1
+                        </td>
+                        <td className="px-3 py-2 text-right text-[#4C4A4B]">
+                          25.0
+                        </td>
+                        <td className="px-3 py-2 text-right text-[#4C4A4B]">
+                          25.0
+                        </td>
                       </tr>
                       <tr className="border-b border-[#EFEBE7] hover:bg-[#F9F8F6]">
-                        <td className="px-3 py-2 font-bold text-[#4C4A4B]">Brachytherapy & Dosimetry QA</td>
-                        <td className="px-3 py-2 text-center text-[#4C4A4B]">1</td>
-                        <td className="px-3 py-2 text-right text-[#4C4A4B]">10.0</td>
-                        <td className="px-3 py-2 text-right text-[#4C4A4B]">10.0</td>
+                        <td className="px-3 py-2 font-bold text-[#4C4A4B]">
+                          Brachytherapy & Dosimetry QA
+                        </td>
+                        <td className="px-3 py-2 text-center text-[#4C4A4B]">
+                          1
+                        </td>
+                        <td className="px-3 py-2 text-right text-[#4C4A4B]">
+                          10.0
+                        </td>
+                        <td className="px-3 py-2 text-right text-[#4C4A4B]">
+                          10.0
+                        </td>
                       </tr>
                       <tr className="border-b border-[#EFEBE7] hover:bg-[#F9F8F6]">
-                        <td className="px-3 py-2 font-bold text-[#4C4A4B]">Cath Lab & Angiography Systems</td>
-                        <td className="px-3 py-2 text-center text-[#4C4A4B]">1</td>
-                        <td className="px-3 py-2 text-right text-[#4C4A4B]">22.0</td>
-                        <td className="px-3 py-2 text-right text-[#4C4A4B]">22.0</td>
+                        <td className="px-3 py-2 font-bold text-[#4C4A4B]">
+                          Cath Lab & Angiography Systems
+                        </td>
+                        <td className="px-3 py-2 text-center text-[#4C4A4B]">
+                          1
+                        </td>
+                        <td className="px-3 py-2 text-right text-[#4C4A4B]">
+                          22.0
+                        </td>
+                        <td className="px-3 py-2 text-right text-[#4C4A4B]">
+                          22.0
+                        </td>
                       </tr>
                       <tr className="border-b border-[#EFEBE7] hover:bg-[#F9F8F6]">
-                        <td className="px-3 py-2 font-bold text-[#4C4A4B]">Operating Room (OR) Subsystems</td>
-                        <td className="px-3 py-2 text-center text-[#4C4A4B]">6</td>
-                        <td className="px-3 py-2 text-right text-[#4C4A4B]">3.0</td>
-                        <td className="px-3 py-2 text-right text-[#4C4A4B]">18.0</td>
+                        <td className="px-3 py-2 font-bold text-[#4C4A4B]">
+                          Operating Room (OR) Subsystems
+                        </td>
+                        <td className="px-3 py-2 text-center text-[#4C4A4B]">
+                          6
+                        </td>
+                        <td className="px-3 py-2 text-right text-[#4C4A4B]">
+                          3.0
+                        </td>
+                        <td className="px-3 py-2 text-right text-[#4C4A4B]">
+                          18.0
+                        </td>
                       </tr>
                       <tr className="border-b border-[#EFEBE7] hover:bg-[#F9F8F6]">
-                        <td className="px-3 py-2 font-bold text-[#4C4A4B]">Radiology (X-Ray / USG / Mammo)</td>
-                        <td className="px-3 py-2 text-center text-[#4C4A4B]">8</td>
-                        <td className="px-3 py-2 text-right text-[#4C4A4B]">1.25</td>
-                        <td className="px-3 py-2 text-right text-[#4C4A4B]">10.0</td>
+                        <td className="px-3 py-2 font-bold text-[#4C4A4B]">
+                          Radiology (X-Ray / USG / Mammo)
+                        </td>
+                        <td className="px-3 py-2 text-center text-[#4C4A4B]">
+                          8
+                        </td>
+                        <td className="px-3 py-2 text-right text-[#4C4A4B]">
+                          1.25
+                        </td>
+                        <td className="px-3 py-2 text-right text-[#4C4A4B]">
+                          10.0
+                        </td>
                       </tr>
                       <tr className="border-b border-[#EFEBE7] hover:bg-[#F9F8F6]">
-                        <td className="px-3 py-2 font-bold text-[#4C4A4B]">Chemo Prep & General Medical</td>
-                        <td className="px-3 py-2 text-center text-[#4C4A4B]">Lot</td>
-                        <td className="px-3 py-2 text-right text-[#4C4A4B]">12.0</td>
-                        <td className="px-3 py-2 text-right text-[#4C4A4B]">12.0</td>
+                        <td className="px-3 py-2 font-bold text-[#4C4A4B]">
+                          Chemo Prep & General Medical
+                        </td>
+                        <td className="px-3 py-2 text-center text-[#4C4A4B]">
+                          Lot
+                        </td>
+                        <td className="px-3 py-2 text-right text-[#4C4A4B]">
+                          12.0
+                        </td>
+                        <td className="px-3 py-2 text-right text-[#4C4A4B]">
+                          12.0
+                        </td>
                       </tr>
                       <tr className="border-b border-[#EFEBE7] hover:bg-[#F9F8F6]">
-                        <td className="px-3 py-2 font-bold text-[#4C4A4B]">Health Information Systems & IT</td>
-                        <td className="px-3 py-2 text-center text-[#4C4A4B]">Lot</td>
-                        <td className="px-3 py-2 text-right text-[#4C4A4B]">8.0</td>
-                        <td className="px-3 py-2 text-right text-[#4C4A4B]">8.0</td>
+                        <td className="px-3 py-2 font-bold text-[#4C4A4B]">
+                          Health Information Systems & IT
+                        </td>
+                        <td className="px-3 py-2 text-center text-[#4C4A4B]">
+                          Lot
+                        </td>
+                        <td className="px-3 py-2 text-right text-[#4C4A4B]">
+                          8.0
+                        </td>
+                        <td className="px-3 py-2 text-right text-[#4C4A4B]">
+                          8.0
+                        </td>
                       </tr>
                       <tr className="bg-[#EFEBE7]/50 font-black relative group">
-                        <td className="px-3 py-3 text-[#1C6048] uppercase tracking-widest text-xs" colSpan={3}>
+                        <td
+                          className="px-3 py-3 text-[#1C6048] uppercase tracking-widest text-xs"
+                          colSpan={3}
+                        >
                           <div className="flex items-center gap-2">
                             Total Medical Equipment Budget
                             {assumptions.medEqProcurement === "lease" && (
@@ -11199,19 +12374,29 @@ const PropCoSettingsView = memo(
                                 Leased (Informational)
                               </span>
                             )}
-                            {(assumptions.medEqProcurement || "lease_operating") === "lease_operating" && (
+                            {(assumptions.medEqProcurement ||
+                              "lease_operating") === "lease_operating" && (
                               <span className="px-2 py-0.5 bg-[#9B8B70] text-white text-[9px] rounded-full uppercase tracking-wider">
                                 Pure Lease (Informational)
                               </span>
                             )}
                           </div>
                         </td>
-                        <td className="px-3 py-3 text-right text-[#1C6048] text-xs">{(assumptions.capexMedEqQty * assumptions.capexMedEqPrice / 1000).toFixed(1)}</td>
+                        <td className="px-3 py-3 text-right text-[#1C6048] text-xs">
+                          {(
+                            (assumptions.capexMedEqQty *
+                              assumptions.capexMedEqPrice) /
+                            1000
+                          ).toFixed(1)}
+                        </td>
                       </tr>
                     </>
                   ) : (
                     <tr>
-                      <td colSpan={4} className="px-3 py-6 text-center text-[#9B8B70] italic">
+                      <td
+                        colSpan={4}
+                        className="px-3 py-6 text-center text-[#9B8B70] italic"
+                      >
                         Medical Equipment is excluded in current assumptions.
                       </td>
                     </tr>
@@ -11220,7 +12405,6 @@ const PropCoSettingsView = memo(
               </table>
             </div>
           </div>
-          
         </div>
       </div>
     );
@@ -11261,7 +12445,7 @@ const PropCoSensitivityView = memo(({ assumptions, opCoModelData, groups }) => {
           { ...assumptions, buildCost: bc, interestRate: ir },
           opCoModelData,
           null,
-          groups
+          groups,
         ).metrics.operatingPayback || 0,
     ),
   );
@@ -11817,10 +13001,12 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
               const depEnd = depStart + depDuration - 1;
 
               if (tStart <= depEnd) {
-                const depEndMonthName = TIMELINE_MONTHS[depEnd - 1]?.name || `Month ${depEnd}`;
-                const tStartMonthName = TIMELINE_MONTHS[tStart - 1]?.name || `Month ${tStart}`;
+                const depEndMonthName =
+                  TIMELINE_MONTHS[depEnd - 1]?.name || `Month ${depEnd}`;
+                const tStartMonthName =
+                  TIMELINE_MONTHS[tStart - 1]?.name || `Month ${tStart}`;
                 warnings.push(
-                  `Predecessor overlap: Scheduled to start in ${tStartMonthName} but relies on ${depId.toUpperCase()} "${depTask.name}" which finishes later in ${depEndMonthName}.`
+                  `Predecessor overlap: Scheduled to start in ${tStartMonthName} but relies on ${depId.toUpperCase()} "${depTask.name}" which finishes later in ${depEndMonthName}.`,
                 );
               }
             }
@@ -11831,9 +13017,12 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
         if (t.id === "t7_1" || t.id === "t7_2") {
           const t6_2 = allTasksMap["t6_2"];
           if (t6_2) {
-            const t6_2End = (parseInt(t6_2.start) || 1) + (parseInt(t6_2.duration) || 1) - 1;
+            const t6_2End =
+              (parseInt(t6_2.start) || 1) + (parseInt(t6_2.duration) || 1) - 1;
             if (tStart <= t6_2End) {
-              warnings.push("Civil sequence constraint: Interior fit-outs cannot realistically start until the main structural superstructure (T6_2) is complete.");
+              warnings.push(
+                "Civil sequence constraint: Interior fit-outs cannot realistically start until the main structural superstructure (T6_2) is complete.",
+              );
             }
           }
         }
@@ -11841,9 +13030,12 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
         if (t.id === "t12") {
           const t6_3 = allTasksMap["t6_3"];
           if (t6_3) {
-            const t6_3End = (parseInt(t6_3.start) || 1) + (parseInt(t6_3.duration) || 1) - 1;
+            const t6_3End =
+              (parseInt(t6_3.start) || 1) + (parseInt(t6_3.duration) || 1) - 1;
             if (tStart <= t6_3End) {
-              warnings.push("Drills safety warning: Emergency drills (T12) and high-energy calibrations cannot proceed inside incomplete concrete vault shielding core (T6_3).");
+              warnings.push(
+                "Drills safety warning: Emergency drills (T12) and high-energy calibrations cannot proceed inside incomplete concrete vault shielding core (T6_3).",
+              );
             }
           }
         }
@@ -11857,7 +13049,9 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
     return conflicts;
   }, [groups, TIMELINE_MONTHS]);
 
-  const selectedTaskConflicts = selectedTaskId ? taskConflicts[selectedTaskId] || [] : [];
+  const selectedTaskConflicts = selectedTaskId
+    ? taskConflicts[selectedTaskId] || []
+    : [];
 
   const toggleGroup = (groupId) =>
     setExpandedGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
@@ -12185,7 +13379,9 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
           </div>
         </div>
 
-        <div className={`bg-white border border-[#D8D8D8] rounded-[24px] overflow-hidden shadow-sm flex flex-col justify-between transition-all duration-300 max-h-[640px] ${showDetailPanel ? "xl:col-span-6" : "xl:col-span-9"}`}>
+        <div
+          className={`bg-white border border-[#D8D8D8] rounded-[24px] overflow-hidden shadow-sm flex flex-col justify-between transition-all duration-300 max-h-[640px] ${showDetailPanel ? "xl:col-span-6" : "xl:col-span-9"}`}
+        >
           <div className="p-5 border-b border-[#D8D8D8] flex flex-wrap justify-between items-center bg-[#F9F8F6]/30 gap-4">
             <div className="flex items-center gap-2.5">
               <Layers size={18} className="text-[#1C6048]" />
@@ -12217,7 +13413,11 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
                 onClick={() => setShowDetailPanel(!showDetailPanel)}
                 className="px-3 py-1 bg-white hover:bg-[#EFEBE7] border border-[#D8D8D8] rounded-[10px] text-[9px] font-black uppercase text-[#1E2F31] flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
               >
-                {showDetailPanel ? <EyeOff size={11} className="text-[#9B8B70]" /> : <Eye size={11} className="text-[#1C6048]" />}
+                {showDetailPanel ? (
+                  <EyeOff size={11} className="text-[#9B8B70]" />
+                ) : (
+                  <Eye size={11} className="text-[#1C6048]" />
+                )}
                 {showDetailPanel ? "Hide Details" : "Show Details"}
               </button>
               <span className="text-[10px] text-[#4C4A4B] font-bold bg-[#EFEBE7] px-2 py-1 rounded-[10px] border border-[#D8D8D8]">
@@ -12488,489 +13688,501 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
 
         {showDetailPanel && (
           <div className="xl:col-span-3 flex flex-col gap-6 max-h-[640px] overflow-y-auto custom-scrollbar">
-          {isCreatingTask ? (
-            <form
-              onSubmit={handleTaskCreate}
-              className="bg-white border border-[#D8D8D8] rounded-[24px] p-5 shadow-sm flex flex-col gap-4 animate-in slide-in-from-right-4 duration-300"
-            >
-              <div className="flex justify-between items-center pb-2 border-b border-[#EFEBE7]">
-                <h3 className="text-sm font-black text-[#1E2F31] uppercase tracking-tight flex items-center gap-2">
-                  <Plus size={16} className="text-[#1C6048]" /> New Milestone
-                </h3>
-                <span className="text-[9px] text-[#4C4A4B] font-bold uppercase">
-                  Wizard
-                </span>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-[#9B8B70] uppercase">
-                  Milestone Name
-                </label>
-                <input
-                  type="text"
-                  value={newTask.name}
-                  onChange={(e) =>
-                    setNewTask((p) => ({ ...p, name: e.target.value }))
-                  }
-                  placeholder="e.g. Procurement Sweep"
-                  className="w-full p-2 bg-[#F9F8F6] border border-[#D8D8D8] rounded-xl text-xs font-bold text-[#1E2F31] focus:ring-1 focus:ring-[#1C6048] outline-none"
-                  required
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-[#9B8B70] uppercase">
-                  Project Stage
-                </label>
-                <select
-                  value={newTask.groupId}
-                  onChange={(e) =>
-                    setNewTask((p) => ({ ...p, groupId: e.target.value }))
-                  }
-                  className="w-full p-2 bg-[#F9F8F6] border border-[#D8D8D8] rounded-xl text-xs font-bold text-[#1E2F31] focus:ring-1 focus:ring-[#1C6048] outline-none cursor-pointer"
-                >
-                  <option value="design">1. Design & Planning</option>
-                  <option value="licensing">2. Licensing & Regulatory</option>
-                  <option value="construction">3. Civil & Construction</option>
-                  <option value="infrastructure">4. Infrastructure</option>
-                  <option value="equipment">5. Equipment & Launch</option>
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div
-                  className="space-y-1.5 relative"
-                  ref={activeMonthPicker?.type === "create" ? pickerRef : null}
-                >
-                  <label className="text-[9px] font-black text-[#9B8B70] uppercase">
-                    Start Month
-                  </label>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (activeMonthPicker?.type === "create")
-                        setActiveMonthPicker(null);
-                      else
-                        openMonthPicker("create", newTask.start, (val) =>
-                          setNewTask((p) => ({ ...p, start: val })),
-                        );
-                    }}
-                    className="w-full p-2 bg-[#F9F8F6] hover:bg-[#EFEBE7]/50 border border-[#D8D8D8] rounded-xl text-xs font-bold text-[#1E2F31] flex items-center justify-between transition-colors shadow-sm text-left h-[34px] relative z-10"
-                  >
-                    <span>
-                      {TIMELINE_MONTHS[
-                        Math.min(Math.max(1, newTask.start), maxMonths) - 1
-                      ]?.name || "Select"}
-                    </span>
-                    <ChevronDown size={14} className="text-[#9B8B70]" />
-                  </button>
-                  {activeMonthPicker?.type === "create" && (
-                    <div className="absolute right-0 bottom-full mb-2 z-50 bg-white/40 backdrop-blur-2xl rounded-2xl border border-white/20 p-4 w-64 shadow-[0_12px_40px_rgba(30,47,49,0.15),inset_0_1px_1px_rgba(255,255,255,0.7)] animate-in fade-in slide-in-from-bottom-2 duration-150">
-                      {renderInlineCalendarContent(activeMonthPicker)}
-                    </div>
-                  )}
+            {isCreatingTask ? (
+              <form
+                onSubmit={handleTaskCreate}
+                className="bg-white border border-[#D8D8D8] rounded-[24px] p-5 shadow-sm flex flex-col gap-4 animate-in slide-in-from-right-4 duration-300"
+              >
+                <div className="flex justify-between items-center pb-2 border-b border-[#EFEBE7]">
+                  <h3 className="text-sm font-black text-[#1E2F31] uppercase tracking-tight flex items-center gap-2">
+                    <Plus size={16} className="text-[#1C6048]" /> New Milestone
+                  </h3>
+                  <span className="text-[9px] text-[#4C4A4B] font-bold uppercase">
+                    Wizard
+                  </span>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black text-[#9B8B70] uppercase">
-                    Duration (Months)
+                    Milestone Name
                   </label>
                   <input
-                    type="number"
-                    min="1"
-                    max={maxAvailableMonths}
-                    value={newTask.duration}
-                    onChange={(e) =>
-                      setNewTask((p) => ({ ...p, duration: e.target.value }))
-                    }
-                    onFocus={() => {
-                      lastValidValRef.current = newTask.duration;
-                    }}
-                    onBlur={(e) => {
-                      const val = parseInt(e.target.value);
-                      const fallback =
-                        lastValidValRef.current !== null
-                          ? lastValidValRef.current
-                          : 4;
-                      const cleanVal =
-                        isNaN(val) || val < 1
-                          ? fallback
-                          : Math.min(maxAvailableMonths, val);
-                      setNewTask((p) => ({ ...p, duration: cleanVal }));
-                    }}
-                    className="w-full p-2 bg-[#F9F8F6] border border-[#D8D8D8] rounded-xl text-xs font-bold text-[#1E2F31] focus:ring-1 focus:ring-[#1C6048] outline-none"
-                  />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <div className="flex justify-between items-center text-[9px] font-black text-[#9B8B70] uppercase">
-                  <span>Initial Progress</span>
-                  <span>{newTask.progress}%</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={newTask.progress}
-                  onChange={(e) =>
-                    setNewTask((p) => ({
-                      ...p,
-                      progress: parseInt(e.target.value),
-                    }))
-                  }
-                  className="w-full h-1.5 bg-[#D8D8D8] rounded-lg appearance-none cursor-pointer accent-[#1C6048]"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-[#9B8B70] uppercase">
-                  Milestone Owner
-                </label>
-                <input
-                  type="text"
-                  value={newTask.owner}
-                  onChange={(e) =>
-                    setNewTask((p) => ({ ...p, owner: e.target.value }))
-                  }
-                  placeholder="e.g. Clinical Director"
-                  className="w-full p-2 bg-[#F9F8F6] border border-[#D8D8D8] rounded-xl text-xs font-bold text-[#1E2F31] focus:ring-1 focus:ring-[#1C6048] outline-none"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-[#9B8B70] uppercase">
-                  Detailed Description
-                </label>
-                <textarea
-                  value={newTask.desc}
-                  onChange={(e) =>
-                    setNewTask((p) => ({ ...p, desc: e.target.value }))
-                  }
-                  placeholder="Summarize the core target vectors..."
-                  className="w-full p-2 bg-[#F9F8F6] border border-[#D8D8D8] rounded-xl text-[10px] font-medium text-[#4C4A4B] focus:ring-1 focus:ring-[#1C6048] outline-none h-14 resize-none leading-snug"
-                />
-              </div>
-              <div className="flex items-center justify-between p-3 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]">
-                <span className="text-[10px] font-bold text-[#4C4A4B] uppercase">
-                  Critical Path Task?
-                </span>
-                <input
-                  type="checkbox"
-                  checked={newTask.critical}
-                  onChange={(e) =>
-                    setNewTask((p) => ({ ...p, critical: e.target.checked }))
-                  }
-                  className="w-4 h-4 rounded text-[#1C6048] accent-[#1C6048] border-[#D8D8D8] cursor-pointer"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3 mt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsCreatingTask(false)}
-                  className="py-2 rounded-xl text-xs font-bold text-[#4C4A4B] bg-[#EFEBE7] hover:bg-[#D8D8D8] transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="py-2 rounded-xl text-xs font-bold text-white bg-[#1C6048] hover:bg-opacity-95 transition-colors"
-                >
-                  Create
-                </button>
-              </div>
-            </form>
-          ) : selectedTask ? (
-            <div className="bg-white border border-[#D8D8D8] rounded-[24px] p-5 shadow-sm flex flex-col gap-4 animate-in slide-in-from-right-4 duration-300">
-              <div className="flex justify-between items-center">
-                <span
-                  className={`px-2.5 py-1 rounded text-[8px] font-black uppercase text-white bg-gradient-to-r ${selectedTask.groupColor}`}
-                >
-                  {selectedTask.groupName.split(" ")[1]} Milestone
-                </span>
-                <button
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        `Are you sure you want to permanently delete "${selectedTask.name}"?`,
-                      )
-                    )
-                      handleTaskDelete(selectedTask.groupId, selectedTask.id);
-                  }}
-                  className="text-gray-400 hover:text-[#9B8B70] transition-colors p-1 bg-[#F9F8F6] border border-[#D8D8D8] rounded-lg"
-                  title="Delete Milestone"
-                >
-                  <Trash2 size={13} />
-                </button>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-[#9B8B70] uppercase">
-                  Milestone Name
-                </label>
-                <input
-                  type="text"
-                  value={selectedTask.name}
-                  onChange={(e) =>
-                    handleTaskUpdate(
-                      selectedTask.groupId,
-                      selectedTask.id,
-                      "name",
-                      e.target.value,
-                    )
-                  }
-                  className="w-full p-2 bg-[#F9F8F6] border border-[#D8D8D8] rounded-xl text-xs font-bold text-[#1E2F31] focus:ring-1 focus:ring-[#1C6048] outline-none"
-                />
-                <textarea
-                  value={selectedTask.desc}
-                  onChange={(e) =>
-                    handleTaskUpdate(
-                      selectedTask.groupId,
-                      selectedTask.id,
-                      "desc",
-                      e.target.value,
-                    )
-                  }
-                  className="w-full p-2 bg-[#F9F8F6] border border-[#D8D8D8] rounded-xl text-[10px] font-medium text-[#4C4A4B] focus:ring-1 focus:ring-[#1C6048] outline-none h-14 resize-none leading-snug"
-                />
-              </div>
-              <div className="p-4 bg-[#F9F8F6] rounded-2xl border border-[#D8D8D8] space-y-2">
-                <div className="flex justify-between items-center text-[10px] font-bold text-[#4C4A4B]">
-                  <span>WORK PROGRESS</span>
-                  <span
-                    className={
-                      selectedTask.progress === 100
-                        ? "text-[#1C6048] font-black"
-                        : "text-[#9B8B70] font-black"
-                    }
-                  >
-                    {selectedTask.progress}%
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={selectedTask.progress}
-                  onChange={(e) =>
-                    handleTaskUpdate(
-                      selectedTask.groupId,
-                      selectedTask.id,
-                      "progress",
-                      parseInt(e.target.value),
-                    )
-                  }
-                  className="w-full h-1.5 bg-[#D8D8D8] rounded-lg appearance-none cursor-pointer accent-[#1C6048]"
-                />
-              </div>
-              <div className="border border-[#D8D8D8] rounded-2xl divide-y divide-[#D8D8D8] bg-white">
-                <div className="flex justify-between p-3 text-[10px] bg-[#F9F8F6]/30 items-center rounded-t-2xl">
-                  <span className="font-bold text-[#4C4A4B] uppercase flex items-center gap-1.5">
-                    <Users size={14} className="text-[#9B8B70]" /> Owner
-                  </span>
-                  <input
                     type="text"
-                    value={selectedTask.owner}
+                    value={newTask.name}
                     onChange={(e) =>
-                      handleTaskUpdate(
-                        selectedTask.groupId,
-                        selectedTask.id,
-                        "owner",
-                        e.target.value,
-                      )
+                      setNewTask((p) => ({ ...p, name: e.target.value }))
                     }
-                    className="w-28 p-1 text-right border border-[#D8D8D8] rounded font-bold text-[#1E2F31] focus:ring-1 focus:ring-[#1C6048] outline-none"
+                    placeholder="e.g. Procurement Sweep"
+                    className="w-full p-2 bg-[#F9F8F6] border border-[#D8D8D8] rounded-xl text-xs font-bold text-[#1E2F31] focus:ring-1 focus:ring-[#1C6048] outline-none"
+                    required
                   />
                 </div>
-                <div
-                  className="flex justify-between p-3 text-[10px] bg-[#F9F8F6]/30 items-center relative"
-                  ref={activeMonthPicker?.type === "edit" ? pickerRef : null}
-                >
-                  <span className="font-bold text-[#4C4A4B] uppercase flex items-center gap-1.5">
-                    <Calendar size={14} className="text-[#99B6AA]" /> Start
-                    Month
-                  </span>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (activeMonthPicker?.type === "edit")
-                        setActiveMonthPicker(null);
-                      else
-                        openMonthPicker("edit", selectedTask.start, (val) =>
-                          handleTaskUpdate(
-                            selectedTask.groupId,
-                            selectedTask.id,
-                            "start",
-                            val,
-                          ),
-                        );
-                    }}
-                    className="w-28 p-1 bg-white hover:bg-[#F9F8F6]/80 border border-[#D8D8D8] rounded font-bold text-[#1E2F31] text-right text-[10px] flex items-center justify-between px-2 h-[26px] relative z-10"
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black text-[#9B8B70] uppercase">
+                    Project Stage
+                  </label>
+                  <select
+                    value={newTask.groupId}
+                    onChange={(e) =>
+                      setNewTask((p) => ({ ...p, groupId: e.target.value }))
+                    }
+                    className="w-full p-2 bg-[#F9F8F6] border border-[#D8D8D8] rounded-xl text-xs font-bold text-[#1E2F31] focus:ring-1 focus:ring-[#1C6048] outline-none cursor-pointer"
                   >
-                    <span>
-                      {TIMELINE_MONTHS[
-                        Math.min(Math.max(1, selectedTask.start), maxMonths) - 1
-                      ]?.name || "Select"}
-                    </span>
-                    <ChevronDown
-                      size={12}
-                      className="text-[#9B8B70] ml-1 shrink-0"
-                    />
-                  </button>
-                  {activeMonthPicker?.type === "edit" && (
-                    <div className="absolute right-3 bottom-full mb-1 z-50 bg-white/40 backdrop-blur-2xl rounded-2xl border border-white/20 p-4 w-64 shadow-[0_12px_40px_rgba(30,47,49,0.15),inset_0_1px_1px_rgba(255,255,255,0.7)] animate-in fade-in slide-in-from-bottom-2 duration-150 text-left animate-out">
-                      {renderInlineCalendarContent(activeMonthPicker)}
-                    </div>
-                  )}
+                    <option value="design">1. Design & Planning</option>
+                    <option value="licensing">2. Licensing & Regulatory</option>
+                    <option value="construction">
+                      3. Civil & Construction
+                    </option>
+                    <option value="infrastructure">4. Infrastructure</option>
+                    <option value="equipment">5. Equipment & Launch</option>
+                  </select>
                 </div>
-                <div className="flex justify-between p-3 text-[10px] bg-[#F9F8F6]/30 items-center rounded-b-2xl">
-                  <span className="font-bold text-[#4C4A4B] uppercase flex items-center gap-1.5">
-                    <Clock size={14} className="text-[#9B8B70]" /> Duration
-                  </span>
-                  <div className="flex items-center gap-1">
+                <div className="grid grid-cols-2 gap-3">
+                  <div
+                    className="space-y-1.5 relative"
+                    ref={
+                      activeMonthPicker?.type === "create" ? pickerRef : null
+                    }
+                  >
+                    <label className="text-[9px] font-black text-[#9B8B70] uppercase">
+                      Start Month
+                    </label>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (activeMonthPicker?.type === "create")
+                          setActiveMonthPicker(null);
+                        else
+                          openMonthPicker("create", newTask.start, (val) =>
+                            setNewTask((p) => ({ ...p, start: val })),
+                          );
+                      }}
+                      className="w-full p-2 bg-[#F9F8F6] hover:bg-[#EFEBE7]/50 border border-[#D8D8D8] rounded-xl text-xs font-bold text-[#1E2F31] flex items-center justify-between transition-colors shadow-sm text-left h-[34px] relative z-10"
+                    >
+                      <span>
+                        {TIMELINE_MONTHS[
+                          Math.min(Math.max(1, newTask.start), maxMonths) - 1
+                        ]?.name || "Select"}
+                      </span>
+                      <ChevronDown size={14} className="text-[#9B8B70]" />
+                    </button>
+                    {activeMonthPicker?.type === "create" && (
+                      <div className="absolute right-0 bottom-full mb-2 z-50 bg-white/40 backdrop-blur-2xl rounded-2xl border border-white/20 p-4 w-64 shadow-[0_12px_40px_rgba(30,47,49,0.15),inset_0_1px_1px_rgba(255,255,255,0.7)] animate-in fade-in slide-in-from-bottom-2 duration-150">
+                        {renderInlineCalendarContent(activeMonthPicker)}
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-[#9B8B70] uppercase">
+                      Duration (Months)
+                    </label>
                     <input
                       type="number"
                       min="1"
-                      max={maxAvailableMonths - selectedTask.start + 1}
-                      value={selectedTask.duration}
+                      max={maxAvailableMonths}
+                      value={newTask.duration}
                       onChange={(e) =>
-                        handleTaskUpdate(
-                          selectedTask.groupId,
-                          selectedTask.id,
-                          "duration",
-                          e.target.value,
-                        )
+                        setNewTask((p) => ({ ...p, duration: e.target.value }))
                       }
                       onFocus={() => {
-                        lastValidValRef.current = selectedTask.duration;
+                        lastValidValRef.current = newTask.duration;
                       }}
                       onBlur={(e) => {
                         const val = parseInt(e.target.value);
                         const fallback =
                           lastValidValRef.current !== null
                             ? lastValidValRef.current
-                            : 1;
+                            : 4;
                         const cleanVal =
                           isNaN(val) || val < 1
                             ? fallback
-                            : Math.min(maxAvailableMonths - selectedTask.start + 1, val);
+                            : Math.min(maxAvailableMonths, val);
+                        setNewTask((p) => ({ ...p, duration: cleanVal }));
+                      }}
+                      className="w-full p-2 bg-[#F9F8F6] border border-[#D8D8D8] rounded-xl text-xs font-bold text-[#1E2F31] focus:ring-1 focus:ring-[#1C6048] outline-none"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center text-[9px] font-black text-[#9B8B70] uppercase">
+                    <span>Initial Progress</span>
+                    <span>{newTask.progress}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={newTask.progress}
+                    onChange={(e) =>
+                      setNewTask((p) => ({
+                        ...p,
+                        progress: parseInt(e.target.value),
+                      }))
+                    }
+                    className="w-full h-1.5 bg-[#D8D8D8] rounded-lg appearance-none cursor-pointer accent-[#1C6048]"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black text-[#9B8B70] uppercase">
+                    Milestone Owner
+                  </label>
+                  <input
+                    type="text"
+                    value={newTask.owner}
+                    onChange={(e) =>
+                      setNewTask((p) => ({ ...p, owner: e.target.value }))
+                    }
+                    placeholder="e.g. Clinical Director"
+                    className="w-full p-2 bg-[#F9F8F6] border border-[#D8D8D8] rounded-xl text-xs font-bold text-[#1E2F31] focus:ring-1 focus:ring-[#1C6048] outline-none"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black text-[#9B8B70] uppercase">
+                    Detailed Description
+                  </label>
+                  <textarea
+                    value={newTask.desc}
+                    onChange={(e) =>
+                      setNewTask((p) => ({ ...p, desc: e.target.value }))
+                    }
+                    placeholder="Summarize the core target vectors..."
+                    className="w-full p-2 bg-[#F9F8F6] border border-[#D8D8D8] rounded-xl text-[10px] font-medium text-[#4C4A4B] focus:ring-1 focus:ring-[#1C6048] outline-none h-14 resize-none leading-snug"
+                  />
+                </div>
+                <div className="flex items-center justify-between p-3 bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]">
+                  <span className="text-[10px] font-bold text-[#4C4A4B] uppercase">
+                    Critical Path Task?
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={newTask.critical}
+                    onChange={(e) =>
+                      setNewTask((p) => ({ ...p, critical: e.target.checked }))
+                    }
+                    className="w-4 h-4 rounded text-[#1C6048] accent-[#1C6048] border-[#D8D8D8] cursor-pointer"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsCreatingTask(false)}
+                    className="py-2 rounded-xl text-xs font-bold text-[#4C4A4B] bg-[#EFEBE7] hover:bg-[#D8D8D8] transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="py-2 rounded-xl text-xs font-bold text-white bg-[#1C6048] hover:bg-opacity-95 transition-colors"
+                  >
+                    Create
+                  </button>
+                </div>
+              </form>
+            ) : selectedTask ? (
+              <div className="bg-white border border-[#D8D8D8] rounded-[24px] p-5 shadow-sm flex flex-col gap-4 animate-in slide-in-from-right-4 duration-300">
+                <div className="flex justify-between items-center">
+                  <span
+                    className={`px-2.5 py-1 rounded text-[8px] font-black uppercase text-white bg-gradient-to-r ${selectedTask.groupColor}`}
+                  >
+                    {selectedTask.groupName.split(" ")[1]} Milestone
+                  </span>
+                  <button
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          `Are you sure you want to permanently delete "${selectedTask.name}"?`,
+                        )
+                      )
+                        handleTaskDelete(selectedTask.groupId, selectedTask.id);
+                    }}
+                    className="text-gray-400 hover:text-[#9B8B70] transition-colors p-1 bg-[#F9F8F6] border border-[#D8D8D8] rounded-lg"
+                    title="Delete Milestone"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black text-[#9B8B70] uppercase">
+                    Milestone Name
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedTask.name}
+                    onChange={(e) =>
+                      handleTaskUpdate(
+                        selectedTask.groupId,
+                        selectedTask.id,
+                        "name",
+                        e.target.value,
+                      )
+                    }
+                    className="w-full p-2 bg-[#F9F8F6] border border-[#D8D8D8] rounded-xl text-xs font-bold text-[#1E2F31] focus:ring-1 focus:ring-[#1C6048] outline-none"
+                  />
+                  <textarea
+                    value={selectedTask.desc}
+                    onChange={(e) =>
+                      handleTaskUpdate(
+                        selectedTask.groupId,
+                        selectedTask.id,
+                        "desc",
+                        e.target.value,
+                      )
+                    }
+                    className="w-full p-2 bg-[#F9F8F6] border border-[#D8D8D8] rounded-xl text-[10px] font-medium text-[#4C4A4B] focus:ring-1 focus:ring-[#1C6048] outline-none h-14 resize-none leading-snug"
+                  />
+                </div>
+                <div className="p-4 bg-[#F9F8F6] rounded-2xl border border-[#D8D8D8] space-y-2">
+                  <div className="flex justify-between items-center text-[10px] font-bold text-[#4C4A4B]">
+                    <span>WORK PROGRESS</span>
+                    <span
+                      className={
+                        selectedTask.progress === 100
+                          ? "text-[#1C6048] font-black"
+                          : "text-[#9B8B70] font-black"
+                      }
+                    >
+                      {selectedTask.progress}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={selectedTask.progress}
+                    onChange={(e) =>
+                      handleTaskUpdate(
+                        selectedTask.groupId,
+                        selectedTask.id,
+                        "progress",
+                        parseInt(e.target.value),
+                      )
+                    }
+                    className="w-full h-1.5 bg-[#D8D8D8] rounded-lg appearance-none cursor-pointer accent-[#1C6048]"
+                  />
+                </div>
+                <div className="border border-[#D8D8D8] rounded-2xl divide-y divide-[#D8D8D8] bg-white">
+                  <div className="flex justify-between p-3 text-[10px] bg-[#F9F8F6]/30 items-center rounded-t-2xl">
+                    <span className="font-bold text-[#4C4A4B] uppercase flex items-center gap-1.5">
+                      <Users size={14} className="text-[#9B8B70]" /> Owner
+                    </span>
+                    <input
+                      type="text"
+                      value={selectedTask.owner}
+                      onChange={(e) =>
                         handleTaskUpdate(
                           selectedTask.groupId,
                           selectedTask.id,
-                          "duration",
-                          cleanVal,
-                        );
-                      }}
-                      className="w-12 p-1 text-right border border-[#D8D8D8] rounded font-bold text-[#1E2F31] focus:ring-1 focus:ring-[#1C6048] outline-none"
+                          "owner",
+                          e.target.value,
+                        )
+                      }
+                      className="w-28 p-1 text-right border border-[#D8D8D8] rounded font-bold text-[#1E2F31] focus:ring-1 focus:ring-[#1C6048] outline-none"
                     />
-                    <span className="font-bold text-[#4C4A4B] text-[9px] uppercase">
-                      Mos
+                  </div>
+                  <div
+                    className="flex justify-between p-3 text-[10px] bg-[#F9F8F6]/30 items-center relative"
+                    ref={activeMonthPicker?.type === "edit" ? pickerRef : null}
+                  >
+                    <span className="font-bold text-[#4C4A4B] uppercase flex items-center gap-1.5">
+                      <Calendar size={14} className="text-[#99B6AA]" /> Start
+                      Month
                     </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (activeMonthPicker?.type === "edit")
+                          setActiveMonthPicker(null);
+                        else
+                          openMonthPicker("edit", selectedTask.start, (val) =>
+                            handleTaskUpdate(
+                              selectedTask.groupId,
+                              selectedTask.id,
+                              "start",
+                              val,
+                            ),
+                          );
+                      }}
+                      className="w-28 p-1 bg-white hover:bg-[#F9F8F6]/80 border border-[#D8D8D8] rounded font-bold text-[#1E2F31] text-right text-[10px] flex items-center justify-between px-2 h-[26px] relative z-10"
+                    >
+                      <span>
+                        {TIMELINE_MONTHS[
+                          Math.min(Math.max(1, selectedTask.start), maxMonths) -
+                            1
+                        ]?.name || "Select"}
+                      </span>
+                      <ChevronDown
+                        size={12}
+                        className="text-[#9B8B70] ml-1 shrink-0"
+                      />
+                    </button>
+                    {activeMonthPicker?.type === "edit" && (
+                      <div className="absolute right-3 bottom-full mb-1 z-50 bg-white/40 backdrop-blur-2xl rounded-2xl border border-white/20 p-4 w-64 shadow-[0_12px_40px_rgba(30,47,49,0.15),inset_0_1px_1px_rgba(255,255,255,0.7)] animate-in fade-in slide-in-from-bottom-2 duration-150 text-left animate-out">
+                        {renderInlineCalendarContent(activeMonthPicker)}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex justify-between p-3 text-[10px] bg-[#F9F8F6]/30 items-center rounded-b-2xl">
+                    <span className="font-bold text-[#4C4A4B] uppercase flex items-center gap-1.5">
+                      <Clock size={14} className="text-[#9B8B70]" /> Duration
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min="1"
+                        max={maxAvailableMonths - selectedTask.start + 1}
+                        value={selectedTask.duration}
+                        onChange={(e) =>
+                          handleTaskUpdate(
+                            selectedTask.groupId,
+                            selectedTask.id,
+                            "duration",
+                            e.target.value,
+                          )
+                        }
+                        onFocus={() => {
+                          lastValidValRef.current = selectedTask.duration;
+                        }}
+                        onBlur={(e) => {
+                          const val = parseInt(e.target.value);
+                          const fallback =
+                            lastValidValRef.current !== null
+                              ? lastValidValRef.current
+                              : 1;
+                          const cleanVal =
+                            isNaN(val) || val < 1
+                              ? fallback
+                              : Math.min(
+                                  maxAvailableMonths - selectedTask.start + 1,
+                                  val,
+                                );
+                          handleTaskUpdate(
+                            selectedTask.groupId,
+                            selectedTask.id,
+                            "duration",
+                            cleanVal,
+                          );
+                        }}
+                        className="w-12 p-1 text-right border border-[#D8D8D8] rounded font-bold text-[#1E2F31] focus:ring-1 focus:ring-[#1C6048] outline-none"
+                      />
+                      <span className="font-bold text-[#4C4A4B] text-[9px] uppercase">
+                        Mos
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div>
-                <h4 className="text-[10px] font-black uppercase text-[#9B8B70] tracking-wider mb-2">
-                  Target Dependencies
-                </h4>
-                {(selectedTask.dependencies || []).length > 0 ? (
-                  <div className="flex flex-col gap-1.5">
-                    {(selectedTask.dependencies || []).map((depId) => {
-                      const depName = getTaskNameById(depId);
-                      return (
-                        <div
-                          key={depId}
-                          onClick={() => setSelectedTaskId(depId)}
-                          className="px-3 py-2 bg-[#EFEBE7] hover:bg-[#D8D8D8] rounded-xl border border-[#D8D8D8] text-[10px] font-bold text-[#1E2F31] cursor-pointer transition-colors flex items-center justify-between group shadow-sm"
-                          title={`Click to focus predecessor: ${depName}`}
-                        >
-                          <div className="flex items-center gap-2 truncate">
-                            <ArrowRight
-                              size={10}
-                              className="text-[#9B8B70] group-hover:translate-x-0.5 transition-transform"
-                            />
-                            <span className="text-[#9B8B70] shrink-0 font-extrabold">
-                              {depId.toUpperCase()}:
-                            </span>
-                            <span className="truncate text-[#4C4A4B] group-hover:text-[#1E2F31]">
-                              {depName}
-                            </span>
+                <div>
+                  <h4 className="text-[10px] font-black uppercase text-[#9B8B70] tracking-wider mb-2">
+                    Target Dependencies
+                  </h4>
+                  {(selectedTask.dependencies || []).length > 0 ? (
+                    <div className="flex flex-col gap-1.5">
+                      {(selectedTask.dependencies || []).map((depId) => {
+                        const depName = getTaskNameById(depId);
+                        return (
+                          <div
+                            key={depId}
+                            onClick={() => setSelectedTaskId(depId)}
+                            className="px-3 py-2 bg-[#EFEBE7] hover:bg-[#D8D8D8] rounded-xl border border-[#D8D8D8] text-[10px] font-bold text-[#1E2F31] cursor-pointer transition-colors flex items-center justify-between group shadow-sm"
+                            title={`Click to focus predecessor: ${depName}`}
+                          >
+                            <div className="flex items-center gap-2 truncate">
+                              <ArrowRight
+                                size={10}
+                                className="text-[#9B8B70] group-hover:translate-x-0.5 transition-transform"
+                              />
+                              <span className="text-[#9B8B70] shrink-0 font-extrabold">
+                                {depId.toUpperCase()}:
+                              </span>
+                              <span className="truncate text-[#4C4A4B] group-hover:text-[#1E2F31]">
+                                {depName}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <span className="text-[10px] text-[#4C4A4B]/60 italic font-medium">
-                    None. This is an initial parent task.
-                  </span>
-                )}
-              </div>
-              {selectedTask.critical && highlightCritical && (
-                <div className="p-4 bg-[#EFEBE7] border border-[#9B8B70]/30 rounded-2xl flex items-start gap-3">
-                  <ShieldAlert
-                    size={18}
-                    className="text-[#9B8B70] shrink-0 mt-0.5"
-                  />
-                  <div>
-                    <h4 className="font-bold text-xs text-[#1E2F31]">
-                      Critical Path Notice
-                    </h4>
-                    <p className="text-[10px] text-[#4C4A4B] leading-relaxed font-medium mt-1">
-                      Delays in this milestone directly disrupt downstream
-                      equipment fitment, nuclear physics calibration, and final
-                      commercial opening.
-                    </p>
-                  </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <span className="text-[10px] text-[#4C4A4B]/60 italic font-medium">
+                      None. This is an initial parent task.
+                    </span>
+                  )}
                 </div>
-              )}
-              {selectedTaskConflicts && selectedTaskConflicts.length > 0 && (
-                <div className="p-4 bg-[#F9F8F6] border-2 border-amber-500/40 rounded-2xl flex flex-col gap-2.5 animate-in fade-in duration-300">
-                  <div className="flex items-start gap-3">
-                    <AlertTriangle
+                {selectedTask.critical && highlightCritical && (
+                  <div className="p-4 bg-[#EFEBE7] border border-[#9B8B70]/30 rounded-2xl flex items-start gap-3">
+                    <ShieldAlert
                       size={18}
-                      className="text-amber-600 shrink-0 mt-0.5 animate-pulse"
+                      className="text-[#9B8B70] shrink-0 mt-0.5"
                     />
                     <div>
-                      <h4 className="font-extrabold text-xs text-[#1E2F31] uppercase tracking-wider">
-                        Timeline Clash Warning
+                      <h4 className="font-bold text-xs text-[#1E2F31]">
+                        Critical Path Notice
                       </h4>
-                      <p className="text-[10px] text-[#4C4A4B] leading-relaxed font-bold mt-1">
-                        We detected sequencing issues that are unrealistic or conflict with predecessors:
+                      <p className="text-[10px] text-[#4C4A4B] leading-relaxed font-medium mt-1">
+                        Delays in this milestone directly disrupt downstream
+                        equipment fitment, nuclear physics calibration, and
+                        final commercial opening.
                       </p>
                     </div>
                   </div>
-                  <div className="space-y-1.5 pl-7">
-                    {selectedTaskConflicts.map((msg, idx) => (
-                      <p key={idx} className="text-[10px] text-[#1E2F31] font-bold leading-normal relative before:content-['•'] before:absolute before:-left-3 before:text-[#9B8B70]">
-                        {msg}
-                      </p>
-                    ))}
+                )}
+                {selectedTaskConflicts && selectedTaskConflicts.length > 0 && (
+                  <div className="p-4 bg-[#F9F8F6] border-2 border-amber-500/40 rounded-2xl flex flex-col gap-2.5 animate-in fade-in duration-300">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle
+                        size={18}
+                        className="text-amber-600 shrink-0 mt-0.5 animate-pulse"
+                      />
+                      <div>
+                        <h4 className="font-extrabold text-xs text-[#1E2F31] uppercase tracking-wider">
+                          Timeline Clash Warning
+                        </h4>
+                        <p className="text-[10px] text-[#4C4A4B] leading-relaxed font-bold mt-1">
+                          We detected sequencing issues that are unrealistic or
+                          conflict with predecessors:
+                        </p>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5 pl-7">
+                      {selectedTaskConflicts.map((msg, idx) => (
+                        <p
+                          key={idx}
+                          className="text-[10px] text-[#1E2F31] font-bold leading-normal relative before:content-['•'] before:absolute before:-left-3 before:text-[#9B8B70]"
+                        >
+                          {msg}
+                        </p>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="bg-white border border-[#D8D8D8] rounded-[24px] p-8 shadow-sm text-center flex flex-col items-center justify-center min-h-[300px]">
-              <HelpCircle size={40} className="text-[#D8D8D8] mb-4" />
-              <p className="text-xs text-[#4C4A4B] font-bold uppercase tracking-wider">
-                No Milestone Selected
+                )}
+              </div>
+            ) : (
+              <div className="bg-white border border-[#D8D8D8] rounded-[24px] p-8 shadow-sm text-center flex flex-col items-center justify-center min-h-[300px]">
+                <HelpCircle size={40} className="text-[#D8D8D8] mb-4" />
+                <p className="text-xs text-[#4C4A4B] font-bold uppercase tracking-wider">
+                  No Milestone Selected
+                </p>
+                <p className="text-[10px] text-[#4C4A4B]/60 font-medium mt-2 max-w-[200px]">
+                  Click any element on the timeline or click "+ Add Milestone"
+                  to construct new tasks.
+                </p>
+              </div>
+            )}
+            <div className="bg-[#EFEBE7] rounded-[24px] p-6 border border-[#D8D8D8] flex flex-col gap-4">
+              <h3 className="font-black text-xs text-[#1E2F31] uppercase tracking-wider flex items-center gap-2">
+                <Award size={16} className="text-[#1C6048]" /> Moat Milestone
+                Strategy
+              </h3>
+              <p className="text-[11px] text-[#4C4A4B] leading-relaxed font-medium">
+                By securing the <strong>BAPETEN Nuclear Licensing</strong> in
+                Phase 2 (Months 9-16), we lock in our legal monopoly. Since no
+                general competitor in the Tangerang sector holds these
+                permissions, this approval protects our oncology revenues even
+                before physical construction is finalized.
               </p>
-              <p className="text-[10px] text-[#4C4A4B]/60 font-medium mt-2 max-w-[200px]">
-                Click any element on the timeline or click "+ Add Milestone" to
-                construct new tasks.
-              </p>
             </div>
-          )}
-          <div className="bg-[#EFEBE7] rounded-[24px] p-6 border border-[#D8D8D8] flex flex-col gap-4">
-            <h3 className="font-black text-xs text-[#1E2F31] uppercase tracking-wider flex items-center gap-2">
-              <Award size={16} className="text-[#1C6048]" /> Moat Milestone
-              Strategy
-            </h3>
-            <p className="text-[11px] text-[#4C4A4B] leading-relaxed font-medium">
-              By securing the <strong>BAPETEN Nuclear Licensing</strong> in Phase 2 (Months
-              9-16), we lock in our legal monopoly. Since no general competitor
-              in the Tangerang sector holds these permissions, this approval
-              protects our oncology revenues even before physical construction
-              is finalized.
-            </p>
           </div>
-        </div>
-      )}
+        )}
       </div>
     </div>
   );
@@ -13012,49 +14224,96 @@ const SettingsPasswordGate = ({ children }) => {
   return <>{children}</>;
 };
 
-export const useMonthlyColumns = (annualData, viewResolution = 'annual') => {
+export const useMonthlyColumns = (annualData, viewResolution = "annual") => {
   const [expandedYears, setExpandedYears] = useState({});
-  const toggleYear = (yr) => setExpandedYears(prev => ({...prev, [yr]: !prev[yr]}));
+  const toggleYear = (yr) =>
+    setExpandedYears((prev) => ({ ...prev, [yr]: !prev[yr] }));
 
   const columns = useMemo(() => {
     let cols = [];
-    annualData.forEach(d => {
-       if (viewResolution !== 'monthly') {
-          cols.push({ ...d, colType: 'year', defaultLabel: d.year });
-       }
-       
-       if (expandedYears[d.year] || viewResolution === 'monthly') {
-          for (let m = 1; m <= 12; m++) {
-             let monthLabel = viewResolution === 'monthly' ? `${String(d.year).slice(-2)} M${m}` : `M${m}`;
-             let monthData = { ...d, colType: 'month', defaultLabel: monthLabel, isMonth: true, parentYear: d.year };
-             const isRate = ['bor', 'ebitdaMargin', 'ebitdarMargin', 'netMargin', 'breakEvenBor', 'pA_Yield', 'pB_Yield', 'avgDscr', 'avgYield', 'moic', 'costPerBed', 'costPerSqm', 'yocExLand', 'irr', 'lpIrr', 'gpIrr', 'isOperating', 'year', 'colType', 'defaultLabel', 'isMonth', 'parentYear'];
-             const isBalance = ['debtBalance', 'debtBalanceExLand'];
-             Object.keys(d).forEach(k => {
-                if (d.monthly && d.monthly[k] && Array.isArray(d.monthly[k])) {
-                   monthData[k] = d.monthly[k][m - 1];
-                } else if (!isRate.includes(k) && !isBalance.includes(k) && typeof d[k] === 'number') {
-                   if (k === 'cumNI' || k === 'cumulativeRetainedEarnings' || k === 'pA_Cum' || k === 'pB_Cum' || k === 'cumFcfe' || k === 'cumFcfeExLand' || k === 'cumFreeCashFlow' || k === 'cumCf') {
-                      let flowKey = '';
-                      if (k === 'cumNI') flowKey = 'netIncome';
-                      if (k === 'cumulativeRetainedEarnings') flowKey = 'retainedThisYear';
-                      if (k === 'pA_Cum') flowKey = 'pA_Net';
-                      if (k === 'pB_Cum') flowKey = 'pB_Net';
-                      if (k === 'cumFcfe') flowKey = 'fcfe';
-                      if (k === 'cumFcfeExLand') flowKey = 'fcfeExLand';
-                      if (k === 'cumFreeCashFlow') flowKey = 'freeCashFlow';
-                      if (k === 'cumCf') flowKey = 'netFlow';
-                      
-                      const flow = d[flowKey] || 0;
-                      const startBase = d[k] - flow; 
-                      monthData[k] = startBase + (flow / 12) * m;
-                   } else {
-                      monthData[k] = d[k] / 12;
-                   }
-                }
-             });
-             cols.push(monthData);
-          }
-       }
+    annualData.forEach((d) => {
+      if (viewResolution !== "monthly") {
+        cols.push({ ...d, colType: "year", defaultLabel: d.year });
+      }
+
+      if (expandedYears[d.year] || viewResolution === "monthly") {
+        for (let m = 1; m <= 12; m++) {
+          let monthLabel =
+            viewResolution === "monthly"
+              ? `${String(d.year).slice(-2)} M${m}`
+              : `M${m}`;
+          let monthData = {
+            ...d,
+            colType: "month",
+            defaultLabel: monthLabel,
+            isMonth: true,
+            parentYear: d.year,
+          };
+          const isRate = [
+            "bor",
+            "ebitdaMargin",
+            "ebitdarMargin",
+            "netMargin",
+            "breakEvenBor",
+            "pA_Yield",
+            "pB_Yield",
+            "avgDscr",
+            "avgYield",
+            "moic",
+            "costPerBed",
+            "costPerSqm",
+            "yocExLand",
+            "irr",
+            "lpIrr",
+            "gpIrr",
+            "isOperating",
+            "year",
+            "colType",
+            "defaultLabel",
+            "isMonth",
+            "parentYear",
+          ];
+          const isBalance = ["debtBalance", "debtBalanceExLand"];
+          Object.keys(d).forEach((k) => {
+            if (d.monthly && d.monthly[k] && Array.isArray(d.monthly[k])) {
+              monthData[k] = d.monthly[k][m - 1];
+            } else if (
+              !isRate.includes(k) &&
+              !isBalance.includes(k) &&
+              typeof d[k] === "number"
+            ) {
+              if (
+                k === "cumNI" ||
+                k === "cumulativeRetainedEarnings" ||
+                k === "pA_Cum" ||
+                k === "pB_Cum" ||
+                k === "cumFcfe" ||
+                k === "cumFcfeExLand" ||
+                k === "cumFreeCashFlow" ||
+                k === "cumCf"
+              ) {
+                let flowKey = "";
+                if (k === "cumNI") flowKey = "netIncome";
+                if (k === "cumulativeRetainedEarnings")
+                  flowKey = "retainedThisYear";
+                if (k === "pA_Cum") flowKey = "pA_Net";
+                if (k === "pB_Cum") flowKey = "pB_Net";
+                if (k === "cumFcfe") flowKey = "fcfe";
+                if (k === "cumFcfeExLand") flowKey = "fcfeExLand";
+                if (k === "cumFreeCashFlow") flowKey = "freeCashFlow";
+                if (k === "cumCf") flowKey = "netFlow";
+
+                const flow = d[flowKey] || 0;
+                const startBase = d[k] - flow;
+                monthData[k] = startBase + (flow / 12) * m;
+              } else {
+                monthData[k] = d[k] / 12;
+              }
+            }
+          });
+          cols.push(monthData);
+        }
+      }
     });
     return cols;
   }, [annualData, expandedYears, viewResolution]);
@@ -13063,26 +14322,37 @@ export const useMonthlyColumns = (annualData, viewResolution = 'annual') => {
 };
 
 const localFinancialAuditor = {
-  getTeaser: (opCoData, propCoData, consolidatedData, opCoAssumptions, propCoAssumptions) => {
+  getTeaser: (
+    opCoData,
+    propCoData,
+    consolidatedData,
+    opCoAssumptions,
+    propCoAssumptions,
+  ) => {
     const beds = opCoAssumptions?.beds || 150;
     const projectNPV = opCoData?.projectNPV || 0;
     const projectIRR = opCoData?.projectIRR || 0;
     const projectPayback = opCoData?.projectPayback || 0;
     const discountRate = opCoAssumptions?.discountRate || 10;
-    
-    const opYears = opCoData?.annualData?.filter(d => (d.totalRev || 0) > 0) || [];
-    const avgEbitdarMargin = opYears.length > 0
-      ? opYears.reduce((acc, d) => acc + (d.ebitdarMargin || 0), 0) / opYears.length
-      : 0;
-    const avgNetMargin = opYears.length > 0
-      ? opYears.reduce((acc, d) => acc + (d.netMargin || 0), 0) / opYears.length
-      : 0;
+
+    const opYears =
+      opCoData?.annualData?.filter((d) => (d.totalRev || 0) > 0) || [];
+    const avgEbitdarMargin =
+      opYears.length > 0
+        ? opYears.reduce((acc, d) => acc + (d.ebitdarMargin || 0), 0) /
+          opYears.length
+        : 0;
+    const avgNetMargin =
+      opYears.length > 0
+        ? opYears.reduce((acc, d) => acc + (d.netMargin || 0), 0) /
+          opYears.length
+        : 0;
 
     const caps = propCoData?.capexDetails || {};
     const landCost = caps.landCost || 0;
     const buildCost = caps.buildCost || 0;
     const medEq = caps.medEqCost || 0;
-    
+
     return `### 📋 COGNITIVE FEASIBILITY INVESTMENT PROSPECTUS
 *(⚡ Context-Aware Real-Time Underwritten Output)* This document is compiled directly from active multi-cascade scenario variables.
 
@@ -13113,21 +14383,37 @@ const localFinancialAuditor = {
 *Note: This pro-forma pitch prospectus displays live calculations and is fully validated.*`;
   },
 
-  getInsights: (opCoData, propCoData, consolidatedData, opCoAssumptions, propCoAssumptions) => {
+  getInsights: (
+    opCoData,
+    propCoData,
+    consolidatedData,
+    opCoAssumptions,
+    propCoAssumptions,
+  ) => {
     const beds = opCoAssumptions?.beds || 150;
     const discountRate = opCoAssumptions?.discountRate || 10;
     const caps = propCoData?.capexDetails || {};
-    const totalCapex = (caps.landCost || 0) + (caps.buildCost || 0) + (caps.medEqCost || 0) + (caps.ffeCost || 0) + (caps.infraCost || 0) + (caps.consultantCost || 0);
+    const totalCapex =
+      (caps.landCost || 0) +
+      (caps.buildCost || 0) +
+      (caps.medEqCost || 0) +
+      (caps.ffeCost || 0) +
+      (caps.infraCost || 0) +
+      (caps.consultantCost || 0);
     const projectNPV = opCoData?.projectNPV || 0;
     const projectIRR = opCoData?.projectIRR || 0;
 
-    const opYears = opCoData?.annualData?.filter(d => (d.totalRev || 0) > 0) || [];
-    const avgEbitdarMargin = opYears.length > 0
-      ? opYears.reduce((acc, d) => acc + (d.ebitdarMargin || 0), 0) / opYears.length
-      : 0;
-    const avgBor = opYears.length > 0
-      ? opYears.reduce((acc, d) => acc + (d.bor || 0), 0) / opYears.length
-      : 0;
+    const opYears =
+      opCoData?.annualData?.filter((d) => (d.totalRev || 0) > 0) || [];
+    const avgEbitdarMargin =
+      opYears.length > 0
+        ? opYears.reduce((acc, d) => acc + (d.ebitdarMargin || 0), 0) /
+          opYears.length
+        : 0;
+    const avgBor =
+      opYears.length > 0
+        ? opYears.reduce((acc, d) => acc + (d.bor || 0), 0) / opYears.length
+        : 0;
 
     return `### 🔍 CAPITAL CASCADE WORKFLOW DIAGNOSIS
 *(⚡ Context-Aware Real-Time Underwritten Output)* Detailed look-through assessment of healthcare asset yield cascades.
@@ -13144,7 +14430,13 @@ const localFinancialAuditor = {
 - **Returns Viability**: With a combined project post-tax IRR of **${projectIRR.toFixed(2)}%**, the asset generates substantial returns exceeding the target **${discountRate}%** discount hurdle rate. Underwritten project NPV matches **${projectNPV.toFixed(2)} B IDR**.`;
   },
 
-  getValidation: (opCoData, propCoData, consolidatedData, opCoAssumptions, propCoAssumptions) => {
+  getValidation: (
+    opCoData,
+    propCoData,
+    consolidatedData,
+    opCoAssumptions,
+    propCoAssumptions,
+  ) => {
     const buildCost = propCoData?.capexDetails?.buildCost || 0;
     const projectPayback = opCoData?.projectPayback || 0;
     const discountRate = opCoAssumptions?.discountRate || 10;
@@ -13161,26 +14453,47 @@ const localFinancialAuditor = {
 - **Payback Sensitivity**: The active payback trajectory of **${projectPayback.toFixed(1)} Years** satisfies institutional healthcare risk models.`;
   },
 
-  getSmartAsk: (query, opCoData, propCoData, consolidatedData, opCoAssumptions, propCoAssumptions) => {
+  getSmartAsk: (
+    query,
+    opCoData,
+    propCoData,
+    consolidatedData,
+    opCoAssumptions,
+    propCoAssumptions,
+  ) => {
     const lowercase = (query || "").toLowerCase();
     const beds = opCoAssumptions?.beds || 150;
     const projectNPV = opCoData?.projectNPV || 0;
     const projectIRR = opCoData?.projectIRR || 0;
     const projectPayback = opCoData?.projectPayback || 0;
 
-    if (lowercase.includes("ebitdar") || lowercase.includes("margin") || lowercase.includes("ebitda")) {
+    if (
+      lowercase.includes("ebitdar") ||
+      lowercase.includes("margin") ||
+      lowercase.includes("ebitda")
+    ) {
       return `### 📊 EBITDAR MARGIN ASSESSMENT
 - **Underwriting Method**: EBITDAR is evaluated as: \`Gross Clinical Revenue - Supplies - Doctor Fees - Staff OPEX - Overheads\`.
 - **Operating Capacity**: Currently modeled with **${beds} beds** showing robust operational yield.`;
     }
 
-    if (lowercase.includes("psak") || lowercase.includes("accounting") || lowercase.includes("regulation") || lowercase.includes("standard")) {
+    if (
+      lowercase.includes("psak") ||
+      lowercase.includes("accounting") ||
+      lowercase.includes("regulation") ||
+      lowercase.includes("standard")
+    ) {
       return `### 🏛️ INDONESIAN ACCOUNTING STANDARD (PSAK 16 & 19)
 - **Direct Construction / PPE (PSAK 16)**: Capitalized directly as building & infrastructure.
 - **Pre-Operating Overhead (PSAK 19)**: Direct pre-operating start-up costs must be expensed immediately under PSAK 19.43 rather than capitalized over years.`;
     }
 
-    if (lowercase.includes("payback") || lowercase.includes("irr") || lowercase.includes("npv") || lowercase.includes("return")) {
+    if (
+      lowercase.includes("payback") ||
+      lowercase.includes("irr") ||
+      lowercase.includes("npv") ||
+      lowercase.includes("return")
+    ) {
       return `### 💎 RETURN METRICS DIAGNOSTIC
 - **NPV**: **${projectNPV.toFixed(2)} B IDR** at active discount rates.
 - **Post-Tax IRR**: **${projectIRR.toFixed(2)}%** offer.
@@ -13192,7 +14505,7 @@ const localFinancialAuditor = {
 - **Project IRR**: **${projectIRR.toFixed(2)}%**
 - **Combined Project NPV**: **${projectNPV.toFixed(2)} B IDR**
 *Change assumptions inside the left parameters panel to run real-time risk-profile updates.*`;
-  }
+  },
 };
 
 export default function App() {
@@ -13341,7 +14654,9 @@ export default function App() {
     (s) =>
       s.group === activeGroup &&
       s.tab === activeTab &&
-      (s.group !== "financials" || s.tab === "timeline" || s.company === activeCompany),
+      (s.group !== "financials" ||
+        s.tab === "timeline" ||
+        s.company === activeCompany),
   );
   const safeSlideIndex = Math.max(0, currentSlideIndex);
 
@@ -13367,20 +14682,20 @@ export default function App() {
     const handleKeyDown = (e) => {
       // Ignore if typing in an input/textarea
       const tag = (e.target || e.srcElement)?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
-      if (e.key === 'F5' || e.key === 'f5') {
+      if (e.key === "F5" || e.key === "f5") {
         e.preventDefault();
-        setIsPresenting(prev => !prev);
+        setIsPresenting((prev) => !prev);
         return;
       }
 
       if (!isPresenting) return;
 
       // Blank screen toggle (Logitech and other wireless clickers send '.' or 'b' / 'B')
-      if (e.key === '.' || e.key === 'b' || e.key === 'B') {
+      if (e.key === "." || e.key === "b" || e.key === "B") {
         e.preventDefault();
-        setIsBlanked(prev => !prev);
+        setIsBlanked((prev) => !prev);
         return;
       }
 
@@ -13390,34 +14705,34 @@ export default function App() {
       }
 
       if (
-        e.key === 'PageDown' || 
-        e.key === 'ArrowRight' || 
-        e.key === 'ArrowDown' || 
-        e.key === 'AudioVolumeDown' || 
-        e.key === 'VolumeDown' || 
-        e.key === ' ' || 
-        e.key === 'Spacebar' || 
-        e.key === 'Enter'
+        e.key === "PageDown" ||
+        e.key === "ArrowRight" ||
+        e.key === "ArrowDown" ||
+        e.key === "AudioVolumeDown" ||
+        e.key === "VolumeDown" ||
+        e.key === " " ||
+        e.key === "Spacebar" ||
+        e.key === "Enter"
       ) {
         e.preventDefault();
         goToNextSlide();
       } else if (
-        e.key === 'PageUp' || 
-        e.key === 'ArrowLeft' || 
-        e.key === 'ArrowUp' || 
-        e.key === 'AudioVolumeUp' || 
-        e.key === 'VolumeUp' || 
-        e.key === 'Backspace'
+        e.key === "PageUp" ||
+        e.key === "ArrowLeft" ||
+        e.key === "ArrowUp" ||
+        e.key === "AudioVolumeUp" ||
+        e.key === "VolumeUp" ||
+        e.key === "Backspace"
       ) {
         e.preventDefault();
         goToPrevSlide();
-      } else if (e.key === 'Escape') {
+      } else if (e.key === "Escape") {
         setIsPresenting(false);
       }
     };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isPresenting, isBlanked, goToNextSlide, goToPrevSlide]);
 
   const projConfig = useMemo(() => {
@@ -13436,31 +14751,46 @@ export default function App() {
       const op1 = runOpCoEngine(opCoAssumptions, p1);
       const pr1 = runPropCoEngine(propCoAssumptions, op1, p1, groups);
       const cons1 = runConsolidatedEngine(op1, pr1, opCoAssumptions);
-      
-      const devYears = Math.max(1, Math.ceil((propCoAssumptions.devDurationMonths || 12) / 12));
-      const exactOverallPayback = cons1.metrics.payback; 
-      let beOpYear = exactOverallPayback > 0 ? Math.ceil(exactOverallPayback) - devYears + 1 : 30;
-      
+
+      const devYears = Math.max(
+        1,
+        Math.ceil((propCoAssumptions.devDurationMonths || 12) / 12),
+      );
+      const exactOverallPayback = cons1.metrics.payback;
+      let beOpYear =
+        exactOverallPayback > 0
+          ? Math.ceil(exactOverallPayback) - devYears + 1
+          : 30;
+
       const y = Math.max(1, propCoAssumptions.loanTenor || 15);
       const targetYear = Math.max(beOpYear, y);
-      return { exitYear: Math.min(targetYear, 30), projYears: Math.min(targetYear, 30) };
+      return {
+        exitYear: Math.min(targetYear, 30),
+        projYears: Math.min(targetYear, 30),
+      };
     }
     if (holdCoScenario === "breakeven") {
       const p1 = { exitYear: -1, projYears: 30 }; // -1 forces the engine to ignore individual settings and test pure operations
       const op1 = runOpCoEngine(opCoAssumptions, p1);
       const pr1 = runPropCoEngine(propCoAssumptions, op1, p1, groups);
       const cons1 = runConsolidatedEngine(op1, pr1, opCoAssumptions);
-      
-      const devYears = Math.max(1, Math.ceil((propCoAssumptions.devDurationMonths || 12) / 12));
+
+      const devYears = Math.max(
+        1,
+        Math.ceil((propCoAssumptions.devDurationMonths || 12) / 12),
+      );
       const exactOverallPayback = cons1.metrics.payback; // this is the exact payback year without exit
-      
-      let beOpYear = exactOverallPayback > 0 ? Math.ceil(exactOverallPayback) - devYears : 30;
+
+      let beOpYear =
+        exactOverallPayback > 0
+          ? Math.ceil(exactOverallPayback) - devYears
+          : 30;
       if (beOpYear < 1) beOpYear = 1;
-      
+
       // We set the exit to occur at the end of the year AFTER it has already crossed over
       // so the exit value does not artificially accelerate the payback fraction.
-      beOpYear = beOpYear + 1; 
-      
+      beOpYear = beOpYear + 1;
+
       return {
         exitYear: Math.min(beOpYear, 30),
         projYears: Math.min(beOpYear, 30),
@@ -13486,7 +14816,7 @@ export default function App() {
   // Sync Timeline tasks with PropCo Model Data to ensure parity
   useEffect(() => {
     if (!propCoModelData || !propCoModelData.capexDetails) return;
-    
+
     setGroups((prevGroups) => {
       let changed = false;
 
@@ -13515,7 +14845,11 @@ export default function App() {
       const consultantRollup = { start: 2, end: 7 };
       if (t1 && t2 && t3) {
         const starts = [t1.start, t2.start, t3.start].map(Number);
-        const ends = [t1.start + t1.duration - 1, t2.start + t2.duration - 1, t3.start + t3.duration - 1].map(Number);
+        const ends = [
+          t1.start + t1.duration - 1,
+          t2.start + t2.duration - 1,
+          t3.start + t3.duration - 1,
+        ].map(Number);
         consultantRollup.start = Math.min(...starts);
         consultantRollup.end = Math.max(...ends);
       }
@@ -13526,7 +14860,10 @@ export default function App() {
       const licensingRollup = { start: 1, end: 15 };
       if (t4 && t5) {
         const starts = [t4.start, t5.start].map(Number);
-        const ends = [t4.start + t4.duration - 1, t5.start + t5.duration - 1].map(Number);
+        const ends = [
+          t4.start + t4.duration - 1,
+          t5.start + t5.duration - 1,
+        ].map(Number);
         licensingRollup.start = Math.min(...starts);
         licensingRollup.end = Math.max(...ends);
       }
@@ -13538,7 +14875,9 @@ export default function App() {
       const t6_4 = findTask("t6_4");
       const constructionRollup = { start: 1, end: 20 };
       if (t6_1 && t6_2 && t6_3 && t6_4) {
-        const starts = [t6_1.start, t6_2.start, t6_3.start, t6_4.start].map(Number);
+        const starts = [t6_1.start, t6_2.start, t6_3.start, t6_4.start].map(
+          Number,
+        );
         const ends = [
           t6_1.start + t6_1.duration - 1,
           t6_2.start + t6_2.duration - 1,
@@ -13555,7 +14894,10 @@ export default function App() {
       const ffeRollup = { start: 18, end: 24 };
       if (t7_1 && t7_2) {
         const starts = [t7_1.start, t7_2.start].map(Number);
-        const ends = [t7_1.start + t7_1.duration - 1, t7_2.start + t7_2.duration - 1].map(Number);
+        const ends = [
+          t7_1.start + t7_1.duration - 1,
+          t7_2.start + t7_2.duration - 1,
+        ].map(Number);
         ffeRollup.start = Math.min(...starts);
         ffeRollup.end = Math.max(...ends);
       }
@@ -13564,9 +14906,12 @@ export default function App() {
       const t8 = findTask("t8");
       const t9 = findTask("t9");
       const commOpeningTask = findTask("t13");
-      const devDuration = commOpeningTask ? Math.max(1, commOpeningTask.start - 1) : (propCoAssumptions.devDurationMonths || 24);
+      const devDuration = commOpeningTask
+        ? Math.max(1, commOpeningTask.start - 1)
+        : propCoAssumptions.devDurationMonths || 24;
       const isLease = propCoAssumptions.medEqProcurement === "lease";
-      const isLeaseOperating = propCoAssumptions.medEqProcurement === "lease_operating";
+      const isLeaseOperating =
+        propCoAssumptions.medEqProcurement === "lease_operating";
       const purchaseYear = propCoAssumptions.medEqPurchaseOpYear || 4;
 
       const targetMedEqStart = isLease
@@ -13598,7 +14943,8 @@ export default function App() {
             case "c3":
               targetCost = formatCost(consultantCost);
               targetStart = consultantRollup.start;
-              targetDuration = consultantRollup.end - consultantRollup.start + 1;
+              targetDuration =
+                consultantRollup.end - consultantRollup.start + 1;
               break;
             case "c4":
               targetCost = formatCost(ffeCost);
@@ -13622,7 +14968,8 @@ export default function App() {
             case "c7":
               targetCost = formatCost(buildCost);
               targetStart = constructionRollup.start;
-              targetDuration = constructionRollup.end - constructionRollup.start + 1;
+              targetDuration =
+                constructionRollup.end - constructionRollup.start + 1;
               break;
             case "c8":
               targetCost = formatCost(medEqCost);
@@ -13632,21 +14979,21 @@ export default function App() {
 
             // Group 1: Design & Planning Consultant cost splits
             case "t1":
-              targetCost = formatCost(consultantCost * 0.20);
+              targetCost = formatCost(consultantCost * 0.2);
               break;
             case "t2":
-              targetCost = formatCost(consultantCost * 0.50);
+              targetCost = formatCost(consultantCost * 0.5);
               break;
             case "t3":
-              targetCost = formatCost(consultantCost * 0.30);
+              targetCost = formatCost(consultantCost * 0.3);
               break;
 
             // Group 2: Licensing & Permits cost splits
             case "t4":
-              targetCost = formatCost(licenseCost * 0.60);
+              targetCost = formatCost(licenseCost * 0.6);
               break;
             case "t5":
-              targetCost = formatCost(licenseCost * 0.40);
+              targetCost = formatCost(licenseCost * 0.4);
               break;
 
             // Group 3: Civil, Construction & Interior components
@@ -13654,19 +15001,19 @@ export default function App() {
               targetCost = formatCost(buildCost * 0.15);
               break;
             case "t6_2":
-              targetCost = formatCost(buildCost * 0.40);
+              targetCost = formatCost(buildCost * 0.4);
               break;
             case "t6_3":
               targetCost = formatCost(buildCost * 0.15);
               break;
             case "t6_4":
-              targetCost = formatCost(buildCost * 0.30);
+              targetCost = formatCost(buildCost * 0.3);
               break;
             case "t7_1":
-              targetCost = formatCost(ffeCost * 0.50);
+              targetCost = formatCost(ffeCost * 0.5);
               break;
             case "t7_2":
-              targetCost = formatCost(ffeCost * 0.50);
+              targetCost = formatCost(ffeCost * 0.5);
               break;
 
             // Group 4: Equipment setup
@@ -13710,16 +15057,22 @@ export default function App() {
 
       return changed ? nextGroups : prevGroups;
     });
-  }, [propCoModelData, propCoAssumptions.medEqProcurement, propCoAssumptions.medEqPurchaseOpYear, propCoAssumptions.devDurationMonths]);
+  }, [
+    propCoModelData,
+    propCoAssumptions.medEqProcurement,
+    propCoAssumptions.medEqPurchaseOpYear,
+    propCoAssumptions.devDurationMonths,
+  ]);
 
   // Compute Presentation Wrapper
   const headerContainerClass = isPresenting
     ? "w-full max-w-full mx-auto px-4"
     : "w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8";
-    
-  const mainContainerClass = isPresenting && isStrictRatio
-    ? "aspect-video w-[100%] max-w-[1800px] max-h-[92vh] mx-auto overflow-y-auto bg-white shadow-2xl rounded-xl border border-[#D8D8D8] px-8 py-6 my-4"
-    : headerContainerClass;
+
+  const mainContainerClass =
+    isPresenting && isStrictRatio
+      ? "aspect-video w-[100%] max-w-[1800px] max-h-[92vh] mx-auto overflow-y-auto bg-white shadow-2xl rounded-xl border border-[#D8D8D8] px-8 py-6 my-4"
+      : headerContainerClass;
 
   // Navigation Logic
   const handleGroupChange = useCallback((group) => {
@@ -13802,7 +15155,8 @@ export default function App() {
 
   const saveDefaultsToCloud = useCallback(
     async (type) => {
-      const setStatus = type === "opco" ? setSaveStatusOpCo : setSaveStatusPropCo;
+      const setStatus =
+        type === "opco" ? setSaveStatusOpCo : setSaveStatusPropCo;
       setStatus("saving");
 
       if (!isCloudConfigured || !db || !user) {
@@ -13815,7 +15169,8 @@ export default function App() {
       }
 
       const colName = type === "opco" ? "opcoConfigs" : "propcoConfigs";
-      const currentAssumptions = type === "opco" ? opCoAssumptions : propCoAssumptions;
+      const currentAssumptions =
+        type === "opco" ? opCoAssumptions : propCoAssumptions;
 
       try {
         const docRef = doc(db, colName, user.uid);
@@ -13823,16 +15178,20 @@ export default function App() {
           userId: user.uid,
           userEmail: user.email,
           updatedAt: serverTimestamp(),
-          assumptions: currentAssumptions
+          assumptions: currentAssumptions,
         });
         setStatus("saved");
         setTimeout(() => setStatus("idle"), 3000);
       } catch (err) {
         setStatus("idle");
-        handleFirestoreError(err, OperationType.WRITE, `${colName}/${user.uid}`);
+        handleFirestoreError(
+          err,
+          OperationType.WRITE,
+          `${colName}/${user.uid}`,
+        );
       }
     },
-    [user, opCoAssumptions, propCoAssumptions]
+    [user, opCoAssumptions, propCoAssumptions],
   );
 
   const handleTextSelection = useCallback((e) => {
@@ -13874,20 +15233,30 @@ export default function App() {
       const res = await callGemini(selectionState.query, "Short analysis.");
       setSelectionState((p) => ({ ...p, response: res }));
     } catch (e) {
-      console.warn("Gemini API omitted; fallback to local scenario validation.", e);
+      console.warn(
+        "Gemini API omitted; fallback to local scenario validation.",
+        e,
+      );
       const localRes = localFinancialAuditor.getSmartAsk(
         selectionState.query,
         opCoModelData,
         propCoModelData,
         consolidatedModelData,
         opCoAssumptions,
-        propCoAssumptions
+        propCoAssumptions,
       );
       setSelectionState((p) => ({ ...p, response: localRes }));
     } finally {
       setSelectionState((p) => ({ ...p, isLoading: false }));
     }
-  }, [selectionState.query, opCoModelData, propCoModelData, consolidatedModelData, opCoAssumptions, propCoAssumptions]);
+  }, [
+    selectionState.query,
+    opCoModelData,
+    propCoModelData,
+    consolidatedModelData,
+    opCoAssumptions,
+    propCoAssumptions,
+  ]);
 
   const handleOpCoChange = useCallback(
     (k, v) =>
@@ -13943,18 +15312,27 @@ export default function App() {
       const res = await callGemini("Project Teaser", "Investment Banker");
       setTeaserContent(res || "Error.");
     } catch (e) {
-      console.warn("Gemini API omitted; fallback to dynamic investment prospectus.", e);
+      console.warn(
+        "Gemini API omitted; fallback to dynamic investment prospectus.",
+        e,
+      );
       const report = localFinancialAuditor.getTeaser(
         opCoModelData,
         propCoModelData,
         consolidatedModelData,
         opCoAssumptions,
-        propCoAssumptions
+        propCoAssumptions,
       );
       setTeaserContent(report);
     }
     setIsTeaserLoading(false);
-  }, [opCoModelData, propCoModelData, consolidatedModelData, opCoAssumptions, propCoAssumptions]);
+  }, [
+    opCoModelData,
+    propCoModelData,
+    consolidatedModelData,
+    opCoAssumptions,
+    propCoAssumptions,
+  ]);
 
   const generateAIInsights = useCallback(async () => {
     setIsAiLoading(true);
@@ -13965,19 +15343,28 @@ export default function App() {
       );
       setAiInsights(res || "Error.");
     } catch (e) {
-      console.warn("Gemini API omitted; fallback to multi-cascade audit report.", e);
+      console.warn(
+        "Gemini API omitted; fallback to multi-cascade audit report.",
+        e,
+      );
       const insights = localFinancialAuditor.getInsights(
         opCoModelData,
         propCoModelData,
         consolidatedModelData,
         opCoAssumptions,
-        propCoAssumptions
+        propCoAssumptions,
       );
       setAiInsights(insights);
     } finally {
       setIsAiLoading(false);
     }
-  }, [opCoModelData, propCoModelData, consolidatedModelData, opCoAssumptions, propCoAssumptions]);
+  }, [
+    opCoModelData,
+    propCoModelData,
+    consolidatedModelData,
+    opCoAssumptions,
+    propCoAssumptions,
+  ]);
 
   const validateAssumptions = useCallback(async () => {
     setIsMarketLoading(true);
@@ -13989,18 +15376,27 @@ export default function App() {
       );
       setMarketValidation(res || "Error.");
     } catch (e) {
-      console.warn("Gemini API omitted; fallback to compliance and PSAK checker.", e);
+      console.warn(
+        "Gemini API omitted; fallback to compliance and PSAK checker.",
+        e,
+      );
       const validation = localFinancialAuditor.getValidation(
         opCoModelData,
         propCoModelData,
         consolidatedModelData,
         opCoAssumptions,
-        propCoAssumptions
+        propCoAssumptions,
       );
       setMarketValidation(validation);
     }
     setIsMarketLoading(false);
-  }, [opCoModelData, propCoModelData, consolidatedModelData, opCoAssumptions, propCoAssumptions]);
+  }, [
+    opCoModelData,
+    propCoModelData,
+    consolidatedModelData,
+    opCoAssumptions,
+    propCoAssumptions,
+  ]);
 
   const handleAskAI = useCallback(async () => {
     if (!askQuery.trim()) return;
@@ -14016,12 +15412,19 @@ export default function App() {
         propCoModelData,
         consolidatedModelData,
         opCoAssumptions,
-        propCoAssumptions
+        propCoAssumptions,
       );
       setAskResponse(answer);
     }
     setIsAskLoading(false);
-  }, [askQuery, opCoModelData, propCoModelData, consolidatedModelData, opCoAssumptions, propCoAssumptions]);
+  }, [
+    askQuery,
+    opCoModelData,
+    propCoModelData,
+    consolidatedModelData,
+    opCoAssumptions,
+    propCoAssumptions,
+  ]);
 
   return (
     <div
@@ -14056,9 +15459,9 @@ export default function App() {
             <div
               className={`transition-all flex items-center justify-start ${isPresenting ? "h-10" : "h-16"}`}
             >
-              <img 
-                src="/vasanta-logo-gold.svg" 
-                alt="Vasanta Group Logo" 
+              <img
+                src="/vasanta-logo-gold.svg"
+                alt="Vasanta Group Logo"
                 className="w-auto h-full object-contain object-left drop-shadow-sm scale-[1.7] origin-left"
               />
             </div>
@@ -14184,18 +15587,18 @@ export default function App() {
                   {activeTab === "executive"
                     ? "Executive Summary"
                     : activeTab === "overview"
-                    ? "Project Context"
-                    : activeTab === "study"
-                      ? "Feasibility Study"
-                      : activeTab === "collab"
-                        ? "Collaboration"
-                        : activeTab === "timeline"
-                          ? "Timeline"
-                          : activeCompany === "opco"
-                            ? "OpCo Model"
-                            : activeCompany === "propco"
-                              ? "PropCo Model"
-                              : "HoldCo VG"}
+                      ? "Project Context"
+                      : activeTab === "study"
+                        ? "Feasibility Study"
+                        : activeTab === "collab"
+                          ? "Collaboration"
+                          : activeTab === "timeline"
+                            ? "Timeline"
+                            : activeCompany === "opco"
+                              ? "OpCo Model"
+                              : activeCompany === "propco"
+                                ? "PropCo Model"
+                                : "HoldCo VG"}
                 </span>
               </h1>
             </div>
@@ -14323,8 +15726,8 @@ export default function App() {
       >
         {/* Content Section */}
         {activeTab === "executive" && (
-          <ExecutiveSummaryView 
-            isPresenting={isPresenting} 
+          <ExecutiveSummaryView
+            isPresenting={isPresenting}
             opCoData={opCoModelData}
             propCoData={propCoModelData}
             consolidatedData={consolidatedModelData}
@@ -14338,9 +15741,9 @@ export default function App() {
           />
         )}
         {activeTab === "study" && (
-          <StudyView 
-            isPresenting={isPresenting} 
-            info={projectInfo} 
+          <StudyView
+            isPresenting={isPresenting}
+            info={projectInfo}
             activeMiniTab={activeMiniTab}
             setActiveMiniTab={setActiveMiniTab}
           />
@@ -14349,8 +15752,8 @@ export default function App() {
           <CollaborationStrategyView isPresenting={isPresenting} />
         )}
         {activeTab === "timeline" && (
-          <MasterTimelineView 
-            isPresenting={isPresenting} 
+          <MasterTimelineView
+            isPresenting={isPresenting}
             groups={groups}
             setGroups={setGroups}
           />
@@ -14428,7 +15831,12 @@ export default function App() {
                 />
               )}
               {activeTab === "comprehensive" && (
-                <PropCoCascadeView data={propCoModelData} onExport={() => {}} viewResolution={viewResolution} setViewResolution={setViewResolution} />
+                <PropCoCascadeView
+                  data={propCoModelData}
+                  onExport={() => {}}
+                  viewResolution={viewResolution}
+                  setViewResolution={setViewResolution}
+                />
               )}
               {activeTab === "sensitivity" && (
                 <PropCoSensitivityView
@@ -14479,7 +15887,11 @@ export default function App() {
                 />
               )}
               {activeTab === "comprehensive" && (
-                <ConsolidatedCascadeView data={consolidatedModelData} viewResolution={viewResolution} setViewResolution={setViewResolution} />
+                <ConsolidatedCascadeView
+                  data={consolidatedModelData}
+                  viewResolution={viewResolution}
+                  setViewResolution={setViewResolution}
+                />
               )}
             </div>
           )}
@@ -14618,18 +16030,32 @@ export default function App() {
                   </h3>
                 </div>
                 <div className="text-[#4C4A4B] text-sm mb-6 leading-relaxed">
-                  Genuine cloud-hosted saving requires valid Google Cloud/Firebase project identifiers. Currently, the application is running in an <strong>Offline Sandbox</strong>. Your changes are isolated to this session and will be lost on refresh.
-                  <br /><br />
+                  Genuine cloud-hosted saving requires valid Google
+                  Cloud/Firebase project identifiers. Currently, the application
+                  is running in an <strong>Offline Sandbox</strong>. Your
+                  changes are isolated to this session and will be lost on
+                  refresh.
+                  <br />
+                  <br />
                   To connect your persistent database:
                   <ul className="list-disc pl-5 mt-2 space-y-1 text-xs font-mono text-[#1E2F31]/80">
-                    <li>Open <code>/firebase-applet-config.json</code> in the workspace explorer.</li>
-                    <li>Replace placeholder keys with active Firebase client credentials.</li>
+                    <li>
+                      Open <code>/firebase-applet-config.json</code> in the
+                      workspace explorer.
+                    </li>
+                    <li>
+                      Replace placeholder keys with active Firebase client
+                      credentials.
+                    </li>
                   </ul>
                 </div>
                 <div className="flex gap-3 justify-end">
                   <button
                     onClick={() =>
-                      setSyncConfirmDialog({ isOpen: false, targetState: false })
+                      setSyncConfirmDialog({
+                        isOpen: false,
+                        targetState: false,
+                      })
                     }
                     className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#1C6048] hover:bg-opacity-90 transition-colors"
                   >
@@ -14649,12 +16075,17 @@ export default function App() {
                   </h3>
                 </div>
                 <p className="text-[#4C4A4B] text-sm mb-6 leading-relaxed border-b border-[#EFEBE7] pb-4">
-                  Sign in using Google Secure OAuth to automatically upload and synchronize custom clinical models, occupancy rates (BOR), development budgets, and debt structures across sessions.
+                  Sign in using Google Secure OAuth to automatically upload and
+                  synchronize custom clinical models, occupancy rates (BOR),
+                  development budgets, and debt structures across sessions.
                 </p>
                 <div className="flex gap-3 justify-end">
                   <button
                     onClick={() =>
-                      setSyncConfirmDialog({ isOpen: false, targetState: false })
+                      setSyncConfirmDialog({
+                        isOpen: false,
+                        targetState: false,
+                      })
                     }
                     className="px-4 py-2.5 rounded-xl text-xs font-bold text-[#4C4A4B] bg-[#EFEBE7] hover:bg-[#D8D8D8]"
                   >
@@ -14665,9 +16096,15 @@ export default function App() {
                       try {
                         await loginWithGoogle();
                         setIsCloudSync(true);
-                        setSyncConfirmDialog({ isOpen: false, targetState: false });
+                        setSyncConfirmDialog({
+                          isOpen: false,
+                          targetState: false,
+                        });
                       } catch (err) {
-                        alert("Sign in failed. Setup is running securely: " + err.message);
+                        alert(
+                          "Sign in failed. Setup is running securely: " +
+                            err.message,
+                        );
                       }
                     }}
                     className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#1C6048] hover:bg-opacity-90 flex items-center gap-2 shadow-md"
@@ -14700,7 +16137,10 @@ export default function App() {
                 <div className="flex gap-3 justify-end">
                   <button
                     onClick={() =>
-                      setSyncConfirmDialog({ isOpen: false, targetState: false })
+                      setSyncConfirmDialog({
+                        isOpen: false,
+                        targetState: false,
+                      })
                     }
                     className="px-4 py-2.5 rounded-xl text-xs font-bold text-[#4C4A4B] bg-[#EFEBE7] hover:bg-[#D8D8D8] transition-colors"
                   >
@@ -14709,7 +16149,10 @@ export default function App() {
                   <button
                     onClick={() => {
                       setIsCloudSync(syncConfirmDialog.targetState);
-                      setSyncConfirmDialog({ isOpen: false, targetState: false });
+                      setSyncConfirmDialog({
+                        isOpen: false,
+                        targetState: false,
+                      });
                     }}
                     className={`px-4 py-2.5 rounded-xl text-xs font-bold text-white transition-colors ${syncConfirmDialog.targetState ? "bg-[#1C6048] hover:bg-opacity-90" : "bg-[#9B8B70] hover:bg-opacity-90"}`}
                   >
@@ -14726,13 +16169,17 @@ export default function App() {
 
       {/* Absolute Blackout Screen for Presentations */}
       {isPresenting && isBlanked && (
-        <div 
+        <div
           onClick={() => setIsBlanked(false)}
           className="fixed inset-0 bg-[#0E1516] z-[9999] flex flex-col items-center justify-center cursor-pointer animate-in fade-in duration-300"
         >
           <div className="text-zinc-650 text-xs font-mono select-none text-center space-y-2 pointer-events-none p-6">
-            <p className="tracking-widest uppercase text-stone-600 font-bold text-sm">Screen Blackout Mode Active</p>
-            <p className="text-[11px] text-stone-700 opacity-60">Click anywhere or press B/'.' on the presenter to resume</p>
+            <p className="tracking-widest uppercase text-stone-600 font-bold text-sm">
+              Screen Blackout Mode Active
+            </p>
+            <p className="text-[11px] text-stone-700 opacity-60">
+              Click anywhere or press B/'.' on the presenter to resume
+            </p>
           </div>
         </div>
       )}
@@ -14743,18 +16190,25 @@ export default function App() {
         <button
           onClick={() => setIsFloatingPanelVisible(!isFloatingPanelVisible)}
           className={`flex items-center justify-center p-3 rounded-full shadow-lg transition-colors ${
-            isFloatingPanelVisible ? "bg-[#1E2F31] text-[#EFEBE7]" : "bg-white text-[#1E2F31] border border-[#D8D8D8]"
+            isFloatingPanelVisible
+              ? "bg-[#1E2F31] text-[#EFEBE7]"
+              : "bg-white text-[#1E2F31] border border-[#D8D8D8]"
           }`}
           title="Toggle Global Settings"
           aria-label="Toggle Global Settings"
         >
-          <Settings size={20} className={isFloatingPanelVisible ? "opacity-100" : "opacity-80"} />
+          <Settings
+            size={20}
+            className={isFloatingPanelVisible ? "opacity-100" : "opacity-80"}
+          />
         </button>
 
         {/* The Panel */}
         <div
           className={`bg-white border border-[#D8D8D8] rounded-2xl shadow-xl w-72 overflow-hidden transition-all duration-300 origin-bottom-left ${
-            isFloatingPanelVisible ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-4 pointer-events-none"
+            isFloatingPanelVisible
+              ? "opacity-100 scale-100 translate-y-0"
+              : "opacity-0 scale-95 translate-y-4 pointer-events-none"
           }`}
         >
           <div className="bg-[#EFEBE7] px-4 py-3 border-b border-[#D8D8D8]">
@@ -14766,7 +16220,8 @@ export default function App() {
             {/* Toggle Item: Bank Debt */}
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
-                <Landmark size={14} className="text-[#9B8B70]" /> Bank Debt Financing
+                <Landmark size={14} className="text-[#9B8B70]" /> Bank Debt
+                Financing
               </span>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -14810,7 +16265,10 @@ export default function App() {
                 <option value="manual">Manual (Settings)</option>
                 <option value="yr10">Exit in Yr 10</option>
                 <option value="breakeven">Exit at Breakeven</option>
-                <option value="debt_free" disabled={!propCoAssumptions?.includeFinancing}>
+                <option
+                  value="debt_free"
+                  disabled={!propCoAssumptions?.includeFinancing}
+                >
                   Exit Post-Debt
                 </option>
                 <option value="none">No Exit (Yield)</option>
@@ -14819,7 +16277,6 @@ export default function App() {
           </div>
         </div>
       </div>
-
     </div>
   );
 }
