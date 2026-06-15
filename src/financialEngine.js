@@ -893,6 +893,52 @@ const runOpCoEngine = (assumptions, config) => {
     });
   }
 
+  // Add CF Statement Standard Items for OpCo
+  annualData = annualData.map(d => {
+    const cfo = d.netIncome;
+    const cfo_in = d.totalRev || 0;
+    const cfo_out = cfo - cfo_in;
+
+    const isY3 = d.isOperating && d.year === 'Year 3';
+    const cfi = (isY3 ? -(assumptions.workingCapitalOpex || 0) : 0) + (d.opCoExit || 0);
+    const cfi_in = d.opCoExit || 0;
+    const cfi_out = isY3 ? -(assumptions.workingCapitalOpex || 0) : 0;
+
+    const cff = -(d.pA_Outlay + d.pB_Outlay) - (d.shareA + d.shareB) - (d.pA_Exit + d.pB_Exit);
+    const cff_in = -(d.pA_Outlay + d.pB_Outlay);
+    const cff_out = -(d.shareA + d.shareB) - (d.pA_Exit + d.pB_Exit);
+
+    const netFlow = cfo + cfi + cff;
+    
+    if (d.monthly) {
+        d.monthly.cfo = d.monthly.netIncome.map(x => x);
+        d.monthly.cfo_in = d.monthly.totalRev.map(x => x || 0);
+        d.monthly.cfo_out = d.monthly.netIncome.map((x, i) => x - (d.monthly.totalRev[i] || 0));
+
+        d.monthly.cfi = d.monthly.opCoExit.map((x, i) => (isY3 && i===0 ? -(assumptions.workingCapitalOpex || 0) : 0) + x);
+        d.monthly.cfi_in = d.monthly.opCoExit.map(x => x || 0);
+        d.monthly.cfi_out = d.monthly.opCoExit.map((_, i) => (isY3 && i===0 ? -(assumptions.workingCapitalOpex || 0) : 0));
+
+        d.monthly.cff = d.monthly.pA_Outlay.map((_, i) => 
+            -(d.monthly.pA_Outlay[i] + d.monthly.pB_Outlay[i]) 
+            - (d.monthly.shareA[i] + d.monthly.shareB[i])
+            - (d.monthly.pA_Exit[i] + d.monthly.pB_Exit[i])
+        );
+        d.monthly.cff_in = d.monthly.pA_Outlay.map((_, i) => -(d.monthly.pA_Outlay[i] + d.monthly.pB_Outlay[i]));
+        d.monthly.cff_out = d.monthly.shareA.map((_, i) => -(d.monthly.shareA[i] + d.monthly.shareB[i]) - (d.monthly.pA_Exit[i] + d.monthly.pB_Exit[i]));
+
+        d.monthly.netFlow = d.monthly.cfo.map((x, i) => x + d.monthly.cfi[i] + d.monthly.cff[i]);
+    }
+    
+    return { ...d, cfo, cfo_in, cfo_out, cfi, cfi_in, cfi_out, cff, cff_in, cff_out, netFlow };
+  });
+  
+  let currentCash = 0;
+  annualData = annualData.map(d => {
+      currentCash += d.netFlow;
+      return { ...d, endCash: currentCash };
+  });
+  
   const operatingData = annualData.filter((d) => d.isOperating);
   const stabilizedYear =
     operatingData.find((y) => y.bor >= assumptions.borMax) ||
@@ -948,6 +994,16 @@ const runOpCoEngine = (assumptions, config) => {
       pB_Exit: annualData.reduce((acc, d) => acc + (d.pB_Exit || 0), 0),
       pA_Outlay: annualData.reduce((acc, d) => acc + (d.pA_Outlay || 0), 0),
       pB_Outlay: annualData.reduce((acc, d) => acc + (d.pB_Outlay || 0), 0),
+      cfo: annualData.reduce((acc, d) => acc + (d.cfo || 0), 0),
+      cfo_in: annualData.reduce((acc, d) => acc + (d.cfo_in || 0), 0),
+      cfo_out: annualData.reduce((acc, d) => acc + (d.cfo_out || 0), 0),
+      cfi: annualData.reduce((acc, d) => acc + (d.cfi || 0), 0),
+      cfi_in: annualData.reduce((acc, d) => acc + (d.cfi_in || 0), 0),
+      cfi_out: annualData.reduce((acc, d) => acc + (d.cfi_out || 0), 0),
+      cff: annualData.reduce((acc, d) => acc + (d.cff || 0), 0),
+      cff_in: annualData.reduce((acc, d) => acc + (d.cff_in || 0), 0),
+      cff_out: annualData.reduce((acc, d) => acc + (d.cff_out || 0), 0),
+      netFlow: annualData.reduce((acc, d) => acc + (d.netFlow || 0), 0),
       ebitdarMargin:
         annualData.reduce((acc, d) => acc + (d.totalRev || 0), 0) > 0
           ? (annualData.reduce((acc, d) => acc + (d.ebitdar || 0), 0) /
@@ -2588,6 +2644,47 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
     });
   }
 
+  // Add CF Statement Standard Items for PropCo
+  annualData = annualData.map(d => {
+    const cfo = (d.netIncome || 0) + (d.dep || 0);
+    const cfo_in = d.revenue || 0;
+    const cfo_out = cfo - cfo_in;
+
+    const cfi = -((d.hardSpend||0) + (d.softSpend||0) + (d.landSpend||0)) + (d.exit || 0);
+    const cfi_in = d.exit || 0;
+    const cfi_out = -((d.hardSpend||0) + (d.softSpend||0) + (d.landSpend||0));
+
+    const cff = (d.debtDraw||0) - (d.principal||0) + (d.shortfallEquity||0) - (d.fcfe||0);
+    const cff_in = (d.debtDraw||0) + (d.shortfallEquity||0);
+    const cff_out = -(d.principal||0) - (d.fcfe||0);
+
+    const netFlow = cfo + cfi + cff;
+    
+    if (d.monthly) {
+        d.monthly.cfo = Array.from({length: 12}, (_, i) => (d.monthly?.netIncome?.[i] || 0) + (d.monthly?.dep?.[i] || 0));
+        d.monthly.cfo_in = Array.from({length: 12}, (_, i) => d.monthly?.revenue?.[i] || 0);
+        d.monthly.cfo_out = d.monthly.cfo.map((x, i) => x - (d.monthly.cfo_in[i] || 0));
+
+        d.monthly.cfi = Array.from({length: 12}, (_, i) => -((d.monthly?.hardSpend?.[i] || 0) + (d.monthly?.softSpend?.[i] || 0) + (d.monthly?.landSpend?.[i] || 0)) + (d.monthly?.exit?.[i] || 0));
+        d.monthly.cfi_in = Array.from({length: 12}, (_, i) => d.monthly?.exit?.[i] || 0);
+        d.monthly.cfi_out = Array.from({length: 12}, (_, i) => -((d.monthly?.hardSpend?.[i] || 0) + (d.monthly?.softSpend?.[i] || 0) + (d.monthly?.landSpend?.[i] || 0)));
+
+        d.monthly.cff = Array.from({length: 12}, (_, i) => (d.monthly?.debtDraw?.[i] || 0) - (d.monthly?.principal?.[i] || 0) + (d.monthly?.shortfallEquity?.[i] || 0) - (d.monthly?.fcfe?.[i] || 0));
+        d.monthly.cff_in = Array.from({length: 12}, (_, i) => (d.monthly?.debtDraw?.[i] || 0) + (d.monthly?.shortfallEquity?.[i] || 0));
+        d.monthly.cff_out = Array.from({length: 12}, (_, i) => -(d.monthly?.principal?.[i] || 0) - (d.monthly?.fcfe?.[i] || 0));
+
+        d.monthly.netFlow = d.monthly.cfo.map((x, i) => x + d.monthly.cfi[i] + d.monthly.cff[i]);
+    }
+    
+    return { ...d, cfo, cfo_in, cfo_out, cfi, cfi_in, cfi_out, cff, cff_in, cff_out, netFlow };
+  });
+  
+  let currentCash = 0;
+  annualData = annualData.map(d => {
+      currentCash += d.netFlow;
+      return { ...d, endCash: currentCash };
+  });
+
   const operatingData = annualData.filter((d) => d.isOperating);
 
   return {
@@ -2693,6 +2790,16 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       ebt: annualData.reduce((acc, d) => acc + (d.ebt || 0), 0),
       corpTax: annualData.reduce((acc, d) => acc + (d.corpTax || 0), 0),
       netIncome: annualData.reduce((acc, d) => acc + (d.netIncome || 0), 0),
+      cfo: annualData.reduce((acc, d) => acc + (d.cfo || 0), 0),
+      cfo_in: annualData.reduce((acc, d) => acc + (d.cfo_in || 0), 0),
+      cfo_out: annualData.reduce((acc, d) => acc + (d.cfo_out || 0), 0),
+      cfi: annualData.reduce((acc, d) => acc + (d.cfi || 0), 0),
+      cfi_in: annualData.reduce((acc, d) => acc + (d.cfi_in || 0), 0),
+      cfi_out: annualData.reduce((acc, d) => acc + (d.cfi_out || 0), 0),
+      cff: annualData.reduce((acc, d) => acc + (d.cff || 0), 0),
+      cff_in: annualData.reduce((acc, d) => acc + (d.cff_in || 0), 0),
+      cff_out: annualData.reduce((acc, d) => acc + (d.cff_out || 0), 0),
+      netFlow: annualData.reduce((acc, d) => acc + (d.netFlow || 0), 0),
       deferredCapex: annualData.reduce(
         (acc, d) => acc + (d.deferredCapex || 0),
         0,

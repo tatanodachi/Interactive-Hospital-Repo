@@ -107,7 +107,7 @@ import {
   HelpCircle,
   Zap,
   Monitor,
-  AlertTriangle,
+  Workflow,
 } from "lucide-react";
 import { ExecutiveSummaryView } from "./ExecutiveSummaryView";
 import {
@@ -1902,34 +1902,50 @@ const TableRow = memo(
       else baseColorClass = "bg-[#EFEBE7] font-bold text-[#1E2F31]";
     }
 
-    let firstColClass = `px-3 py-1.5 sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap transition-colors shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] ${baseColorClass} ${isIndent ? "pl-5 text-[10px]" : "text-[11px]"} ${isExpandable ? "cursor-pointer" : ""}`;
+    let firstColClass = `px-3 py-1.5 sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap transition-all shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] w-[360px] min-w-[360px] max-w-[360px] overflow-hidden text-ellipsis ${baseColorClass} ${isIndent ? "pl-5 text-[10px]" : "text-[11px]"} ${!highlight && !isHeader ? "group-hover:bg-[#F9F8F6]" : ""}`;
     let totalColClass = `px-2 py-1.5 text-right font-bold font-mono border-l border-b border-[#D8D8D8] sticky right-0 z-[40] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] ${baseColorClass} ${!highlight && !isHeader ? "group-hover:bg-[#F9F8F6]" : ""}`;
 
     return (
       <tr
-        className={`group ${highlight || isHeader ? "" : "hover:bg-[#F9F8F6]"} ${isExpandable ? "cursor-pointer" : ""}`}
+        className={`group transition-all ${isExpandable ? "cursor-pointer select-none" : ""} ${highlight || isHeader ? "" : "hover:bg-[#F9F8F6]"}`}
         onClick={isExpandable ? onExpand : undefined}
       >
-        <td className={firstColClass}>
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5">
-              {isExpandable && (
-                <span className="text-[#9B8B70]">
-                  {isExpanded ? (
-                    <ChevronDown size={12} strokeWidth={3} />
-                  ) : (
-                    <ChevronRight size={12} strokeWidth={3} />
+        <td
+          className={firstColClass}
+        >
+          <div className="flex items-center justify-between gap-2 overflow-hidden w-full">
+            <div 
+              className={`flex items-center gap-1.5 overflow-hidden min-w-0 ${isExpandable ? 'cursor-pointer hover:opacity-80 active:scale-95 transition-all' : ''}`}
+              onClick={(e) => {
+                if (isExpandable && onExpand) {
+                  e.stopPropagation();
+                  onExpand();
+                }
+              }}
+            >
+              {isExpandable ? (
+                <>
+                  <div
+                    className={`pointer-events-none text-[#9B8B70] flex-shrink-0 flex items-center justify-center w-5 h-5 -ml-1 rounded-md hover:bg-[#1C6048]/15 hover:text-[#1C6048] transition-all duration-200 bg-[#9B8B70]/10 ${isExpanded ? "rotate-90 bg-[#1C6048]/15 text-[#1C6048]" : ""}`}
+                  >
+                    <ChevronRight size={14} strokeWidth={2.5} />
+                  </div>
+                  <span className={`truncate ${isHeader ? "font-bold text-[#1E2F31]" : "text-[#4C4A4B]"}`}>
+                    {label}
+                  </span>
+                </>
+              ) : (
+                <>
+                  {hasConnector && (
+                    <span className="text-[#9B8B70]/80 font-sans select-none text-[9px] tracking-tighter shrink-0">
+                      └─
+                    </span>
                   )}
-                </span>
+                  <span className={`truncate ${isHeader ? "font-bold text-[#1E2F31]" : ""}`}>
+                    {label}
+                  </span>
+                </>
               )}
-              {hasConnector && (
-                <span className="text-[#9B8B70]/80 font-sans select-none text-[9px] tracking-tighter">
-                  └─
-                </span>
-              )}
-              <span className={isHeader ? "font-bold text-[#1E2F31]" : ""}>
-                {label}
-              </span>
             </div>
             {tooltip && <StatefulTooltipIcon tooltip={tooltip} align="right" />}
           </div>
@@ -1959,10 +1975,15 @@ const TableRow = memo(
                   : "-"
                 : formattedVal;
 
+          const hoverBgClass = !highlight && !isHeader
+            ? "group-hover:bg-[#F9F8F6]"
+            : "";
+
           return (
             <td
               key={i}
-              className={`px-2 py-1.5 text-right border-r border-b border-[#D8D8D8] font-mono transition-colors ${cellBg} ${val < 0 ? "text-[#9B8B70]" : highlight ? "text-[#1E2F31] font-bold" : "text-[#4C4A4B]"} ${isCrossover ? "bg-[#9B8B70]/20 ring-1 ring-inset ring-[#9B8B70] text-[#1E2F31] font-bold" : ""}`}
+              title={String(d.defaultLabel)}
+              className={`px-2 py-1.5 text-right border-r border-b border-[#D8D8D8] font-mono transition-all ${cellBg} ${val < 0 ? "text-[#9B8B70]" : highlight ? "text-[#1E2F31] font-bold" : "text-[#4C4A4B]"} ${isCrossover ? "bg-[#9B8B70]/20 ring-1 ring-inset ring-[#9B8B70] text-[#1E2F31] font-bold" : ""} ${hoverBgClass}`}
             >
               {displayVal}
             </td>
@@ -1998,45 +2019,29 @@ const ExpandableDataRowGroup = ({
   return (
     <>
       <TableRow
-        label={
-          <div
-            className="flex items-center cursor-pointer hover:text-[#1E2F31] -ml-4"
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            <div className="flex items-center justify-center w-4 shrink-0">
-              <ChevronDown
-                size={14}
-                className={`text-[#9B8B70] transition-transform duration-200 ${!isExpanded ? "-rotate-90" : "rotate-0"}`}
-              />
-            </div>
-            <span>{parentLabel}</span>
-          </div>
-        }
+        label={parentLabel}
         data={data}
         dk={parentDk}
         total={parentTotal}
-        isIndent
         tooltip={parentTooltip}
         isSubtractor={isSubtractor}
+        isExpandable
+        isExpanded={isExpanded}
+        onExpand={() => setIsExpanded(!isExpanded)}
+        isIndent
       />
       {isExpanded &&
         childrenData.map((child, i) => (
           <TableRow
             key={i}
-            label={
-              <div className="flex items-start pl-4 opacity-90 transition-opacity">
-                <div className="w-3 flex items-start justify-end mr-2 pt-2 shrink-0">
-                  <div className="w-2.5 border-b border-l rounded-bl border-[#A1A1AA] h-2"></div>
-                </div>
-                <span className="text-[#8e8e8e]">{child.label}</span>
-              </div>
-            }
+            label={child.label}
             data={data}
             dk={child.dk}
             total={child.total}
             isIndent
             tooltip={child.tooltip}
             isSubtractor={isSubtractor}
+            hasConnector
           />
         ))}
     </>
@@ -8299,14 +8304,56 @@ const OpCoCascadeView = memo(
       viewResolution,
     );
     const scrollRef = useRef(null);
-    const [showSetupBudget, setShowSetupBudget] = useState(true);
+    const [showSetupBudget, setShowSetupBudget] = useState(false);
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [viewMode, setViewMode] = useState("all"); // 'all' | 'pl' | 'cf'
+    const [expandedCfo, setExpandedCfo] = useState(false);
+    const [expandedCfi, setExpandedCfi] = useState(false);
+    const [expandedCff, setExpandedCff] = useState(false);
 
     const overallSetup =
       (assumptions?.jvaOpex ?? 2.5) +
       (assumptions?.commOpex ?? 15.0) +
       (assumptions?.workingCapitalOpex ?? 64.671175);
+
+    const renderTableHeaders = () => (
+      <thead className="bg-[#EFEBE7] font-bold sticky top-0 z-[50] shadow-md">
+        <tr>
+          <th className="px-4 py-3 border-b-2 border-r border-[#D8D8D8] sticky left-0 top-0 bg-white z-[60] w-[360px] min-w-[360px] max-w-[360px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-[#1E2F31]">
+            Line Item
+          </th>
+          {columns.map((col, i) => (
+            <th
+              key={i}
+              onClick={
+                col.colType === "year"
+                  ? () => toggleYear(col.defaultLabel)
+                  : undefined
+              }
+              className={`px-3 py-3 text-right border-b-2 border-r border-[#D8D8D8] ${
+                col.colType === "year"
+                  ? "cursor-pointer hover:bg-[#EFEBE7] font-black underline decoration-dashed underline-offset-4 "
+                  : "font-medium text-[10px] "
+              } ${!col.isOperating ? "bg-[#F9F8F6] text-[#9B8B70]" : "bg-white text-[#1E2F31]"} ${col.isMonth ? "min-w-[65px] whitespace-nowrap" : "min-w-[90px]"}`}
+            >
+              {col.colType === "year" ? (
+                <div className="flex items-center justify-end gap-1">
+                  {expandedYears[col.defaultLabel] ? "-" : "+"}
+                  {String(col.defaultLabel)}
+                </div>
+              ) : (
+                <div className="text-center w-full">
+                  {String(col.defaultLabel)}
+                </div>
+              )}
+            </th>
+          ))}
+          <th className="px-4 py-3 text-right bg-[#EFEBE7] text-[#1E2F31] sticky right-0 top-0 z-[60] border-l border-b-2 border-[#D8D8D8] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+            Total
+          </th>
+        </tr>
+      </thead>
+    );
 
     return (
       <div
@@ -8392,9 +8439,9 @@ const OpCoCascadeView = memo(
           )}
 
           <div
-            className={`${showSetupBudget && !isFullScreen ? "md:col-span-2" : "md:col-span-1"} bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden ${isFullScreen ? "h-full" : "h-[calc(100vh-240px)]"} flex flex-col`}
+            className={`${showSetupBudget && !isFullScreen ? "md:col-span-2" : "md:col-span-1"} flex flex-col gap-4 overflow-hidden ${isFullScreen ? "h-full" : "h-[calc(100vh-240px)]"}`}
           >
-            <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
+            <div className="p-4 bg-white rounded-xl shadow-sm border border-[#D8D8D8] flex justify-between items-center shrink-0">
               <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
                 <List size={14} /> OpCo P&L & Cash Flow
                 {!showSetupBudget && (
@@ -8417,14 +8464,23 @@ const OpCoCascadeView = memo(
                   <button
                     onClick={() => setViewMode("pl")}
                     className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "pl" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                    title="Operating Income Statement (P&L)"
                   >
                     P&L
                   </button>
                   <button
+                    onClick={() => setViewMode("statement")}
+                    className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "statement" ? "bg-[#1E2F31] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                    title="C&F (Standardized)"
+                  >
+                    C&F
+                  </button>
+                  <button
                     onClick={() => setViewMode("cf")}
                     className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "cf" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                    title="OpCo Capital Cascade"
                   >
-                    CF
+                    Cascade
                   </button>
                 </div>
                 <button
@@ -8452,429 +8508,537 @@ const OpCoCascadeView = memo(
                     Monthly
                   </button>
                 </div>
-                <button
-                  onClick={() =>
-                    scrollRef.current?.scrollBy({
-                      left: -300,
-                      behavior: "smooth",
-                    })
-                  }
-                  className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6]"
-                >
-                  <ChevronLeft size={13} strokeWidth={2.5} />
-                </button>
-                <button
-                  onClick={() =>
-                    scrollRef.current?.scrollBy({
-                      left: 300,
-                      behavior: "smooth",
-                    })
-                  }
-                  className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6]"
-                >
-                  <ChevronRight size={13} strokeWidth={2.5} />
-                </button>
                 <span className="text-[10px] bg-white text-[#4C4A4B] border border-[#D8D8D8] px-2 py-1 rounded font-bold uppercase shadow-sm">
                   IDR Billions
                 </span>
               </div>
             </div>
-            <div ref={scrollRef} className="overflow-auto min-h-0 flex-1">
-              <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
-                <thead className="bg-white font-bold sticky top-0 z-[50] shadow-md">
-                  <tr>
-                    <th className="px-4 py-3 border-b-2 border-r border-[#D8D8D8] sticky left-0 top-0 bg-white z-[60] w-[260px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-[#1E2F31]">
-                      Line Item
-                    </th>
-                    {columns.map((col, i) => (
-                      <th
-                        key={i}
-                        onClick={
-                          col.colType === "year"
-                            ? () => toggleYear(col.defaultLabel)
-                            : undefined
-                        }
-                        className={`px-3 py-3 text-right border-b-2 border-r border-[#D8D8D8] ${
-                          col.colType === "year"
-                            ? "cursor-pointer hover:bg-[#EFEBE7] font-black underline decoration-dashed underline-offset-4 "
-                            : "font-medium text-[10px] "
-                        } ${!col.isOperating ? "bg-[#F9F8F6] text-[#9B8B70]" : "bg-white text-[#1E2F31]"} ${col.isMonth ? "min-w-[65px] whitespace-nowrap" : "min-w-[90px]"}`}
-                      >
-                        {col.colType === "year" ? (
-                          <div className="flex items-center justify-end gap-1">
-                            {expandedYears[col.defaultLabel] ? "-" : "+"}
-                            {String(col.defaultLabel)}
-                          </div>
-                        ) : (
-                          <div className="text-center w-full">
-                            {String(col.defaultLabel)}
-                          </div>
+            <div className="overflow-auto min-h-0 flex-1 space-y-6">
+              {/* TABLE 1: Profit & Loss Statement (P&L) */}
+              {(viewMode === "all" || viewMode === "pl") && (
+                <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden">
+                  <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
+                      Clinical Profit & Loss (P&L)
+                    </h3>
+                  </div>
+                  <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
+                    <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
+                      {renderTableHeaders()}
+                      <tbody>
+                        <TableSection
+                          title="Operating Volume"
+                          colSpan={columns.length + 2}
+                        />
+                        <TableRow
+                          label="Bed Occupancy Rate (BOR)"
+                          data={columns}
+                          dk="bor"
+                          tooltip={OPCO_FORMULAS.bor}
+                        />
+                        <TableRow
+                          label="Inpatient Cases"
+                          data={columns}
+                          dk="ipCases"
+                          tooltip={OPCO_FORMULAS.ipCases}
+                        />
+                        <TableRow
+                          label="Outpatient Visits"
+                          data={columns}
+                          dk="opVisits"
+                          tooltip={OPCO_FORMULAS.opVisits}
+                        />
+
+                        <TableSection
+                          title="Revenue"
+                          colSpan={columns.length + 2}
+                        />
+                        <TableRow
+                          label="Inpatient Revenue"
+                          data={columns}
+                          dk="ipRev"
+                          total={data.totals.ipRev}
+                          isIndent
+                          tooltip={OPCO_FORMULAS.ipRev}
+                        />
+                        <TableRow
+                          label="Outpatient Revenue"
+                          data={columns}
+                          dk="opRev"
+                          total={data.totals.opRev}
+                          isIndent
+                          tooltip={OPCO_FORMULAS.opRev}
+                        />
+                        <TableRow
+                          label="NET REVENUE"
+                          data={columns}
+                          dk="totalRev"
+                          total={data.totals.totalRev}
+                          highlight
+                          tooltip={OPCO_FORMULAS.totalRev}
+                        />
+
+                        <TableSection
+                          title="Cost of Goods Sold"
+                          colSpan={columns.length + 2}
+                        />
+                        <TableRow
+                          label="Medical Supplies"
+                          data={columns}
+                          dk="totalMedSupp"
+                          total={data.totals.totalMedSupp}
+                          isIndent
+                          tooltip={OPCO_FORMULAS.totalMedSupp}
+                          isSubtractor
+                        />
+                        <TableRow
+                          label="Doctor Fees"
+                          data={columns}
+                          dk="totalDocFee"
+                          total={data.totals.totalDocFee}
+                          isIndent
+                          tooltip={OPCO_FORMULAS.totalDocFee}
+                          isSubtractor
+                        />
+                        <TableRow
+                          label="GROSS PROFIT"
+                          data={columns}
+                          dk="grossProfit"
+                          total={data.totals.grossProfit}
+                          highlight
+                          tooltip={OPCO_FORMULAS.grossProfit}
+                        />
+
+                        <TableSection
+                          title="Operating Expenses"
+                          colSpan={columns.length + 2}
+                        />
+                        <TableRow
+                          label="Staffing & Labor"
+                          data={columns}
+                          dk="staffCost"
+                          isIndent
+                          tooltip={OPCO_FORMULAS.staffCost}
+                          isSubtractor
+                        />
+                        <ExpandableDataRowGroup
+                          parentLabel="Other OpEx"
+                          parentDk="otherOpex"
+                          parentTotal={data.totals.otherOpex}
+                          data={columns}
+                          parentTooltip={OPCO_FORMULAS.recurringOpex}
+                          isSubtractor
+                          childrenData={[
+                            {
+                              label: "Administrative Expense",
+                              dk: "adminOpex",
+                              total: data?.totals?.adminOpex,
+                              tooltip: {
+                                desc: "Administrative support overhead calculated based on administrative expense rate assumptions.",
+                                formula:
+                                  "Admin Exp = adminExpRate% * Net Revenue",
+                              },
+                            },
+                            {
+                              label: "Utilities Expense",
+                              dk: "utilOpex",
+                              total: data?.totals?.utilOpex,
+                              tooltip: {
+                                desc: "Clinic utilities expense based on utility expense rate assumptions.",
+                                formula:
+                                  "Utilities Exp = utilExpRate% * Net Revenue",
+                              },
+                            },
+                            {
+                              label: "Marketing Expense",
+                              dk: "mktgOpex",
+                              total: data?.totals?.mktgOpex,
+                              tooltip: {
+                                desc: "Marketing expenditures aligned with marketing expense rate assumptions.",
+                                formula:
+                                  "Marketing Exp = marketingExpRate% * Net Revenue",
+                              },
+                            },
+                            {
+                              label: "Hospital Operator Fee",
+                              dk: "operatorOpex",
+                              total: data?.totals?.operatorOpex,
+                              tooltip: {
+                                desc: "Hospital management and operator fees.",
+                                formula:
+                                  "Operator Fee = operatorFeeRate% * Net Revenue",
+                              },
+                            },
+                            {
+                              label: "Operational Insurance",
+                              dk: "insOpex",
+                              total: data?.totals?.insOpex,
+                              tooltip: {
+                                desc: "Annual facility, equipment, and liability insurance expenditures.",
+                                formula: "Insurance = insuranceMonthly * 12",
+                              },
+                            },
+                          ]}
+                        />
+                        <TableRow
+                          label="EBITDAR"
+                          data={columns}
+                          dk="ebitdar"
+                          total={data.totals.ebitdar}
+                          highlight
+                          tooltip={OPCO_FORMULAS.ebitdar}
+                        />
+                        <TableRow
+                          label="EBITDAR MARGIN"
+                          data={columns}
+                          dk="ebitdarMargin"
+                          total={data.totals.ebitdarMargin}
+                          highlight
+                          isPercent
+                          tooltip={OPCO_FORMULAS.ebitdarMargin}
+                        />
+
+                        <TableSection
+                          title="Rent & Taxes"
+                          colSpan={columns.length + 2}
+                        />
+                        <TableRow
+                          label="Building Rental"
+                          data={columns}
+                          dk="rent"
+                          total={data.totals.rent}
+                          isIndent
+                          tooltip={OPCO_FORMULAS.rent}
+                          isSubtractor
+                        />
+                        <TableRow
+                          label="EBITDA"
+                          data={columns}
+                          dk="ebitda"
+                          total={data.totals.ebitda}
+                          highlight
+                          tooltip={OPCO_FORMULAS.ebitda}
+                        />
+                        <TableRow
+                          label="Corporate Tax"
+                          data={columns}
+                          dk="tax"
+                          total={data.totals.tax}
+                          isIndent
+                          tooltip={OPCO_FORMULAS.tax}
+                          isSubtractor
+                        />
+                        <TableRow
+                          label="NET INCOME"
+                          data={columns}
+                          dk="netIncome"
+                          total={data.totals.netIncome}
+                          highlight
+                          emerald
+                          tooltip={OPCO_FORMULAS.netIncome}
+                        />
+                        <TableRow
+                          label="NET PROFIT MARGIN"
+                          data={columns}
+                          dk="netMargin"
+                          total={data.totals.netMargin}
+                          highlight
+                          emerald
+                          isPercent
+                          tooltip={OPCO_FORMULAS.netMargin}
+                        />
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* TABLE 2: Standard Statement of Cash Flows */}
+              {(viewMode === "all" || viewMode === "statement") && (
+                <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden">
+                  <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
+                      Clinical Standard Cash Flows
+                    </h3>
+                  </div>
+                  <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
+                    <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
+                      {renderTableHeaders()}
+                      <tbody>
+                        <TableSection
+                          title="STATEMENT OF CASH FLOWS"
+                          colSpan={columns.length + 2}
+                          type="amber"
+                        />
+                        <TableRow
+                          label="Net Cash from Operating (CFO)"
+                          data={columns}
+                          dk="cfo"
+                          total={data.totals.cfo}
+                          highlight
+                          isExpandable
+                          isExpanded={expandedCfo}
+                          onExpand={() => setExpandedCfo(!expandedCfo)}
+                          tooltip="OpCo Net Income."
+                        />
+                        {expandedCfo && (
+                          <>
+                            <TableRow
+                              label="Cash Inflows (Clinical Revenues)"
+                              data={columns}
+                              dk="cfo_in"
+                              total={data.totals.cfo_in}
+                              isIndent
+                              hasConnector
+                              tooltip="OpCo Clinical Inpatient & Outpatient Revenues."
+                            />
+                            <TableRow
+                              label="Cash Outflows (Operating OPEX & Tax)"
+                              data={columns}
+                              dk="cfo_out"
+                              total={data.totals.cfo_out}
+                              isIndent
+                              hasConnector
+                              tooltip="OPEX costs (staffing, rent, doc fees, supplies, utilities, marketing, insurance, management fees, corporate taxes)."
+                            />
+                          </>
                         )}
-                      </th>
-                    ))}
-                    <th className="px-4 py-3 text-right bg-[#EFEBE7] text-[#1E2F31] sticky right-0 top-0 z-[60] border-l border-b-2 border-[#D8D8D8] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">
-                      Total
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(viewMode === "all" || viewMode === "pl") && (
-                    <>
-                      <TableSection
-                        title="A. Operating Volume"
-                        colSpan={columns.length + 2}
-                      />
-                      <TableRow
-                        label="Bed Occupancy Rate (BOR)"
-                        data={columns}
-                        dk="bor"
-                        tooltip={OPCO_FORMULAS.bor}
-                      />
-                      <TableRow
-                        label="Inpatient Cases"
-                        data={columns}
-                        dk="ipCases"
-                        tooltip={OPCO_FORMULAS.ipCases}
-                      />
-                      <TableRow
-                        label="Outpatient Visits"
-                        data={columns}
-                        dk="opVisits"
-                        tooltip={OPCO_FORMULAS.opVisits}
-                      />
 
-                      <TableSection
-                        title="B. Revenue"
-                        colSpan={columns.length + 2}
-                      />
-                      <TableRow
-                        label="Inpatient Revenue"
-                        data={columns}
-                        dk="ipRev"
-                        total={data.totals.ipRev}
-                        isIndent
-                        tooltip={OPCO_FORMULAS.ipRev}
-                      />
-                      <TableRow
-                        label="Outpatient Revenue"
-                        data={columns}
-                        dk="opRev"
-                        total={data.totals.opRev}
-                        isIndent
-                        tooltip={OPCO_FORMULAS.opRev}
-                      />
-                      <TableRow
-                        label="NET REVENUE"
-                        data={columns}
-                        dk="totalRev"
-                        total={data.totals.totalRev}
-                        highlight
-                        tooltip={OPCO_FORMULAS.totalRev}
-                      />
+                        <TableRow
+                          label="Net Cash from Investing (CFI)"
+                          data={columns}
+                          dk="cfi"
+                          total={data.totals.cfi}
+                          highlight
+                          isExpandable
+                          isExpanded={expandedCfi}
+                          onExpand={() => setExpandedCfi(!expandedCfi)}
+                          tooltip="Working capital outlays and enterprise exit proceeds."
+                        />
+                        {expandedCfi && (
+                          <>
+                            <TableRow
+                              label="Cash Inflows (Exit Proceeds)"
+                              data={columns}
+                              dk="cfi_in"
+                              total={data.totals.cfi_in}
+                              isIndent
+                              hasConnector
+                              tooltip="Capital received from OpCo enterprise valuation exit."
+                            />
+                            <TableRow
+                              label="Cash Outflows (Setup & Working Capital CapEx)"
+                              data={columns}
+                              dk="cfi_out"
+                              total={data.totals.cfi_out}
+                              isIndent
+                              hasConnector
+                              tooltip="Initial pre-operating working capital outlays (Year 3 operational buffer)."
+                            />
+                          </>
+                        )}
 
-                      <TableSection
-                        title="C. Cost of Goods Sold"
-                        colSpan={columns.length + 2}
-                      />
-                      <TableRow
-                        label="Medical Supplies"
-                        data={columns}
-                        dk="totalMedSupp"
-                        total={data.totals.totalMedSupp}
-                        isIndent
-                        tooltip={OPCO_FORMULAS.totalMedSupp}
-                        isSubtractor
-                      />
-                      <TableRow
-                        label="Doctor Fees"
-                        data={columns}
-                        dk="totalDocFee"
-                        total={data.totals.totalDocFee}
-                        isIndent
-                        tooltip={OPCO_FORMULAS.totalDocFee}
-                        isSubtractor
-                      />
-                      <TableRow
-                        label="GROSS PROFIT"
-                        data={columns}
-                        dk="grossProfit"
-                        total={data.totals.grossProfit}
-                        highlight
-                        tooltip={OPCO_FORMULAS.grossProfit}
-                      />
+                        <TableRow
+                          label="Net Cash from Financing (CFF)"
+                          data={columns}
+                          dk="cff"
+                          total={data.totals.cff}
+                          highlight
+                          isExpandable
+                          isExpanded={expandedCff}
+                          onExpand={() => setExpandedCff(!expandedCff)}
+                          tooltip="Sponsor equity investments and OpCo dividend payouts."
+                        />
+                        {expandedCff && (
+                          <>
+                            <TableRow
+                              label="Cash Inflows (Sponsor Equity Contributions)"
+                              data={columns}
+                              dk="cff_in"
+                              total={data.totals.cff_in}
+                              isIndent
+                              hasConnector
+                              tooltip="Initial equity funding received from Operator & Sponsor Partners."
+                            />
+                            <TableRow
+                              label="Cash Outflows (Partner Distributions & Dividends)"
+                              data={columns}
+                              dk="cff_out"
+                              total={data.totals.cff_out}
+                              isIndent
+                              hasConnector
+                              tooltip="Standard cash dividends paid to Operator & Sponsor Partners and exit payouts."
+                            />
+                          </>
+                        )}
 
-                      <TableSection
-                        title="D. Operating Expenses"
-                        colSpan={columns.length + 2}
-                      />
-                      <TableRow
-                        label="Staffing & Labor"
-                        data={columns}
-                        dk="staffCost"
-                        isIndent
-                        tooltip={OPCO_FORMULAS.staffCost}
-                        isSubtractor
-                      />
-                      <ExpandableDataRowGroup
-                        parentLabel="Other OpEx"
-                        parentDk="otherOpex"
-                        parentTotal={data.totals.otherOpex}
-                        data={columns}
-                        parentTooltip={OPCO_FORMULAS.recurringOpex}
-                        isSubtractor
-                        childrenData={[
-                          {
-                            label: "Administrative Expense",
-                            dk: "adminOpex",
-                            total: data?.totals?.adminOpex,
-                            tooltip: {
-                              desc: "Administrative support overhead calculated based on administrative expense rate assumptions.",
-                              formula:
-                                "Admin Exp = adminExpRate% * Net Revenue",
-                            },
-                          },
-                          {
-                            label: "Utilities Expense",
-                            dk: "utilOpex",
-                            total: data?.totals?.utilOpex,
-                            tooltip: {
-                              desc: "Clinic utilities expense based on utility expense rate assumptions.",
-                              formula:
-                                "Utilities Exp = utilExpRate% * Net Revenue",
-                            },
-                          },
-                          {
-                            label: "Marketing Expense",
-                            dk: "mktgOpex",
-                            total: data?.totals?.mktgOpex,
-                            tooltip: {
-                              desc: "Marketing expenditures aligned with marketing expense rate assumptions.",
-                              formula:
-                                "Marketing Exp = marketingExpRate% * Net Revenue",
-                            },
-                          },
-                          {
-                            label: "Hospital Operator Fee",
-                            dk: "operatorOpex",
-                            total: data?.totals?.operatorOpex,
-                            tooltip: {
-                              desc: "Hospital management and operator fees.",
-                              formula:
-                                "Operator Fee = operatorFeeRate% * Net Revenue",
-                            },
-                          },
-                          {
-                            label: "Operational Insurance",
-                            dk: "insOpex",
-                            total: data?.totals?.insOpex,
-                            tooltip: {
-                              desc: "Annual facility, equipment, and liability insurance expenditures.",
-                              formula: "Insurance = insuranceMonthly * 12",
-                            },
-                          },
-                        ]}
-                      />
-                      <TableRow
-                        label="EBITDAR"
-                        data={columns}
-                        dk="ebitdar"
-                        total={data.totals.ebitdar}
-                        highlight
-                        tooltip={OPCO_FORMULAS.ebitdar}
-                      />
-                      <TableRow
-                        label="EBITDAR MARGIN"
-                        data={columns}
-                        dk="ebitdarMargin"
-                        total={data.totals.ebitdarMargin}
-                        highlight
-                        isPercent
-                        tooltip={OPCO_FORMULAS.ebitdarMargin}
-                      />
+                        <TableRow
+                          label="Total Net Cash Flow"
+                          data={columns}
+                          dk="netFlow"
+                          total={data.totals.netFlow}
+                          highlight
+                          emerald
+                        />
+                        <TableRow
+                          label="Cumulative Cash Balance"
+                          data={columns}
+                          dk="endCash"
+                          total={data.totals.netFlow}
+                          highlight
+                          crossover
+                          indigo
+                          bold
+                          tooltip="Rolling cash balance."
+                        />
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
 
-                      <TableSection
-                        title="E. Rent & Taxes"
-                        colSpan={columns.length + 2}
-                      />
-                      <TableRow
-                        label="Building Rental"
-                        data={columns}
-                        dk="rent"
-                        total={data.totals.rent}
-                        isIndent
-                        tooltip={OPCO_FORMULAS.rent}
-                        isSubtractor
-                      />
-                      <TableRow
-                        label="EBITDA"
-                        data={columns}
-                        dk="ebitda"
-                        total={data.totals.ebitda}
-                        highlight
-                        tooltip={OPCO_FORMULAS.ebitda}
-                      />
-                      <TableRow
-                        label="Corporate Tax"
-                        data={columns}
-                        dk="tax"
-                        total={data.totals.tax}
-                        isIndent
-                        tooltip={OPCO_FORMULAS.tax}
-                        isSubtractor
-                      />
-                      <TableRow
-                        label="NET INCOME"
-                        data={columns}
-                        dk="netIncome"
-                        total={data.totals.netIncome}
-                        highlight
-                        emerald
-                        tooltip={OPCO_FORMULAS.netIncome}
-                      />
-                      <TableRow
-                        label="NET PROFIT MARGIN"
-                        data={columns}
-                        dk="netMargin"
-                        total={data.totals.netMargin}
-                        highlight
-                        emerald
-                        isPercent
-                        tooltip={OPCO_FORMULAS.netMargin}
-                      />
-                    </>
-                  )}
+              {/* TABLE 3: Capital Cascade & Sponsor Returns */}
+              {(viewMode === "all" || viewMode === "cf") && (
+                <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden">
+                  <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
+                      Sponsor Capital Cascade & Returns
+                    </h3>
+                  </div>
+                  <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
+                    <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
+                      {renderTableHeaders()}
+                      <tbody>
+                        <TableSection
+                          title="Free Cash Flow & Retained Earnings"
+                          colSpan={columns.length + 2}
+                          type="emerald"
+                        />
+                        <TableRow
+                          label="Cumulative Net Income"
+                          data={columns}
+                          dk="cumNI"
+                          highlight
+                          crossover
+                          bold
+                          indigo
+                          tooltip={OPCO_FORMULAS.cumNI}
+                        />
+                        <TableRow
+                          label={`Distributable Profit (${assumptions.dividendPayoutRatio ?? 100}%)`}
+                          data={columns}
+                          dk="distributableProfit"
+                          total={data.totals.distributableProfit}
+                          highlight
+                          tooltip={OPCO_FORMULAS.distributableProfit}
+                        />
+                        <TableRow
+                          label={`Retained Earnings (${100 - (assumptions.dividendPayoutRatio ?? 100)}%)`}
+                          data={columns}
+                          dk="retainedThisYear"
+                          total={data.totals.retainedThisYear}
+                          isIndent
+                          tooltip={OPCO_FORMULAS.retainedThisYear}
+                        />
+                        <TableRow
+                          label="Cumulative Retained Cash"
+                          data={columns}
+                          dk="cumulativeRetainedEarnings"
+                          highlight
+                          crossover
+                          bold
+                          indigo
+                          tooltip={OPCO_FORMULAS.cumulativeRetainedEarnings}
+                        />
 
-                  {(viewMode === "all" || viewMode === "cf") && (
-                    <>
-                      <TableSection
-                        title="F. Free Cash Flow & Retained Earnings"
-                        colSpan={columns.length + 2}
-                        type="emerald"
-                      />
-                      <TableRow
-                        label="Cumulative Net Income"
-                        data={columns}
-                        dk="cumNI"
-                        highlight
-                        crossover
-                        bold
-                        indigo
-                        tooltip={OPCO_FORMULAS.cumNI}
-                      />
-                      <TableRow
-                        label={`Distributable Profit (${assumptions.dividendPayoutRatio ?? 100}%)`}
-                        data={columns}
-                        dk="distributableProfit"
-                        total={data.totals.distributableProfit}
-                        highlight
-                        tooltip={OPCO_FORMULAS.distributableProfit}
-                      />
-                      <TableRow
-                        label={`Retained Earnings (${100 - (assumptions.dividendPayoutRatio ?? 100)}%)`}
-                        data={columns}
-                        dk="retainedThisYear"
-                        total={data.totals.retainedThisYear}
-                        isIndent
-                        tooltip={OPCO_FORMULAS.retainedThisYear}
-                      />
-                      <TableRow
-                        label="Cumulative Retained Cash"
-                        data={columns}
-                        dk="cumulativeRetainedEarnings"
-                        highlight
-                        crossover
-                        bold
-                        indigo
-                        tooltip={OPCO_FORMULAS.cumulativeRetainedEarnings}
-                      />
+                        <TableSection
+                          title="Terminal Value (Exit)"
+                          colSpan={columns.length + 2}
+                        />
+                        <TableRow
+                          label="OpCo Enterprise Value (EV)"
+                          data={columns}
+                          dk="ev"
+                          total={data.totals.ev}
+                          highlight
+                          tooltip={OPCO_FORMULAS.ev}
+                        />
+                        <TableRow
+                          label="+ Retained Cash Sweep"
+                          data={columns}
+                          dk="cumulativeRetainedEarnings"
+                          total={data.totals.retainedThisYear}
+                          isIndent
+                          tooltip={OPCO_FORMULAS.cumulativeRetainedEarnings}
+                        />
+                        <TableRow
+                          label="Total Exit Equity Value"
+                          data={columns}
+                          dk="opCoExit"
+                          total={data.totals.opCoExit}
+                          highlight
+                          tooltip={OPCO_FORMULAS.opCoExit}
+                        />
+                        <TableRow
+                          label="Strategic Ptnr Proceeds (51%)"
+                          data={columns}
+                          dk="pA_Exit"
+                          total={data.totals.pA_Exit}
+                          isIndent
+                          tooltip={OPCO_FORMULAS.pA_Exit}
+                        />
+                        <TableRow
+                          label="Vasanta Proceeds (49%)"
+                          data={columns}
+                          dk="pB_Exit"
+                          total={data.totals.pB_Exit}
+                          isIndent
+                          tooltip={OPCO_FORMULAS.pB_Exit}
+                        />
 
-                      <TableSection
-                        title="G. Terminal Value (Exit)"
-                        colSpan={columns.length + 2}
-                      />
-                      <TableRow
-                        label="OpCo Enterprise Value (EV)"
-                        data={columns}
-                        dk="ev"
-                        total={data.totals.ev}
-                        highlight
-                        tooltip={OPCO_FORMULAS.ev}
-                      />
-                      <TableRow
-                        label="+ Retained Cash Sweep"
-                        data={columns}
-                        dk="cumulativeRetainedEarnings"
-                        total={data.totals.retainedThisYear}
-                        isIndent
-                        tooltip={OPCO_FORMULAS.cumulativeRetainedEarnings}
-                      />
-                      <TableRow
-                        label="Total Exit Equity Value"
-                        data={columns}
-                        dk="opCoExit"
-                        total={data.totals.opCoExit}
-                        highlight
-                        tooltip={OPCO_FORMULAS.opCoExit}
-                      />
-                      <TableRow
-                        label="Strategic Ptnr Proceeds (51%)"
-                        data={columns}
-                        dk="pA_Exit"
-                        total={data.totals.pA_Exit}
-                        isIndent
-                        tooltip={OPCO_FORMULAS.pA_Exit}
-                      />
-                      <TableRow
-                        label="Vasanta Proceeds (49%)"
-                        data={columns}
-                        dk="pB_Exit"
-                        total={data.totals.pB_Exit}
-                        isIndent
-                        tooltip={OPCO_FORMULAS.pB_Exit}
-                      />
-
-                      <TableSection
-                        title="H. Vasanta Returns (49%)"
-                        colSpan={columns.length + 2}
-                        type="emerald"
-                      />
-                      <TableRow
-                        label="Partner B Investment"
-                        data={columns}
-                        dk="pB_Outlay"
-                        total={data.totals.pB_Outlay}
-                        isIndent
-                        tooltip={OPCO_FORMULAS.pB_Outlay}
-                      />
-                      <TableRow
-                        label="Partner B Dividend"
-                        data={columns}
-                        dk="shareB"
-                        total={data.totals.shareB}
-                        isIndent
-                        tooltip={OPCO_FORMULAS.shareB}
-                      />
-                      <TableRow
-                        label="Terminal Exit Proceeds"
-                        data={columns}
-                        dk="pB_Exit"
-                        total={data.totals.pB_Exit}
-                        isIndent
-                        tooltip={OPCO_FORMULAS.pB_Exit}
-                      />
-                      <TableRow
-                        label="VG NET CASH FLOW"
-                        data={columns}
-                        dk="pB_Net"
-                        total={data.totals.pB_Net}
-                        highlight
-                        emerald
-                        tooltip={OPCO_FORMULAS.pB_Net}
-                      />
-                    </>
-                  )}
-                </tbody>
-              </table>
+                        <TableSection
+                          title="Vasanta Returns (49%)"
+                          colSpan={columns.length + 2}
+                          type="emerald"
+                        />
+                        <TableRow
+                          label="Partner B Investment"
+                          data={columns}
+                          dk="pB_Outlay"
+                          total={data.totals.pB_Outlay}
+                          isIndent
+                          tooltip={OPCO_FORMULAS.pB_Outlay}
+                        />
+                        <TableRow
+                          label="Partner B Dividend"
+                          data={columns}
+                          dk="shareB"
+                          total={data.totals.shareB}
+                          isIndent
+                          tooltip={OPCO_FORMULAS.shareB}
+                        />
+                        <TableRow
+                          label="Terminal Exit Proceeds"
+                          data={columns}
+                          dk="pB_Exit"
+                          total={data.totals.pB_Exit}
+                          isIndent
+                          tooltip={OPCO_FORMULAS.pB_Exit}
+                        />
+                        <TableRow
+                          label="VG NET CASH FLOW"
+                          data={columns}
+                          dk="pB_Net"
+                          total={data.totals.pB_Net}
+                          highlight
+                          emerald
+                          tooltip={OPCO_FORMULAS.pB_Net}
+                        />
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -9393,9 +9557,51 @@ const PropCoCascadeView = memo(
       viewResolution,
     );
     const scrollRef = useRef(null);
-    const [showDevBudget, setShowDevBudget] = useState(true);
+    const [showDevBudget, setShowDevBudget] = useState(false);
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [viewMode, setViewMode] = useState("all"); // 'all' | 'pl' | 'cf'
+    const [expandedCfo, setExpandedCfo] = useState(false);
+    const [expandedCfi, setExpandedCfi] = useState(false);
+    const [expandedCff, setExpandedCff] = useState(false);
+
+    const renderTableHeaders = () => (
+      <thead className="bg-[#EFEBE7] font-bold sticky top-0 z-[50] shadow-md">
+        <tr>
+          <th className="px-4 py-3 border-b-2 border-r border-[#D8D8D8] sticky left-0 top-0 bg-[#EFEBE7] z-[60] w-[360px] min-w-[360px] max-w-[360px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-[#1E2F31]">
+            Line Item
+          </th>
+          {columns.map((col, i) => (
+            <th
+              key={i}
+              onClick={
+                col.colType === "year"
+                  ? () => toggleYear(col.defaultLabel)
+                  : undefined
+              }
+              className={`px-3 py-3 text-right border-b-2 border-r border-[#D8D8D8] ${
+                col.colType === "year"
+                  ? "cursor-pointer hover:bg-white font-black underline decoration-dashed underline-offset-4 "
+                  : "font-medium text-[10px] "
+              } bg-[#EFEBE7] ${!col.isOperating ? "text-[#9B8B70]" : "text-[#1E2F31]"} ${col.isMonth ? "min-w-[65px] whitespace-nowrap" : "min-w-[90px]"}`}
+            >
+              {col.colType === "year" ? (
+                <div className="flex items-center justify-end gap-1">
+                  {expandedYears[col.defaultLabel] ? "-" : "+"}
+                  {String(col.defaultLabel)}
+                </div>
+              ) : (
+                <div className="text-center w-full">
+                  {String(col.defaultLabel)}
+                </div>
+              )}
+            </th>
+          ))}
+          <th className="px-4 py-3 text-right bg-[#EFEBE7] text-[#1E2F31] sticky right-0 top-0 z-[60] border-l border-b-2 border-[#D8D8D8] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+            Total
+          </th>
+        </tr>
+      </thead>
+    );
 
     return (
       <div
@@ -9534,9 +9740,9 @@ const PropCoCascadeView = memo(
           )}
 
           <div
-            className={`${showDevBudget && !isFullScreen ? "md:col-span-2" : "md:col-span-1"} bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden ${isFullScreen ? "h-full" : "h-[calc(100vh-240px)]"} flex flex-col`}
+            className={`${showDevBudget && !isFullScreen ? "md:col-span-2" : "md:col-span-1"} flex flex-col gap-4 overflow-hidden ${isFullScreen ? "h-full" : "h-[calc(100vh-240px)]"}`}
           >
-            <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
+            <div className="p-4 bg-white rounded-xl shadow-sm border border-[#D8D8D8] flex justify-between items-center shrink-0">
               <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
                 <List size={14} /> PropCo P&L & Cash Flow
                 {!showDevBudget && (
@@ -9559,14 +9765,23 @@ const PropCoCascadeView = memo(
                   <button
                     onClick={() => setViewMode("pl")}
                     className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "pl" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                    title="PropCo Income Statement (P&L)"
                   >
                     P&L
                   </button>
                   <button
+                    onClick={() => setViewMode("statement")}
+                    className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "statement" ? "bg-[#1E2F31] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                    title="C&F (Standardized)"
+                  >
+                    C&F
+                  </button>
+                  <button
                     onClick={() => setViewMode("cf")}
                     className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "cf" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                    title="PropCo Capital Cascade"
                   >
-                    CF
+                    Cascade
                   </button>
                 </div>
                 <button
@@ -9594,587 +9809,686 @@ const PropCoCascadeView = memo(
                     Monthly
                   </button>
                 </div>
-                <button
-                  onClick={() =>
-                    scrollRef.current?.scrollBy({
-                      left: -300,
-                      behavior: "smooth",
-                    })
-                  }
-                  className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6]"
-                >
-                  <ChevronLeft size={13} strokeWidth={2.5} />
-                </button>
-                <button
-                  onClick={() =>
-                    scrollRef.current?.scrollBy({
-                      left: 300,
-                      behavior: "smooth",
-                    })
-                  }
-                  className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6]"
-                >
-                  <ChevronRight size={13} strokeWidth={2.5} />
-                </button>
                 <span className="text-[10px] bg-white text-[#4C4A4B] border border-[#D8D8D8] px-2 py-1 rounded font-bold uppercase shadow-sm">
                   IDR Billions
                 </span>
               </div>
             </div>
-            <div ref={scrollRef} className="overflow-auto min-h-0 flex-1">
-              <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
-                <thead className="bg-[#EFEBE7] font-bold sticky top-0 z-[50] shadow-md">
-                  <tr>
-                    <th className="px-4 py-3 border-b-2 border-r border-[#D8D8D8] sticky left-0 top-0 bg-[#EFEBE7] z-[60] w-[260px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-[#1E2F31]">
-                      Line Item
-                    </th>
-                    {columns.map((col, i) => (
-                      <th
-                        key={i}
-                        onClick={
-                          col.colType === "year"
-                            ? () => toggleYear(col.defaultLabel)
-                            : undefined
-                        }
-                        className={`px-3 py-3 text-right border-b-2 border-r border-[#D8D8D8] ${
-                          col.colType === "year"
-                            ? "cursor-pointer hover:bg-white font-black underline decoration-dashed underline-offset-4 "
-                            : "font-medium text-[10px] "
-                        } bg-[#EFEBE7] ${!col.isOperating ? "text-[#9B8B70]" : "text-[#1E2F31]"} ${col.isMonth ? "min-w-[65px] whitespace-nowrap" : "min-w-[90px]"}`}
-                      >
-                        {col.colType === "year" ? (
-                          <div className="flex items-center justify-end gap-1">
-                            {expandedYears[col.defaultLabel] ? "-" : "+"}
-                            {String(col.defaultLabel)}
-                          </div>
-                        ) : (
-                          <div className="text-center w-full">
-                            {String(col.defaultLabel)}
-                          </div>
+            <div className="overflow-auto min-h-0 flex-1 space-y-6">
+              {/* TABLE 1: PropCo Operating P&L & Debt Coverage */}
+              {(viewMode === "all" || viewMode === "pl") && (
+                <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden">
+                  <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
+                      Property Operating Income Statement (P&L) & Debt Service
+                    </h3>
+                  </div>
+                  <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
+                    <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
+                      {renderTableHeaders()}
+                      <tbody>
+                        <TableSection
+                          title="Operating Revenue & Expense"
+                          colSpan={columns.length + 2}
+                        />
+                        <TableRow
+                          label="Net Rent Revenue / NOR"
+                          data={columns}
+                          dk="revenue"
+                          total={data.totals.revenue}
+                          highlight
+                          tooltip={PROPCO_FORMULAS.revenue}
+                        />
+
+                        <tr className="group">
+                          <td className="px-3 py-1.5 sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap transition-colors shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-[#EFEBE7] font-bold text-[#1E2F31] text-[11px]">
+                            Operating Expenses (OpEx)
+                          </td>
+                          {columns.map((_, idx) => (
+                            <td
+                              key={idx}
+                              className="px-2 py-1.5 text-right border-r border-b border-[#D8D8D8] font-mono transition-colors bg-[#EFEBE7]/50"
+                            />
+                          ))}
+                          <td className="px-2 py-1.5 text-right font-bold font-mono border-l border-b border-[#D8D8D8] sticky right-0 z-[40] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-[#EFEBE7] font-bold text-[#1E2F31] text-[11px]">
+                            &nbsp;
+                          </td>
+                        </tr>
+
+                        <ExpandableDataRowGroup
+                          parentLabel="Pre-Opening & Dev Expenses"
+                          parentDk="preOpeningDev"
+                          parentTotal={data.totals.preOpeningDev}
+                          data={columns}
+                          parentTooltip={PROPCO_FORMULAS.preOpeningDev}
+                          isSubtractor
+                          childrenData={[
+                            {
+                              label: "Dev. G&A Expense",
+                              dk: "devGa",
+                              total: data.totals.devGa,
+                            },
+                            {
+                              label: "Dev. CAR Expense",
+                              dk: "devCar",
+                              total: data.totals.devCar,
+                            },
+                          ]}
+                        />
+
+                        <TableRow
+                          label="Facility Maintenance OPEX"
+                          data={columns}
+                          dk="maintOpex"
+                          total={data.totals.maintOpex}
+                          isIndent
+                          tooltip={PROPCO_FORMULAS.maintOpex}
+                          isSubtractor
+                        />
+                        <TableRow
+                          label="Property Tax"
+                          data={columns}
+                          dk="taxOpex"
+                          total={data.totals.taxOpex}
+                          isIndent
+                          tooltip={PROPCO_FORMULAS.taxOpex}
+                          isSubtractor
+                        />
+                        <TableRow
+                          label="Management / Overhead OPEX"
+                          data={columns}
+                          dk="overheadOpex"
+                          total={data.totals.overheadOpex}
+                          isIndent
+                          tooltip={PROPCO_FORMULAS.overheadOpex}
+                          isSubtractor
+                        />
+                        <TableRow
+                          label="Equipment Lease OPEX"
+                          data={columns}
+                          dk="medEqLeaseOpex"
+                          total={data.totals.medEqLeaseOpex}
+                          isIndent
+                          tooltip={PROPCO_FORMULAS.medEqLeaseOpex}
+                          isSubtractor
+                        />
+
+                        <TableRow
+                          label="Gross Operating Profit (GOP)"
+                          data={columns}
+                          dk="gop"
+                          total={data.totals.gop}
+                          highlight
+                          tooltip={PROPCO_FORMULAS.gop}
+                        />
+
+                        <tr className="group">
+                          <td className="px-3 py-1.5 sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap transition-colors shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-[#EFEBE7] font-bold text-[#1E2F31] text-[11px]">
+                            Finance & Reserves
+                          </td>
+                          {columns.map((_, idx) => (
+                            <td
+                              key={idx}
+                              className="px-2 py-1.5 text-right border-r border-b border-[#D8D8D8] font-mono transition-colors bg-[#EFEBE7]/50"
+                            />
+                          ))}
+                          <td className="px-2 py-1.5 text-right font-bold font-mono border-l border-b border-[#D8D8D8] sticky right-0 z-[40] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-[#EFEBE7] font-bold text-[#1E2F31] text-[11px]">
+                            &nbsp;
+                          </td>
+                        </tr>
+
+                        <TableRow
+                          label="FF&E Reserve Allocation"
+                          data={columns}
+                          dk="ffeReserve"
+                          total={data.totals.ffeReserve}
+                          isIndent
+                          tooltip={PROPCO_FORMULAS.ffeReserve}
+                          isSubtractor
+                        />
+                        <TableRow
+                          label="EBITDA"
+                          data={columns}
+                          dk="ebitda"
+                          total={data.totals.ebitda}
+                          highlight
+                          tooltip={PROPCO_FORMULAS.ebitda}
+                        />
+
+                        <ExpandableDataRowGroup
+                          parentLabel="Depreciation (D&A)"
+                          parentDk="dep"
+                          parentTotal={data.totals.dep}
+                          data={columns}
+                          parentTooltip={PROPCO_FORMULAS.dep}
+                          isSubtractor
+                          childrenData={[
+                            {
+                              label: "Construction",
+                              dk: "depBuild",
+                              total: data.totals.depBuild,
+                            },
+                            {
+                              label: "Medical Equipment",
+                              dk: "depMedEq",
+                              total: data.totals.depMedEq,
+                            },
+                            {
+                              label: "Infrastructure",
+                              dk: "depInfra",
+                              total: data.totals.depInfra,
+                            },
+                            {
+                              label: "FF&E",
+                              dk: "depFfe",
+                              total: data.totals.depFfe,
+                            },
+                            {
+                              label: "Sharing Dev.",
+                              dk: "depSharing",
+                              total: data.totals.depSharing,
+                            },
+                            {
+                              label: "Consultant",
+                              dk: "depConsultant",
+                              total: data.totals.depConsultant,
+                            },
+                            {
+                              label: "License",
+                              dk: "depLicense",
+                              total: data.totals.depLicense,
+                            },
+                            {
+                              label: "VAT",
+                              dk: "depVat",
+                              total: data.totals.depVat,
+                            },
+                            {
+                              label: "Contingency",
+                              dk: "depContingency",
+                              total: data.totals.depContingency,
+                            },
+                          ]}
+                        />
+                        <TableRow
+                          label="EBIT"
+                          data={columns}
+                          dk="ebit"
+                          total={data.totals.ebit}
+                          highlight
+                          tooltip={PROPCO_FORMULAS.ebit}
+                        />
+                        <TableRow
+                          label="Interest Expense (Debt)"
+                          data={columns}
+                          dk="interest"
+                          total={data.totals.interest}
+                          isIndent
+                          tooltip={PROPCO_FORMULAS.interest}
+                          isSubtractor
+                        />
+                        <TableRow
+                          label="Earnings Before Tax (EBT)"
+                          data={columns}
+                          dk="ebt"
+                          total={data.totals.ebt}
+                          highlight
+                          tooltip={PROPCO_FORMULAS.ebt}
+                        />
+                        <TableRow
+                          label="Corporate Income Tax"
+                          data={columns}
+                          dk="corpTax"
+                          total={data.totals.corpTax}
+                          isIndent
+                          tooltip={PROPCO_FORMULAS.corpTax}
+                          isSubtractor
+                        />
+                        <TableRow
+                          label="Net Profit"
+                          data={columns}
+                          dk="netIncome"
+                          total={data.totals.netIncome}
+                          highlight
+                          tooltip={PROPCO_FORMULAS.netIncome}
+                        />
+
+                        <TableSection
+                          title="Debt Service & Exit"
+                          colSpan={columns.length + 2}
+                        />
+                        <TableRow
+                          label="Principal Repayment"
+                          data={columns}
+                          dk="principal"
+                          total={data.totals.principal}
+                          isIndent
+                          tooltip={PROPCO_FORMULAS.principal}
+                          isSubtractor
+                        />
+                        <TableRow
+                          label="DSCR (Coverage Ratio)"
+                          data={columns}
+                          dk="dscr"
+                          tooltip={PROPCO_FORMULAS.dscr}
+                        />
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* TABLE 2: PropCo Standard Cash Flows */}
+              {(viewMode === "all" || viewMode === "statement") && (
+                <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden">
+                  <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
+                      Property Standard Cash Flows (CFO/CFI/CFF)
+                    </h3>
+                  </div>
+                  <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
+                    <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
+                      {renderTableHeaders()}
+                      <tbody>
+                        <TableSection
+                          title="STATEMENT OF CASH FLOWS"
+                          colSpan={columns.length + 2}
+                          type="amber"
+                        />
+                        <TableRow
+                          label="Net Cash from Operating (CFO)"
+                          data={columns}
+                          dk="cfo"
+                          total={data.totals.cfo}
+                          highlight
+                          isExpandable
+                          isExpanded={expandedCfo}
+                          onExpand={() => setExpandedCfo(!expandedCfo)}
+                          tooltip="PropCo Net Income + D&A."
+                        />
+                        {expandedCfo && (
+                          <>
+                            <TableRow
+                              label="Cash Inflows (OpCo Lease Rentals)"
+                              data={columns}
+                              dk="cfo_in"
+                              total={data.totals.cfo_in}
+                              isIndent
+                              hasConnector
+                              tooltip="PropCo Rental Revenues received from clinical leasing operations."
+                            />
+                            <TableRow
+                              label="Cash Outflows (Maint, Reserves, Interest & Taxes)"
+                              data={columns}
+                              dk="cfo_out"
+                              total={data.totals.cfo_out}
+                              isIndent
+                              hasConnector
+                              tooltip="Operating outflows paid during PropCo operations, including maintenance OPEX, FF&E reserve payments, financing interest, and corporate income taxes."
+                            />
+                          </>
                         )}
-                      </th>
-                    ))}
-                    <th className="px-4 py-3 text-right bg-[#EFEBE7] text-[#1E2F31] sticky right-0 top-0 z-[60] border-l border-b-2 border-[#D8D8D8] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">
-                      Total
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(viewMode === "all" || viewMode === "cf") && (
-                    <>
-                      <TableSection
-                        title="A. Project Development Spending"
-                        colSpan={columns.length + 2}
-                        type="indigo"
-                      />
-                      <TableRow
-                        label="Land Cost"
-                        data={columns}
-                        dk="landSpend"
-                        total={data.totals.landSpend}
-                        isIndent
-                        tooltip={PROPCO_FORMULAS.landSpend}
-                      />
-                      <ExpandableDataRowGroup
-                        parentLabel="Total Hard Costs"
-                        parentDk="hardSpend"
-                        parentTotal={data.totals.hardSpend}
-                        data={columns}
-                        parentTooltip={PROPCO_FORMULAS.hardSpend}
-                        childrenData={[
-                          {
-                            label: "Construction",
-                            dk: "buildSpend",
-                            total: data.totals.buildSpend,
-                          },
-                          {
-                            label: "Medical Equip.",
-                            dk: "eqSpend",
-                            total: data.totals.eqSpend,
-                          },
-                          {
-                            label: "Infrastructure",
-                            dk: "infraSpend",
-                            total: data.totals.infraSpend,
-                          },
-                          {
-                            label: "FF&E",
-                            dk: "ffeSpend",
-                            total: data.totals.ffeSpend,
-                          },
-                          {
-                            label: "Sharing Dev.",
-                            dk: "sharingSpend",
-                            total: data.totals.sharingSpend,
-                          },
-                        ]}
-                      />
-                      <ExpandableDataRowGroup
-                        parentLabel="Total Soft Costs"
-                        parentDk="softSpend"
-                        parentTotal={data.totals.softSpend}
-                        data={columns}
-                        parentTooltip={PROPCO_FORMULAS.softSpend}
-                        childrenData={[
-                          {
-                            label: "Consultant",
-                            dk: "consultantSpend",
-                            total: data.totals.consultantSpend,
-                          },
-                          {
-                            label: "License",
-                            dk: "licenseSpend",
-                            total: data.totals.licenseSpend,
-                          },
-                          {
-                            label: "VAT",
-                            dk: "vatSpend",
-                            total: data.totals.vatSpend,
-                          },
-                          {
-                            label: "Contingency",
-                            dk: "contingencySpend",
-                            total: data.totals.contingencySpend,
-                          },
-                          {
-                            label: "Dev. G&A",
-                            dk: "devGa",
-                            total: data.totals.devGa,
-                          },
-                          {
-                            label: "Dev. CAR",
-                            dk: "devCar",
-                            total: data.totals.devCar,
-                          },
-                        ]}
-                      />
-                      <TableRow
-                        label="PROJECT DEVELOPMENT SPEND"
-                        data={columns}
-                        dk="totalSpend"
-                        total={data.totals.totalSpend}
-                        highlight
-                        tooltip={PROPCO_FORMULAS.totalSpend}
-                      />
-                      <TableRow
-                        label="Debt Drawdown"
-                        data={columns}
-                        dk="debtDraw"
-                        total={data.totals.debtDraw}
-                        isIndent
-                        tooltip={PROPCO_FORMULAS.debtDraw}
-                      />
-                    </>
-                  )}
 
-                  {(viewMode === "all" || viewMode === "pl") && (
-                    <>
-                      <TableSection
-                        title="B. Operating Revenue & Expense"
-                        colSpan={columns.length + 2}
-                      />
-                      <TableRow
-                        label="Net Rent Revenue / NOR"
-                        data={columns}
-                        dk="revenue"
-                        total={data.totals.revenue}
-                        highlight
-                        tooltip={PROPCO_FORMULAS.revenue}
-                      />
+                        <TableRow
+                          label="Net Cash from Investing (CFI)"
+                          data={columns}
+                          dk="cfi"
+                          total={data.totals.cfi}
+                          highlight
+                          isExpandable
+                          isExpanded={expandedCfi}
+                          onExpand={() => setExpandedCfi(!expandedCfi)}
+                          tooltip="PropCo development spending and exit proceeds."
+                        />
+                        {expandedCfi && (
+                          <>
+                            <TableRow
+                              label="Cash Inflows (Exit Proceeds)"
+                              data={columns}
+                              dk="cfi_in"
+                              total={data.totals.cfi_in}
+                              isIndent
+                              hasConnector
+                              tooltip="Capital proceeds received from PropCo asset liquidations/exits."
+                            />
+                            <TableRow
+                              label="Cash Outflows (Development Capex)"
+                              data={columns}
+                              dk="cfi_out"
+                              total={data.totals.cfi_out}
+                              isIndent
+                              hasConnector
+                              tooltip="Pre-operating development capital expenditures incurred across hard, soft, and land spends."
+                            />
+                          </>
+                        )}
 
-                      <tr className="group">
-                        <td className="px-3 py-1.5 sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap transition-colors shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-[#EFEBE7] font-bold text-[#1E2F31] text-[11px]">
-                          Operating Expenses (OpEx)
-                        </td>
-                        {columns.map((_, idx) => (
-                          <td
-                            key={idx}
-                            className="px-2 py-1.5 text-right border-r border-b border-[#D8D8D8] font-mono transition-colors bg-[#EFEBE7]/50"
-                          />
-                        ))}
-                        <td className="px-2 py-1.5 text-right font-bold font-mono border-l border-b border-[#D8D8D8] sticky right-0 z-[40] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-[#EFEBE7] font-bold text-[#1E2F31] text-[11px]">
-                          &nbsp;
-                        </td>
-                      </tr>
+                        <TableRow
+                          label="Net Cash from Financing (CFF)"
+                          data={columns}
+                          dk="cff"
+                          total={data.totals.cff}
+                          highlight
+                          isExpandable
+                          isExpanded={expandedCff}
+                          onExpand={() => setExpandedCff(!expandedCff)}
+                          tooltip="Debt drawdowns, principal repayment, equity injections, and dividends paid."
+                        />
+                        {expandedCff && (
+                          <>
+                            <TableRow
+                              label="Cash Inflows (Debt Draws & Shortfall Contributions)"
+                              data={columns}
+                              dk="cff_in"
+                              total={data.totals.cff_in}
+                              isIndent
+                              hasConnector
+                              tooltip="Capital inflows from development bank loan drawdowns and extra sponsor shortfall injections."
+                            />
+                            <TableRow
+                              label="Cash Outflows (Sponsor Distributions & Principal Repayments)"
+                              data={columns}
+                              dk="cff_out"
+                              total={data.totals.cff_out}
+                              isIndent
+                              hasConnector
+                              tooltip="Subsequent debt principal amortization repayments and net operational free distributions paid to stakeholders."
+                            />
+                          </>
+                        )}
 
-                      <ExpandableDataRowGroup
-                        parentLabel="Pre-Opening & Dev Expenses"
-                        parentDk="preOpeningDev"
-                        parentTotal={data.totals.preOpeningDev}
-                        data={columns}
-                        parentTooltip={PROPCO_FORMULAS.preOpeningDev}
-                        isSubtractor
-                        childrenData={[
-                          {
-                            label: "Dev. G&A Expense",
-                            dk: "devGa",
-                            total: data.totals.devGa,
-                          },
-                          {
-                            label: "Dev. CAR Expense",
-                            dk: "devCar",
-                            total: data.totals.devCar,
-                          },
-                        ]}
-                      />
+                        <TableRow
+                          label="Total Net Cash Flow"
+                          data={columns}
+                          dk="netFlow"
+                          total={data.totals.netFlow}
+                          highlight
+                          emerald
+                        />
+                        <TableRow
+                          label="Cumulative Cash Balance"
+                          data={columns}
+                          dk="endCash"
+                          total={data.totals.netFlow}
+                          highlight
+                          crossover
+                          indigo
+                          bold
+                          tooltip="Rolling cash balance."
+                        />
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
 
-                      <TableRow
-                        label="Facility Maintenance OPEX"
-                        data={columns}
-                        dk="maintOpex"
-                        total={data.totals.maintOpex}
-                        isIndent
-                        tooltip={PROPCO_FORMULAS.maintOpex}
-                        isSubtractor
-                      />
-                      <TableRow
-                        label="Property Tax"
-                        data={columns}
-                        dk="taxOpex"
-                        total={data.totals.taxOpex}
-                        isIndent
-                        tooltip={PROPCO_FORMULAS.taxOpex}
-                        isSubtractor
-                      />
-                      <TableRow
-                        label="Management / Overhead OPEX"
-                        data={columns}
-                        dk="overheadOpex"
-                        total={data.totals.overheadOpex}
-                        isIndent
-                        tooltip={PROPCO_FORMULAS.overheadOpex}
-                        isSubtractor
-                      />
-                      <TableRow
-                        label="Equipment Lease OPEX"
-                        data={columns}
-                        dk="medEqLeaseOpex"
-                        total={data.totals.medEqLeaseOpex}
-                        isIndent
-                        tooltip={PROPCO_FORMULAS.medEqLeaseOpex}
-                        isSubtractor
-                      />
+              {/* TABLE 3: PropCo Capital Cascade & Returns */}
+              {(viewMode === "all" || viewMode === "cf") && (
+                <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden">
+                  <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
+                      Property Development Capex rolls & Return Metrics
+                    </h3>
+                  </div>
+                  <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
+                    <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
+                      {renderTableHeaders()}
+                      <tbody>
+                        <TableSection
+                          title="Project Development Spending"
+                          colSpan={columns.length + 2}
+                          type="indigo"
+                        />
+                        <TableRow
+                          label="Land Cost"
+                          data={columns}
+                          dk="landSpend"
+                          total={data.totals.landSpend}
+                          isIndent
+                          tooltip={PROPCO_FORMULAS.landSpend}
+                        />
+                        <ExpandableDataRowGroup
+                          parentLabel="Total Hard Costs"
+                          parentDk="hardSpend"
+                          parentTotal={data.totals.hardSpend}
+                          data={columns}
+                          parentTooltip={PROPCO_FORMULAS.hardSpend}
+                          childrenData={[
+                            {
+                              label: "Construction",
+                              dk: "buildSpend",
+                              total: data.totals.buildSpend,
+                            },
+                            {
+                              label: "Medical Equip.",
+                              dk: "eqSpend",
+                              total: data.totals.eqSpend,
+                            },
+                            {
+                              label: "Infrastructure",
+                              dk: "infraSpend",
+                              total: data.totals.infraSpend,
+                            },
+                            {
+                              label: "FF&E",
+                              dk: "ffeSpend",
+                              total: data.totals.ffeSpend,
+                            },
+                            {
+                              label: "Sharing Dev.",
+                              dk: "sharingSpend",
+                              total: data.totals.sharingSpend,
+                            },
+                          ]}
+                        />
+                        <ExpandableDataRowGroup
+                          parentLabel="Total Soft Costs"
+                          parentDk="softSpend"
+                          parentTotal={data.totals.softSpend}
+                          data={columns}
+                          parentTooltip={PROPCO_FORMULAS.softSpend}
+                          childrenData={[
+                            {
+                              label: "Consultant",
+                              dk: "consultantSpend",
+                              total: data.totals.consultantSpend,
+                            },
+                            {
+                              label: "License",
+                              dk: "licenseSpend",
+                              total: data.totals.licenseSpend,
+                            },
+                            {
+                              label: "VAT",
+                              dk: "vatSpend",
+                              total: data.totals.vatSpend,
+                            },
+                            {
+                              label: "Contingency",
+                              dk: "contingencySpend",
+                              total: data.totals.contingencySpend,
+                            },
+                            {
+                              label: "Dev. G&A",
+                              dk: "devGa",
+                              total: data.totals.devGa,
+                            },
+                            {
+                              label: "Dev. CAR",
+                              dk: "devCar",
+                              total: data.totals.devCar,
+                            },
+                          ]}
+                        />
+                        <TableRow
+                          label="PROJECT DEVELOPMENT SPEND"
+                          data={columns}
+                          dk="totalSpend"
+                          total={data.totals.totalSpend}
+                          highlight
+                          tooltip={PROPCO_FORMULAS.totalSpend}
+                        />
+                        <TableRow
+                          label="Debt Drawdown"
+                          data={columns}
+                          dk="debtDraw"
+                          total={data.totals.debtDraw}
+                          isIndent
+                          tooltip={PROPCO_FORMULAS.debtDraw}
+                        />
 
-                      <TableRow
-                        label="Gross Operating Profit (GOP)"
-                        data={columns}
-                        dk="gop"
-                        total={data.totals.gop}
-                        highlight
-                        tooltip={PROPCO_FORMULAS.gop}
-                      />
+                        <TableSection
+                          title="Return Metrics"
+                          colSpan={columns.length + 2}
+                          type="emerald"
+                        />
+                        <TableRow
+                          label="Deferred MedEq Purchase"
+                          data={columns}
+                          dk="deferredCapex"
+                          total={data.totals.deferredCapex}
+                          isIndent
+                          tooltip={PROPCO_FORMULAS.deferredCapex}
+                        />
+                        <TableRow
+                          label="FCFE (Operating)"
+                          data={columns}
+                          dk="opFcfe"
+                          total={data.totals.opFcfe}
+                          isIndent
+                          tooltip={PROPCO_FORMULAS.opFcfe}
+                        />
+                        <TableRow
+                          label="Shortfall Equity"
+                          data={columns}
+                          dk="shortfallEquity"
+                          total={data.totals.shortfallEquity}
+                          isIndent
+                          tooltip="Dynamic Operating Shortfall (The Pay As You Go Method). Injected equity to cover negative operating free cash flow to equity."
+                        />
+                        <TableRow
+                          label="Gross Exit Proceeds"
+                          data={columns}
+                          dk="grossExitValue"
+                          total={data.totals.grossExitValue}
+                          isIndent
+                          tooltip={PROPCO_FORMULAS.grossExitValue}
+                        />
+                        <TableRow
+                          label="Loan Settlement at Exit"
+                          data={columns}
+                          dk="loanSettledAtExit"
+                          total={data.totals.loanSettledAtExit}
+                          isIndent
+                          tooltip={PROPCO_FORMULAS.loanSettledAtExit}
+                        />
+                        <TableRow
+                          label="Net Exit Proceeds"
+                          data={columns}
+                          dk="netExitProceeds"
+                          total={data.totals.netExitProceeds}
+                          highlight
+                          tooltip={PROPCO_FORMULAS.netExitProceeds}
+                        />
+                        <TableRow
+                          label="FCFE (Levered)"
+                          data={columns}
+                          dk="fcfe"
+                          highlight
+                          emerald
+                          total={data.totals.fcfe}
+                          tooltip={PROPCO_FORMULAS.fcfe}
+                        />
+                        <TableRow
+                          label="Cumulative FCFE"
+                          data={columns}
+                          dk="cumFcfe"
+                          highlight
+                          crossover
+                          bold
+                          indigo
+                          tooltip={PROPCO_FORMULAS.cumFcfe}
+                        />
 
-                      <tr className="group">
-                        <td className="px-3 py-1.5 sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap transition-colors shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-[#EFEBE7] font-bold text-[#1E2F31] text-[11px]">
-                          Finance & Reserves
-                        </td>
-                        {columns.map((_, idx) => (
-                          <td
-                            key={idx}
-                            className="px-2 py-1.5 text-right border-r border-b border-[#D8D8D8] font-mono transition-colors bg-[#EFEBE7]/50"
-                          />
-                        ))}
-                        <td className="px-2 py-1.5 text-right font-bold font-mono border-l border-b border-[#D8D8D8] sticky right-0 z-[40] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-[#EFEBE7] font-bold text-[#1E2F31] text-[11px]">
-                          &nbsp;
-                        </td>
-                      </tr>
-
-                      <TableRow
-                        label="FF&E Reserve Allocation"
-                        data={columns}
-                        dk="ffeReserve"
-                        total={data.totals.ffeReserve}
-                        isIndent
-                        tooltip={PROPCO_FORMULAS.ffeReserve}
-                        isSubtractor
-                      />
-                      <TableRow
-                        label="EBITDA"
-                        data={columns}
-                        dk="ebitda"
-                        total={data.totals.ebitda}
-                        highlight
-                        tooltip={PROPCO_FORMULAS.ebitda}
-                      />
-                    </>
-                  )}
-
-                  {(viewMode === "all" ||
-                    viewMode === "pl" ||
-                    viewMode === "cf") && (
-                    <>
-                      <ExpandableDataRowGroup
-                        parentLabel="Depreciation (D&A)"
-                        parentDk="dep"
-                        parentTotal={data.totals.dep}
-                        data={columns}
-                        parentTooltip={PROPCO_FORMULAS.dep}
-                        isSubtractor
-                        childrenData={[
-                          {
-                            label: "Construction",
-                            dk: "depBuild",
-                            total: data.totals.depBuild,
-                          },
-                          {
-                            label: "Medical Equipment",
-                            dk: "depMedEq",
-                            total: data.totals.depMedEq,
-                          },
-                          {
-                            label: "Infrastructure",
-                            dk: "depInfra",
-                            total: data.totals.depInfra,
-                          },
-                          {
-                            label: "FF&E",
-                            dk: "depFfe",
-                            total: data.totals.depFfe,
-                          },
-                          {
-                            label: "Sharing Dev.",
-                            dk: "depSharing",
-                            total: data.totals.depSharing,
-                          },
-                          {
-                            label: "Consultant",
-                            dk: "depConsultant",
-                            total: data.totals.depConsultant,
-                          },
-                          {
-                            label: "License",
-                            dk: "depLicense",
-                            total: data.totals.depLicense,
-                          },
-                          {
-                            label: "VAT",
-                            dk: "depVat",
-                            total: data.totals.depVat,
-                          },
-                          {
-                            label: "Contingency",
-                            dk: "depContingency",
-                            total: data.totals.depContingency,
-                          },
-                        ]}
-                      />
-                      <TableRow
-                        label="EBIT"
-                        data={columns}
-                        dk="ebit"
-                        total={data.totals.ebit}
-                        highlight
-                        tooltip={PROPCO_FORMULAS.ebit}
-                      />
-                      <TableRow
-                        label="Interest Expense (Debt)"
-                        data={columns}
-                        dk="interest"
-                        total={data.totals.interest}
-                        isIndent
-                        tooltip={PROPCO_FORMULAS.interest}
-                        isSubtractor
-                      />
-                      <TableRow
-                        label="Earnings Before Tax (EBT)"
-                        data={columns}
-                        dk="ebt"
-                        total={data.totals.ebt}
-                        highlight
-                        tooltip={PROPCO_FORMULAS.ebt}
-                      />
-                      <TableRow
-                        label="Corporate Income Tax"
-                        data={columns}
-                        dk="corpTax"
-                        total={data.totals.corpTax}
-                        isIndent
-                        tooltip={PROPCO_FORMULAS.corpTax}
-                        isSubtractor
-                      />
-                      <TableRow
-                        label="Net Profit"
-                        data={columns}
-                        dk="netIncome"
-                        total={data.totals.netIncome}
-                        highlight
-                        tooltip={PROPCO_FORMULAS.netIncome}
-                      />
-                      <TableSection
-                        title="C. Debt Service & Exit"
-                        colSpan={columns.length + 2}
-                      />
-                      <TableRow
-                        label="Principal Repayment"
-                        data={columns}
-                        dk="principal"
-                        total={data.totals.principal}
-                        isIndent
-                        tooltip={PROPCO_FORMULAS.principal}
-                        isSubtractor
-                      />
-                      <TableRow
-                        label="DSCR (Coverage Ratio)"
-                        data={columns}
-                        dk="dscr"
-                        tooltip={PROPCO_FORMULAS.dscr}
-                      />
-                    </>
-                  )}
-
-                  {(viewMode === "all" || viewMode === "cf") && (
-                    <>
-                      <TableSection
-                        title="D. Return Metrics"
-                        colSpan={columns.length + 2}
-                        type="emerald"
-                      />
-                      <TableRow
-                        label="Deferred MedEq Purchase"
-                        data={columns}
-                        dk="deferredCapex"
-                        total={data.totals.deferredCapex}
-                        isIndent
-                        tooltip={PROPCO_FORMULAS.deferredCapex}
-                      />
-                      <TableRow
-                        label="FCFE (Operating)"
-                        data={columns}
-                        dk="opFcfe"
-                        total={data.totals.opFcfe}
-                        isIndent
-                        tooltip={PROPCO_FORMULAS.opFcfe}
-                      />
-                      <TableRow
-                        label="Shortfall Equity"
-                        data={columns}
-                        dk="shortfallEquity"
-                        total={data.totals.shortfallEquity}
-                        isIndent
-                        tooltip="Dynamic Operating Shortfall (The Pay As You Go Method). Injected equity to cover negative operating free cash flow to equity."
-                      />
-                      <TableRow
-                        label="Gross Exit Proceeds"
-                        data={columns}
-                        dk="grossExitValue"
-                        total={data.totals.grossExitValue}
-                        isIndent
-                        tooltip={PROPCO_FORMULAS.grossExitValue}
-                      />
-                      <TableRow
-                        label="Loan Settlement at Exit"
-                        data={columns}
-                        dk="loanSettledAtExit"
-                        total={data.totals.loanSettledAtExit}
-                        isIndent
-                        tooltip={PROPCO_FORMULAS.loanSettledAtExit}
-                      />
-                      <TableRow
-                        label="Net Exit Proceeds"
-                        data={columns}
-                        dk="netExitProceeds"
-                        total={data.totals.netExitProceeds}
-                        highlight
-                        tooltip={PROPCO_FORMULAS.netExitProceeds}
-                      />
-                      <TableRow
-                        label="FCFE (Levered)"
-                        data={columns}
-                        dk="fcfe"
-                        highlight
-                        emerald
-                        total={data.totals.fcfe}
-                        tooltip={PROPCO_FORMULAS.fcfe}
-                      />
-                      <TableRow
-                        label="Cumulative FCFE"
-                        data={columns}
-                        dk="cumFcfe"
-                        highlight
-                        crossover
-                        bold
-                        indigo
-                        tooltip={PROPCO_FORMULAS.cumFcfe}
-                      />
-
-                      <TableSection
-                        title="E. Ex-Land Cash Flows (Optional)"
-                        colSpan={columns.length + 2}
-                      />
-                      <TableRow
-                        label="Interest (Ex-Land)"
-                        data={columns}
-                        dk="interestExLand"
-                        total={data.totals.interestExLand}
-                        isIndent
-                        tooltip={PROPCO_FORMULAS.interestExLand}
-                        isSubtractor
-                      />
-                      <TableRow
-                        label="Principal (Ex-Land)"
-                        data={columns}
-                        dk="principalExLand"
-                        total={data.totals.principalExLand}
-                        isIndent
-                        tooltip={PROPCO_FORMULAS.principalExLand}
-                        isSubtractor
-                      />
-                      <TableRow
-                        label="EBT (Ex-Land)"
-                        data={columns}
-                        dk="ebtExLand"
-                        total={data.totals.ebtExLand}
-                        highlight
-                        tooltip={PROPCO_FORMULAS.ebtExLand}
-                      />
-                      <TableRow
-                        label="Corporate Tax (Ex-Land)"
-                        data={columns}
-                        dk="corpTaxExLand"
-                        total={data.totals.corpTaxExLand}
-                        isIndent
-                        tooltip={PROPCO_FORMULAS.corpTaxExLand}
-                        isSubtractor
-                      />
-                      <TableRow
-                        label="FCFE Op (Ex-Land)"
-                        data={columns}
-                        dk="opFcfeExLand"
-                        total={data.totals.opFcfeExLand}
-                        isIndent
-                        tooltip={PROPCO_FORMULAS.opFcfeExLand}
-                      />
-                      <TableRow
-                        label="Net Exit Proceeds (Ex-Land)"
-                        data={columns}
-                        dk="netExitProceedsExLand"
-                        total={data.totals.netExitProceedsExLand}
-                        highlight
-                        tooltip={PROPCO_FORMULAS.netExitProceedsExLand}
-                      />
-                      <TableRow
-                        label="FCFE (EX-LAND)"
-                        data={columns}
-                        dk="fcfeExLand"
-                        highlight
-                        emerald
-                        total={data.totals.fcfeExLand}
-                        tooltip={PROPCO_FORMULAS.fcfeExLand}
-                      />
-                      <TableRow
-                        label="Cumulative FCFE (Ex-Land)"
-                        data={columns}
-                        dk="cumFcfeExLand"
-                        highlight
-                        crossover
-                        bold
-                        indigo
-                        tooltip={PROPCO_FORMULAS.cumFcfeExLand}
-                      />
-                    </>
-                  )}
-                </tbody>
-              </table>
+                        <TableSection
+                          title="Ex-Land Cash Flows (Optional)"
+                          colSpan={columns.length + 2}
+                        />
+                        <TableRow
+                          label="Interest (Ex-Land)"
+                          data={columns}
+                          dk="interestExLand"
+                          total={data.totals.interestExLand}
+                          isIndent
+                          tooltip={PROPCO_FORMULAS.interestExLand}
+                          isSubtractor
+                        />
+                        <TableRow
+                          label="Principal (Ex-Land)"
+                          data={columns}
+                          dk="principalExLand"
+                          total={data.totals.principalExLand}
+                          isIndent
+                          tooltip={PROPCO_FORMULAS.principalExLand}
+                          isSubtractor
+                        />
+                        <TableRow
+                          label="EBT (Ex-Land)"
+                          data={columns}
+                          dk="ebtExLand"
+                          total={data.totals.ebtExLand}
+                          highlight
+                          tooltip={PROPCO_FORMULAS.ebtExLand}
+                        />
+                        <TableRow
+                          label="Corporate Tax (Ex-Land)"
+                          data={columns}
+                          dk="corpTaxExLand"
+                          total={data.totals.corpTaxExLand}
+                          isIndent
+                          tooltip={PROPCO_FORMULAS.corpTaxExLand}
+                          isSubtractor
+                        />
+                        <TableRow
+                          label="FCFE Op (Ex-Land)"
+                          data={columns}
+                          dk="opFcfeExLand"
+                          total={data.totals.opFcfeExLand}
+                          isIndent
+                          tooltip={PROPCO_FORMULAS.opFcfeExLand}
+                        />
+                        <TableRow
+                          label="Net Exit Proceeds (Ex-Land)"
+                          data={columns}
+                          dk="netExitProceedsExLand"
+                          total={data.totals.netExitProceedsExLand}
+                          highlight
+                          tooltip={PROPCO_FORMULAS.netExitProceedsExLand}
+                        />
+                        <TableRow
+                          label="FCFE (EX-LAND)"
+                          data={columns}
+                          dk="fcfeExLand"
+                          highlight
+                          emerald
+                          total={data.totals.fcfeExLand}
+                          tooltip={PROPCO_FORMULAS.fcfeExLand}
+                        />
+                        <TableRow
+                          label="Cumulative FCFE (Ex-Land)"
+                          data={columns}
+                          dk="cumFcfeExLand"
+                          highlight
+                          crossover
+                          bold
+                          indigo
+                          tooltip={PROPCO_FORMULAS.cumFcfeExLand}
+                        />
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -10603,16 +10917,169 @@ const ConsolidatedDashboardView = memo(
 );
 
 const ConsolidatedCascadeView = memo(
-  ({ data, viewResolution, setViewResolution }) => {
-    const { columns, expandedYears, toggleYear } = useMonthlyColumns(
+  ({ data, opcoData, propcoData, viewResolution, setViewResolution }) => {
+    const { columns: rawColumns, expandedYears, toggleYear } = useMonthlyColumns(
       data.annualData,
       viewResolution,
     );
     const scrollRef = useRef(null);
     const [isFullScreen, setIsFullScreen] = useState(false);
-    const [viewMode, setViewMode] = useState("all"); // 'all' | 'pl' | 'cf'
+    
+    // viewMode defines table visibility: 'all' | 'statement' | 'cascade'
+    const [viewMode, setViewMode] = useState("all"); 
+
     const [expandedPropCo, setExpandedPropCo] = useState(false);
     const [expandedOpCo, setExpandedOpCo] = useState(false);
+
+    // Enrich columns on the fly with true look-through accounting values
+    const columns = useMemo(() => {
+      let cumPartnerPropCo = 0;
+      let cumPartnerOpCo = 0;
+
+      return rawColumns.map((col) => {
+        const yr = col.parentYear || col.year;
+        const yrIdx = data.annualData.findIndex((d) => d.year === yr);
+        
+        const pY = propcoData?.annualData?.[yrIdx] || {};
+        const oY = opcoData?.annualData?.[yrIdx] || {};
+        
+        const isMonth = col.colType === "month";
+        let mIdx = 0;
+        if (isMonth) {
+          const match = col.defaultLabel.match(/M(\d+)/);
+          if (match) mIdx = parseInt(match[1]) - 1;
+        }
+
+        const sharePct = 0.49;
+
+        // Operating Flow lookups
+        const pEbitda = isMonth ? (pY.monthly?.ebitda?.[mIdx] || 0) : (pY.ebitda || 0);
+        const oEbitda = isMonth ? (oY.monthly?.ebitda?.[mIdx] || 0) : (oY.ebitda || 0);
+        const ltEbitda = col.lookThroughEbitda || (pEbitda + oEbitda * sharePct);
+
+        const pTax = isMonth ? (pY.monthly?.corpTax?.[mIdx] || 0) : (pY.corpTax || 0);
+        const oTax = isMonth ? (oY.monthly?.tax?.[mIdx] || 0) : (oY.tax || 0);
+        const ltTax = pTax + oTax * sharePct;
+        const ltCfo = ltEbitda - ltTax;
+
+        // Investing Flow lookups (Capex & setups)
+        const pLand = isMonth ? (pY.monthly?.landSpend?.[mIdx] || 0) : (pY.landSpend || 0);
+        const pHard = isMonth ? (pY.monthly?.hardSpend?.[mIdx] || 0) : (pY.hardSpend || 0);
+        const pSoft = isMonth ? (pY.monthly?.softSpend?.[mIdx] || 0) : (pY.softSpend || 0);
+        const pDevGa = isMonth ? (pY.monthly?.devGa?.[mIdx] || 0) : (pY.devGa || 0);
+        const pDevCar = isMonth ? (pY.monthly?.devCar?.[mIdx] || 0) : (pY.devCar || 0);
+        const pConInt = isMonth ? (pY.monthly?.conInt?.[mIdx] || 0) : (pY.conInt || 0);
+        
+        const oSetupOutlay = isMonth ? (oY.monthly?.pB_Outlay?.[mIdx] || 0) : (oY.pB_Outlay || 0);
+
+        const ltPropCoCapex = pLand + pHard + pSoft + pDevGa + pDevCar + pConInt;
+        const ltOpCoCapex = oSetupOutlay;
+        const ltCapex = ltPropCoCapex + ltOpCoCapex;
+
+        const pExit = isMonth ? (pY.monthly?.exit?.[mIdx] || 0) : (pY.exit || 0);
+        const oExit = isMonth ? (oY.monthly?.pB_Exit?.[mIdx] || 0) : (oY.pB_Exit || 0);
+        const ltExit = pExit + oExit;
+        const ltCfi = -ltCapex + ltExit;
+
+        // Financing Flow lookups (PropCo Debt)
+        const pDebtDraw = isMonth ? (pY.monthly?.debtDraw?.[mIdx] || 0) : (pY.debtDraw || 0);
+        const pPrincipal = isMonth ? (pY.monthly?.principal?.[mIdx] || 0) : (pY.principal || 0);
+        const pInterest = isMonth ? (pY.monthly?.interest?.[mIdx] || 0) : (pY.interest || 0);
+
+        const ltDebtDraw = pDebtDraw;
+        const ltDebtPrincipal = pPrincipal;
+        const ltDebtInterest = pInterest;
+        const ltCffPay = ltDebtDraw - ltDebtPrincipal - ltDebtInterest;
+
+        // Cascading Distributions split to Sponsors
+        const pFcfe = isMonth ? (pY.monthly?.fcfe?.[mIdx] || 0) : (pY.fcfe || 0);
+        const oShareB = isMonth ? (oY.monthly?.shareB?.[mIdx] || 0) : (oY.shareB || 0);
+        const oOutlayB = isMonth ? (oY.monthly?.pB_Outlay?.[mIdx] || 0) : (oY.pB_Outlay || 0);
+        const oExitB = isMonth ? (oY.monthly?.pB_Exit?.[mIdx] || 0) : (oY.pB_Exit || 0);
+
+        const partnerPropCoFlow = pFcfe;
+        const partnerOpCoFlow = oOutlayB + oShareB + oExitB;
+
+        cumPartnerPropCo += partnerPropCoFlow;
+        cumPartnerOpCo += partnerOpCoFlow;
+
+        return {
+          ...col,
+          pEbitda,
+          oEbitda,
+          ltEbitda,
+          pTax,
+          oTax,
+          ltTax,
+          ltCfo,
+          pLand,
+          pHard,
+          pSoft,
+          pDevGa,
+          pDevCar,
+          pConInt,
+          ltPropCoCapex,
+          ltOpCoCapex,
+          ltCapex,
+          pExit,
+          oExit,
+          ltExit,
+          ltCfi,
+          ltDebtDraw,
+          ltDebtPrincipal,
+          ltDebtInterest,
+          ltCffPay,
+          partnerPropCoFlow,
+          partnerOpCoFlow,
+          cumPartnerPropCo,
+          cumPartnerOpCo,
+        };
+      });
+    }, [rawColumns, opcoData, propcoData, data.annualData]);
+
+    // Pre-calculate exact lookup totals over year columns
+    const totals = useMemo(() => {
+      let Ebitda = 0, Tax = 0, Cfo = 0;
+      let PropCapex = 0, OpCapex = 0, Capex = 0, Exit = 0, Cfi = 0;
+      let DebtDraw = 0, DebtPrincipal = 0, DebtInterest = 0, CffPay = 0;
+      let PartnerPropCo = 0, PartnerOpCo = 0;
+
+      columns.forEach((col) => {
+        if (col.colType === "year") {
+          Ebitda += col.ltEbitda || 0;
+          Tax += col.ltTax || 0;
+          Cfo += col.ltCfo || 0;
+          PropCapex += col.ltPropCoCapex || 0;
+          OpCapex += col.ltOpCoCapex || 0;
+          Capex += col.ltCapex || 0;
+          Exit += col.ltExit || 0;
+          Cfi += col.ltCfi || 0;
+          DebtDraw += col.ltDebtDraw || 0;
+          DebtPrincipal += col.ltDebtPrincipal || 0;
+          DebtInterest += col.ltDebtInterest || 0;
+          CffPay += col.ltCffPay || 0;
+          PartnerPropCo += col.partnerPropCoFlow || 0;
+          PartnerOpCo += col.partnerOpCoFlow || 0;
+        }
+      });
+
+      return {
+        ltEbitda: Ebitda,
+        ltTax: Tax,
+        ltCfo: Cfo,
+        ltPropCoCapex: PropCapex,
+        ltOpCoCapex: OpCapex,
+        ltCapex: Capex,
+        ltExit: Exit,
+        ltCfi: Cfi,
+        ltDebtDraw: DebtDraw,
+        ltDebtPrincipal: DebtPrincipal,
+        ltDebtInterest: DebtInterest,
+        ltCffPay: CffPay,
+        partnerPropCo: PartnerPropCo,
+        partnerOpCo: PartnerOpCo,
+      };
+    }, [columns]);
 
     const chartData = useMemo(() => {
       let cumInflow = 0;
@@ -10620,17 +11087,13 @@ const ConsolidatedCascadeView = memo(
 
       return data.annualData.map((d) => {
         const year = d.year;
-
-        // Calculate inflows (positive occurrences of individual cash flow items)
         const propCoIn = d.propCoFlow > 0 ? d.propCoFlow : 0;
         const opCoOpIn = d.opCoOperatingFlow > 0 ? d.opCoOperatingFlow : 0;
         const opCoExitIn = d.opCoExitFlow > 0 ? d.opCoExitFlow : 0;
         const yrInflow = propCoIn + opCoOpIn + opCoExitIn;
 
-        // Calculate outflows (negative occurrences of individual cash flow items, converted to positive number for heights)
         const propCoOut = d.propCoFlow < 0 ? Math.abs(d.propCoFlow) : 0;
-        const opCoOpOut =
-          d.opCoOperatingFlow < 0 ? Math.abs(d.opCoOperatingFlow) : 0;
+        const opCoOpOut = d.opCoOperatingFlow < 0 ? Math.abs(d.opCoOperatingFlow) : 0;
         const opCoExitOut = d.opCoExitFlow < 0 ? Math.abs(d.opCoExitFlow) : 0;
         const yrOutflow = propCoOut + opCoOpOut + opCoExitOut;
 
@@ -10659,13 +11122,11 @@ const ConsolidatedCascadeView = memo(
         totalReturns += propCoIn + opCoOpIn + opCoExitIn;
 
         const propCoOut = d.propCoFlow < 0 ? Math.abs(d.propCoFlow) : 0;
-        const opCoOpOut =
-          d.opCoOperatingFlow < 0 ? Math.abs(d.opCoOperatingFlow) : 0;
+        const opCoOpOut = d.opCoOperatingFlow < 0 ? Math.abs(d.opCoOperatingFlow) : 0;
         const opCoExitOut = d.opCoExitFlow < 0 ? Math.abs(d.opCoExitFlow) : 0;
         totalInjections += propCoOut + opCoOpOut + opCoExitOut;
       });
 
-      // Fallback if zero to avoid dividing by 0
       const ratio = totalInjections > 0 ? totalReturns / totalInjections : 0;
       const netSurplus = totalReturns - totalInjections;
 
@@ -10677,39 +11138,89 @@ const ConsolidatedCascadeView = memo(
       };
     }, [data.annualData]);
 
+    const renderTableHeaders = () => (
+      <thead className="bg-[#EFEBE7] font-bold sticky top-0 z-[50] shadow-md">
+        <tr>
+          <th className="px-4 py-3 border-b-2 border-r border-[#D8D8D8] sticky left-0 top-0 bg-[#EFEBE7] z-[60] w-[360px] min-w-[360px] max-w-[360px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-[#1E2F31]">
+            Line Item
+          </th>
+          {columns.map((col, i) => (
+            <th
+              key={i}
+              onClick={
+                col.colType === "year"
+                  ? () => toggleYear(col.defaultLabel)
+                  : undefined
+              }
+              className={`px-3 py-3 text-right border-b-2 border-r border-[#D8D8D8] ${
+                col.colType === "year"
+                  ? "cursor-pointer hover:bg-white font-black underline decoration-dashed underline-offset-4 "
+                  : "font-medium text-[10px] "
+              } bg-[#EFEBE7] ${!col.isOperating ? "text-[#9B8B70]" : "text-[#1E2F31]"} ${col.isMonth ? "min-w-[65px] whitespace-nowrap" : "min-w-[90px]"}`}
+            >
+              {col.colType === "year" ? (
+                <div className="flex items-center justify-end gap-1">
+                  {expandedYears[col.defaultLabel] ? "-" : "+"}
+                  {String(col.defaultLabel)}
+                </div>
+              ) : (
+                <div className="text-center w-full">
+                  {String(col.defaultLabel)}
+                </div>
+              )}
+            </th>
+          ))}
+          <th className="px-4 py-3 text-right bg-[#EFEBE7] text-[#1E2F31] sticky right-0 top-0 z-[60] border-l border-b-2 border-[#D8D8D8] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+            Total
+          </th>
+        </tr>
+      </thead>
+    );
+
     return (
       <div
         className={`space-y-6 ${isFullScreen ? "fixed inset-0 z-[150] bg-[#F9F8F6] p-4 lg:p-6 pb-24 overflow-y-auto flex flex-col" : ""}`}
       >
-        {/* Detailed HoldCo Waterfall Panel */}
+        {/* Double Table Waterfall Stack */}
         <div
-          className={`bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden flex flex-col ${isFullScreen ? "flex-1 overflow-hidden min-h-0 h-full" : "max-h-[calc(100vh-240px)] h-fit"}`}
+          className={`flex flex-col overflow-hidden gap-4 ${isFullScreen ? "flex-1 overflow-hidden min-h-0 h-full max-h-none" : "h-[calc(100vh-240px)]"}`}
         >
-          <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
+          <div className="p-4 bg-white rounded-xl shadow-sm border border-[#D8D8D8] flex justify-between items-center shrink-0">
             <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
-              <List size={14} /> Consolidated P&L & Cash Flow
+              <List size={14} /> Look-Through Statement of Cash Flows & Cascade Waterfall
             </h3>
             <div className="flex items-center gap-2">
+              {/* Table Selection Mode */}
               <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
                 <button
                   onClick={() => setViewMode("all")}
-                  className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "all" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                  className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "all" ? "bg-[#1C6048] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
                 >
                   All
                 </button>
                 <button
-                  onClick={() => setViewMode("pl")}
-                  className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "pl" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                  onClick={() => setViewMode("pnl")}
+                  className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "pnl" ? "bg-[#1C6048] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                  title="Look-Through Income Statement (P&L)"
                 >
                   P&L
                 </button>
                 <button
-                  onClick={() => setViewMode("cf")}
-                  className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "cf" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                  onClick={() => setViewMode("statement")}
+                  className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "statement" ? "bg-[#1E2F31] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                  title="Statement of Cash Flows (C&F)"
                 >
-                  CF
+                  C&F
+                </button>
+                <button
+                  onClick={() => setViewMode("cascade")}
+                  className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "cascade" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                  title="Capital Cascade & Sponsor distributions"
+                >
+                  Cascade
                 </button>
               </div>
+
               <button
                 onClick={() => setIsFullScreen(!isFullScreen)}
                 className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6] transition-colors"
@@ -10721,6 +11232,7 @@ const ConsolidatedCascadeView = memo(
                   <Maximize2 size={13} strokeWidth={2.5} />
                 )}
               </button>
+
               <div className="flex items-center bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
                 <button
                   onClick={() => setViewResolution("annual")}
@@ -10735,84 +11247,260 @@ const ConsolidatedCascadeView = memo(
                   Monthly
                 </button>
               </div>
-              <button
-                onClick={() =>
-                  scrollRef.current?.scrollBy({
-                    left: -300,
-                    behavior: "smooth",
-                  })
-                }
-                className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6]"
-              >
-                <ChevronLeft size={13} strokeWidth={2.5} />
-              </button>
-              <button
-                onClick={() =>
-                  scrollRef.current?.scrollBy({ left: 300, behavior: "smooth" })
-                }
-                className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6]"
-              >
-                <ChevronRight size={13} strokeWidth={2.5} />
-              </button>
+
               <span className="text-[10px] bg-white text-[#4C4A4B] border border-[#D8D8D8] px-2 py-1 rounded font-bold uppercase shadow-sm">
                 IDR Billions
               </span>
             </div>
           </div>
-          <div ref={scrollRef} className="overflow-auto min-h-0 flex-1">
-            <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
-              <thead className="bg-[#EFEBE7] font-bold sticky top-0 z-[50] shadow-md">
-                <tr>
-                  <th className="px-4 py-3 border-b-2 border-r border-[#D8D8D8] sticky left-0 top-0 bg-[#EFEBE7] z-[60] w-[260px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-[#1E2F31]">
-                    Line Item
-                  </th>
-                  {columns.map((col, i) => (
-                    <th
-                      key={i}
-                      onClick={
-                        col.colType === "year"
-                          ? () => toggleYear(col.defaultLabel)
-                          : undefined
-                      }
-                      className={`px-3 py-3 text-right border-b-2 border-r border-[#D8D8D8] ${
-                        col.colType === "year"
-                          ? "cursor-pointer hover:bg-white font-black underline decoration-dashed underline-offset-4 "
-                          : "font-medium text-[10px] "
-                      } bg-[#EFEBE7] ${!col.isOperating ? "text-[#9B8B70]" : "text-[#1E2F31]"} ${col.isMonth ? "min-w-[65px] whitespace-nowrap" : "min-w-[90px]"}`}
-                    >
-                      {col.colType === "year" ? (
-                        <div className="flex items-center justify-end gap-1">
-                          {expandedYears[col.defaultLabel] ? "-" : "+"}
-                          {String(col.defaultLabel)}
-                        </div>
-                      ) : (
-                        <div className="text-center w-full">
-                          {String(col.defaultLabel)}
-                        </div>
-                      )}
-                    </th>
-                  ))}
-                  <th className="px-4 py-3 text-right bg-[#EFEBE7] text-[#1E2F31] sticky right-0 top-0 z-[60] border-l border-b-2 border-[#D8D8D8] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">
-                    Total
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {(viewMode === "all" || viewMode === "cf") && (
-                  <>
-                    <TableSection
-                      title="A. Component Cash Flows"
-                      colSpan={columns.length + 2}
+
+          <div className="overflow-auto min-h-0 flex-1 space-y-6 bg-[#F9F8F6]">
+            {/* TABLE 1: MANAGERIAL LOOK-THROUGH INCOME STATEMENT (P&L) */}
+            {(viewMode === "all" || viewMode === "pnl") && (
+              <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden">
+                <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
+                    Managerial Look-Through Income Statement (P&L)
+                  </h3>
+                </div>
+                <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
+                  <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
+                    {renderTableHeaders()}
+                    <tbody>
+                      <TableSection
+                        title="MANAGERIAL LOOK-THROUGH INCOME STATEMENT (P&L)"
+                        colSpan={columns.length + 2}
+                        type="amber"
+                      />
+                    <TableRow
+                      label="Look-Through Combined Revenue"
+                      data={columns}
+                      dk="lookThroughRevenue"
+                      total={data.totals.lookThroughRevenue}
+                      isIndent
+                      tooltip={CONSOLIDATED_FORMULAS.lookThroughRevenue}
                     />
                     <TableRow
-                      label="PropCo Asset Cascade (100%)"
+                      label="Look-Through Combined EBITDA"
                       data={columns}
-                      dk="propCoFlow"
-                      total={data.totals.propCoFlow}
+                      dk="lookThroughEbitda"
+                      total={data.totals.lookThroughEbitda}
+                      isIndent
+                      tooltip={CONSOLIDATED_FORMULAS.lookThroughEbitda}
+                    />
+                    <TableRow
+                      label="Look-Through Combined Net Income"
+                      data={columns}
+                      dk="lookThroughNetIncome"
+                      total={data.totals.lookThroughNetIncome}
+                      highlight
+                      tooltip={CONSOLIDATED_FORMULAS.lookThroughNetIncome}
+                    />
+                    <TableRow
+                      label="Blended Combined Net Margin (%)"
+                      data={columns}
+                      dk="lookThroughMargin"
+                      total={data.totals.lookThroughMargin}
+                      highlight
+                      isPercent
+                      indigo
+                      tooltip={CONSOLIDATED_FORMULAS.lookThroughMargin}
+                    />
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* TABLE 2: ACCOUNTING STANDARD STATEMENT OF CASH FLOWS */}
+            {(viewMode === "all" || viewMode === "statement") && (
+              <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden">
+                <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
+                    Statement of Cash Flows (CFO, CFI, CFF)
+                  </h3>
+                </div>
+                <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
+                  <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
+                    {renderTableHeaders()}
+                    <tbody>
+                      <TableSection
+                        title="STATEMENT OF CASH FLOWS (LOOK-THROUGH CFO, CFI, CFF)"
+                        colSpan={columns.length + 2}
+                        type="indigo"
+                      />
+
+                    {/* OPERATING CFO */}
+                    <TableRow
+                      label="1. Cash Flow from Operating Activities"
+                      data={columns}
+                      isHeader
+                    />
+                    <TableRow
+                      label="Look-Through Combined Operating EBITDA"
+                      data={columns}
+                      dk="ltEbitda"
+                      total={totals.ltEbitda}
+                      isIndent
+                      tooltip="Combines 100% of PropCo EBITDA and 49% of OpCo operating EBITDA (eliminating internal rents)"
+                    />
+                    <TableRow
+                      label="Less: Corporate Income Taxes Paid"
+                      data={columns}
+                      dk="ltTax"
+                      total={totals.ltTax}
+                      isIndent
+                      isSubtractor
+                      tooltip="PropCo tax + 49% share of clinical OpCo tax"
+                    />
+                    <TableRow
+                      label="Net Cash from Operating Activities (CFO)"
+                      data={columns}
+                      dk="ltCfo"
+                      total={totals.ltCfo}
+                      highlight
+                      indigo
+                      tooltip="Cash surplus generated from pure medical and rental business segments"
+                    />
+
+                    {/* INVESTING CFI */}
+                    <TableRow
+                      label="2. Cash Flow from Investing Activities"
+                      data={columns}
+                      isHeader
+                    />
+                    <TableRow
+                      label="Look-Through Construction Capex & Setups"
+                      data={columns}
+                      dk="ltCapex"
+                      total={totals.ltCapex}
+                      isIndent
+                      isSubtractor
+                      tooltip="All PropCo land & hard spend + OpCo setup outlays pro-rated"
+                    />
+                    <TableRow
+                      label="Look-Through Capital Disposal / Exit Proceeds"
+                      data={columns}
+                      dk="ltExit"
+                      total={totals.ltExit}
+                      isIndent
+                      tooltip="Proceeds from estate and clinical equity buyback liquidation"
+                    />
+                    <TableRow
+                      label="Net Cash from Investing Activities (CFI)"
+                      data={columns}
+                      dk="ltCfi"
+                      total={totals.ltCfi}
+                      highlight
+                      indigo
+                    />
+
+                    {/* FINANCING CFF */}
+                    <TableRow
+                      label="3. Cash Flow from Financing Activities"
+                      data={columns}
+                      isHeader
+                    />
+                    <TableRow
+                      label="Bank Debt Disbursements (PropCo Drawdown)"
+                      data={columns}
+                      dk="ltDebtDraw"
+                      total={totals.ltDebtDraw}
+                      isIndent
+                      tooltip="Debt funding injected to cover property construction spend"
+                    />
+                    <TableRow
+                      label="Less: Principal Amortization paid"
+                      data={columns}
+                      dk="ltDebtPrincipal"
+                      total={totals.ltDebtPrincipal}
+                      isIndent
+                      isSubtractor
+                      tooltip="Repayment of senior loan key"
+                    />
+                    <TableRow
+                      label="Less: Bank Interest Paid"
+                      data={columns}
+                      dk="ltDebtInterest"
+                      total={totals.ltDebtInterest}
+                      isIndent
+                      isSubtractor
+                    />
+                    <TableRow
+                      label="Net Cash from Financing Activities (CFF)"
+                      data={columns}
+                      dk="ltCffPay"
+                      total={totals.ltCffPay}
+                      highlight
+                      indigo
+                    />
+
+                    {/* RECONCILIATION SUMMARY */}
+                    <TableSection
+                      title="CFO + CFI + CFF RECONCILIATION"
+                      colSpan={columns.length + 2}
+                      type="emerald"
+                    />
+                    <TableRow
+                      label="NET COMBINED FREE CASH FLOW"
+                      data={columns}
+                      dk="netFlow"
+                      total={data.totals.netFlow}
+                      highlight
+                      emerald
+                      tooltip="Net change in cash position across all segments for HoldCo"
+                    />
+                    <TableRow
+                      label="Cumulative Combined Cash Position"
+                      data={columns}
+                      dk="cumCf"
+                      highlight
+                      crossover
+                      bold
+                      indigo
+                      tooltip="Aggregated wealth balance after net investment offsets"
+                    />
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* TABLE 3: CAPITAL CASCADE & WATERFALL WATERFALL */}
+            {(viewMode === "all" || viewMode === "cascade") && (
+              <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden">
+                <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
+                    Capital Cascade & Sponsor Waterfall (Distributions)
+                  </h3>
+                </div>
+                <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
+                  <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
+                    {renderTableHeaders()}
+                    <tbody>
+                      <TableSection
+                        title="CAPITAL CASCADE & SPONSOR WATERFALL (DISTRIBUTIONS)"
+                        colSpan={columns.length + 2}
+                        type="amber"
+                      />
+                    <TableRow
+                      label="HoldCo Cash Available for Outflows"
+                      data={columns}
+                      dk="netFlow"
+                      total={data.totals.netFlow}
+                      highlight
+                      emerald
+                    />
+                    
+                    <TableRow
+                      label="Sponsor Cascade 1: Real Estate Partner (100% PropCo FCFE)"
+                      data={columns}
+                      dk="partnerPropCoFlow"
+                      total={totals.partnerPropCo}
                       isHeader
                       isExpandable
                       isExpanded={expandedPropCo}
-                      onExpand={() => setExpandedPropCo(!expandedPropCo)}
+                      onExpand={() => setExpandedPropCo((prev) => !prev)}
                       tooltip={CONSOLIDATED_FORMULAS.propCoFlow}
                     />
                     {expandedPropCo && (
@@ -10848,14 +11536,14 @@ const ConsolidatedCascadeView = memo(
                     )}
 
                     <TableRow
-                      label="OpCo Clinical Cascade (49%)"
+                      label="Sponsor Cascade 2: Clinical Operator (49% OpCo Dividends)"
                       data={columns}
-                      dk="opCoFlow"
-                      total={data.totals.opCoFlow}
+                      dk="partnerOpCoFlow"
+                      total={totals.partnerOpCo}
                       isHeader
                       isExpandable
                       isExpanded={expandedOpCo}
-                      onExpand={() => setExpandedOpCo(!expandedOpCo)}
+                      onExpand={() => setExpandedOpCo((prev) => !prev)}
                       tooltip={CONSOLIDATED_FORMULAS.opCoFlow}
                     />
                     {expandedOpCo && (
@@ -10876,9 +11564,7 @@ const ConsolidatedCascadeView = memo(
                           total={data.totals.opCoOperatingDividendFlow}
                           isIndent
                           hasConnector
-                          tooltip={
-                            CONSOLIDATED_FORMULAS.opCoOperatingDividendFlow
-                          }
+                          tooltip={CONSOLIDATED_FORMULAS.opCoOperatingDividendFlow}
                         />
                         <TableRow
                           label="OpCo Exit Proceeds"
@@ -10893,278 +11579,27 @@ const ConsolidatedCascadeView = memo(
                     )}
 
                     <TableSection
-                      title="B. Consolidated Position"
+                      title="CUMULATIVE CASCADE STATUS"
                       colSpan={columns.length + 2}
-                      type="emerald"
                     />
                     <TableRow
-                      label="NET COMBINED CASH FLOW"
+                      label="Cumulative Real Estate Sponsor Cash Flow"
                       data={columns}
-                      dk="netFlow"
-                      total={data.totals.netFlow}
-                      highlight
-                      emerald
-                      tooltip={CONSOLIDATED_FORMULAS.netFlow}
-                    />
-                    <TableRow
-                      label="Cumulative Net Position"
-                      data={columns}
-                      dk="cumCf"
-                      highlight
-                      crossover
+                      dk="cumPartnerPropCo"
                       bold
-                      indigo
-                      tooltip={CONSOLIDATED_FORMULAS.cumCf}
-                    />
-                  </>
-                )}
-
-                {(viewMode === "all" || viewMode === "pl") && (
-                  <>
-                    <TableSection
-                      title="C. Managerial Look-Through PnL"
-                      colSpan={columns.length + 2}
                     />
                     <TableRow
-                      label="Look-Through Revenue"
+                      label="Cumulative Clinical Operator Sponsor Cash Flow"
                       data={columns}
-                      dk="lookThroughRevenue"
-                      total={data.totals.lookThroughRevenue}
-                      isIndent
-                      tooltip={CONSOLIDATED_FORMULAS.lookThroughRevenue}
+                      dk="cumPartnerOpCo"
+                      bold
                     />
-                    <TableRow
-                      label="Look-Through EBITDA"
-                      data={columns}
-                      dk="lookThroughEbitda"
-                      total={data.totals.lookThroughEbitda}
-                      isIndent
-                      tooltip={CONSOLIDATED_FORMULAS.lookThroughEbitda}
-                    />
-                    <TableRow
-                      label="Look-Through Net Income"
-                      data={columns}
-                      dk="lookThroughNetIncome"
-                      total={data.totals.lookThroughNetIncome}
-                      highlight
-                      tooltip={CONSOLIDATED_FORMULAS.lookThroughNetIncome}
-                    />
-                    <TableRow
-                      label="Blended Net Margin (%)"
-                      data={columns}
-                      dk="lookThroughMargin"
-                      total={data.totals.lookThroughMargin}
-                      highlight
-                      indigo
-                      tooltip={CONSOLIDATED_FORMULAS.lookThroughMargin}
-                    />
-                  </>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Mini-Bento Visual Summary Widget */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Grid: Group Cumulative Flow Tracker Chart */}
-          <div className="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-[#D8D8D8] flex flex-col justify-between">
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] mb-1 flex items-center gap-2">
-                <TrendingUp size={14} className="text-[#1C6048]" /> Group
-                Cumulative Flow Tracker
-              </h4>
-              <p className="text-[10px] text-[#4C4A4B] font-medium leading-relaxed mb-4">
-                Tracks year-on-year cumulative capital inflows (dividends +
-                proceeds) relative to capital outflows (equity outlays)
-                alongside yearly net cash flows.
-              </p>
-            </div>
-
-            <div className="h-[210px] w-full mt-2">
-              <LazyResponsiveContainer width="100%" height="100%">
-                <ComposedChart
-                  data={chartData}
-                  margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="#F1F1F1"
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="year"
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{
-                      fontSize: 9,
-                      fill: "#8A8175",
-                      fontWeight: "bold",
-                      fontFamily: "JetBrains Mono",
-                    }}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{
-                      fontSize: 9,
-                      fill: "#8A8175",
-                      fontWeight: "bold",
-                      fontFamily: "JetBrains Mono",
-                    }}
-                    tickFormatter={(v) => `Rp${Math.abs(v).toFixed(0)}B`}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#1E2F31",
-                      borderRadius: "12px",
-                      border: "none",
-                      color: "#FFF",
-                      fontSize: "10px",
-                      fontFamily: "JetBrains Mono",
-                    }}
-                    formatter={(value, name) => {
-                      const formattedVal = `IDR ${Number(value).toFixed(2)}B`;
-                      if (name === "cumInflow")
-                        return [formattedVal, "Cumulative Inflow"];
-                      if (name === "cumOutflow")
-                        return [formattedVal, "Cumulative Outflow"];
-                      return [formattedVal, "Net Year Flow"];
-                    }}
-                    labelFormatter={(label) => `Year: ${label}`}
-                  />
-                  <Legend
-                    verticalAlign="top"
-                    height={28}
-                    iconSize={7}
-                    iconType="circle"
-                    wrapperStyle={{
-                      fontSize: "9px",
-                      fontWeight: "bold",
-                      color: "#4C4A4B",
-                      textTransform: "uppercase",
-                    }}
-                  />
-                  <Bar
-                    name="netFlow"
-                    dataKey="netFlow"
-                    barSize={12}
-                    radius={[3, 3, 0, 0]}
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={entry.netFlow >= 0 ? "#1C6048" : "#B85A38"}
-                      />
-                    ))}
-                  </Bar>
-                  <Line
-                    type="monotone"
-                    name="cumInflow"
-                    dataKey="cumInflow"
-                    stroke="#9B8B70"
-                    strokeWidth={2.5}
-                    dot={{
-                      r: 2.5,
-                      stroke: "#9B8B70",
-                      fill: "#FFF",
-                      strokeWidth: 1.5,
-                    }}
-                    activeDot={{ r: 4 }}
-                  />
-                  <Line
-                    type="monotone"
-                    name="cumOutflow"
-                    dataKey="cumOutflow"
-                    stroke="#1E2F31"
-                    strokeWidth={2.5}
-                    strokeDasharray="4 4"
-                    dot={{
-                      r: 2.5,
-                      stroke: "#1E2F31",
-                      fill: "#FFF",
-                      strokeWidth: 1.5,
-                    }}
-                    activeDot={{ r: 4 }}
-                  />
-                </ComposedChart>
-              </LazyResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Right Grid: Bento Metrics Yield Audit Card */}
-          <div className="bg-[#1E2F31] text-[#EFEBE7] p-5 rounded-2xl shadow-sm flex flex-col justify-between border border-[#1E2F31]">
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-widest text-[#9B8B70] mb-1">
-                  Yield Cascade Audit
-                </h4>
-                <p className="text-[10px] text-white/60 font-medium leading-relaxed">
-                  Look-through combined position capturing clinical profits &
-                  estate asset distributions.
-                </p>
-              </div>
-
-              <div className="space-y-4 pt-4 border-t border-white/10">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <span className="text-[9px] uppercase tracking-wider text-[#9B8B70] font-bold block">
-                      Equity Outlay (Outflow)
-                    </span>
-                    <span className="text-sm font-bold font-mono text-white">
-                      IDR {formatNumber(stats.totalInjections, 2)}B
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[9px] uppercase tracking-wider text-[#9B8B70] font-bold block">
-                      Distributions (Inflow)
-                    </span>
-                    <span className="text-sm font-bold font-mono text-[#99B6AA]">
-                      IDR {formatNumber(stats.totalReturns, 2)}B
-                    </span>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-white/5">
-                  <span className="text-[9px] uppercase tracking-wider text-[#9B8B70] font-bold block">
-                    Look-Through Multiple
-                  </span>
-                  <div className="flex items-baseline gap-2 mt-0.5">
-                    <span className="text-xl font-black text-white font-mono">
-                      {formatNumber(stats.ratio, 2)}x
-                    </span>
-                    <span className="text-[9px] font-medium text-white/50">
-                      Cumulative Factor
-                    </span>
-                  </div>
-                  <div className="w-full bg-white/10 h-1 rounded-full overflow-hidden mt-1.5">
-                    <div
-                      className="bg-[#1C6048] h-full rounded-full transition-all duration-1000"
-                      style={{ width: `${Math.min(100, stats.ratio * 33)}%` }}
-                    />
-                  </div>
+                    </tbody>
+                  </table>
                 </div>
               </div>
-            </div>
+            )}
 
-            <div className="pt-4 border-t border-white/10">
-              <div className="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/5">
-                <div>
-                  <span className="text-[9px] uppercase tracking-wider text-white/50 font-bold block">
-                    Net Lifetime Surplus
-                  </span>
-                  <span className="text-xs font-bold font-mono text-[#99B6AA]">
-                    {stats.netSurplus >= 0 ? "+" : "-"}IDR{" "}
-                    {formatNumber(Math.abs(stats.netSurplus), 2)}B
-                  </span>
-                </div>
-                <div
-                  className={`p-1.5 rounded-lg ${stats.netSurplus >= 0 ? "bg-[#1C6048]/20 text-[#99B6AA]" : "bg-red-500/20 text-red-400"}`}
-                >
-                  <TrendingUp size={13} />
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -15429,7 +15864,6 @@ export default function App() {
   return (
     <div
       className={`min-h-screen bg-[#F9F8F6] text-[#1E2F31] font-sans pb-12 relative text-xs`}
-      onMouseUp={handleTextSelection}
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700;800&family=League+Spartan:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700;800&display=swap');
@@ -15889,6 +16323,8 @@ export default function App() {
               {activeTab === "comprehensive" && (
                 <ConsolidatedCascadeView
                   data={consolidatedModelData}
+                  opcoData={opCoModelData}
+                  propcoData={propCoModelData}
                   viewResolution={viewResolution}
                   setViewResolution={setViewResolution}
                 />
