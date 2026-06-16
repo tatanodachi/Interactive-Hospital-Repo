@@ -1885,6 +1885,7 @@ const TableRow = memo(
     emerald,
     crossover,
     isIndent,
+    isDoubleIndent,
     tooltip,
     isPercent,
     isExpandable,
@@ -1892,6 +1893,7 @@ const TableRow = memo(
     onExpand,
     isHeader,
     hasConnector,
+    hasDoubleConnector,
     isSubtractor,
   }) => {
     let baseColorClass = "bg-white font-medium text-[#4C4A4B]";
@@ -1902,7 +1904,7 @@ const TableRow = memo(
       else baseColorClass = "bg-[#EFEBE7] font-bold text-[#1E2F31]";
     }
 
-    let firstColClass = `px-3 py-1.5 sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap transition-all shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] w-[360px] min-w-[360px] max-w-[360px] overflow-hidden text-ellipsis ${baseColorClass} ${isIndent ? "pl-5 text-[10px]" : "text-[11px]"} ${!highlight && !isHeader ? "group-hover:bg-[#F9F8F6]" : ""}`;
+    let firstColClass = `pr-3 py-1.5 sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap transition-all shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] w-[360px] min-w-[360px] max-w-[360px] overflow-hidden text-ellipsis ${baseColorClass} ${isDoubleIndent ? "pl-3.5 text-[9.5px]" : isIndent ? "pl-3.5 text-[10px]" : "pl-1 text-[11px]"} ${!highlight && !isHeader ? "group-hover:bg-[#F9F8F6]" : ""}`;
     let totalColClass = `px-2 py-1.5 text-right font-bold font-mono border-l border-b border-[#D8D8D8] sticky right-0 z-[40] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] ${baseColorClass} ${!highlight && !isHeader ? "group-hover:bg-[#F9F8F6]" : ""}`;
 
     return (
@@ -1924,28 +1926,29 @@ const TableRow = memo(
               }}
             >
               {isExpandable ? (
-                <>
-                  <div
-                    className={`pointer-events-none text-[#9B8B70] flex-shrink-0 flex items-center justify-center w-5 h-5 -ml-1 rounded-md hover:bg-[#1C6048]/15 hover:text-[#1C6048] transition-all duration-200 bg-[#9B8B70]/10 ${isExpanded ? "rotate-90 bg-[#1C6048]/15 text-[#1C6048]" : ""}`}
-                  >
-                    <ChevronRight size={14} strokeWidth={2.5} />
-                  </div>
-                  <span className={`truncate ${isHeader ? "font-bold text-[#1E2F31]" : "text-[#4C4A4B]"}`}>
-                    {label}
-                  </span>
-                </>
+                <div
+                  className={`pointer-events-none text-[#9B8B70] flex-shrink-0 flex items-center justify-center w-5 h-5 -ml-1 rounded-md hover:bg-[#1C6048]/15 hover:text-[#1C6048] transition-all duration-200 bg-[#9B8B70]/10 ${isExpanded ? "rotate-90 bg-[#1C6048]/15 text-[#1C6048]" : ""}`}
+                >
+                  <ChevronRight size={14} strokeWidth={2.5} />
+                </div>
               ) : (
-                <>
-                  {hasConnector && (
-                    <span className="text-[#9B8B70]/80 font-sans select-none text-[9px] tracking-tighter shrink-0">
-                      └─
-                    </span>
-                  )}
-                  <span className={`truncate ${isHeader ? "font-bold text-[#1E2F31]" : ""}`}>
-                    {label}
-                  </span>
-                </>
+                <div className="w-5 h-5 -ml-1 flex-shrink-0" />
               )}
+
+              {hasDoubleConnector && (
+                <span className="font-mono select-none text-[9px] tracking-tighter text-[#9B8B70]/80 mr-1 flex-shrink-0 whitespace-nowrap">
+                  │  └─
+                </span>
+              )}
+              {hasConnector && !hasDoubleConnector && (
+                <span className="font-mono select-none text-[9px] tracking-tighter text-[#9B8B70]/80 mr-1 flex-shrink-0 whitespace-nowrap">
+                  └─
+                </span>
+              )}
+
+              <span className={`truncate ${isHeader ? "font-bold text-[#1E2F31]" : highlight ? "font-bold text-[#1E2F31]" : "text-[#4C4A4B]"}`}>
+                {label}
+              </span>
             </div>
             {tooltip && <StatefulTooltipIcon tooltip={tooltip} align="right" />}
           </div>
@@ -2073,7 +2076,7 @@ const CapexRow = memo(
       className={`group ${isSubtotal ? "font-bold text-[#1E2F31]" : "text-[#4C4A4B]"} ${isHeader ? "font-bold text-[#1E2F31]" : ""}`}
     >
       <td
-        className={`px-3 py-1.5 border-r border-b border-[#D8D8D8] transition-colors ${isSubtotal ? "bg-[#EFEBE7]/50" : "bg-white group-hover:bg-[#F9F8F6]"} ${isIndent ? "pl-6 text-[10px]" : "text-[11px]"}`}
+        className={`pr-3 py-1.5 border-r border-b border-[#D8D8D8] transition-colors ${isSubtotal ? "bg-[#EFEBE7]/50" : "bg-white group-hover:bg-[#F9F8F6]"} ${isIndent ? "pl-4 text-[10px]" : "pl-1 text-[11px]"}`}
       >
         {label}
       </td>
@@ -8308,8 +8311,14 @@ const OpCoCascadeView = memo(
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [viewMode, setViewMode] = useState("all"); // 'all' | 'pl' | 'cf'
     const [expandedCfo, setExpandedCfo] = useState(false);
+    const [expandedCfoIn, setExpandedCfoIn] = useState(false);
+    const [expandedCfoOut, setExpandedCfoOut] = useState(false);
     const [expandedCfi, setExpandedCfi] = useState(false);
+    const [expandedCfiIn, setExpandedCfiIn] = useState(false);
+    const [expandedCfiOut, setExpandedCfiOut] = useState(false);
     const [expandedCff, setExpandedCff] = useState(false);
+    const [expandedCffIn, setExpandedCffIn] = useState(false);
+    const [expandedCffOut, setExpandedCffOut] = useState(false);
 
     const overallSetup =
       (assumptions?.jvaOpex ?? 2.5) +
@@ -8319,7 +8328,7 @@ const OpCoCascadeView = memo(
     const renderTableHeaders = () => (
       <thead className="bg-[#EFEBE7] font-bold sticky top-0 z-[50] shadow-md">
         <tr>
-          <th className="px-4 py-3 border-b-2 border-r border-[#D8D8D8] sticky left-0 top-0 bg-white z-[60] w-[360px] min-w-[360px] max-w-[360px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-[#1E2F31]">
+          <th className="pl-1 pr-4 py-3 border-b-2 border-r border-[#D8D8D8] sticky left-0 top-0 bg-white z-[60] w-[360px] min-w-[360px] max-w-[360px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-[#1E2F31]">
             Line Item
           </th>
           {columns.map((col, i) => (
@@ -8457,27 +8466,27 @@ const OpCoCascadeView = memo(
                 <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
                   <button
                     onClick={() => setViewMode("all")}
-                    className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "all" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                    className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "all" ? "bg-[#1C6048] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
                   >
                     All
                   </button>
                   <button
                     onClick={() => setViewMode("pl")}
-                    className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "pl" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                    className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "pl" ? "bg-[#1C6048] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
                     title="Operating Income Statement (P&L)"
                   >
                     P&L
                   </button>
                   <button
                     onClick={() => setViewMode("statement")}
-                    className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "statement" ? "bg-[#1E2F31] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                    className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "statement" ? "bg-[#1C6048] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
                     title="C&F (Standardized)"
                   >
                     C&F
                   </button>
                   <button
                     onClick={() => setViewMode("cf")}
-                    className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "cf" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                    className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "cf" ? "bg-[#1C6048] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
                     title="OpCo Capital Cascade"
                   >
                     Cascade
@@ -8503,7 +8512,7 @@ const OpCoCascadeView = memo(
                   </button>
                   <button
                     onClick={() => setViewResolution("monthly")}
-                    className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${viewResolution === "monthly" ? "bg-[#9B8B70] text-white" : "text-[#8A8175] hover:text-[#1E2F31] hover:bg-[#F9F8F6]"}`}
+                    className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${viewResolution === "monthly" ? "bg-[#1C6048] text-white" : "text-[#8A8175] hover:text-[#1E2F31] hover:bg-[#F9F8F6]"}`}
                   >
                     Monthly
                   </button>
@@ -8517,9 +8526,9 @@ const OpCoCascadeView = memo(
               {/* TABLE 1: Profit & Loss Statement (P&L) */}
               {(viewMode === "all" || viewMode === "pl") && (
                 <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden">
-                  <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
-                      Clinical Profit & Loss (P&L)
+                  <div className="p-4 bg-[#1C6048] border-b border-[#1C6048] flex justify-between items-center shrink-0">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-white flex items-center gap-2">
+                      1. Clinical Profit & Loss (P&L)
                     </h3>
                   </div>
                   <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
@@ -8756,9 +8765,9 @@ const OpCoCascadeView = memo(
               {/* TABLE 2: Standard Statement of Cash Flows */}
               {(viewMode === "all" || viewMode === "statement") && (
                 <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden">
-                  <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
-                      Clinical Standard Cash Flows
+                  <div className="p-4 bg-[#1C6048] border-b border-[#1C6048] flex justify-between items-center shrink-0">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-white flex items-center gap-2">
+                      2. Clinical Cash Flows
                     </h3>
                   </div>
                   <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
@@ -8790,8 +8799,22 @@ const OpCoCascadeView = memo(
                               total={data.totals.cfo_in}
                               isIndent
                               hasConnector
+                              isExpandable
+                              isExpanded={expandedCfoIn}
+                              onExpand={() => setExpandedCfoIn(!expandedCfoIn)}
                               tooltip="OpCo Clinical Inpatient & Outpatient Revenues."
                             />
+                            {expandedCfoIn && (
+                              <TableRow
+                                label="Clinical Revenue Receipts"
+                                data={columns}
+                                dk="cfo_in"
+                                total={data.totals.cfo_in}
+                                isDoubleIndent
+                                hasDoubleConnector
+                                tooltip="Patient cash inflows collected across operations."
+                              />
+                            )}
                             <TableRow
                               label="Cash Outflows (Operating OPEX & Tax)"
                               data={columns}
@@ -8799,8 +8822,23 @@ const OpCoCascadeView = memo(
                               total={data.totals.cfo_out}
                               isIndent
                               hasConnector
+                              isExpandable
+                              isExpanded={expandedCfoOut}
+                              onExpand={() => setExpandedCfoOut(!expandedCfoOut)}
                               tooltip="OPEX costs (staffing, rent, doc fees, supplies, utilities, marketing, insurance, management fees, corporate taxes)."
                             />
+                            {expandedCfoOut && (
+                              <TableRow
+                                label="Clinical Operations OPEX & Taxes"
+                                data={columns}
+                                dk="cfo_out"
+                                total={data.totals.cfo_out}
+                                isDoubleIndent
+                                hasDoubleConnector
+                                isSubtractor
+                                tooltip="Outflows for staff, services, supplies, overhead, and taxes."
+                              />
+                            )}
                           </>
                         )}
 
@@ -8824,8 +8862,22 @@ const OpCoCascadeView = memo(
                               total={data.totals.cfi_in}
                               isIndent
                               hasConnector
+                              isExpandable
+                              isExpanded={expandedCfiIn}
+                              onExpand={() => setExpandedCfiIn(!expandedCfiIn)}
                               tooltip="Capital received from OpCo enterprise valuation exit."
                             />
+                            {expandedCfiIn && (
+                              <TableRow
+                                label="Enterprise Valuation Exit"
+                                data={columns}
+                                dk="cfi_in"
+                                total={data.totals.cfi_in}
+                                isDoubleIndent
+                                hasDoubleConnector
+                                tooltip="Liquidation proceeds distributed at exit."
+                              />
+                            )}
                             <TableRow
                               label="Cash Outflows (Setup & Working Capital CapEx)"
                               data={columns}
@@ -8833,8 +8885,23 @@ const OpCoCascadeView = memo(
                               total={data.totals.cfi_out}
                               isIndent
                               hasConnector
+                              isExpandable
+                              isExpanded={expandedCfiOut}
+                              onExpand={() => setExpandedCfiOut(!expandedCfiOut)}
                               tooltip="Initial pre-operating working capital outlays (Year 3 operational buffer)."
                             />
+                            {expandedCfiOut && (
+                              <TableRow
+                                label="Pre-Operating Setups & Work Capital"
+                                data={columns}
+                                dk="cfi_out"
+                                total={data.totals.cfi_out}
+                                isDoubleIndent
+                                hasDoubleConnector
+                                isSubtractor
+                                tooltip="Required upfront clinical buffer/reserves."
+                              />
+                            )}
                           </>
                         )}
 
@@ -8858,8 +8925,22 @@ const OpCoCascadeView = memo(
                               total={data.totals.cff_in}
                               isIndent
                               hasConnector
+                              isExpandable
+                              isExpanded={expandedCffIn}
+                              onExpand={() => setExpandedCffIn(!expandedCffIn)}
                               tooltip="Initial equity funding received from Operator & Sponsor Partners."
                             />
+                            {expandedCffIn && (
+                              <TableRow
+                                label="Sponsor Injected Equity"
+                                data={columns}
+                                dk="cff_in"
+                                total={data.totals.cff_in}
+                                isDoubleIndent
+                                hasDoubleConnector
+                                tooltip="Firms-injected startup operating capital."
+                              />
+                            )}
                             <TableRow
                               label="Cash Outflows (Partner Distributions & Dividends)"
                               data={columns}
@@ -8867,8 +8948,23 @@ const OpCoCascadeView = memo(
                               total={data.totals.cff_out}
                               isIndent
                               hasConnector
+                              isExpandable
+                              isExpanded={expandedCffOut}
+                              onExpand={() => setExpandedCffOut(!expandedCffOut)}
                               tooltip="Standard cash dividends paid to Operator & Sponsor Partners and exit payouts."
                             />
+                            {expandedCffOut && (
+                              <TableRow
+                                label="Clinical Free Cash Flow Distributions"
+                                data={columns}
+                                dk="cff_out"
+                                total={data.totals.cff_out}
+                                isDoubleIndent
+                                hasDoubleConnector
+                                isSubtractor
+                                tooltip="Annual operating yields sent back to sponsors."
+                              />
+                            )}
                           </>
                         )}
 
@@ -8900,9 +8996,9 @@ const OpCoCascadeView = memo(
               {/* TABLE 3: Capital Cascade & Sponsor Returns */}
               {(viewMode === "all" || viewMode === "cf") && (
                 <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden">
-                  <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
-                      Sponsor Capital Cascade & Returns
+                  <div className="p-4 bg-[#1C6048] border-b border-[#1C6048] flex justify-between items-center shrink-0">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-white flex items-center gap-2">
+                      3. Sponsor Cascade & Returns
                     </h3>
                   </div>
                   <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
@@ -9556,18 +9652,49 @@ const PropCoCascadeView = memo(
       data.annualData,
       viewResolution,
     );
+
+    const enrichedColumns = useMemo(() => {
+      return columns.map((col) => {
+        const preOpening = col.preOpeningDev || 0;
+        const maint = col.maintOpex || 0;
+        const tax = col.taxOpex || 0;
+        const overhead = col.overheadOpex || 0;
+        const lease = col.medEqLeaseOpex || 0;
+        const opex = preOpening + maint + tax + overhead + lease;
+        return {
+          ...col,
+          opex,
+        };
+      });
+    }, [columns]);
+
+    const totalOpex = useMemo(() => {
+      const tPreOpening = data.totals.preOpeningDev || 0;
+      const tMaint = data.totals.maintOpex || 0;
+      const tTax = data.totals.taxOpex || 0;
+      const tOverhead = data.totals.overheadOpex || 0;
+      const tLease = data.totals.medEqLeaseOpex || 0;
+      return tPreOpening + tMaint + tTax + tOverhead + tLease;
+    }, [data.totals]);
+
     const scrollRef = useRef(null);
     const [showDevBudget, setShowDevBudget] = useState(false);
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [viewMode, setViewMode] = useState("all"); // 'all' | 'pl' | 'cf'
     const [expandedCfo, setExpandedCfo] = useState(false);
+    const [expandedCfoIn, setExpandedCfoIn] = useState(false);
+    const [expandedCfoOut, setExpandedCfoOut] = useState(false);
     const [expandedCfi, setExpandedCfi] = useState(false);
+    const [expandedCfiIn, setExpandedCfiIn] = useState(false);
+    const [expandedCfiOut, setExpandedCfiOut] = useState(false);
     const [expandedCff, setExpandedCff] = useState(false);
+    const [expandedCffIn, setExpandedCffIn] = useState(false);
+    const [expandedCffOut, setExpandedCffOut] = useState(false);
 
     const renderTableHeaders = () => (
       <thead className="bg-[#EFEBE7] font-bold sticky top-0 z-[50] shadow-md">
         <tr>
-          <th className="px-4 py-3 border-b-2 border-r border-[#D8D8D8] sticky left-0 top-0 bg-[#EFEBE7] z-[60] w-[360px] min-w-[360px] max-w-[360px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-[#1E2F31]">
+          <th className="pl-1 pr-4 py-3 border-b-2 border-r border-[#D8D8D8] sticky left-0 top-0 bg-[#EFEBE7] z-[60] w-[360px] min-w-[360px] max-w-[360px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-[#1E2F31]">
             Line Item
           </th>
           {columns.map((col, i) => (
@@ -9818,19 +9945,15 @@ const PropCoCascadeView = memo(
               {/* TABLE 1: PropCo Operating P&L & Debt Coverage */}
               {(viewMode === "all" || viewMode === "pl") && (
                 <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden">
-                  <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
-                      Property Operating Income Statement (P&L) & Debt Service
+                  <div className="p-4 bg-[#9B8B70] border-b border-[#9B8B70] flex justify-between items-center shrink-0">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-white flex items-center gap-2">
+                      1. Property P&L & Debt Service
                     </h3>
                   </div>
                   <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
                     <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
                       {renderTableHeaders()}
                       <tbody>
-                        <TableSection
-                          title="Operating Revenue & Expense"
-                          colSpan={columns.length + 2}
-                        />
                         <TableRow
                           label="Net Rent Revenue / NOR"
                           data={columns}
@@ -9840,20 +9963,18 @@ const PropCoCascadeView = memo(
                           tooltip={PROPCO_FORMULAS.revenue}
                         />
 
-                        <tr className="group">
-                          <td className="px-3 py-1.5 sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap transition-colors shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-[#EFEBE7] font-bold text-[#1E2F31] text-[11px]">
-                            Operating Expenses (OpEx)
-                          </td>
-                          {columns.map((_, idx) => (
-                            <td
-                              key={idx}
-                              className="px-2 py-1.5 text-right border-r border-b border-[#D8D8D8] font-mono transition-colors bg-[#EFEBE7]/50"
-                            />
-                          ))}
-                          <td className="px-2 py-1.5 text-right font-bold font-mono border-l border-b border-[#D8D8D8] sticky right-0 z-[40] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-[#EFEBE7] font-bold text-[#1E2F31] text-[11px]">
-                            &nbsp;
-                          </td>
-                        </tr>
+                        <TableRow
+                          label="Operating Expenses (OpEx)"
+                          data={enrichedColumns}
+                          dk="opex"
+                          total={totalOpex}
+                          highlight
+                          isSubtractor
+                          tooltip={{
+                            desc: "Total operational and developmental property expenditures.",
+                            formula: "Total OpEx = Pre-Opening & Dev + Maintenance + Tax + Overhead + Equipment Lease",
+                          }}
+                        />
 
                         <ExpandableDataRowGroup
                           parentLabel="Pre-Opening & Dev Expenses"
@@ -9921,21 +10042,6 @@ const PropCoCascadeView = memo(
                           highlight
                           tooltip={PROPCO_FORMULAS.gop}
                         />
-
-                        <tr className="group">
-                          <td className="px-3 py-1.5 sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap transition-colors shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-[#EFEBE7] font-bold text-[#1E2F31] text-[11px]">
-                            Finance & Reserves
-                          </td>
-                          {columns.map((_, idx) => (
-                            <td
-                              key={idx}
-                              className="px-2 py-1.5 text-right border-r border-b border-[#D8D8D8] font-mono transition-colors bg-[#EFEBE7]/50"
-                            />
-                          ))}
-                          <td className="px-2 py-1.5 text-right font-bold font-mono border-l border-b border-[#D8D8D8] sticky right-0 z-[40] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] bg-[#EFEBE7] font-bold text-[#1E2F31] text-[11px]">
-                            &nbsp;
-                          </td>
-                        </tr>
 
                         <TableRow
                           label="FF&E Reserve Allocation"
@@ -10081,9 +10187,9 @@ const PropCoCascadeView = memo(
               {/* TABLE 2: PropCo Standard Cash Flows */}
               {(viewMode === "all" || viewMode === "statement") && (
                 <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden">
-                  <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
-                      Property Standard Cash Flows (CFO/CFI/CFF)
+                  <div className="p-4 bg-[#9B8B70] border-b border-[#9B8B70] flex justify-between items-center shrink-0">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-white flex items-center gap-2">
+                      2. Property Cash Flows
                     </h3>
                   </div>
                   <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
@@ -10115,8 +10221,22 @@ const PropCoCascadeView = memo(
                               total={data.totals.cfo_in}
                               isIndent
                               hasConnector
+                              isExpandable
+                              isExpanded={expandedCfoIn}
+                              onExpand={() => setExpandedCfoIn(!expandedCfoIn)}
                               tooltip="PropCo Rental Revenues received from clinical leasing operations."
                             />
+                            {expandedCfoIn && (
+                              <TableRow
+                                label="Lease Rental Receipts"
+                                data={columns}
+                                dk="cfo_in"
+                                total={data.totals.cfo_in}
+                                isDoubleIndent
+                                hasDoubleConnector
+                                tooltip="Actual lease payments received from clinical OpCo operations."
+                              />
+                            )}
                             <TableRow
                               label="Cash Outflows (Maint, Reserves, Interest & Taxes)"
                               data={columns}
@@ -10124,8 +10244,95 @@ const PropCoCascadeView = memo(
                               total={data.totals.cfo_out}
                               isIndent
                               hasConnector
+                              isExpandable
+                              isExpanded={expandedCfoOut}
+                              onExpand={() => setExpandedCfoOut(!expandedCfoOut)}
                               tooltip="Operating outflows paid during PropCo operations, including maintenance OPEX, FF&E reserve payments, financing interest, and corporate income taxes."
                             />
+                            {expandedCfoOut && (
+                              <>
+                                <TableRow
+                                  label="Facility Maintenance OPEX"
+                                  data={columns}
+                                  dk="maintOpex"
+                                  total={data.totals.maintOpex}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="Daily maintenance, facility OPEX, and standard upkeeps."
+                                />
+                                <TableRow
+                                  label="FF&E Reserve Allocation"
+                                  data={columns}
+                                  dk="ffeReserve"
+                                  total={data.totals.ffeReserve}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="Furniture, Fixtures, and Equipment reserve payments."
+                                />
+                                <TableRow
+                                  label="Interest Expense (Debt)"
+                                  data={columns}
+                                  dk="interest"
+                                  total={data.totals.interest}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="Financing interest cost on commercial property debt."
+                                />
+                                <TableRow
+                                  label="Corporate Income Tax"
+                                  data={columns}
+                                  dk="corpTax"
+                                  total={data.totals.corpTax}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="Calculated Indonesian corporate income taxes paid by the PropCo entity."
+                                />
+                                <TableRow
+                                  label="Pre-Opening & Dev Expenses"
+                                  data={columns}
+                                  dk="preOpeningDev"
+                                  total={data.totals.preOpeningDev}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="Operational start-up cost pre-opening outlays, Dev G&A and Contractor All Risk expense."
+                                />
+                                <TableRow
+                                  label="Management / Overhead OPEX"
+                                  data={columns}
+                                  dk="overheadOpex"
+                                  total={data.totals.overheadOpex}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="PropCo administration and property overhead operations."
+                                />
+                                <TableRow
+                                  label="Property Tax"
+                                  data={columns}
+                                  dk="taxOpex"
+                                  total={data.totals.taxOpex}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="Annual land tax / PBB on properties."
+                                />
+                                <TableRow
+                                  label="Equipment Lease OPEX"
+                                  data={columns}
+                                  dk="medEqLeaseOpex"
+                                  total={data.totals.medEqLeaseOpex}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="Clinical equipment leasing and maintenance obligations."
+                                />
+                              </>
+                            )}
                           </>
                         )}
 
@@ -10149,8 +10356,22 @@ const PropCoCascadeView = memo(
                               total={data.totals.cfi_in}
                               isIndent
                               hasConnector
+                              isExpandable
+                              isExpanded={expandedCfiIn}
+                              onExpand={() => setExpandedCfiIn(!expandedCfiIn)}
                               tooltip="Capital proceeds received from PropCo asset liquidations/exits."
                             />
+                            {expandedCfiIn && (
+                              <TableRow
+                                label="Property Liquidations & Exits"
+                                data={columns}
+                                dk="cfi_in"
+                                total={data.totals.cfi_in}
+                                isDoubleIndent
+                                hasDoubleConnector
+                                tooltip="Capital proceeds from PropCo asset divestments or exit."
+                              />
+                            )}
                             <TableRow
                               label="Cash Outflows (Development Capex)"
                               data={columns}
@@ -10158,8 +10379,45 @@ const PropCoCascadeView = memo(
                               total={data.totals.cfi_out}
                               isIndent
                               hasConnector
+                              isExpandable
+                              isExpanded={expandedCfiOut}
+                              onExpand={() => setExpandedCfiOut(!expandedCfiOut)}
                               tooltip="Pre-operating development capital expenditures incurred across hard, soft, and land spends."
                             />
+                            {expandedCfiOut && (
+                              <>
+                                <TableRow
+                                  label="Land Cost"
+                                  data={columns}
+                                  dk="landSpend"
+                                  total={data.totals.landSpend}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="Property acquisition land procurement outlays."
+                                />
+                                <TableRow
+                                  label="Total Hard Costs"
+                                  data={columns}
+                                  dk="hardSpend"
+                                  total={data.totals.hardSpend}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="Real estate construction, medical equipment, infrastructure, FF&E, and joint sharing development spends."
+                                />
+                                <TableRow
+                                  label="Total Soft Costs"
+                                  data={columns}
+                                  dk="softSpend"
+                                  total={data.totals.softSpend}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="Consultant fees, licensing, VAT, and contingency reserves."
+                                />
+                              </>
+                            )}
                           </>
                         )}
 
@@ -10183,8 +10441,33 @@ const PropCoCascadeView = memo(
                               total={data.totals.cff_in}
                               isIndent
                               hasConnector
+                              isExpandable
+                              isExpanded={expandedCffIn}
+                              onExpand={() => setExpandedCffIn(!expandedCffIn)}
                               tooltip="Capital inflows from development bank loan drawdowns and extra sponsor shortfall injections."
                             />
+                            {expandedCffIn && (
+                              <>
+                                <TableRow
+                                  label="Debt Drawdown"
+                                  data={columns}
+                                  dk="debtDraw"
+                                  total={data.totals.debtDraw}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  tooltip="Inflows sourced from property development project banking facilities."
+                                />
+                                <TableRow
+                                  label="Sponsor Shortfall Equity"
+                                  data={columns}
+                                  dk="shortfallEquity"
+                                  total={data.totals.shortfallEquity}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  tooltip="Sponsor-injected bridging equity to cover temporal operational deficit drawdowns."
+                                />
+                              </>
+                            )}
                             <TableRow
                               label="Cash Outflows (Sponsor Distributions & Principal Repayments)"
                               data={columns}
@@ -10192,8 +10475,35 @@ const PropCoCascadeView = memo(
                               total={data.totals.cff_out}
                               isIndent
                               hasConnector
+                              isExpandable
+                              isExpanded={expandedCffOut}
+                              onExpand={() => setExpandedCffOut(!expandedCffOut)}
                               tooltip="Subsequent debt principal amortization repayments and net operational free distributions paid to stakeholders."
                             />
+                            {expandedCffOut && (
+                              <>
+                                <TableRow
+                                  label="Debt Principal Repayments"
+                                  data={columns}
+                                  dk="principal"
+                                  total={data.totals.principal}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="Commercial property loan amortization principal payments."
+                                />
+                                <TableRow
+                                  label="Sponsor Distributions (FCFE)"
+                                  data={columns}
+                                  dk="fcfe"
+                                  total={data.totals.fcfe}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="Net free cash flow distributed back to sponsor stakeholders."
+                                />
+                              </>
+                            )}
                           </>
                         )}
 
@@ -10225,9 +10535,9 @@ const PropCoCascadeView = memo(
               {/* TABLE 3: PropCo Capital Cascade & Returns */}
               {(viewMode === "all" || viewMode === "cf") && (
                 <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden">
-                  <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
-                      Property Development Capex rolls & Return Metrics
+                  <div className="p-4 bg-[#9B8B70] border-b border-[#9B8B70] flex justify-between items-center shrink-0">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-white flex items-center gap-2">
+                      3. Property Capex & Returns
                     </h3>
                   </div>
                   <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
@@ -10415,21 +10725,30 @@ const PropCoCascadeView = memo(
                           colSpan={columns.length + 2}
                         />
                         <TableRow
+                          label="EBITDA"
+                          data={columns}
+                          dk="ebitda"
+                          total={data.totals.ebitda}
+                          isIndent
+                          hasConnector
+                        />
+                        <TableRow
+                          label="Depreciation"
+                          data={columns}
+                          dk="dep"
+                          total={data.totals.dep}
+                          isIndent
+                          hasConnector
+                          isSubtractor
+                        />
+                        <TableRow
                           label="Interest (Ex-Land)"
                           data={columns}
                           dk="interestExLand"
                           total={data.totals.interestExLand}
                           isIndent
+                          hasConnector
                           tooltip={PROPCO_FORMULAS.interestExLand}
-                          isSubtractor
-                        />
-                        <TableRow
-                          label="Principal (Ex-Land)"
-                          data={columns}
-                          dk="principalExLand"
-                          total={data.totals.principalExLand}
-                          isIndent
-                          tooltip={PROPCO_FORMULAS.principalExLand}
                           isSubtractor
                         />
                         <TableRow
@@ -10446,23 +10765,43 @@ const PropCoCascadeView = memo(
                           dk="corpTaxExLand"
                           total={data.totals.corpTaxExLand}
                           isIndent
+                          hasConnector
                           tooltip={PROPCO_FORMULAS.corpTaxExLand}
                           isSubtractor
                         />
                         <TableRow
-                          label="FCFE Op (Ex-Land)"
+                          label="Add: Depreciation"
+                          data={columns}
+                          dk="dep"
+                          total={data.totals.dep}
+                          isIndent
+                          hasConnector
+                        />
+                        <TableRow
+                          label="Less: Principal (Ex-Land)"
+                          data={columns}
+                          dk="principalExLand"
+                          total={data.totals.principalExLand}
+                          isIndent
+                          hasConnector
+                          tooltip={PROPCO_FORMULAS.principalExLand}
+                          isSubtractor
+                        />
+                        <TableRow
+                          label="Operating FCFE (Ex-Land)"
                           data={columns}
                           dk="opFcfeExLand"
                           total={data.totals.opFcfeExLand}
-                          isIndent
+                          highlight
                           tooltip={PROPCO_FORMULAS.opFcfeExLand}
                         />
                         <TableRow
-                          label="Net Exit Proceeds (Ex-Land)"
+                          label="Add: Net Exit Proceeds (Ex-Land)"
                           data={columns}
                           dk="netExitProceedsExLand"
                           total={data.totals.netExitProceedsExLand}
-                          highlight
+                          isIndent
+                          hasConnector
                           tooltip={PROPCO_FORMULAS.netExitProceedsExLand}
                         />
                         <TableRow
@@ -11141,7 +11480,7 @@ const ConsolidatedCascadeView = memo(
     const renderTableHeaders = () => (
       <thead className="bg-[#EFEBE7] font-bold sticky top-0 z-[50] shadow-md">
         <tr>
-          <th className="px-4 py-3 border-b-2 border-r border-[#D8D8D8] sticky left-0 top-0 bg-[#EFEBE7] z-[60] w-[360px] min-w-[360px] max-w-[360px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-[#1E2F31]">
+          <th className="pl-1 pr-4 py-3 border-b-2 border-r border-[#D8D8D8] sticky left-0 top-0 bg-[#EFEBE7] z-[60] w-[360px] min-w-[360px] max-w-[360px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-[#1E2F31]">
             Line Item
           </th>
           {columns.map((col, i) => (
@@ -11258,20 +11597,15 @@ const ConsolidatedCascadeView = memo(
             {/* TABLE 1: MANAGERIAL LOOK-THROUGH INCOME STATEMENT (P&L) */}
             {(viewMode === "all" || viewMode === "pnl") && (
               <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden">
-                <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
-                    Managerial Look-Through Income Statement (P&L)
+                <div className="p-4 bg-[#1E2F31] border-b border-[#1E2F31] flex justify-between items-center shrink-0">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-white flex items-center gap-2">
+                    1. Look-Through P&L
                   </h3>
                 </div>
                 <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
                   <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
                     {renderTableHeaders()}
                     <tbody>
-                      <TableSection
-                        title="MANAGERIAL LOOK-THROUGH INCOME STATEMENT (P&L)"
-                        colSpan={columns.length + 2}
-                        type="amber"
-                      />
                     <TableRow
                       label="Look-Through Combined Revenue"
                       data={columns}
@@ -11315,21 +11649,15 @@ const ConsolidatedCascadeView = memo(
             {/* TABLE 2: ACCOUNTING STANDARD STATEMENT OF CASH FLOWS */}
             {(viewMode === "all" || viewMode === "statement") && (
               <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden">
-                <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
-                    Statement of Cash Flows (CFO, CFI, CFF)
+                <div className="p-4 bg-[#1E2F31] border-b border-[#1E2F31] flex justify-between items-center shrink-0">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-white flex items-center gap-2">
+                    2. Look-Through Cash Flows
                   </h3>
                 </div>
                 <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
                   <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
                     {renderTableHeaders()}
                     <tbody>
-                      <TableSection
-                        title="STATEMENT OF CASH FLOWS (LOOK-THROUGH CFO, CFI, CFF)"
-                        colSpan={columns.length + 2}
-                        type="indigo"
-                      />
-
                     {/* OPERATING CFO */}
                     <TableRow
                       label="1. Cash Flow from Operating Activities"
@@ -11469,20 +11797,15 @@ const ConsolidatedCascadeView = memo(
             {/* TABLE 3: CAPITAL CASCADE & WATERFALL WATERFALL */}
             {(viewMode === "all" || viewMode === "cascade") && (
               <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden">
-                <div className="p-4 bg-[#EFEBE7] border-b border-[#D8D8D8] flex justify-between items-center shrink-0">
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
-                    Capital Cascade & Sponsor Waterfall (Distributions)
+                <div className="p-4 bg-[#1E2F31] border-b border-[#1E2F31] flex justify-between items-center shrink-0">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-white flex items-center gap-2">
+                    3. Look-Through Cascade & Waterfall
                   </h3>
                 </div>
                 <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
                   <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
                     {renderTableHeaders()}
                     <tbody>
-                      <TableSection
-                        title="CAPITAL CASCADE & SPONSOR WATERFALL (DISTRIBUTIONS)"
-                        colSpan={columns.length + 2}
-                        type="amber"
-                      />
                     <TableRow
                       label="HoldCo Cash Available for Outflows"
                       data={columns}
