@@ -580,18 +580,19 @@ const runOpCoEngine = (assumptions, config) => {
       let m_totalMedSupp = totalMedSupp * (days / daysInYear);
       let m_totalDocFee = totalDocFee * (days / daysInYear);
       let m_grossProfit = grossProfit * (days / daysInYear);
-      let m_staffCost = staffCost * (days / daysInYear);
-      let m_recurringOpex = recurringOpex * (days / daysInYear);
+      let m_staffCost = staffCost / 12;
 
       let m_adminOpex = ((assumptions.adminExpRate || 0) / 100) * totalRev * (days / daysInYear);
       let m_utilOpex = ((assumptions.utilExpRate || 0) / 100) * totalRev * (days / daysInYear);
       let m_mktgOpex = ((assumptions.mktgExpRate || 0) / 100) * totalRev * (days / daysInYear);
       let m_operatorOpex = ((assumptions.operatorFeeRate || 0) / 100) * totalRev * (days / daysInYear);
-      let m_insOpex = (((assumptions.insuranceMonthly || 0) * 12) / 1000) * (days / daysInYear);
+      let m_insOpex = (assumptions.insuranceMonthly || 0) / 1000;
       let m_otherOpex = m_adminOpex + m_utilOpex + m_mktgOpex + m_operatorOpex + m_insOpex;
+      
+      let m_recurringOpex = m_staffCost + m_otherOpex;
 
-      let m_ebitdar = ebitdar * (days / daysInYear);
-      let m_rent = annualRent * (days / daysInYear);
+      let m_ebitdar = m_grossProfit - m_recurringOpex;
+      let m_rent = annualRent / 12;
       let m_ebitda = m_ebitdar - m_rent;
       let m_tax = m_ebitda > 0 ? m_ebitda * (assumptions.corporateTax / 100) : 0;
       let m_netIncome = m_ebitda - m_tax;
@@ -846,8 +847,7 @@ const runOpCoEngine = (assumptions, config) => {
       let m_totalMedSupp = totalMedSupp * (days / daysInYear);
       let m_totalDocFee = totalDocFee * (days / daysInYear);
       let m_grossProfit = grossProfit * (days / daysInYear);
-      let m_staffCost = staffCost * (days / daysInYear);
-      let m_recurringOpex = recurringOpex * (days / daysInYear);
+      let m_staffCost = staffCost / 12;
 
       let m_adminOpex =
         ((assumptions.adminExpRate || 0) / 100) *
@@ -862,15 +862,16 @@ const runOpCoEngine = (assumptions, config) => {
         totalRev *
         (days / daysInYear);
       let m_insOpex =
-        (((assumptions.insuranceMonthly || 0) * 12) / 1000) *
-        (days / daysInYear);
+        (assumptions.insuranceMonthly || 0) / 1000;
       let m_otherOpex =
         m_adminOpex + m_utilOpex + m_mktgOpex + m_operatorOpex + m_insOpex;
 
-      let m_ebitdar = ebitdar * (days / daysInYear);
+      let m_recurringOpex = m_staffCost + m_otherOpex;
+
+      let m_ebitdar = m_grossProfit - m_recurringOpex;
 
       // Distributed monthly:
-      let m_rent = annualRent * (days / daysInYear);
+      let m_rent = annualRent / 12;
       let m_ebitda = m_ebitdar - m_rent;
       let m_tax =
         m_ebitda > 0 ? m_ebitda * (assumptions.corporateTax / 100) : 0;
