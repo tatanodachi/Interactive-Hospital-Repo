@@ -307,7 +307,7 @@ const INITIAL_GROUPS = [
       {
         id: "c4",
         name: "Hospital FF&E Setup",
-        start: 21,
+        start: 19,
         duration: 4,
         progress: 0,
         dependencies: ["t7_1"],
@@ -355,7 +355,7 @@ const INITIAL_GROUPS = [
       {
         id: "c8",
         name: "Medical Equipment Setup",
-        start: 61,
+        start: 19,
         duration: 3,
         progress: 0,
         dependencies: ["c7"],
@@ -501,7 +501,7 @@ const INITIAL_GROUPS = [
       {
         id: "t7_1",
         name: "Interior Fit-Out & Finishes",
-        start: 18,
+        start: 15,
         duration: 4,
         progress: 0,
         owner: "Interior Designer",
@@ -513,7 +513,7 @@ const INITIAL_GROUPS = [
       {
         id: "t7_2",
         name: "Clinical Furniture Integration",
-        start: 21,
+        start: 19,
         duration: 4,
         progress: 0,
         owner: "Procurement Lead",
@@ -565,7 +565,7 @@ const INITIAL_GROUPS = [
       {
         id: "t10",
         name: "Oncology Asset Lease",
-        start: 22,
+        start: 16,
         duration: 3,
         progress: 0,
         owner: "Procurement Board",
@@ -577,7 +577,7 @@ const INITIAL_GROUPS = [
       {
         id: "t11",
         name: "Machinery Rigging & Fit",
-        start: 25,
+        start: 19,
         duration: 3,
         progress: 0,
         owner: "Install Engineers",
@@ -589,7 +589,7 @@ const INITIAL_GROUPS = [
       {
         id: "t12",
         name: "Testing & Staff Drills",
-        start: 28,
+        start: 22,
         duration: 3,
         progress: 0,
         owner: "Clinical Director",
@@ -601,7 +601,7 @@ const INITIAL_GROUPS = [
       {
         id: "t13",
         name: "Commercial Opening",
-        start: 31,
+        start: 25,
         duration: 1,
         progress: 0,
         owner: "Operations GM",
@@ -2227,10 +2227,16 @@ const PartnerReturnCard = ({
             Payback
           </p>
           <p className="text-xl lg:text-2xl font-black text-[#9B8B70]">
-            {formatNumber(metrics?.payback, 1)}{" "}
-            <span className="text-xs font-bold text-[#4C4A4B] uppercase">
-              Yrs
-            </span>
+            {metrics?.payback && metrics.payback > 0 ? (
+              <>
+                {formatNumber(metrics.payback, 1)}{" "}
+                <span className="text-xs font-bold text-[#4C4A4B] uppercase">
+                  Yrs
+                </span>
+              </>
+            ) : (
+              "Never"
+            )}
           </p>
         </div>
       </div>
@@ -8517,6 +8523,29 @@ const OpCoCascadeView = memo(
                     Monthly
                   </button>
                 </div>
+                <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
+                  <button
+                    onClick={() => {
+                      const tables = document.querySelectorAll('.opco-table-scroll');
+                      tables.forEach(t => t.scrollBy({ left: -300, behavior: 'smooth' }));
+                    }}
+                    className="p-1 rounded bg-white text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#F9F8F6] transition-colors"
+                    title="Scroll Left"
+                  >
+                    <ChevronLeft size={13} strokeWidth={2.5} />
+                  </button>
+                  <div className="w-[1px] bg-[#D8D8D8] my-1 opacity-50"></div>
+                  <button
+                    onClick={() => {
+                      const tables = document.querySelectorAll('.opco-table-scroll');
+                      tables.forEach(t => t.scrollBy({ left: 300, behavior: 'smooth' }));
+                    }}
+                    className="p-1 rounded bg-white text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#F9F8F6] transition-colors"
+                    title="Scroll Right"
+                  >
+                    <ChevronRight size={13} strokeWidth={2.5} />
+                  </button>
+                </div>
                 <span className="text-[10px] bg-white text-[#4C4A4B] border border-[#D8D8D8] px-2 py-1 rounded font-bold uppercase shadow-sm">
                   IDR Billions
                 </span>
@@ -8531,7 +8560,7 @@ const OpCoCascadeView = memo(
                       1. Clinical Profit & Loss (P&L)
                     </h3>
                   </div>
-                  <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
+                  <div className="overflow-auto max-h-[65vh] custom-scrollbar relative opco-table-scroll">
                     <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
                       {renderTableHeaders()}
                       <tbody>
@@ -8544,6 +8573,7 @@ const OpCoCascadeView = memo(
                           data={columns}
                           dk="bor"
                           tooltip={OPCO_FORMULAS.bor}
+                          isPercent={true}
                         />
                         <TableRow
                           label="Inpatient Cases"
@@ -8770,7 +8800,7 @@ const OpCoCascadeView = memo(
                       2. Clinical Cash Flows
                     </h3>
                   </div>
-                  <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
+                  <div className="overflow-auto max-h-[65vh] custom-scrollbar relative opco-table-scroll">
                     <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
                       {renderTableHeaders()}
                       <tbody>
@@ -9001,7 +9031,7 @@ const OpCoCascadeView = memo(
                       3. Sponsor Cascade & Returns
                     </h3>
                   </div>
-                  <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
+                  <div className="overflow-auto max-h-[65vh] custom-scrollbar relative opco-table-scroll">
                     <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
                       {renderTableHeaders()}
                       <tbody>
@@ -9516,12 +9546,12 @@ const PropCoDashboardView = memo(
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             <MiniKPICard
               title="Equity Payback"
-              value={`${formatNumber(data.metrics.payback > 0 ? Math.max(0, data.metrics.payback - devYears) : 0, 1)} Yrs`}
+              value={data.metrics.payback > 0 ? `${formatNumber(Math.max(0, data.metrics.payback - devYears), 1)} Yrs` : "Never"}
               subtitle="From Operations"
             />
             <MiniKPICard
               title="Op. Payback"
-              value={`${formatNumber(data.metrics.operatingPayback > 0 ? Math.max(0, data.metrics.operatingPayback - devYears) : 0, 1)} Yrs`}
+              value={data.metrics.operatingPayback > 0 ? `${formatNumber(Math.max(0, data.metrics.operatingPayback - devYears), 1)} Yrs` : "Never"}
               subtitle="From Operations"
             />
             <MiniKPICard
@@ -9936,6 +9966,29 @@ const PropCoCascadeView = memo(
                     Monthly
                   </button>
                 </div>
+                <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
+                  <button
+                    onClick={() => {
+                      const tables = document.querySelectorAll('.propco-table-scroll');
+                      tables.forEach(t => t.scrollBy({ left: -300, behavior: 'smooth' }));
+                    }}
+                    className="p-1 rounded bg-white text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#F9F8F6] transition-colors"
+                    title="Scroll Left"
+                  >
+                    <ChevronLeft size={13} strokeWidth={2.5} />
+                  </button>
+                  <div className="w-[1px] bg-[#D8D8D8] my-1 opacity-50"></div>
+                  <button
+                    onClick={() => {
+                      const tables = document.querySelectorAll('.propco-table-scroll');
+                      tables.forEach(t => t.scrollBy({ left: 300, behavior: 'smooth' }));
+                    }}
+                    className="p-1 rounded bg-white text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#F9F8F6] transition-colors"
+                    title="Scroll Right"
+                  >
+                    <ChevronRight size={13} strokeWidth={2.5} />
+                  </button>
+                </div>
                 <span className="text-[10px] bg-white text-[#4C4A4B] border border-[#D8D8D8] px-2 py-1 rounded font-bold uppercase shadow-sm">
                   IDR Billions
                 </span>
@@ -9950,7 +10003,7 @@ const PropCoCascadeView = memo(
                       1. Property P&L & Debt Service
                     </h3>
                   </div>
-                  <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
+                  <div className="overflow-auto max-h-[65vh] custom-scrollbar relative propco-table-scroll">
                     <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
                       {renderTableHeaders()}
                       <tbody>
@@ -10192,7 +10245,7 @@ const PropCoCascadeView = memo(
                       2. Property Cash Flows
                     </h3>
                   </div>
-                  <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
+                  <div className="overflow-auto max-h-[65vh] custom-scrollbar relative propco-table-scroll">
                     <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
                       {renderTableHeaders()}
                       <tbody>
@@ -10540,7 +10593,7 @@ const PropCoCascadeView = memo(
                       3. Property Capex & Returns
                     </h3>
                   </div>
-                  <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
+                  <div className="overflow-auto max-h-[65vh] custom-scrollbar relative propco-table-scroll">
                     <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
                       {renderTableHeaders()}
                       <tbody>
@@ -11008,7 +11061,7 @@ const ConsolidatedDashboardView = memo(
           />
           <KPICard
             title="Blended Payback"
-            value={`${formatNumber(data.metrics.payback, 2)} Yrs`}
+            value={data.metrics.payback > 0 ? `${formatNumber(data.metrics.payback, 2)} Yrs` : "Never"}
             icon={<Clock size={18} />}
             color="indigo"
             subtitle="From Year 1"
@@ -11587,6 +11640,30 @@ const ConsolidatedCascadeView = memo(
                 </button>
               </div>
 
+              <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
+                <button
+                  onClick={() => {
+                    const tables = document.querySelectorAll('.cons-table-scroll');
+                    tables.forEach(t => t.scrollBy({ left: -300, behavior: 'smooth' }));
+                  }}
+                  className="p-1 rounded bg-white text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#F9F8F6] transition-colors"
+                  title="Scroll Left"
+                >
+                  <ChevronLeft size={13} strokeWidth={2.5} />
+                </button>
+                <div className="w-[1px] bg-[#D8D8D8] my-1 opacity-50"></div>
+                <button
+                  onClick={() => {
+                    const tables = document.querySelectorAll('.cons-table-scroll');
+                    tables.forEach(t => t.scrollBy({ left: 300, behavior: 'smooth' }));
+                  }}
+                  className="p-1 rounded bg-white text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#F9F8F6] transition-colors"
+                  title="Scroll Right"
+                >
+                  <ChevronRight size={13} strokeWidth={2.5} />
+                </button>
+              </div>
+
               <span className="text-[10px] bg-white text-[#4C4A4B] border border-[#D8D8D8] px-2 py-1 rounded font-bold uppercase shadow-sm">
                 IDR Billions
               </span>
@@ -11602,7 +11679,7 @@ const ConsolidatedCascadeView = memo(
                     1. Look-Through P&L
                   </h3>
                 </div>
-                <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
+                <div className="overflow-auto max-h-[65vh] custom-scrollbar relative cons-table-scroll">
                   <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
                     {renderTableHeaders()}
                     <tbody>
@@ -11654,7 +11731,7 @@ const ConsolidatedCascadeView = memo(
                     2. Look-Through Cash Flows
                   </h3>
                 </div>
-                <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
+                <div className="overflow-auto max-h-[65vh] custom-scrollbar relative cons-table-scroll">
                   <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
                     {renderTableHeaders()}
                     <tbody>
@@ -11802,7 +11879,7 @@ const ConsolidatedCascadeView = memo(
                     3. Look-Through Cascade & Waterfall
                   </h3>
                 </div>
-                <div className="overflow-auto max-h-[65vh] custom-scrollbar relative">
+                <div className="overflow-auto max-h-[65vh] custom-scrollbar relative cons-table-scroll">
                   <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
                     {renderTableHeaders()}
                     <tbody>
@@ -12313,6 +12390,7 @@ const PropCoSettingsView = memo(
     onValidate,
     isCloudSync,
     isPresenting,
+    resolvedDevDuration,
   }) => {
     const buildCostForUi =
       (assumptions.buildArea * assumptions.buildCost) / 1000;
@@ -12458,13 +12536,6 @@ const PropCoSettingsView = memo(
               isLocked={isLocked}
             />
             <AssumptionRow
-              label="Dev. Duration"
-              val={assumptions.devDurationMonths}
-              set={(v) => onChange("devDurationMonths", v)}
-              unit="Mos"
-              isLocked={isLocked}
-            />
-            <AssumptionRow
               label="Year 1 Capex Draw"
               val={assumptions.equityDrawYear1Pct ?? 100}
               set={(v) =>
@@ -12474,7 +12545,7 @@ const PropCoSettingsView = memo(
                 )
               }
               unit="%"
-              isLocked={isLocked || assumptions.devDurationMonths <= 12}
+              isLocked={isLocked || resolvedDevDuration <= 12}
             />
           </div>
           <div className="space-y-4">
@@ -15136,7 +15207,7 @@ const localFinancialAuditor = {
 ## 💎 4. Master Look-Through Returns Cascade
 - **Project NPV**: **${projectNPV.toFixed(2)} B IDR** (at ${discountRate}% hurdle)
 - **Project IRR (Post-Tax)**: **${projectIRR.toFixed(2)}%**
-- **Amortization & Payback Window**: Stable return payout crossed in **${projectPayback.toFixed(1)} Years**
+- **Amortization & Payback Window**: Stable return payout crossed in **${projectPayback > 0 ? projectPayback.toFixed(1) + " Years" : "Never (beyond projection period)"}**
 
 *Note: This pro-forma pitch prospectus displays live calculations and is fully validated.*`;
   },
@@ -15208,7 +15279,7 @@ const localFinancialAuditor = {
 
 ## 🔒 2. Sensitivity Hurdle Thresholds
 - **Hurdle Optimizations**: Adjusted hurdle at **${discountRate}%** mirrors Indonesian private healthcare and infrastructure premiums.
-- **Payback Sensitivity**: The active payback trajectory of **${projectPayback.toFixed(1)} Years** satisfies institutional healthcare risk models.`;
+- **Payback Sensitivity**: The active payback trajectory of **${projectPayback > 0 ? projectPayback.toFixed(1) + " Years" : "Never (beyond projection period)"}** satisfies institutional healthcare risk models.`;
   },
 
   getSmartAsk: (
@@ -15255,7 +15326,7 @@ const localFinancialAuditor = {
       return `### 💎 RETURN METRICS DIAGNOSTIC
 - **NPV**: **${projectNPV.toFixed(2)} B IDR** at active discount rates.
 - **Post-Tax IRR**: **${projectIRR.toFixed(2)}%** offer.
-- **Simple Payback**: Covered in **${projectPayback.toFixed(1)} Years**.`;
+- **Simple Payback**: Covered in **${projectPayback > 0 ? projectPayback.toFixed(1) + " Years" : "Never (beyond projection period)"}**.`;
     }
 
     return `### 📋 FEASIBILITY AUDIT RESPONSE
@@ -15493,6 +15564,14 @@ export default function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isPresenting, isBlanked, goToNextSlide, goToPrevSlide]);
 
+  const resolvedDevDuration = useMemo(() => {
+    const allTasks = groups.flatMap((g) => g.tasks || []);
+    const commOpeningTask = allTasks.find(
+      (t) => t.id === "t13" || t.name.toLowerCase().includes("commercial opening")
+    );
+    return commOpeningTask ? Math.max(1, commOpeningTask.start - 1) : propCoAssumptions.devDurationMonths || 24;
+  }, [groups, propCoAssumptions.devDurationMonths]);
+
   const projConfig = useMemo(() => {
     if (holdCoScenario === "manual")
       return {
@@ -15506,13 +15585,13 @@ export default function App() {
     if (holdCoScenario === "yr10") return { exitYear: 10, projYears: 10 };
     if (holdCoScenario === "debt_free") {
       const p1 = { exitYear: -1, projYears: 30 };
-      const op1 = runOpCoEngine(opCoAssumptions, p1);
-      const pr1 = runPropCoEngine(propCoAssumptions, op1, p1, groups);
+      const op1 = runOpCoEngine({ ...opCoAssumptions, devDurationMonths: resolvedDevDuration }, p1);
+      const pr1 = runPropCoEngine({ ...propCoAssumptions, devDurationMonths: resolvedDevDuration }, op1, p1, groups);
       const cons1 = runConsolidatedEngine(op1, pr1, opCoAssumptions);
 
       const devYears = Math.max(
         1,
-        Math.ceil((propCoAssumptions.devDurationMonths || 12) / 12),
+        Math.ceil(resolvedDevDuration / 12),
       );
       const exactOverallPayback = cons1.metrics.payback;
       let beOpYear =
@@ -15529,13 +15608,13 @@ export default function App() {
     }
     if (holdCoScenario === "breakeven") {
       const p1 = { exitYear: -1, projYears: 30 }; // -1 forces the engine to ignore individual settings and test pure operations
-      const op1 = runOpCoEngine(opCoAssumptions, p1);
-      const pr1 = runPropCoEngine(propCoAssumptions, op1, p1, groups);
+      const op1 = runOpCoEngine({ ...opCoAssumptions, devDurationMonths: resolvedDevDuration }, p1);
+      const pr1 = runPropCoEngine({ ...propCoAssumptions, devDurationMonths: resolvedDevDuration }, op1, p1, groups);
       const cons1 = runConsolidatedEngine(op1, pr1, opCoAssumptions);
 
       const devYears = Math.max(
         1,
-        Math.ceil((propCoAssumptions.devDurationMonths || 12) / 12),
+        Math.ceil(resolvedDevDuration / 12),
       );
       const exactOverallPayback = cons1.metrics.payback; // this is the exact payback year without exit
 
@@ -15555,15 +15634,15 @@ export default function App() {
       };
     }
     return { exitYear: 10, projYears: 10 };
-  }, [holdCoScenario, opCoAssumptions, propCoAssumptions]);
+  }, [holdCoScenario, opCoAssumptions, propCoAssumptions, groups, resolvedDevDuration]);
 
   const opCoModelData = useMemo(
-    () => runOpCoEngine(opCoAssumptions, projConfig),
-    [opCoAssumptions, projConfig],
+    () => runOpCoEngine({ ...opCoAssumptions, devDurationMonths: resolvedDevDuration }, projConfig),
+    [opCoAssumptions, projConfig, resolvedDevDuration],
   );
   const propCoModelData = useMemo(
-    () => runPropCoEngine(propCoAssumptions, opCoModelData, projConfig, groups),
-    [propCoAssumptions, opCoModelData, projConfig, groups],
+    () => runPropCoEngine({ ...propCoAssumptions, devDurationMonths: resolvedDevDuration }, opCoModelData, projConfig, groups),
+    [propCoAssumptions, opCoModelData, projConfig, groups, resolvedDevDuration],
   );
   const consolidatedModelData = useMemo(
     () =>
@@ -16618,6 +16697,7 @@ export default function App() {
                     }
                     isCloudSync={isCloudSync}
                     isPresenting={isPresenting}
+                    resolvedDevDuration={resolvedDevDuration}
                   />
                 </SettingsPasswordGate>
               )}

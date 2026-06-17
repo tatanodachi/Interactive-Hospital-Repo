@@ -217,6 +217,7 @@ const callGemini = async (prompt, systemInstruction) => {
 const runOpCoEngine = (assumptions, config) => {
   const requestedYears = config?.projYears || 10;
   const projYears = Math.min(requestedYears, 30);
+  const totalDevMonths = assumptions.devDurationMonths || 24;
 
   let exitYear = null;
   if (config?.exitYear !== undefined && config.exitYear !== null) {
@@ -234,24 +235,33 @@ const runOpCoEngine = (assumptions, config) => {
     partnerB_CumCF = 0,
     cumulativeRetainedEarnings = 0;
 
-  // Simulate 24 pre-operating months
-  for (let m = 1; m <= 24; m++) {
+  // Simulate pre-operating months based on totalDevMonths
+  for (let m = 1; m <= totalDevMonths; m++) {
     const isY1 = m <= 12;
     const split = isY1
       ? assumptions.equitySplitY1 / 100
       : (100 - assumptions.equitySplitY1) / 100;
 
-    // jvaOpex occurs 100% in Month 1, commOpex occurs across Months 19-24 (6 months) pro-rata
+    // jvaOpex occurs 100% in Month 1, commOpex occurs across last 6 months pro-rata
     let net_month = 0;
-    if (isY1) {
-      net_month = m === 1 ? -assumptions.jvaOpex : 0;
-    } else {
-      net_month = m >= 19 && m <= 24 ? -assumptions.commOpex / 6 : 0;
+    if (m === 1) {
+      net_month = -assumptions.jvaOpex;
+    } else if (m >= totalDevMonths - 5 && m <= totalDevMonths) {
+      net_month = -assumptions.commOpex / 6;
     }
 
     cumulativeNetIncome += net_month;
-    const m_pA_Outlay = (-assumptions.partnerAEquity * split) / 12;
-    const m_pB_Outlay = (-assumptions.partnerBEquity * split) / 12;
+    // Adjust outlays to span the entire totalDevMonths
+    // A simplified approach: divide the required equity evenly over the months
+    // but preserving the Y1 vs Y2+ split. 
+    // If devDurationMonths is 24, Y1 has 12, Y2 has 12.
+    // Let's use a simpler spread for equityOutlay based on totalDevMonths.
+    // The original outlay formula divded by 12 for Y1 and Y2 respectively.
+    const splitFactor = isY1 ? assumptions.equitySplitY1 / 100 : (100 - assumptions.equitySplitY1) / 100;
+    const monthsInThisSplit = isY1 ? Math.min(12, totalDevMonths) : Math.max(1, totalDevMonths - 12);
+    const m_pA_Outlay = (-assumptions.partnerAEquity * splitFactor) / monthsInThisSplit;
+    const m_pB_Outlay = (-assumptions.partnerBEquity * splitFactor) / monthsInThisSplit;
+
     partnerA_CumCF += m_pA_Outlay;
     partnerB_CumCF += m_pB_Outlay;
 
@@ -260,25 +270,42 @@ const runOpCoEngine = (assumptions, config) => {
     projectCfsMonthly.push(m_pA_Outlay + m_pB_Outlay);
   }
 
-  // Pre-operating years: Yr 1 & Yr 2 pushed for Annual Spreadsheets
-  const preOp = [
-    {
-      k: "jvaOpex",
-      y: "Year 1",
-      split: assumptions.equitySplitY1 / 100,
-      startM: 1,
-    },
-    {
-      k: "commOpex",
-      y: "Year 2",
-      split: (100 - assumptions.equitySplitY1) / 100,
-      startM: 13,
-    },
-  ];
+  // Pre-operating years: Create annual reporting blocks based on devYears
+  const devYearsCount = Math.ceil(totalDevMonths / 12) || 1;
+  const preOp = [];
+  
+  for (let y = 1; y <= devYearsCount; y++) {
+    const isY1 = y === 1;
+    const split = isY1 ? assumptions.equitySplitY1 / 100 : (100 - assumptions.equitySplitY1) / 100;
+    const monthsInThisYear = Math.min(12, totalDevMonths - (y - 1) * 12);
+    
+    let netThisYear = 0;
+    // Jva occurs in year 1
+    if (isY1) netThisYear += -assumptions.jvaOpex;
+    
+    // CommOpex occurs ONLY in the exact last 6 months of totalDevMonths.
+    for (let m = 0; m < monthsInThisYear; m++) {
+      const monthIndex = (y - 1) * 12 + m;
+      if (monthIndex >= totalDevMonths - 6 && monthIndex < totalDevMonths) {
+        netThisYear += -(assumptions.commOpex / 6);
+      }
+    }
+
+    preOp.push({
+      y: `Year ${y}`,
+      split: split,
+      startM: (y - 1) * 12 + 1,
+      net: netThisYear,
+      months: monthsInThisYear,
+    });
+  }
+
   preOp.forEach((p, idx) => {
-    const net = -assumptions[p.k];
-    const pA_Outlay = -assumptions.partnerAEquity * p.split;
-    const pB_Outlay = -assumptions.partnerBEquity * p.split;
+    const net = p.net;
+    // Split the outlay properly for the year block
+    const pA_Outlay = (-assumptions.partnerAEquity * p.split) * (p.months / (idx === 0 ? Math.min(12, totalDevMonths) : Math.max(1, totalDevMonths - 12)));
+    const pB_Outlay = (-assumptions.partnerBEquity * p.split) * (p.months / (idx === 0 ? Math.min(12, totalDevMonths) : Math.max(1, totalDevMonths - 12)));
+
 
     let monthly = {
       ipRev: [],
@@ -335,19 +362,20 @@ const runOpCoEngine = (assumptions, config) => {
       monthly.grossProfit.push(0);
       monthly.staffCost.push(0);
 
-      let m_recOpex, m_ebitdar, m_ebitda, m_netInc;
-      if (p.k === "jvaOpex") {
-        m_recOpex = m === 0 ? assumptions.jvaOpex : 0;
-        m_ebitdar = -m_recOpex;
-        m_ebitda = -m_recOpex;
-        m_netInc = -m_recOpex;
-      } else {
-        // commOpex occurs across Months 19-24 (indices 6 to 11 of Year 2, which is m >= 6)
-        m_recOpex = m >= 6 ? assumptions.commOpex / 6 : 0;
-        m_ebitdar = -m_recOpex;
-        m_ebitda = -m_recOpex;
-        m_netInc = -m_recOpex;
+      // Check the exact month in the overall projection
+      const monthIndex = p.startM + m - 1; 
+
+      let m_recOpex = 0;
+      if (monthIndex === 0) {
+        m_recOpex = assumptions.jvaOpex;
+      } else if (monthIndex >= totalDevMonths - 6 && monthIndex < totalDevMonths) {
+        m_recOpex = assumptions.commOpex / 6;
       }
+
+      let m_ebitdar = -m_recOpex;
+      let m_ebitda = -m_recOpex;
+      let m_netInc = -m_recOpex;
+
 
       monthly.recurringOpex.push(m_recOpex);
       monthly.ebitdar.push(m_ebitdar);
@@ -365,13 +393,20 @@ const runOpCoEngine = (assumptions, config) => {
 
       // Cumulative Net Income chain
       let cum_net_up_to_month = 0;
-      if (p.k === "jvaOpex") {
-        cum_net_up_to_month = -assumptions.jvaOpex;
-      } else {
-        const commOpexExpensed =
-          m >= 6 ? (m - 5) * (assumptions.commOpex / 6) : 0;
-        cum_net_up_to_month = -assumptions.jvaOpex - commOpexExpensed;
+      let prior_net = 0;
+      for(let prev = 0; prev < idx; prev++) prior_net += preOp[prev].net;
+      
+      let currentMonthNet = 0;
+      for (let pm = 0; pm <= m; pm++) {
+        const pmIndex = p.startM + pm - 1;
+        if (pmIndex === 0) {
+          currentMonthNet += -assumptions.jvaOpex;
+        } else if (pmIndex >= totalDevMonths - 6 && pmIndex < totalDevMonths) {
+          currentMonthNet += -(assumptions.commOpex / 6);
+        }
       }
+      
+      cum_net_up_to_month = prior_net + currentMonthNet;
       monthly.cumNI.push(cum_net_up_to_month);
 
       monthly.distributableProfit.push(0);
@@ -388,31 +423,56 @@ const runOpCoEngine = (assumptions, config) => {
       // Cumulative Outlays
       let pA_CumVal = 0;
       let pB_CumVal = 0;
-      if (p.k === "jvaOpex") {
-        pA_CumVal = (pA_Outlay / 12) * (m + 1);
-        pB_CumVal = (pB_Outlay / 12) * (m + 1);
-      } else {
-        const pA_Yr1_total =
-          -assumptions.partnerAEquity * (assumptions.equitySplitY1 / 100);
-        const pB_Yr1_total =
-          -assumptions.partnerBEquity * (assumptions.equitySplitY1 / 100);
-        pA_CumVal = pA_Yr1_total + (pA_Outlay / 12) * (m + 1);
-        pB_CumVal = pB_Yr1_total + (pB_Outlay / 12) * (m + 1);
+
+      const m_pA_OutlayMonth = p.months > 0 ? pA_Outlay / p.months : 0;
+      const m_pB_OutlayMonth = p.months > 0 ? pB_Outlay / p.months : 0;
+
+      let prior_pA_Outlay = 0;
+      let prior_pB_Outlay = 0;
+      for (let prev = 0; prev < idx; prev++) {
+         const pastP = preOp[prev];
+         const pastFactor = pastP.months / (prev === 0 ? Math.min(12, totalDevMonths) : Math.max(1, totalDevMonths - 12));
+         prior_pA_Outlay += (-assumptions.partnerAEquity * pastP.split) * pastFactor;
+         prior_pB_Outlay += (-assumptions.partnerBEquity * pastP.split) * pastFactor;
       }
 
-      monthly.pA_Net.push(pA_Outlay / 12);
-      monthly.pA_Outlay.push(pA_Outlay / 12);
+      if (m < p.months) {
+        pA_CumVal = prior_pA_Outlay + m_pA_OutlayMonth * (m + 1);
+        pB_CumVal = prior_pB_Outlay + m_pB_OutlayMonth * (m + 1);
+      } else {
+        pA_CumVal = prior_pA_Outlay + pA_Outlay;
+        pB_CumVal = prior_pB_Outlay + pB_Outlay;
+      }
+
+      monthly.pA_Net.push(m < p.months ? m_pA_OutlayMonth : 0);
+      monthly.pA_Outlay.push(m < p.months ? m_pA_OutlayMonth : 0);
       monthly.pA_Cum.push(pA_CumVal);
       monthly.pB_Div.push(0);
-      monthly.pB_Net.push(pB_Outlay / 12);
-      monthly.pB_Outlay.push(pB_Outlay / 12);
+      monthly.pB_Net.push(m < p.months ? m_pB_OutlayMonth : 0);
+      monthly.pB_Outlay.push(m < p.months ? m_pB_OutlayMonth : 0);
       monthly.pB_Cum.push(pB_CumVal);
-      monthly.fcf.push((pA_Outlay + pB_Outlay) / 12);
+      monthly.fcf.push(m < p.months ? (m_pA_OutlayMonth + m_pB_OutlayMonth) : 0);
       monthly.bor.push(0);
       monthly.pA_Yield.push(0);
       monthly.pB_Yield.push(0);
       monthly.ipCases.push(0);
       monthly.opVisits.push(0);
+    }
+
+    let priorNI = 0;
+    for (let prev = 0; prev < idx; prev++) priorNI += preOp[prev].net;
+    let prior_pA_Outlay_Total = 0;
+    for (let prev = 0; prev < idx; prev++) {
+       const pastP = preOp[prev];
+       const pastFactor = pastP.months / (prev === 0 ? Math.min(12, totalDevMonths) : Math.max(1, totalDevMonths - 12));
+       prior_pA_Outlay_Total += (-assumptions.partnerAEquity * pastP.split) * pastFactor;
+    }
+
+    let prior_pB_Outlay_Total = 0;
+    for (let prev = 0; prev < idx; prev++) {
+       const pastP = preOp[prev];
+       const pastFactor = pastP.months / (prev === 0 ? Math.min(12, totalDevMonths) : Math.max(1, totalDevMonths - 12));
+       prior_pB_Outlay_Total += (-assumptions.partnerBEquity * pastP.split) * pastFactor;
     }
 
     annualData.push({
@@ -425,22 +485,19 @@ const runOpCoEngine = (assumptions, config) => {
       totalDocFee: 0,
       grossProfit: 0,
       staffCost: 0,
-      recurringOpex: assumptions[p.k],
-      otherOpex: assumptions[p.k],
+      recurringOpex: -p.net,
+      otherOpex: -p.net,
       adminOpex: 0,
       utilOpex: 0,
       mktgOpex: 0,
       operatorOpex: 0,
       insOpex: 0,
-      ebitdar: -assumptions[p.k],
+      ebitdar: p.net,
       rent: 0,
       ebitda: net,
       tax: 0,
       netIncome: net,
-      cumNI:
-        idx === 0
-          ? -assumptions.jvaOpex
-          : -assumptions.jvaOpex - assumptions.commOpex,
+      cumNI: priorNI + p.net,
       distributableProfit: 0,
       retainedThisYear: 0,
       cumulativeRetainedEarnings: 0,
@@ -449,21 +506,14 @@ const runOpCoEngine = (assumptions, config) => {
       pA_Outlay,
       pA_Div: 0,
       pA_Net: pA_Outlay,
-      pA_Cum:
-        idx === 0
-          ? pA_Outlay
-          : pA_Outlay +
-            -assumptions.partnerAEquity * (assumptions.equitySplitY1 / 100),
+      pA_Cum: prior_pA_Outlay_Total + pA_Outlay,
       pA_Yield: 0,
       pB_Outlay,
       pB_Div: 0,
       pB_Net: pB_Outlay,
-      pB_Cum:
-        idx === 0
-          ? pB_Outlay
-          : pB_Outlay +
-            -assumptions.partnerBEquity * (assumptions.equitySplitY1 / 100),
+      pB_Cum: prior_pB_Outlay_Total + pB_Outlay,
       pB_Yield: 0,
+
       fcf: pA_Outlay + pB_Outlay,
       ebitdaMargin: 0,
       ebitdarMargin: 0,
@@ -476,9 +526,158 @@ const runOpCoEngine = (assumptions, config) => {
     });
   });
 
+  const transitionOpMonths = totalDevMonths % 12 === 0 ? 0 : 12 - (totalDevMonths % 12);
+  if (transitionOpMonths > 0 && annualData.length > 0) {
+    const tYear = annualData[annualData.length - 1];
+    const mo = tYear.monthly;
+    
+    // Use Year 1 operating parameters for the transition months
+    const i = 1; 
+    const currentYear = 2025 + devYearsCount;
+    const daysInYear = (currentYear % 4 === 0 && currentYear % 100 !== 0) || currentYear % 400 === 0 ? 366 : 365;
+
+    let bor = Math.min(assumptions.borMax / 100, assumptions.borStart / 100);
+    let bedDays = assumptions.beds * daysInYear * bor;
+    let ipCases = bedDays / assumptions.alos;
+    let opVisits = ipCases * assumptions.opIpRatio;
+    let priceMultiplier = 1;
+
+    let ipRev = (ipCases * (assumptions.ipRevenue * priceMultiplier)) / 1000;
+    let opRev = (opVisits * (assumptions.opRevenue * priceMultiplier)) / 1000;
+    let totalRev = ipRev + opRev;
+
+    let costMultiplier = 1;
+    let totalMedSupp = ((ipCases * assumptions.ipMedSupply + opVisits * assumptions.opMedSupply) * costMultiplier) / 1000;
+    let totalDocFee = (assumptions.docFeeIp / 100) * ipRev + (assumptions.docFeeOp / 100) * opRev;
+    let grossProfit = totalRev - totalMedSupp - totalDocFee;
+
+    let staffCost = assumptions.monthlyStaffCost * 12;
+    let otherOpex = ((assumptions.adminExpRate + assumptions.utilExpRate + assumptions.mktgExpRate + assumptions.operatorFeeRate) / 100) * totalRev + (assumptions.insuranceMonthly * 12) / 1000;
+    let recurringOpex = staffCost + otherOpex;
+    let ebitdar = grossProfit - recurringOpex;
+
+    let annualRent = 0;
+    if (assumptions.rentStructureType === "flatEbitdar") {
+      annualRent = ebitdar > 0 ? ((assumptions.rentFlatEbitdarRate ?? 15) / 100) * ebitdar : 0;
+    } else if (assumptions.rentStructureType === "revAndProfit") {
+      let revRent = ((assumptions.rentRevRate ?? 5) / 100) * totalRev;
+      let remainingProfit = Math.max(0, ebitdar - revRent);
+      annualRent = revRent + (remainingProfit > 0 ? ((assumptions.rentProfitRate ?? 10) / 100) * remainingProfit : 0);
+    } else {
+      let currentRevPab = assumptions.beds > 0 ? totalRev / assumptions.beds : 0;
+      let rentRate = currentRevPab < assumptions.rentTier1Limit ? assumptions.rentTier1Rate : currentRevPab < assumptions.rentTier2Limit ? assumptions.rentTier2Rate : assumptions.rentTier3Rate;
+      annualRent = ebitdar > 0 ? (rentRate / 100) * ebitdar : 0;
+    }
+
+    const startM = 12 - transitionOpMonths + 1;
+    for (let m = startM; m <= 12; m++) {
+      const days = new Date(currentYear, m, 0).getDate();
+      let m_ipCases = ipCases * (days / daysInYear);
+      let m_opVisits = opVisits * (days / daysInYear);
+      let m_ipRev = ipRev * (days / daysInYear);
+      let m_opRev = opRev * (days / daysInYear);
+      let m_totalRev = totalRev * (days / daysInYear);
+      let m_totalMedSupp = totalMedSupp * (days / daysInYear);
+      let m_totalDocFee = totalDocFee * (days / daysInYear);
+      let m_grossProfit = grossProfit * (days / daysInYear);
+      let m_staffCost = staffCost * (days / daysInYear);
+      let m_recurringOpex = recurringOpex * (days / daysInYear);
+
+      let m_adminOpex = ((assumptions.adminExpRate || 0) / 100) * totalRev * (days / daysInYear);
+      let m_utilOpex = ((assumptions.utilExpRate || 0) / 100) * totalRev * (days / daysInYear);
+      let m_mktgOpex = ((assumptions.mktgExpRate || 0) / 100) * totalRev * (days / daysInYear);
+      let m_operatorOpex = ((assumptions.operatorFeeRate || 0) / 100) * totalRev * (days / daysInYear);
+      let m_insOpex = (((assumptions.insuranceMonthly || 0) * 12) / 1000) * (days / daysInYear);
+      let m_otherOpex = m_adminOpex + m_utilOpex + m_mktgOpex + m_operatorOpex + m_insOpex;
+
+      let m_ebitdar = ebitdar * (days / daysInYear);
+      let m_rent = annualRent * (days / daysInYear);
+      let m_ebitda = m_ebitdar - m_rent;
+      let m_tax = m_ebitda > 0 ? m_ebitda * (assumptions.corporateTax / 100) : 0;
+      let m_netIncome = m_ebitda - m_tax;
+
+      let prevCumNI = cumulativeNetIncome;
+      cumulativeNetIncome += m_netIncome;
+      let m_availableForDistribution = Math.max(0, cumulativeNetIncome > 0 ? (prevCumNI < 0 ? cumulativeNetIncome : m_netIncome) : 0);
+      let m_distributableProfit = m_availableForDistribution * ((assumptions.dividendPayoutRatio ?? 100) / 100);
+      let m_retainedThisYear = m_availableForDistribution - m_distributableProfit;
+
+      cumulativeRetainedEarnings += m_retainedThisYear;
+      let m_shareA = m_distributableProfit * ((assumptions.sharingPercentA ?? 51) / 100);
+      let m_shareB = m_distributableProfit * (1 - (assumptions.sharingPercentA ?? 51) / 100);
+
+      mo.ipCases[m - 1] = m_ipCases;
+      mo.opVisits[m - 1] = m_opVisits;
+      mo.ipRev[m - 1] = m_ipRev;
+      mo.opRev[m - 1] = m_opRev;
+      mo.totalRev[m - 1] = m_totalRev;
+      mo.totalMedSupp[m - 1] = m_totalMedSupp;
+      mo.totalDocFee[m - 1] = m_totalDocFee;
+      mo.grossProfit[m - 1] = m_grossProfit;
+      mo.staffCost[m - 1] = m_staffCost;
+      mo.adminOpex[m - 1] = m_adminOpex;
+      mo.utilOpex[m - 1] = m_utilOpex;
+      mo.mktgOpex[m - 1] = m_mktgOpex;
+      mo.operatorOpex[m - 1] = m_operatorOpex;
+      mo.insOpex[m - 1] = m_insOpex;
+      mo.otherOpex[m - 1] = m_otherOpex;
+      mo.recurringOpex[m - 1] = m_recurringOpex;
+      mo.ebitdar[m - 1] = m_ebitdar;
+      mo.rent[m - 1] = m_rent;
+      mo.ebitda[m - 1] = m_ebitda;
+      mo.tax[m - 1] = m_tax;
+      mo.netIncome[m - 1] = m_netIncome;
+      mo.cumNI[m - 1] = cumulativeNetIncome;
+      mo.distributableProfit[m - 1] = m_distributableProfit;
+      mo.retainedThisYear[m - 1] = m_retainedThisYear;
+      mo.cumulativeRetainedEarnings[m - 1] = cumulativeRetainedEarnings;
+      mo.shareA[m - 1] = m_shareA;
+      mo.shareB[m - 1] = m_shareB;
+      mo.opCoExit[m - 1] = 0;
+      mo.pA_Exit[m - 1] = 0;
+      mo.pB_Exit[m - 1] = 0;
+      mo.ev[m - 1] = 0;
+      mo.pA_Div[m - 1] = m_shareA;
+      mo.pA_Net[m - 1] = m_shareA;
+      mo.pA_Outlay[m - 1] = 0;
+      mo.pA_Cum[m - 1] = 0; // will recalculate later
+      mo.pB_Div[m - 1] = m_shareB;
+      mo.pB_Net[m - 1] = m_shareB;
+      mo.pB_Outlay[m - 1] = 0;
+      mo.pB_Cum[m - 1] = 0;
+      mo.fcf[m - 1] = m_netIncome;
+      mo.bor[m - 1] = bor;
+      mo.pA_Yield[m - 1] = 0;
+      mo.pB_Yield[m - 1] = 0;
+
+      tYear.ipRev += m_ipRev;
+      tYear.opRev += m_opRev;
+      tYear.totalRev += m_totalRev;
+      tYear.totalMedSupp += m_totalMedSupp;
+      tYear.totalDocFee += m_totalDocFee;
+      tYear.grossProfit += m_grossProfit;
+      tYear.staffCost += m_staffCost;
+      tYear.recurringOpex += m_recurringOpex;
+      tYear.ebitdar += m_ebitdar;
+      tYear.rent += m_rent;
+      tYear.ebitda += m_ebitda;
+      tYear.tax += m_tax;
+      tYear.netIncome += m_netIncome;
+      tYear.distributableProfit += m_distributableProfit;
+      tYear.retainedThisYear += m_retainedThisYear;
+      tYear.shareA += m_shareA;
+      tYear.shareB += m_shareB;
+      tYear.pA_Div += m_shareA;
+      tYear.pB_Div += m_shareB;
+      tYear.pA_Net += m_shareA;
+      tYear.pB_Net += m_shareB;
+      tYear.fcf += m_netIncome;
+    }
+  }
+
   // Operating years
   for (let i = 1; i <= projYears; i++) {
-    const currentYear = 2025 + i;
+    const currentYear = 2025 + devYearsCount + i;
     const daysInYear =
       (currentYear % 4 === 0 && currentYear % 100 !== 0) ||
       currentYear % 400 === 0
@@ -827,7 +1026,7 @@ const runOpCoEngine = (assumptions, config) => {
     const breakEvenBor = totalRev > 0 ? (breakEvenRev / totalRev) * bor : 0;
 
     annualData.push({
-      year: `Year ${i + 2}`,
+      year: `Year ${i + devYearsCount}`,
       isOperating: true,
       ipRev: year_ipRev,
       opRev: year_opRev,

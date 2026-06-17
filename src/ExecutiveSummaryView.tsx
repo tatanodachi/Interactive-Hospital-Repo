@@ -533,12 +533,16 @@ export const ExecutiveSummaryView = memo(({
                 {/* Row 1 */}
                 <div className="py-2 flex justify-between items-center hover:bg-[#F9F8F6] px-1 transition-colors">
                   <span className="text-[11px] font-medium text-[#4C4A4B]">Hospital Development Phase</span>
-                  <span className="text-xs font-bold font-sans text-[#1E2F31]">2.0 Years</span>
+                  <span className="text-xs font-bold font-sans text-[#1E2F31]">
+                    {propCoData?.assumptions?.devDurationMonths ? (propCoData.assumptions.devDurationMonths / 12).toFixed(1) : "2.0"} Years
+                  </span>
                 </div>
                 {/* Row 2 */}
                 <div className="py-2 flex justify-between items-center hover:bg-[#F9F8F6] px-1 transition-colors">
                   <span className="text-[11px] font-medium text-[#4C4A4B]">Commercial Operations Start</span>
-                  <span className="text-xs font-bold font-sans text-[#1C6048]">Q3 2028</span>
+                  <span className="text-xs font-bold font-sans text-[#1C6048]">
+                    {propCoData?.assumptions?.devDurationMonths ? `Year ${(Math.ceil(propCoData.assumptions.devDurationMonths / 12) + 1)} (${2025 + Math.ceil(propCoData.assumptions.devDurationMonths / 12) + 1})` : "Year 3 (2028)"}
+                  </span>
                 </div>
                 {/* Row 3 */}
                 <div className="py-2 flex justify-between items-center hover:bg-[#F9F8F6] px-1 transition-colors">
@@ -556,7 +560,9 @@ export const ExecutiveSummaryView = memo(({
               <div className="pt-2">
                 <div className="flex justify-between items-center mb-1.5">
                   <span className="text-[10px] font-bold text-[#4C4A4B]">Occupancy (BOR) Target Ramp</span>
-                  <span className="text-[10px] font-bold font-sans text-[#1C6048]">45% → 65% (+5%/Yr)</span>
+                  <span className="text-[10px] font-bold font-sans text-[#1C6048]">
+                    {opCoData?.assumptions?.borStart ? `${opCoData.assumptions.borStart}%` : "45%"} → {opCoData?.assumptions?.borMax ? `${opCoData.assumptions.borMax}%` : "65%"} (+{opCoData?.assumptions?.borIncrement ? `${opCoData.assumptions.borIncrement}%` : "5%"}/Yr)
+                  </span>
                 </div>
                 <div className="h-[74px] w-full relative bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/50 p-1.5">
                   <ResponsiveContainer width="100%" height="100%">
