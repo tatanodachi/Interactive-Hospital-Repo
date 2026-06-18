@@ -8891,14 +8891,54 @@ const OpCoCascadeView = memo(
                                   tooltip="Nurses, clinical techs, and operational staffing wages."
                                 />
                                 <TableRow
-                                  label="Admin, Mktg, Util & Ins OPEX"
+                                  label="Administrative Expense"
                                   data={columns}
-                                  dk="otherOpex"
-                                  total={data.totals.otherOpex}
+                                  dk="adminOpex"
+                                  total={data.totals.adminOpex}
                                   isDoubleIndent
                                   hasDoubleConnector
                                   isSubtractor
-                                  tooltip="Facility administration, G&A, insurance, marketing, and operator fees."
+                                  tooltip="Administrative support overhead calculated based on administrative expense rate assumptions."
+                                />
+                                <TableRow
+                                  label="Utilities Expense"
+                                  data={columns}
+                                  dk="utilOpex"
+                                  total={data.totals.utilOpex}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="Clinic utilities expense based on utility expense rate assumptions."
+                                />
+                                <TableRow
+                                  label="Marketing Expense"
+                                  data={columns}
+                                  dk="mktgOpex"
+                                  total={data.totals.mktgOpex}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="Marketing expenditures aligned with marketing expense rate assumptions."
+                                />
+                                <TableRow
+                                  label="Hospital Operator Fee"
+                                  data={columns}
+                                  dk="operatorOpex"
+                                  total={data.totals.operatorOpex}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="Hospital management and operator fees."
+                                />
+                                <TableRow
+                                  label="Operational Insurance"
+                                  data={columns}
+                                  dk="insOpex"
+                                  total={data.totals.insOpex}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="Annual facility, equipment, and liability insurance expenditures."
                                 />
                                 <TableRow
                                   label="Facility Lease Rent"

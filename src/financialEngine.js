@@ -1169,6 +1169,7 @@ const runOpCoEngine = (assumptions, config) => {
         (acc, d) => acc + (d.recurringOpex || 0),
         0,
       ),
+      staffCost: annualData.reduce((acc, d) => acc + (d.staffCost || 0), 0),
       otherOpex: annualData.reduce((acc, d) => acc + (d.otherOpex || 0), 0),
       adminOpex: annualData.reduce((acc, d) => acc + (d.adminOpex || 0), 0),
       utilOpex: annualData.reduce((acc, d) => acc + (d.utilOpex || 0), 0),
