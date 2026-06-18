@@ -8656,6 +8656,7 @@ const OpCoCascadeView = memo(
                           label="Staffing & Labor"
                           data={columns}
                           dk="staffCost"
+                          total={data.totals.staffCost}
                           isIndent
                           tooltip={OPCO_FORMULAS.staffCost}
                           isSubtractor
