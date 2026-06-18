@@ -571,6 +571,7 @@ const runOpCoEngine = (assumptions, config) => {
 
     const startM = 12 - transitionOpMonths + 1;
     let ytdEbitda = 0;
+    let cumNI_startOfYear = cumulativeNetIncome;
     for (let m = startM; m <= 12; m++) {
       const days = new Date(currentYear, m, 0).getDate();
       let m_ipCases = ipCases * (days / daysInYear);
@@ -602,7 +603,18 @@ const runOpCoEngine = (assumptions, config) => {
 
       let prevCumNI = cumulativeNetIncome;
       cumulativeNetIncome += m_netIncome;
-      let m_availableForDistribution = Math.max(0, cumulativeNetIncome > 0 ? (prevCumNI < 0 ? cumulativeNetIncome : m_netIncome) : 0);
+      
+      let m_availableForDistribution = 0;
+      if (m === 12) {
+        m_availableForDistribution = Math.max(
+          0,
+          cumulativeNetIncome > 0
+            ? cumNI_startOfYear < 0
+              ? cumulativeNetIncome
+              : cumulativeNetIncome - cumNI_startOfYear
+            : 0
+        );
+      }
       let m_distributableProfit = m_availableForDistribution * ((assumptions.dividendPayoutRatio ?? 100) / 100);
       let m_retainedThisYear = m_availableForDistribution - m_distributableProfit;
 
@@ -839,6 +851,7 @@ const runOpCoEngine = (assumptions, config) => {
       year_ev = 0;
 
     let ytdEbitda = 0;
+    let cumNI_startOfYear = cumulativeNetIncome;
     for (let m = 1; m <= 12; m++) {
       const days = new Date(currentYear, m, 0).getDate();
 
@@ -886,20 +899,27 @@ const runOpCoEngine = (assumptions, config) => {
       let prevCumNI = cumulativeNetIncome;
       cumulativeNetIncome += m_netIncome;
 
-      let m_availableForDistribution = Math.max(
-        0,
-        cumulativeNetIncome > 0
-          ? prevCumNI < 0
-            ? cumulativeNetIncome
-            : m_netIncome
-          : 0,
-      );
+      let m_availableForDistribution = 0;
+      if (m === 12) {
+        m_availableForDistribution = Math.max(
+          0,
+          cumulativeNetIncome > 0
+            ? cumNI_startOfYear < 0
+              ? cumulativeNetIncome
+              : cumulativeNetIncome - cumNI_startOfYear
+            : 0
+        );
+      }
+      
       let m_distributableProfit =
         m_availableForDistribution *
         ((assumptions.dividendPayoutRatio ?? 100) / 100);
       let m_retainedThisYear =
         m_availableForDistribution - m_distributableProfit;
-      cumulativeRetainedEarnings += m_retainedThisYear;
+      
+      if (m === 12) {
+         cumulativeRetainedEarnings += m_retainedThisYear;
+      }
 
       let m_shareA =
         m_distributableProfit * (assumptions.sharingPercentA / 100);
@@ -1110,6 +1130,9 @@ const runOpCoEngine = (assumptions, config) => {
     const cfi_in = d.opCoExit || 0;
     const cfi_out = isY3 ? -(assumptions.workingCapitalOpex || 0) : 0;
 
+    const exitEv = d.ev || 0;
+    const exitRetained = d.opCoExit ? Math.max(0, d.opCoExit - (d.ev || 0)) : 0;
+
     const cff_in = -((d.pA_Outlay || 0) + (d.pB_Outlay || 0));
     const cff_out = -((d.shareA || 0) + (d.shareB || 0)) - ((d.pA_Exit || 0) + (d.pB_Exit || 0));
     const cff = cff_in + cff_out;
@@ -1125,6 +1148,12 @@ const runOpCoEngine = (assumptions, config) => {
         d.monthly.cfi_in = d.monthly.opCoExit.map(x => x || 0);
         d.monthly.cfi_out = d.monthly.opCoExit.map((_, i) => (isY3 && i===0 ? -(assumptions.workingCapitalOpex || 0) : 0));
 
+        d.monthly.exitEv = (d.monthly.ev || []).map(x => x || 0);
+        d.monthly.exitRetained = d.monthly.opCoExit.map((x, i) => {
+          const ev_val = (d.monthly.ev || [])[i] || 0;
+          return x ? Math.max(0, x - ev_val) : 0;
+        });
+
         d.monthly.cff_in = d.monthly.pA_Outlay.map((_, i) => -((d.monthly.pA_Outlay[i] || 0) + (d.monthly.pB_Outlay[i] || 0)));
         d.monthly.cff_out = d.monthly.shareA.map((_, i) => -((d.monthly.shareA[i] || 0) + (d.monthly.shareB[i] || 0)) - ((d.monthly.pA_Exit[i] || 0) + (d.monthly.pB_Exit[i] || 0)));
         d.monthly.cff = d.monthly.cff_in.map((x, i) => x + d.monthly.cff_out[i]);
@@ -1132,7 +1161,7 @@ const runOpCoEngine = (assumptions, config) => {
         d.monthly.netFlow = d.monthly.cfo.map((x, i) => x + d.monthly.cfi[i] + d.monthly.cff[i]);
     }
     
-    return { ...d, cfo, cfo_in, cfo_out, cfi, cfi_in, cfi_out, cff, cff_in, cff_out, netFlow };
+    return { ...d, cfo, cfo_in, cfo_out, cfi, cfi_in, cfi_out, cff, cff_in, cff_out, netFlow, exitEv, exitRetained };
   });
   
   let currentCash = 0;
@@ -1192,6 +1221,8 @@ const runOpCoEngine = (assumptions, config) => {
         0,
       ),
       ev: annualData.reduce((acc, d) => acc + (d.ev || 0), 0),
+      exitEv: annualData.reduce((acc, d) => acc + (d.exitEv || 0), 0),
+      exitRetained: annualData.reduce((acc, d) => acc + (d.exitRetained || 0), 0),
       opCoExit: annualData.reduce((acc, d) => acc + (d.opCoExit || 0), 0),
       pA_Exit: annualData.reduce((acc, d) => acc + (d.pA_Exit || 0), 0),
       pB_Exit: annualData.reduce((acc, d) => acc + (d.pB_Exit || 0), 0),

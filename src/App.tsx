@@ -8988,18 +8988,29 @@ const OpCoCascadeView = memo(
                               isExpandable
                               isExpanded={expandedCfiIn}
                               onExpand={() => setExpandedCfiIn(!expandedCfiIn)}
-                              tooltip="Capital received from OpCo enterprise valuation exit."
+                              tooltip="Capital received from OpCo enterprise valuation and accumulated cash buffer at exit."
                             />
                             {expandedCfiIn && (
-                              <TableRow
-                                label="Enterprise Valuation Exit"
-                                data={columns}
-                                dk="cfi_in"
-                                total={data.totals.cfi_in}
-                                isDoubleIndent
-                                hasDoubleConnector
-                                tooltip="Liquidation proceeds distributed at exit."
-                              />
+                              <>
+                                <TableRow
+                                  label={`Clinical Enterprise Value (${assumptions?.exitMultiple || 15}x EBITDA)`}
+                                  data={columns}
+                                  dk="exitEv"
+                                  total={data.totals.exitEv}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  tooltip="Clinical enterprise valuation calculated as: Annualized Operating EBITDA in Exit Year × Exit Multiple."
+                                />
+                                <TableRow
+                                  label="Clinical Accumulated Retained Cash Buffer"
+                                  data={columns}
+                                  dk="exitRetained"
+                                  total={data.totals.exitRetained}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  tooltip="Accumulated clinical reserves (20% retained after dividends) distributed to partners at exit."
+                                />
+                              </>
                             )}
                             <TableRow
                               label="Cash Outflows (Setup & Working Capital CapEx)"
