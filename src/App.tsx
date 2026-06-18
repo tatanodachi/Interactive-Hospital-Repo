@@ -8858,16 +8858,68 @@ const OpCoCascadeView = memo(
                               tooltip="OPEX costs (staffing, rent, doc fees, supplies, utilities, marketing, insurance, management fees, corporate taxes)."
                             />
                             {expandedCfoOut && (
-                              <TableRow
-                                label="Clinical Operations OPEX & Taxes"
-                                data={columns}
-                                dk="cfo_out"
-                                total={data.totals.cfo_out}
-                                isDoubleIndent
-                                hasDoubleConnector
-                                isSubtractor
-                                tooltip="Outflows for staff, services, supplies, overhead, and taxes."
-                              />
+                              <>
+                                <TableRow
+                                  label="Medical Supplies"
+                                  data={columns}
+                                  dk="totalMedSupp"
+                                  total={data.totals.totalMedSupp}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="Costs for medicines and clinical supplies."
+                                />
+                                <TableRow
+                                  label="Doctor Fees"
+                                  data={columns}
+                                  dk="totalDocFee"
+                                  total={data.totals.totalDocFee}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="Professional specialist provider honorariums."
+                                />
+                                <TableRow
+                                  label="Staffing Costs"
+                                  data={columns}
+                                  dk="staffCost"
+                                  total={data.totals.staffCost}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="Nurses, clinical techs, and operational staffing wages."
+                                />
+                                <TableRow
+                                  label="Admin, Mktg, Util & Ins OPEX"
+                                  data={columns}
+                                  dk="otherOpex"
+                                  total={data.totals.otherOpex}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="Facility administration, G&A, insurance, marketing, and operator fees."
+                                />
+                                <TableRow
+                                  label="Facility Lease Rent"
+                                  data={columns}
+                                  dk="rent"
+                                  total={data.totals.rent}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="Payments delivered to the Property Company (PropCo)."
+                                />
+                                <TableRow
+                                  label="Corporate Income Tax"
+                                  data={columns}
+                                  dk="tax"
+                                  total={data.totals.tax}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="Taxes swept across OpCo financial distributions."
+                                />
+                              </>
                             )}
                           </>
                         )}

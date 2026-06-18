@@ -570,6 +570,7 @@ const runOpCoEngine = (assumptions, config) => {
     }
 
     const startM = 12 - transitionOpMonths + 1;
+    let ytdEbitda = 0;
     for (let m = startM; m <= 12; m++) {
       const days = new Date(currentYear, m, 0).getDate();
       let m_ipCases = ipCases * (days / daysInYear);
@@ -592,9 +593,11 @@ const runOpCoEngine = (assumptions, config) => {
       let m_recurringOpex = m_staffCost + m_otherOpex;
 
       let m_ebitdar = m_grossProfit - m_recurringOpex;
-      let m_rent = annualRent / 12;
+      let m_rent = (m === 12) ? annualRent : 0;
       let m_ebitda = m_ebitdar - m_rent;
-      let m_tax = m_ebitda > 0 ? m_ebitda * (assumptions.corporateTax / 100) : 0;
+      
+      ytdEbitda += m_ebitda;
+      let m_tax = (m === 12 && ytdEbitda > 0) ? ytdEbitda * (assumptions.corporateTax / 100) : 0;
       let m_netIncome = m_ebitda - m_tax;
 
       let prevCumNI = cumulativeNetIncome;
@@ -835,6 +838,7 @@ const runOpCoEngine = (assumptions, config) => {
       year_pB_Exit = 0,
       year_ev = 0;
 
+    let ytdEbitda = 0;
     for (let m = 1; m <= 12; m++) {
       const days = new Date(currentYear, m, 0).getDate();
 
@@ -871,10 +875,12 @@ const runOpCoEngine = (assumptions, config) => {
       let m_ebitdar = m_grossProfit - m_recurringOpex;
 
       // Distributed monthly:
-      let m_rent = annualRent / 12;
+      let m_rent = (m === 12) ? annualRent : 0;
       let m_ebitda = m_ebitdar - m_rent;
+      
+      ytdEbitda += m_ebitda;
       let m_tax =
-        m_ebitda > 0 ? m_ebitda * (assumptions.corporateTax / 100) : 0;
+        (m === 12 && ytdEbitda > 0) ? ytdEbitda * (assumptions.corporateTax / 100) : 0;
       let m_netIncome = m_ebitda - m_tax;
 
       let prevCumNI = cumulativeNetIncome;
@@ -2256,9 +2262,10 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       year_loanSettledAtExit = 0,
       year_grossExitValue = 0;
 
+    let ytdEbt = 0;
     for (let m = 1; m <= 12; m++) {
       // Distributed monthly:
-      let m_revenue = annualRevenue / 12;
+      let m_revenue = (m === 12) ? annualRevenue : 0;
       const m_maint = maint_year / 12,
         m_taxOp = taxOp_year / 12;
       const m_overhead =
@@ -2591,7 +2598,9 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       const m_dep = m_d1 + m_d2 + m_d3 + m_d4 + m_dSharing + m_d5;
 
       const m_ebt = m_ebitda - m_interest - m_dep;
-      const m_tax = m_ebt > 0 ? m_ebt * (assumptions.corporateTax / 100) : 0;
+      
+      ytdEbt += m_ebt;
+      const m_tax = (m === 12 && ytdEbt > 0) ? ytdEbt * (assumptions.corporateTax / 100) : 0;
       const m_netIncome = m_ebt - m_tax;
 
       let m_exit = 0,
