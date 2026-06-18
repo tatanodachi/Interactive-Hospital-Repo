@@ -1110,9 +1110,9 @@ const runOpCoEngine = (assumptions, config) => {
     const cfi_in = d.opCoExit || 0;
     const cfi_out = isY3 ? -(assumptions.workingCapitalOpex || 0) : 0;
 
-    const cff = -(d.pA_Outlay + d.pB_Outlay) - (d.shareA + d.shareB) - (d.pA_Exit + d.pB_Exit);
-    const cff_in = -(d.pA_Outlay + d.pB_Outlay);
-    const cff_out = -(d.shareA + d.shareB) - (d.pA_Exit + d.pB_Exit);
+    const cff_in = -((d.pA_Outlay || 0) + (d.pB_Outlay || 0));
+    const cff_out = -((d.shareA || 0) + (d.shareB || 0)) - ((d.pA_Exit || 0) + (d.pB_Exit || 0));
+    const cff = cff_in + cff_out;
 
     const netFlow = cfo + cfi + cff;
     
@@ -1125,13 +1125,9 @@ const runOpCoEngine = (assumptions, config) => {
         d.monthly.cfi_in = d.monthly.opCoExit.map(x => x || 0);
         d.monthly.cfi_out = d.monthly.opCoExit.map((_, i) => (isY3 && i===0 ? -(assumptions.workingCapitalOpex || 0) : 0));
 
-        d.monthly.cff = d.monthly.pA_Outlay.map((_, i) => 
-            -(d.monthly.pA_Outlay[i] + d.monthly.pB_Outlay[i]) 
-            - (d.monthly.shareA[i] + d.monthly.shareB[i])
-            - (d.monthly.pA_Exit[i] + d.monthly.pB_Exit[i])
-        );
-        d.monthly.cff_in = d.monthly.pA_Outlay.map((_, i) => -(d.monthly.pA_Outlay[i] + d.monthly.pB_Outlay[i]));
-        d.monthly.cff_out = d.monthly.shareA.map((_, i) => -(d.monthly.shareA[i] + d.monthly.shareB[i]) - (d.monthly.pA_Exit[i] + d.monthly.pB_Exit[i]));
+        d.monthly.cff_in = d.monthly.pA_Outlay.map((_, i) => -((d.monthly.pA_Outlay[i] || 0) + (d.monthly.pB_Outlay[i] || 0)));
+        d.monthly.cff_out = d.monthly.shareA.map((_, i) => -((d.monthly.shareA[i] || 0) + (d.monthly.shareB[i] || 0)) - ((d.monthly.pA_Exit[i] || 0) + (d.monthly.pB_Exit[i] || 0)));
+        d.monthly.cff = d.monthly.cff_in.map((x, i) => x + d.monthly.cff_out[i]);
 
         d.monthly.netFlow = d.monthly.cfo.map((x, i) => x + d.monthly.cfi[i] + d.monthly.cff[i]);
     }
