@@ -9290,6 +9290,10 @@ const PropCoDashboardView = memo(
     isPresenting,
     propCoScenario = "manual",
     setPropCoScenario = () => {},
+    onChange,
+    propCoLocked = false,
+    holdCoLocked = false,
+    toggleHoldCoLock = () => {},
   }) => {
     const pieData = useMemo(() => {
       const leasedMedEq =
@@ -9395,62 +9399,100 @@ const PropCoDashboardView = memo(
           <div className="bg-white p-4 rounded-2xl shadow-sm border border-[#D8D8D8] flex flex-col gap-3">
             <div>
               <h3 className="text-sm font-bold text-[#1E2F31] flex items-center gap-2">
-                <Target size={16} className="text-[#1C6048]" /> PropCo Asset Exit Strategy
+                <Target size={16} className={propCoLocked ? "text-[#1C6048]/50" : "text-[#1C6048]"} /> PropCo Asset Exit Strategy
+                {propCoLocked && (
+                  <span className="inline-flex items-center gap-1.5 text-[9px] bg-[#EFEBE7] text-[#9B8B70] px-2 py-0.5 rounded-full font-bold border border-[#D8D8D8]">
+                    <Lock size={10} /> Locked to Master
+                  </span>
+                )}
               </h3>
               <p className="text-[9px] text-[#4C4A4B] mt-1 font-medium leading-relaxed">
-                Configure standalone property-level holding horizons and exit scenarios purely driven by PropCo covenants and asset yields.
+                {propCoLocked
+                  ? "Property exit strategy is locked to follow the Master (HoldCo) Exit. Deselect 'Lock PropCo to Master' in Global Settings or Consolidated Dashboard to override manually."
+                  : "Configure standalone property-level holding horizons and exit scenarios purely driven by PropCo covenants and asset yields."}
               </p>
             </div>
-            <div className="flex flex-wrap gap-1.5 mt-1">
-              <div className="flex-1 min-w-[100px] relative group flex">
+            <div className={`flex flex-wrap gap-1.5 mt-1 ${propCoLocked ? "pointer-events-none opacity-85" : ""}`}>
+              <div className="flex-1 min-w-[100px] relative group flex flex-col justify-start">
                 <button
+                  disabled={propCoLocked}
                   onClick={() => setPropCoScenario("manual")}
-                  className={`w-full px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all ${propCoScenario === "manual" ? "bg-white shadow-sm border border-[#D8D8D8] text-[#1E2F31]" : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                  className={`w-full px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                    propCoLocked
+                      ? propCoScenario === "manual"
+                        ? "bg-[#EFEBE7]/80 border border-[#D8D8D8] text-[#1E2F31]/70"
+                        : "bg-[#F3F4F6]/50 text-[#D1D5DB]/50 border border-[#E5E7EB]/50"
+                      : propCoScenario === "manual"
+                        ? "bg-white shadow-sm border border-[#D8D8D8] text-[#1E2F31]"
+                        : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"
+                  }`}
                 >
                   Manual (Settings)
                 </button>
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
-                  Uses the exit settings defined in PropCo assumptions
+                  {propCoLocked ? "Locked to Master HoldCo exit strategy" : "Uses the exit settings defined in PropCo assumptions"}
                   <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
                 </div>
               </div>
 
               <div className="flex-1 min-w-[100px] relative group flex">
                 <button
+                  disabled={propCoLocked}
                   onClick={() => setPropCoScenario("yr10")}
-                  className={`w-full px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all ${propCoScenario === "yr10" ? "bg-[#1E2F31] shadow-sm border border-[#1E2F31] text-white" : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                  className={`w-full px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                    propCoLocked
+                      ? propCoScenario === "yr10"
+                        ? "bg-[#1E2F31]/15 text-[#1E2F31]/70 border border-[#1E2F31]/20"
+                        : "bg-[#F3F4F6]/50 text-[#D1D5DB]/50 border border-[#E5E7EB]/50"
+                      : propCoScenario === "yr10"
+                        ? "bg-[#1E2F31] shadow-sm border border-[#1E2F31] text-white"
+                        : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"
+                  }`}
                 >
                   Exit in Yr 10
                 </button>
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
-                  Forces the exit on Year 10
+                  {propCoLocked ? "Locked to Master HoldCo exit strategy" : "Forces the exit on Year 10"}
                   <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
                 </div>
               </div>
 
               <div className="flex-1 min-w-[100px] relative group flex">
                 <button
+                  disabled={propCoLocked}
                   onClick={() => setPropCoScenario("breakeven")}
-                  className={`w-full px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all ${propCoScenario === "breakeven" ? "bg-[#1C6048] shadow-sm border border-[#1C6048] text-white" : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                  className={`w-full px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                    propCoLocked
+                      ? propCoScenario === "breakeven"
+                        ? "bg-[#1C6048]/15 text-[#1C6048]/70 border border-[#1C6048]/20"
+                        : "bg-[#F3F4F6]/50 text-[#D1D5DB]/50 border border-[#E5E7EB]/50"
+                      : propCoScenario === "breakeven"
+                        ? "bg-[#1C6048] shadow-sm border border-[#1C6048] text-white"
+                        : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"
+                  }`}
                 >
                   Exit at Breakeven
                 </button>
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
-                  Exits at the end of the year standalone PropCo achieves cumulative equity cash flow breakeven
+                  {propCoLocked ? "Locked to Master HoldCo exit strategy" : "Exits at the end of the year standalone PropCo achieves cumulative equity cash flow breakeven"}
                   <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
                 </div>
               </div>
 
               <div className="flex-1 min-w-[100px] relative group flex">
                 <button
+                  disabled={propCoLocked || !assumptions.includeFinancing}
                   onClick={() => setPropCoScenario("debt_free")}
-                  disabled={!assumptions.includeFinancing}
                   className={`w-full px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
                     !assumptions.includeFinancing
                       ? "bg-[#F3F4F6] text-[#D1D5DB] cursor-not-allowed border border-[#E5E7EB]"
-                      : propCoScenario === "debt_free"
-                        ? "bg-[#9B8B70] shadow-sm border border-[#9B8B70] text-white"
-                        : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"
+                      : propCoLocked
+                        ? propCoScenario === "debt_free"
+                          ? "bg-[#9B8B70]/15 text-[#9B8B70]/70 border border-[#9B8B70]/20"
+                          : "bg-[#F3F4F6]/50 text-[#D1D5DB]/50 border border-[#E5E7EB]/50"
+                        : propCoScenario === "debt_free"
+                          ? "bg-[#9B8B70] shadow-sm border border-[#9B8B70] text-white"
+                          : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"
                   }`}
                 >
                   Exit Post-Debt
@@ -9458,24 +9500,101 @@ const PropCoDashboardView = memo(
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
                   {!assumptions.includeFinancing
                     ? "Requires loan financing to be enabled"
-                    : "Exits only after PropCo reaches breakeven and PropCo debt is fully repaid"}
+                    : propCoLocked
+                      ? "Locked to Master HoldCo exit strategy"
+                      : "Exits only after PropCo reaches breakeven and PropCo debt is fully repaid"}
                   <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
                 </div>
               </div>
 
               <div className="flex-1 min-w-[100px] relative group flex">
                 <button
+                  disabled={propCoLocked}
                   onClick={() => setPropCoScenario("none")}
-                  className={`w-full px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all ${propCoScenario === "none" ? "bg-white shadow-sm border border-[#1C6048] text-[#1C6048]" : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                  className={`w-full px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                    propCoLocked
+                      ? propCoScenario === "none"
+                        ? "bg-[#1C6048]/10 text-[#1C6048]/70 border border-[#1C6048]/20"
+                        : "bg-[#F3F4F6]/50 text-[#D1D5DB]/50 border border-[#E5E7EB]/50"
+                      : propCoScenario === "none"
+                        ? "bg-white shadow-sm border border-[#1C6048] text-[#1C6048]"
+                        : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"
+                  }`}
                 >
                   No Exit (Yield)
                 </button>
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
-                  No exit is calculated; evaluates pure operating yields over 30 years
+                  {propCoLocked ? "Locked to Master HoldCo exit strategy" : "No exit is calculated; evaluates pure operating yields over 30 years"}
                   <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
                 </div>
               </div>
             </div>
+
+            {/* Assumptions Toggles Grid */}
+            {onChange && (
+              <>
+                <hr className="border-t border-[#D8D8D8]/50 my-2" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+                  {/* Lock Master to PropCo toggle */}
+                  <div className="flex items-center justify-between bg-[#F9F8F6] px-3 py-2 rounded-xl border border-[#D8D8D8]/40 hover:border-[#1C6048]/20 transition-all">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold text-[#4C4A4B] flex items-center gap-1.5 whitespace-nowrap">
+                        <Lock
+                          size={13}
+                          className={holdCoLocked ? "text-[#1C6048]" : "text-[#9B8B70]"}
+                        />{" "}
+                        Lock Master to PropCo
+                      </span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                      <input
+                        type="checkbox"
+                        className="sr-only peer"
+                        checked={holdCoLocked}
+                        onChange={toggleHoldCoLock}
+                      />
+                      <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
+                    </label>
+                  </div>
+
+                  {/* Bank Debt Financing Toggle */}
+                  <div className="flex items-center justify-between bg-[#F9F8F6] px-3 py-2 rounded-xl border border-[#D8D8D8]/40 hover:border-[#1C6048]/20 transition-all">
+                    <span className="text-[10px] font-bold text-[#4C4A4B] flex items-center gap-1.5 whitespace-nowrap">
+                      <Landmark size={13} className="text-[#9B8B70]" /> Bank Debt Financing
+                    </span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="sr-only peer"
+                        checked={assumptions?.includeFinancing || false}
+                        onChange={(e) =>
+                          onChange("includeFinancing", e.target.checked)
+                        }
+                      />
+                      <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
+                    </label>
+                  </div>
+
+                  {/* Include Land Cost Toggle */}
+                  <div className="flex items-center justify-between bg-[#F9F8F6] px-3 py-2 rounded-xl border border-[#D8D8D8]/40 hover:border-[#1C6048]/20 transition-all">
+                    <span className="text-[10px] font-bold text-[#4C4A4B] flex items-center gap-1.5 whitespace-nowrap">
+                      <Map size={13} className="text-[#9B8B70]" /> Include Land Cost
+                    </span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="sr-only peer"
+                        checked={assumptions?.includeLand ?? true}
+                        onChange={(e) =>
+                          onChange("includeLand", e.target.checked)
+                        }
+                      />
+                      <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
+                    </label>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           <div
@@ -11090,6 +11209,10 @@ const ConsolidatedDashboardView = memo(
     isPresenting,
     holdCoScenario,
     setHoldCoScenario,
+    holdCoLocked,
+    toggleHoldCoLock,
+    propCoLocked,
+    togglePropCoLock,
   }) => (
     <div
       className={
@@ -11102,50 +11225,82 @@ const ConsolidatedDashboardView = memo(
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-[#D8D8D8] flex flex-col gap-3">
           <div>
             <h3 className="text-sm font-bold text-[#1E2F31] flex items-center gap-2">
-              <Target size={16} className="text-[#1C6048]" /> Master Exit
-              Strategy
+              <Target size={16} className={holdCoLocked ? "text-[#1C6048]/50" : "text-[#1C6048]"} /> Master Exit Strategy
+              {holdCoLocked && (
+                <span className="inline-flex items-center gap-1.5 text-[9px] bg-[#EFEBE7] text-[#9B8B70] px-2 py-0.5 rounded-full font-bold border border-[#D8D8D8]">
+                  <Lock size={10} /> Locked to PropCo
+                </span>
+              )}
             </h3>
             <p className="text-[9px] text-[#4C4A4B] mt-1 font-medium leading-relaxed">
-              Override individual entity settings to simulate master portfolio
-              exits and visualize long-term holding yields.
+              {holdCoLocked
+                ? "Locked to follow the PropCo Exit scenario. Deselect 'Lock Master to PropCo' below to override manually."
+                : "Override individual security and entity settings to simulate combined Master exits and long-term portfolio yields."}
             </p>
           </div>
-          <div className="flex flex-wrap gap-1.5 mt-1">
+          <div className={`flex flex-wrap gap-1.5 mt-1 ${holdCoLocked ? "pointer-events-none opacity-85" : ""}`}>
             <div className="flex-1 min-w-[100px] relative group flex">
               <button
+                disabled={holdCoLocked}
                 onClick={() => setHoldCoScenario("manual")}
-                className={`w-full px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all ${holdCoScenario === "manual" ? "bg-white shadow-sm border border-[#D8D8D8] text-[#1E2F31]" : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                className={`w-full px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                  holdCoLocked
+                    ? holdCoScenario === "manual"
+                      ? "bg-[#EFEBE7]/80 border border-[#D8D8D8] text-[#1E2F31]/70"
+                      : "bg-[#F3F4F6]/50 text-[#D1D5DB]/50 border border-[#E5E7EB]/50"
+                    : holdCoScenario === "manual"
+                      ? "bg-white shadow-sm border border-[#D8D8D8] text-[#1E2F31]"
+                      : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"
+                }`}
               >
                 Manual (Settings)
               </button>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
-                Uses the exit settings defined in the project assumptions
+                {holdCoLocked ? "Locked to PropCo exit strategy" : "Uses the exit settings defined in the project assumptions"}
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
               </div>
             </div>
 
             <div className="flex-1 min-w-[100px] relative group flex">
               <button
+                disabled={holdCoLocked}
                 onClick={() => setHoldCoScenario("yr10")}
-                className={`w-full px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all ${holdCoScenario === "yr10" ? "bg-[#1E2F31] shadow-sm border border-[#1E2F31] text-white" : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                className={`w-full px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                  holdCoLocked
+                    ? holdCoScenario === "yr10"
+                      ? "bg-[#1E2F31]/15 text-[#1E2F31]/70 border border-[#1E2F31]/20"
+                      : "bg-[#F3F4F6]/50 text-[#D1D5DB]/50 border border-[#E5E7EB]/50"
+                    : holdCoScenario === "yr10"
+                      ? "bg-[#1E2F31] shadow-sm border border-[#1E2F31] text-white"
+                      : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"
+                }`}
               >
                 Exit in Yr 10
               </button>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
-                Forces the exit to occur exactly at the end of Year 10
+                {holdCoLocked ? "Locked to PropCo exit strategy" : "Forces the exit to occur exactly at the end of Year 10"}
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
               </div>
             </div>
 
             <div className="flex-1 min-w-[100px] relative group flex">
               <button
+                disabled={holdCoLocked}
                 onClick={() => setHoldCoScenario("breakeven")}
-                className={`w-full px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all ${holdCoScenario === "breakeven" ? "bg-[#1C6048] shadow-sm border border-[#1C6048] text-white" : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                className={`w-full px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                  holdCoLocked
+                    ? holdCoScenario === "breakeven"
+                      ? "bg-[#1C6048]/15 text-[#1C6048]/70 border border-[#1C6048]/20"
+                      : "bg-[#F3F4F6]/50 text-[#D1D5DB]/50 border border-[#E5E7EB]/50"
+                    : holdCoScenario === "breakeven"
+                      ? "bg-[#1C6048] shadow-sm border border-[#1C6048] text-white"
+                      : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"
+                }`}
               >
                 Exit at Breakeven
               </button>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
-                Exits at the end of the year the project achieves operational breakeven
+                {holdCoLocked ? "Locked to PropCo exit strategy" : "Exits at the end of the year the project achieves operational breakeven"}
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
               </div>
             </div>
@@ -11153,13 +11308,17 @@ const ConsolidatedDashboardView = memo(
             <div className="flex-1 min-w-[100px] relative group flex">
               <button
                 onClick={() => setHoldCoScenario("debt_free")}
-                disabled={!propCoAssumptions.includeFinancing}
+                disabled={holdCoLocked || !propCoAssumptions.includeFinancing}
                 className={`w-full px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
                   !propCoAssumptions.includeFinancing
                     ? "bg-[#F3F4F6] text-[#D1D5DB] cursor-not-allowed border border-[#E5E7EB]"
-                    : holdCoScenario === "debt_free"
-                      ? "bg-[#9B8B70] shadow-sm border border-[#9B8B70] text-white"
-                      : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"
+                    : holdCoLocked
+                      ? holdCoScenario === "debt_free"
+                        ? "bg-[#9B8B70]/15 text-[#9B8B70]/70 border border-[#9B8B70]/20"
+                        : "bg-[#F3F4F6]/50 text-[#D1D5DB]/50 border border-[#E5E7EB]/50"
+                      : holdCoScenario === "debt_free"
+                        ? "bg-[#9B8B70] shadow-sm border border-[#9B8B70] text-white"
+                        : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"
                 }`}
               >
                 Exit Post-Debt
@@ -11167,21 +11326,31 @@ const ConsolidatedDashboardView = memo(
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
                 {!propCoAssumptions.includeFinancing
                   ? "Requires debt financing to be enabled"
-                  : "Exits only after operational breakeven is reached and all debt is fully paid off"}
+                  : holdCoLocked
+                    ? "Locked to PropCo exit strategy"
+                    : "Exits only after operational breakeven is reached and all debt is fully paid off"}
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
               </div>
             </div>
 
             <div className="flex-1 min-w-[100px] relative group flex">
               <button
+                disabled={holdCoLocked}
                 onClick={() => setHoldCoScenario("none")}
-                className={`w-full px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all ${holdCoScenario === "none" ? "bg-white shadow-sm border border-[#1C6048] text-[#1C6048]" : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                className={`w-full px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                  holdCoLocked
+                    ? holdCoScenario === "none"
+                      ? "bg-[#1C6048]/10 text-[#1C6048]/70 border border-[#1C6048]/20"
+                      : "bg-[#F3F4F6]/50 text-[#D1D5DB]/50 border border-[#E5E7EB]/50"
+                    : holdCoScenario === "none"
+                      ? "bg-white shadow-sm border border-[#1C6048] text-[#1C6048]"
+                      : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"
+                }`}
               >
                 No Exit (Yield)
               </button>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
-                No exit is calculated; evaluates pure operating yield over a
-                long period
+                {holdCoLocked ? "Locked to PropCo exit strategy" : "No exit is calculated; evaluates pure operating yield over a long period"}
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
               </div>
             </div>
@@ -11217,6 +11386,20 @@ const ConsolidatedDashboardView = memo(
                   onChange={(e) =>
                     handlePropCoChange("includeLand", e.target.checked)
                   }
+                />
+                <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
+              </label>
+            </div>
+            <div className="flex items-center justify-between pt-2 pb-1 border-t border-[#D8D8D8]/50">
+              <span className="text-[10px] font-bold text-[#4C4A4B] flex items-center gap-1.5">
+                <Lock size={14} className={propCoLocked ? "text-[#1C6048]" : "text-[#9B8B70]"} /> Lock PropCo to Master
+              </span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={propCoLocked}
+                  onChange={togglePropCoLock}
                 />
                 <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
               </label>
@@ -15610,6 +15793,42 @@ export default function App() {
 
   const [holdCoScenario, setHoldCoScenario] = useState("manual");
   const [propCoScenario, setPropCoScenario] = useState("manual");
+  const [holdCoLocked, setHoldCoLocked] = useState(false);
+  const [propCoLocked, setPropCoLocked] = useState(false);
+
+  const toggleHoldCoLock = () => {
+    setHoldCoLocked((prev) => {
+      const next = !prev;
+      if (next) {
+        setPropCoLocked(false);
+        setHoldCoScenario(propCoScenario);
+      }
+      return next;
+    });
+  };
+
+  const togglePropCoLock = () => {
+    setPropCoLocked((prev) => {
+      const next = !prev;
+      if (next) {
+        setHoldCoLocked(false);
+        setPropCoScenario(holdCoScenario);
+      }
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (holdCoLocked) {
+      setHoldCoScenario(propCoScenario);
+    }
+  }, [propCoScenario, holdCoLocked]);
+
+  useEffect(() => {
+    if (propCoLocked) {
+      setPropCoScenario(holdCoScenario);
+    }
+  }, [holdCoScenario, propCoLocked]);
 
   useEffect(() => {
     if (!propCoAssumptions.includeFinancing && holdCoScenario === "debt_free") {
@@ -16935,6 +17154,10 @@ export default function App() {
                   isPresenting={isPresenting}
                   propCoScenario={propCoScenario}
                   setPropCoScenario={setPropCoScenario}
+                  onChange={handlePropCoChange}
+                  propCoLocked={propCoLocked}
+                  holdCoLocked={holdCoLocked}
+                  toggleHoldCoLock={toggleHoldCoLock}
                 />
               )}
               {activeTab === "comprehensive" && (
@@ -16992,6 +17215,10 @@ export default function App() {
                   isPresenting={isPresenting}
                   holdCoScenario={holdCoScenario}
                   setHoldCoScenario={setHoldCoScenario}
+                  holdCoLocked={holdCoLocked}
+                  toggleHoldCoLock={toggleHoldCoLock}
+                  propCoLocked={propCoLocked}
+                  togglePropCoLock={togglePropCoLock}
                 />
               )}
               {activeTab === "comprehensive" && (
@@ -17362,15 +17589,66 @@ export default function App() {
                 <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
               </label>
             </div>
+            {/* Symmetrical Exit Locks */}
+            <div className="space-y-2 pt-2 border-t border-[#D8D8D8]/50">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
+                  <Lock size={14} className={propCoLocked ? "text-[#1C6048]" : "text-[#9B8B70]"} /> Lock PropCo to Master
+                </span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={propCoLocked}
+                    onChange={togglePropCoLock}
+                  />
+                  <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
+                </label>
+              </div>
+            </div>
             {/* Dropdown: Master Exit Strategy */}
             <div className="flex items-center justify-between mt-2">
               <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
-                <Target size={14} className="text-[#1C6048]" /> Master Exit
+                <Target size={14} className={holdCoLocked ? "text-[#1C6048]/50" : "text-[#1C6048]"} /> Master Exit
+                {holdCoLocked && <Lock size={10} className="text-[#1C6048]" />}
               </span>
               <select
-                className="w-[130px] bg-white border border-[#D8D8D8] text-[#1E2F31] text-[10px] rounded p-1 font-bold focus:outline-none focus:border-[#1C6048]"
+                disabled={holdCoLocked}
+                className={`w-[130px] text-[10px] rounded p-1 font-bold focus:outline-none transition-all ${
+                  holdCoLocked
+                    ? "bg-[#EFEBE7]/80 text-[#9B8B70] cursor-not-allowed border-[#D8D8D8]"
+                    : "bg-white border border-[#D8D8D8] text-[#1E2F31] focus:border-[#1C6048]"
+                }`}
                 value={holdCoScenario}
                 onChange={(e) => setHoldCoScenario(e.target.value)}
+              >
+                <option value="manual">Manual (Settings)</option>
+                <option value="yr10">Exit in Yr 10</option>
+                <option value="breakeven">Exit at Breakeven</option>
+                <option
+                  value="debt_free"
+                  disabled={!propCoAssumptions?.includeFinancing}
+                >
+                  Exit Post-Debt
+                </option>
+                <option value="none">No Exit (Yield)</option>
+              </select>
+            </div>
+            {/* Dropdown: PropCo Exit Strategy */}
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
+                <Target size={14} className={propCoLocked ? "text-[#9B8B70]/50" : "text-[#9B8B70]"} /> PropCo Exit
+                {propCoLocked && <Lock size={10} className="text-[#9B8B70]" />}
+              </span>
+              <select
+                disabled={propCoLocked}
+                className={`w-[130px] text-[10px] rounded p-1 font-bold focus:outline-none transition-all ${
+                  propCoLocked
+                    ? "bg-[#EFEBE7]/80 text-[#9B8B70] cursor-not-allowed border-[#D8D8D8]"
+                    : "bg-white border border-[#D8D8D8] text-[#1E2F31] focus:border-[#1C6048]"
+                }`}
+                value={propCoScenario}
+                onChange={(e) => setPropCoScenario(e.target.value)}
               >
                 <option value="manual">Manual (Settings)</option>
                 <option value="yr10">Exit in Yr 10</option>
