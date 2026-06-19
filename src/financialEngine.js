@@ -2293,7 +2293,7 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
     let ytdEbt = 0;
     for (let m = 1; m <= 12; m++) {
       // Distributed monthly:
-      let m_revenue = (m === 12) ? annualRevenue : 0;
+      let m_revenue = annualRevenue / 12;
       const m_maint = maint_year / 12,
         m_taxOp = taxOp_year / 12;
       const m_overhead =

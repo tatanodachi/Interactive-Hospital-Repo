@@ -9288,6 +9288,8 @@ const PropCoDashboardView = memo(
     teaserContent,
     setTab,
     isPresenting,
+    propCoScenario = "manual",
+    setPropCoScenario = () => {},
   }) => {
     const pieData = useMemo(() => {
       const leasedMedEq =
@@ -9389,6 +9391,92 @@ const PropCoDashboardView = memo(
               <MarkdownRenderer content={teaserContent} />
             </div>
           )}
+
+          <div className="bg-white p-4 rounded-2xl shadow-sm border border-[#D8D8D8] flex flex-col gap-3">
+            <div>
+              <h3 className="text-sm font-bold text-[#1E2F31] flex items-center gap-2">
+                <Target size={16} className="text-[#1C6048]" /> PropCo Asset Exit Strategy
+              </h3>
+              <p className="text-[9px] text-[#4C4A4B] mt-1 font-medium leading-relaxed">
+                Configure standalone property-level holding horizons and exit scenarios purely driven by PropCo covenants and asset yields.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              <div className="flex-1 min-w-[100px] relative group flex">
+                <button
+                  onClick={() => setPropCoScenario("manual")}
+                  className={`w-full px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all ${propCoScenario === "manual" ? "bg-white shadow-sm border border-[#D8D8D8] text-[#1E2F31]" : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                >
+                  Manual (Settings)
+                </button>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
+                  Uses the exit settings defined in PropCo assumptions
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
+                </div>
+              </div>
+
+              <div className="flex-1 min-w-[100px] relative group flex">
+                <button
+                  onClick={() => setPropCoScenario("yr10")}
+                  className={`w-full px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all ${propCoScenario === "yr10" ? "bg-[#1E2F31] shadow-sm border border-[#1E2F31] text-white" : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                >
+                  Exit in Yr 10
+                </button>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
+                  Forces the exit on Year 10
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
+                </div>
+              </div>
+
+              <div className="flex-1 min-w-[100px] relative group flex">
+                <button
+                  onClick={() => setPropCoScenario("breakeven")}
+                  className={`w-full px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all ${propCoScenario === "breakeven" ? "bg-[#1C6048] shadow-sm border border-[#1C6048] text-white" : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                >
+                  Exit at Breakeven
+                </button>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
+                  Exits at the end of the year standalone PropCo achieves cumulative equity cash flow breakeven
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
+                </div>
+              </div>
+
+              <div className="flex-1 min-w-[100px] relative group flex">
+                <button
+                  onClick={() => setPropCoScenario("debt_free")}
+                  disabled={!assumptions.includeFinancing}
+                  className={`w-full px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                    !assumptions.includeFinancing
+                      ? "bg-[#F3F4F6] text-[#D1D5DB] cursor-not-allowed border border-[#E5E7EB]"
+                      : propCoScenario === "debt_free"
+                        ? "bg-[#9B8B70] shadow-sm border border-[#9B8B70] text-white"
+                        : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"
+                  }`}
+                >
+                  Exit Post-Debt
+                </button>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
+                  {!assumptions.includeFinancing
+                    ? "Requires loan financing to be enabled"
+                    : "Exits only after PropCo reaches breakeven and PropCo debt is fully repaid"}
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
+                </div>
+              </div>
+
+              <div className="flex-1 min-w-[100px] relative group flex">
+                <button
+                  onClick={() => setPropCoScenario("none")}
+                  className={`w-full px-2 py-1.5 rounded-lg text-[10px] font-bold transition-all ${propCoScenario === "none" ? "bg-white shadow-sm border border-[#1C6048] text-[#1C6048]" : "bg-[#EFEBE7] text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                >
+                  No Exit (Yield)
+                </button>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
+                  No exit is calculated; evaluates pure operating yields over 30 years
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div
             className={`grid grid-cols-1 md:grid-cols-2 ${isPresenting ? "lg:grid-cols-2" : "lg:grid-cols-4"} gap-4`}
@@ -11057,7 +11145,7 @@ const ConsolidatedDashboardView = memo(
                 Exit at Breakeven
               </button>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
-                Exits the year after the project achieves operational breakeven
+                Exits at the end of the year the project achieves operational breakeven
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
               </div>
             </div>
@@ -15521,12 +15609,19 @@ export default function App() {
   );
 
   const [holdCoScenario, setHoldCoScenario] = useState("manual");
+  const [propCoScenario, setPropCoScenario] = useState("manual");
 
   useEffect(() => {
     if (!propCoAssumptions.includeFinancing && holdCoScenario === "debt_free") {
       setHoldCoScenario("breakeven");
     }
   }, [propCoAssumptions.includeFinancing, holdCoScenario]);
+
+  useEffect(() => {
+    if (!propCoAssumptions.includeFinancing && propCoScenario === "debt_free") {
+      setPropCoScenario("breakeven");
+    }
+  }, [propCoAssumptions.includeFinancing, propCoScenario]);
 
   // --- PRESENTATION NAVIGATION LOGIC ---
   const presentationSteps = useMemo(
@@ -15728,10 +15823,9 @@ export default function App() {
           : 30;
       if (beOpYear < 1) beOpYear = 1;
 
-      // We set the exit to occur at the end of the year AFTER it has already crossed over
-      // so the exit value does not artificially accelerate the payback fraction.
-      beOpYear = beOpYear + 1;
-
+      // We set the exit to occur at the end of the breakeven year
+      // (Option 1: Calendar Year-End).
+      
       return {
         exitYear: Math.min(beOpYear, 30),
         projYears: Math.min(beOpYear, 30),
@@ -15739,6 +15833,77 @@ export default function App() {
     }
     return { exitYear: 10, projYears: 10 };
   }, [holdCoScenario, opCoAssumptions, propCoAssumptions, groups, resolvedDevDuration]);
+
+  const propCoProjConfig = useMemo(() => {
+    if (propCoScenario === "manual")
+      return {
+        exitYear: propCoAssumptions.includeTerminalValue ? 10 : -1,
+        projYears: 10,
+      };
+    if (propCoScenario === "none") {
+      const y = Math.max(15, (propCoAssumptions.loanTenor || 15) + 2);
+      return { exitYear: -1, projYears: Math.min(y, 30) };
+    }
+    if (propCoScenario === "yr10") return { exitYear: 10, projYears: 10 };
+    if (propCoScenario === "debt_free") {
+      const p1 = { exitYear: -1, projYears: 30 };
+      const op1 = runOpCoEngine({ ...opCoAssumptions, devDurationMonths: resolvedDevDuration }, p1);
+      const pr1 = runPropCoEngine({ ...propCoAssumptions, devDurationMonths: resolvedDevDuration }, op1, p1, groups);
+
+      const devYears = Math.max(
+        1,
+        Math.ceil(resolvedDevDuration / 12),
+      );
+      const exactOverallPayback = pr1.metrics.payback;
+      let beOpYear =
+        exactOverallPayback > 0
+          ? Math.ceil(exactOverallPayback) - devYears + 1
+          : 30;
+
+      const y = Math.max(1, propCoAssumptions.loanTenor || 15);
+      const targetYear = Math.max(beOpYear, y);
+      return {
+        exitYear: Math.min(targetYear, 30),
+        projYears: Math.min(targetYear, 30),
+      };
+    }
+    if (propCoScenario === "breakeven") {
+      const p1 = { exitYear: -1, projYears: 30 };
+      const op1 = runOpCoEngine({ ...opCoAssumptions, devDurationMonths: resolvedDevDuration }, p1);
+      const pr1 = runPropCoEngine({ ...propCoAssumptions, devDurationMonths: resolvedDevDuration }, op1, p1, groups);
+
+      const devYears = Math.max(
+        1,
+        Math.ceil(resolvedDevDuration / 12),
+      );
+      const exactOverallPayback = pr1.metrics.payback;
+
+      let beOpYear =
+        exactOverallPayback > 0
+          ? Math.ceil(exactOverallPayback) - devYears
+          : 30;
+      if (beOpYear < 1) beOpYear = 1;
+
+      // We set the exit to occur at the end of the breakeven year
+      // (Option 1: Calendar Year-End).
+
+      return {
+        exitYear: Math.min(beOpYear, 30),
+        projYears: Math.min(beOpYear, 30),
+      };
+    }
+    return { exitYear: 10, projYears: 10 };
+  }, [propCoScenario, opCoAssumptions, propCoAssumptions, groups, resolvedDevDuration]);
+
+  const standalonePropCoOpCoData = useMemo(
+    () => runOpCoEngine({ ...opCoAssumptions, devDurationMonths: resolvedDevDuration }, propCoProjConfig),
+    [opCoAssumptions, propCoProjConfig, resolvedDevDuration],
+  );
+
+  const standalonePropCoData = useMemo(
+    () => runPropCoEngine({ ...propCoAssumptions, devDurationMonths: resolvedDevDuration }, standalonePropCoOpCoData, propCoProjConfig, groups),
+    [propCoAssumptions, standalonePropCoOpCoData, propCoProjConfig, groups, resolvedDevDuration],
+  );
 
   const opCoModelData = useMemo(
     () => runOpCoEngine({ ...opCoAssumptions, devDurationMonths: resolvedDevDuration }, projConfig),
@@ -16759,7 +16924,7 @@ export default function App() {
             <div className="animate-in fade-in duration-500">
               {activeTab === "dashboard" && (
                 <PropCoDashboardView
-                  data={propCoModelData}
+                  data={standalonePropCoData}
                   assumptions={propCoAssumptions}
                   generateTeaser={generateTeaser}
                   isTeaserLoading={isTeaserLoading}
@@ -16768,11 +16933,13 @@ export default function App() {
                   teaserContent={teaserContent}
                   setTab={setActiveTab}
                   isPresenting={isPresenting}
+                  propCoScenario={propCoScenario}
+                  setPropCoScenario={setPropCoScenario}
                 />
               )}
               {activeTab === "comprehensive" && (
                 <PropCoCascadeView
-                  data={propCoModelData}
+                  data={standalonePropCoData}
                   onExport={() => {}}
                   viewResolution={viewResolution}
                   setViewResolution={setViewResolution}
@@ -16781,7 +16948,7 @@ export default function App() {
               {activeTab === "sensitivity" && (
                 <PropCoSensitivityView
                   assumptions={propCoAssumptions}
-                  opCoModelData={opCoModelData}
+                  opCoModelData={standalonePropCoOpCoData}
                   groups={groups}
                 />
               )}
@@ -16789,7 +16956,7 @@ export default function App() {
                 <SettingsPasswordGate>
                   <PropCoSettingsView
                     assumptions={propCoAssumptions}
-                    data={propCoModelData}
+                    data={standalonePropCoData}
                     onChange={handlePropCoChange}
                     onValidate={validateAssumptions}
                     isLocked={isLockedPropCo}
