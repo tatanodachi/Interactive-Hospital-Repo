@@ -81,6 +81,7 @@ import {
   FolderTree,
   BarChartHorizontal,
   Layers,
+  Sliders,
   Microscope,
   Bed,
   Timer,
@@ -11390,19 +11391,38 @@ const ConsolidatedDashboardView = memo(
                 <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
               </label>
             </div>
-            <div className="flex items-center justify-between pt-2 pb-1 border-t border-[#D8D8D8]/50">
-              <span className="text-[10px] font-bold text-[#4C4A4B] flex items-center gap-1.5">
-                <Lock size={14} className={propCoLocked ? "text-[#1C6048]" : "text-[#9B8B70]"} /> Lock PropCo to Master
-              </span>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  checked={propCoLocked}
-                  onChange={togglePropCoLock}
-                />
-                <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
-              </label>
+            <div className="pt-2 border-t border-[#D8D8D8]/50 space-y-2 pb-1">
+              {/* Lock Master to PropCo */}
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-[#4C4A4B] flex items-center gap-1.5">
+                  <Lock size={14} className={holdCoLocked ? "text-[#1C6048]" : "text-[#4C4A4B]/40"} /> Lock Master to PropCo
+                </span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={holdCoLocked}
+                    onChange={toggleHoldCoLock}
+                  />
+                  <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
+                </label>
+              </div>
+
+              {/* Lock PropCo to Master */}
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-[#4C4A4B] flex items-center gap-1.5">
+                  <Lock size={14} className={propCoLocked ? "text-[#1C6048]" : "text-[#4C4A4B]/40"} /> Lock PropCo to Master
+                </span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={propCoLocked}
+                    onChange={togglePropCoLock}
+                  />
+                  <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
+                </label>
+              </div>
             </div>
           </div>
         </div>
@@ -13756,6 +13776,84 @@ function AIAuditView({
 // ==========================================
 // MASTER TIMELINE VIEW (GANTT CHART)
 // ==========================================
+const TIMELINE_PRESETS = {
+  baseline: {
+    name: "Scenario 1: Baseline (24-Month Build)",
+    description: "Standard clinical rollouts, commercial opening in Month 25 (default baseline).",
+    badge: "24-Mo Baseline",
+    badgeColor: "bg-[#1C6048]/10 text-[#1C6048] border border-[#1C6048]/20",
+    tasks: {
+      t1: { start: 1, duration: 6 },
+      t2: { start: 7, duration: 4 },
+      t3: { start: 8, duration: 4 },
+      t4: { start: 9, duration: 3 },
+      t5: { start: 12, duration: 3 },
+      t6_1: { start: 1, duration: 4 },
+      t6_2: { start: 5, duration: 10 },
+      t6_3: { start: 9, duration: 4 },
+      t6_4: { start: 12, duration: 8 },
+      t7_1: { start: 15, duration: 4 },
+      t7_2: { start: 19, duration: 4 },
+      t8: { start: 9, duration: 6 },
+      t9: { start: 9, duration: 6 },
+      t10: { start: 16, duration: 3 },
+      t11: { start: 19, duration: 3 },
+      t12: { start: 22, duration: 3 },
+      t13: { start: 25, duration: 1 },
+    }
+  },
+  fast_track: {
+    name: "Scenario 2: Fast-Track (18-Month Build)",
+    description: "Accelerated licensing and construction phases, commercial opening in Month 19.",
+    badge: "18-Mo Fast-Track",
+    badgeColor: "bg-indigo-50 text-indigo-700 border border-indigo-200/50",
+    tasks: {
+      t1: { start: 1, duration: 4 },
+      t2: { start: 5, duration: 3 },
+      t3: { start: 6, duration: 3 },
+      t4: { start: 7, duration: 2 },
+      t5: { start: 9, duration: 2 },
+      t6_1: { start: 1, duration: 3 },
+      t6_2: { start: 4, duration: 7 },
+      t6_3: { start: 7, duration: 3 },
+      t6_4: { start: 9, duration: 6 },
+      t7_1: { start: 11, duration: 3 },
+      t7_2: { start: 14, duration: 3 },
+      t8: { start: 7, duration: 4 },
+      t9: { start: 7, duration: 4 },
+      t10: { start: 12, duration: 2 },
+      t11: { start: 14, duration: 2 },
+      t12: { start: 16, duration: 2 },
+      t13: { start: 19, duration: 1 },
+    }
+  },
+  delayed: {
+    name: "Scenario 3: Delayed/Phased (30-Month Build)",
+    description: "Extended regulatory approvals and complex excavations, commercial opening in Month 31.",
+    badge: "30-Mo Delayed",
+    badgeColor: "bg-[#9B8B70]/10 text-[#4C4A4B] border border-[#9B8B70]/25",
+    tasks: {
+      t1: { start: 1, duration: 8 },
+      t2: { start: 9, duration: 5 },
+      t3: { start: 10, duration: 5 },
+      t4: { start: 11, duration: 4 },
+      t5: { start: 15, duration: 4 },
+      t6_1: { start: 1, duration: 5 },
+      t6_2: { start: 6, duration: 12 },
+      t6_3: { start: 11, duration: 5 },
+      t6_4: { start: 15, duration: 10 },
+      t7_1: { start: 19, duration: 5 },
+      t7_2: { start: 24, duration: 5 },
+      t8: { start: 11, duration: 8 },
+      t9: { start: 11, duration: 8 },
+      t10: { start: 20, duration: 4 },
+      t11: { start: 24, duration: 4 },
+      t12: { start: 27, duration: 4 },
+      t13: { start: 31, duration: 1 },
+    }
+  }
+};
+
 const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
   const [activeYearFilter, setActiveYearFilter] = useState("All");
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(6);
@@ -13779,6 +13877,57 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
 
   const [activeMonthPicker, setActiveMonthPicker] = useState(null);
   const [tempPickerYear, setTempPickerYear] = useState(START_YEAR);
+
+  const [pendingScenarioKey, setPendingScenarioKey] = useState(null);
+
+  const detectedScenarioKey = useMemo(() => {
+    const flat = {};
+    groups.forEach((g) => {
+      (g.tasks || []).forEach((t) => {
+        flat[t.id] = { start: Number(t.start), duration: Number(t.duration) };
+      });
+    });
+
+    for (const [key, preset] of Object.entries(TIMELINE_PRESETS)) {
+      let match = true;
+      for (const [taskId, vals] of Object.entries(preset.tasks)) {
+        if (taskId === "t10") continue; // t10 represents the Oncology Lease, which is dynamically derived in the synchronize hook and overrides manual schedule values.
+        if (
+          !flat[taskId] ||
+          Number(flat[taskId].start) !== vals.start ||
+          Number(flat[taskId].duration) !== vals.duration
+        ) {
+          match = false;
+          break;
+        }
+      }
+      if (match) return key;
+    }
+    return "custom";
+  }, [groups]);
+
+  const handleApplyPreset = (presetKey) => {
+    const selectedPreset = TIMELINE_PRESETS[presetKey];
+    if (!selectedPreset) return;
+
+    setGroups((prevGroups) => {
+      return prevGroups.map((group) => {
+        const nextTasks = group.tasks.map((task) => {
+          const presetVal = selectedPreset.tasks[task.id];
+          if (presetVal) {
+            return {
+              ...task,
+              start: presetVal.start,
+              duration: presetVal.duration,
+            };
+          }
+          return task;
+        });
+        return { ...group, tasks: nextTasks };
+      });
+    });
+    setPendingScenarioKey(null);
+  };
 
   const TIMELINE_MONTHS = useMemo(() => {
     const fullMonths = generateTimelineMonths(START_YEAR, endYear);
@@ -14470,6 +14619,98 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
           </div>
         </div>
       </div>
+
+      {/* Sleek, Compact Scenario Switcher Toolbar */}
+      <div className="bg-white px-5 py-3.5 rounded-2xl border border-[#D8D8D8] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10 -mt-2">
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="p-2 bg-[#1C6048]/10 rounded-xl text-[#1C6048]">
+            <Sliders size={15} />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black uppercase tracking-wider text-[#1E2F31]">
+              Timeline Scenario
+            </span>
+            <span className="text-[9px] text-[#4C4A4B] font-medium leading-none mt-0.5">
+              Switch underwriting schedules instantly
+            </span>
+          </div>
+        </div>
+
+        {/* Segmented Controller Button Row */}
+        <div className="flex bg-[#F9F8F6] p-1 rounded-xl border border-[#D8D8D8] shrink-0 self-start md:self-auto gap-0.5">
+          {Object.entries(TIMELINE_PRESETS).map(([key, preset]) => {
+            const isActive = detectedScenarioKey === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setPendingScenarioKey(key)}
+                className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                  isActive
+                    ? "bg-white text-[#1C6048] shadow-sm border border-[#D8D8D8]/50"
+                    : "text-[#4C4A4B] hover:text-[#1E2F31]"
+                }`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-[#1C6048]" : "bg-[#4C4A4B]/20"}`}></span>
+                {preset.badge}
+              </button>
+            );
+          })}
+          
+          {detectedScenarioKey === "custom" && (
+            <div className="px-3 py-1.5 text-[9px] font-black uppercase text-amber-700 bg-amber-50/50 rounded-lg border border-amber-200/40 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+              Custom Sandbox Active
+            </div>
+          )}
+        </div>
+
+        {/* Dynamic Scenario Description Panel */}
+        <div className="hidden lg:flex items-center gap-2 max-w-sm text-right text-[10px] text-[#4C4A4B] font-medium leading-normal">
+          {detectedScenarioKey !== "custom" ? (
+            <span>
+              Active Preset: <strong className="text-[#1E2F31] font-black">{TIMELINE_PRESETS[detectedScenarioKey]?.name}</strong>. Commercial Opening at Month {TIMELINE_PRESETS[detectedScenarioKey]?.tasks.t13.start}.
+            </span>
+          ) : (
+            <span className="text-amber-800 font-semibold">
+              Sandbox Active: Timings manually optimized. Fully reactive to financial metrics.
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Inline Confirmation Overwrite Panel */}
+      {pendingScenarioKey && (
+        <div className="bg-[#EFEBE7]/80 border border-[#D8D8D8] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in slide-in-from-top-2 duration-200 -mt-2 relative z-10">
+          <div className="flex items-start gap-2.5">
+            <span className="text-sm mt-0.5">⚠️</span>
+            <div className="flex flex-col">
+              <span className="text-[11px] font-black text-[#1E2F31]">
+                Confirm Scenario Shift
+              </span>
+              <span className="text-[10px] text-[#4C4A4B] mt-0.5 leading-snug max-w-xl">
+                Ready to shift to <strong className="text-[#1E2F31] font-black">"{TIMELINE_PRESETS[pendingScenarioKey]?.name}"</strong>? This will overwrite your active manual timing adjustments for all milestones.
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setPendingScenarioKey(null)}
+              className="px-3 py-1.5 rounded-lg border border-[#D8D8D8] bg-white text-[9px] font-black uppercase text-[#4C4A4B] hover:bg-[#F9F8F6] transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => handleApplyPreset(pendingScenarioKey)}
+              className="px-3       py-1.5 rounded-lg bg-[#1C6048] text-white text-[9px] font-black uppercase shadow-sm hover:bg-[#1C6048]/90 transition-all"
+            >
+              Confirm & Overwrite
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-stretch relative z-10">
         <div className="xl:col-span-3 bg-white border border-[#D8D8D8] rounded-[24px] p-5 flex flex-col gap-4 shadow-sm max-h-[640px]">
@@ -17591,9 +17832,26 @@ export default function App() {
             </div>
             {/* Symmetrical Exit Locks */}
             <div className="space-y-2 pt-2 border-t border-[#D8D8D8]/50">
+              {/* Lock Master to PropCo */}
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
-                  <Lock size={14} className={propCoLocked ? "text-[#1C6048]" : "text-[#9B8B70]"} /> Lock PropCo to Master
+                  <Lock size={14} className={holdCoLocked ? "text-[#1C6048]" : "text-[#4C4A4B]/40"} /> Lock Master to PropCo
+                </span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={holdCoLocked}
+                    onChange={toggleHoldCoLock}
+                  />
+                  <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
+                </label>
+              </div>
+
+              {/* Lock PropCo to Master */}
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
+                  <Lock size={14} className={propCoLocked ? "text-[#1C6048]" : "text-[#4C4A4B]/40"} /> Lock PropCo to Master
                 </span>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input

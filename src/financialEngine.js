@@ -594,7 +594,7 @@ const runOpCoEngine = (assumptions, config) => {
       let m_recurringOpex = m_staffCost + m_otherOpex;
 
       let m_ebitdar = m_grossProfit - m_recurringOpex;
-      let m_rent = (m === 12) ? annualRent : 0;
+      let m_rent = annualRent * (days / daysInYear);
       let m_ebitda = m_ebitdar - m_rent;
       
       ytdEbitda += m_ebitda;
@@ -888,7 +888,7 @@ const runOpCoEngine = (assumptions, config) => {
       let m_ebitdar = m_grossProfit - m_recurringOpex;
 
       // Distributed monthly:
-      let m_rent = (m === 12) ? annualRent : 0;
+      let m_rent = annualRent * (days / daysInYear);
       let m_ebitda = m_ebitdar - m_rent;
       
       ytdEbitda += m_ebitda;
