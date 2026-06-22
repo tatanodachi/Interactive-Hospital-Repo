@@ -8350,14 +8350,21 @@ const OpCoCascadeView = memo(
               }
               className={`px-3 py-3 text-right border-b-2 border-r border-[#D8D8D8] ${
                 col.colType === "year"
-                  ? "cursor-pointer hover:bg-[#EFEBE7] font-black underline decoration-dashed underline-offset-4 "
+                  ? "cursor-pointer hover:bg-[#EFEBE7] font-black group "
                   : "font-medium text-[10px] "
               } ${!col.isOperating ? "bg-[#F9F8F6] text-[#9B8B70]" : "bg-white text-[#1E2F31]"} ${col.isMonth ? "min-w-[65px] whitespace-nowrap" : "min-w-[90px]"}`}
             >
               {col.colType === "year" ? (
-                <div className="flex items-center justify-end gap-1">
-                  {expandedYears[col.defaultLabel] ? "-" : "+"}
-                  {String(col.defaultLabel)}
+                <div className="flex items-center justify-end gap-1.5">
+                  <span className="text-[14px] font-black">{expandedYears[col.defaultLabel] ? "-" : "+"}</span>
+                  <div className="flex flex-col items-center">
+                    <span className="border-b-[1.5px] border-dashed border-transparent group-hover:border-current pb-[2px]">{String(col.defaultLabel)}</span>
+                    {String(col.defaultLabel).startsWith("Year ") && !isNaN(Number(String(col.defaultLabel).replace("Year ", ""))) && (
+                      <span className="text-[10px] font-mono font-normal tracking-tight border-b-[1.5px] border-dashed border-transparent group-hover:border-current pb-[2px]">
+                        ({2025 + Number(String(col.defaultLabel).replace("Year ", ""))})
+                      </span>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div className="text-center w-full">
@@ -10051,14 +10058,21 @@ const PropCoCascadeView = memo(
               }
               className={`px-3 py-3 text-right border-b-2 border-r border-[#D8D8D8] ${
                 col.colType === "year"
-                  ? "cursor-pointer hover:bg-white font-black underline decoration-dashed underline-offset-4 "
+                  ? "cursor-pointer hover:bg-white font-black group "
                   : "font-medium text-[10px] "
               } bg-[#EFEBE7] ${!col.isOperating ? "text-[#9B8B70]" : "text-[#1E2F31]"} ${col.isMonth ? "min-w-[65px] whitespace-nowrap" : "min-w-[90px]"}`}
             >
               {col.colType === "year" ? (
-                <div className="flex items-center justify-end gap-1">
-                  {expandedYears[col.defaultLabel] ? "-" : "+"}
-                  {String(col.defaultLabel)}
+                <div className="flex items-center justify-end gap-1.5">
+                  <span className="text-[14px] font-black">{expandedYears[col.defaultLabel] ? "-" : "+"}</span>
+                  <div className="flex flex-col items-center">
+                    <span className="border-b-[1.5px] border-dashed border-transparent group-hover:border-current pb-[2px]">{String(col.defaultLabel)}</span>
+                    {String(col.defaultLabel).startsWith("Year ") && !isNaN(Number(String(col.defaultLabel).replace("Year ", ""))) && (
+                      <span className="text-[10px] font-mono font-normal tracking-tight border-b-[1.5px] border-dashed border-transparent group-hover:border-current pb-[2px]">
+                        ({2025 + Number(String(col.defaultLabel).replace("Year ", ""))})
+                      </span>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div className="text-center w-full">
@@ -11927,14 +11941,21 @@ const ConsolidatedCascadeView = memo(
               }
               className={`px-3 py-3 text-right border-b-2 border-r border-[#D8D8D8] ${
                 col.colType === "year"
-                  ? "cursor-pointer hover:bg-white font-black underline decoration-dashed underline-offset-4 "
+                  ? "cursor-pointer hover:bg-white font-black group "
                   : "font-medium text-[10px] "
               } bg-[#EFEBE7] ${!col.isOperating ? "text-[#9B8B70]" : "text-[#1E2F31]"} ${col.isMonth ? "min-w-[65px] whitespace-nowrap" : "min-w-[90px]"}`}
             >
               {col.colType === "year" ? (
-                <div className="flex items-center justify-end gap-1">
-                  {expandedYears[col.defaultLabel] ? "-" : "+"}
-                  {String(col.defaultLabel)}
+                <div className="flex items-center justify-end gap-1.5">
+                  <span className="text-[14px] font-black">{expandedYears[col.defaultLabel] ? "-" : "+"}</span>
+                  <div className="flex flex-col items-center">
+                    <span className="border-b-[1.5px] border-dashed border-transparent group-hover:border-current pb-[2px]">{String(col.defaultLabel)}</span>
+                    {String(col.defaultLabel).startsWith("Year ") && !isNaN(Number(String(col.defaultLabel).replace("Year ", ""))) && (
+                      <span className="text-[10px] font-mono font-normal tracking-tight border-b-[1.5px] border-dashed border-transparent group-hover:border-current pb-[2px]">
+                        ({2025 + Number(String(col.defaultLabel).replace("Year ", ""))})
+                      </span>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div className="text-center w-full">

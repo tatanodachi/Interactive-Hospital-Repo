@@ -1,0 +1,36 @@
+import fs from 'fs';
+
+let content = fs.readFileSync('src/App.tsx', 'utf8');
+
+const tOld = `              {col.colType === "year" ? (
+                <div className="flex items-center justify-end gap-1.5 text-[#1C6048]">
+                  <span className="text-[14px] font-black">{expandedYears[col.defaultLabel] ? "-" : "+"}</span>
+                  <div className="flex flex-col items-center">
+                    <span className="border-b-[1.5px] border-dashed border-transparent group-hover:border-current pb-[2px]">{String(col.defaultLabel)}</span>
+                    {String(col.defaultLabel).startsWith("Year ") && !isNaN(Number(String(col.defaultLabel).replace("Year ", ""))) && (
+                      <span className="text-[10px] font-mono font-normal tracking-tight border-b-[1.5px] border-dashed border-transparent group-hover:border-current pb-[2px]">
+                        ({2025 + Number(String(col.defaultLabel).replace("Year ", ""))})
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : (`;
+
+const tNew = `              {col.colType === "year" ? (
+                <div className="flex items-center justify-end gap-1.5">
+                  <span className="text-[14px] font-black">{expandedYears[col.defaultLabel] ? "-" : "+"}</span>
+                  <div className="flex flex-col items-center">
+                    <span className="border-b-[1.5px] border-dashed border-transparent group-hover:border-current pb-[2px]">{String(col.defaultLabel)}</span>
+                    {String(col.defaultLabel).startsWith("Year ") && !isNaN(Number(String(col.defaultLabel).replace("Year ", ""))) && (
+                      <span className="text-[10px] font-mono font-normal tracking-tight border-b-[1.5px] border-dashed border-transparent group-hover:border-current pb-[2px]">
+                        ({2025 + Number(String(col.defaultLabel).replace("Year ", ""))})
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : (`;
+
+content = content.split(tOld).join(tNew);
+fs.writeFileSync('src/App.tsx', content);
+
+console.log("Replaced");
