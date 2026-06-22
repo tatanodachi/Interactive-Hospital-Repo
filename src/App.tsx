@@ -11392,22 +11392,6 @@ const ConsolidatedDashboardView = memo(
               </label>
             </div>
             <div className="pt-2 border-t border-[#D8D8D8]/50 space-y-2 pb-1">
-              {/* Lock Master to PropCo */}
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-[#4C4A4B] flex items-center gap-1.5">
-                  <Lock size={14} className={holdCoLocked ? "text-[#1C6048]" : "text-[#4C4A4B]/40"} /> Lock Master to PropCo
-                </span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={holdCoLocked}
-                    onChange={toggleHoldCoLock}
-                  />
-                  <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
-                </label>
-              </div>
-
               {/* Lock PropCo to Master */}
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-[#4C4A4B] flex items-center gap-1.5">
@@ -17832,22 +17816,6 @@ export default function App() {
             </div>
             {/* Symmetrical Exit Locks */}
             <div className="space-y-2 pt-2 border-t border-[#D8D8D8]/50">
-              {/* Lock Master to PropCo */}
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
-                  <Lock size={14} className={holdCoLocked ? "text-[#1C6048]" : "text-[#4C4A4B]/40"} /> Lock Master to PropCo
-                </span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={holdCoLocked}
-                    onChange={toggleHoldCoLock}
-                  />
-                  <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
-                </label>
-              </div>
-
               {/* Lock PropCo to Master */}
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
