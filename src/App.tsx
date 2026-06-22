@@ -124,6 +124,8 @@ import {
   CANCER_DATA,
   INSURANCE_DATA,
   callGemini,
+  getInitialStepUpPercentages,
+  ensureArray,
 } from "./financialEngine";
 import {
   OPCO_FORMULAS,
@@ -9536,28 +9538,6 @@ const PropCoDashboardView = memo(
               <>
                 <hr className="border-t border-[#D8D8D8]/50 my-2" />
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
-                  {/* Lock Master to PropCo toggle */}
-                  <div className="flex items-center justify-between bg-[#F9F8F6] px-3 py-2 rounded-xl border border-[#D8D8D8]/40 hover:border-[#1C6048]/20 transition-all">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-bold text-[#4C4A4B] flex items-center gap-1.5 whitespace-nowrap">
-                        <Lock
-                          size={13}
-                          className={holdCoLocked ? "text-[#1C6048]" : "text-[#9B8B70]"}
-                        />{" "}
-                        Lock Master to PropCo
-                      </span>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                      <input
-                        type="checkbox"
-                        className="sr-only peer"
-                        checked={holdCoLocked}
-                        onChange={toggleHoldCoLock}
-                      />
-                      <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
-                    </label>
-                  </div>
-
                   {/* Bank Debt Financing Toggle */}
                   <div className="flex items-center justify-between bg-[#F9F8F6] px-3 py-2 rounded-xl border border-[#D8D8D8]/40 hover:border-[#1C6048]/20 transition-all">
                     <span className="text-[10px] font-bold text-[#4C4A4B] flex items-center gap-1.5 whitespace-nowrap">
@@ -9589,6 +9569,28 @@ const PropCoDashboardView = memo(
                         onChange={(e) =>
                           onChange("includeLand", e.target.checked)
                         }
+                      />
+                      <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
+                    </label>
+                  </div>
+
+                  {/* Lock Master to PropCo toggle */}
+                  <div className="flex items-center justify-between bg-[#F9F8F6] px-3 py-2 rounded-xl border border-[#D8D8D8]/40 hover:border-[#1C6048]/20 transition-all">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold text-[#4C4A4B] flex items-center gap-1.5 whitespace-nowrap">
+                        <Lock
+                          size={13}
+                          className={holdCoLocked ? "text-[#1C6048]" : "text-[#9B8B70]"}
+                        />{" "}
+                        Lock Master to PropCo
+                      </span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                      <input
+                        type="checkbox"
+                        className="sr-only peer"
+                        checked={holdCoLocked}
+                        onChange={toggleHoldCoLock}
                       />
                       <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
                     </label>
@@ -13234,6 +13236,193 @@ const PropCoSettingsView = memo(
               unit="Yrs"
               isLocked={isLocked || !assumptions.includeFinancing}
             />
+            {assumptions.includeFinancing && (() => {
+              const amortYears = Math.max(1, (assumptions.loanTenor || 15) - (assumptions.ioGracePeriodYears || 2));
+              return (
+                <div id="propco-amortization-scheme" className="bg-[#F9F8F6] p-4 border border-[#D8D8D8] rounded-[16px] mt-4 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black uppercase text-[#1C6048] tracking-wider block">
+                          Amortization Scheme
+                        </span>
+                        {isLocked && (
+                          <span className="text-[8px] bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                            Locked
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[9px] text-[#4C4A4B] font-medium font-mono">
+                        {isLocked ? "Click \"Unlock\" at top-right of section to edit" : "Select how the principal loan balance is repaid over time"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Repayment Type Tabs */}
+                  <div className="grid grid-cols-2 gap-1 bg-[#D8D8D8]/55 p-1 rounded-xl">
+                    <button
+                      type="button"
+                      disabled={isLocked}
+                      onClick={() => onChange("repaymentType", "standard")}
+                      className={`py-1.5 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-75 ${(assumptions.repaymentType || "standard") === "standard" ? "bg-white text-[#1E2F31] shadow-sm border border-[#D8D8D8]" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                    >
+                      Standard Sinking Fund
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isLocked}
+                      onClick={() => {
+                        const resolvedP = getInitialStepUpPercentages(amortYears, "tangerang_stepup");
+                        onChange({ repaymentType: "step_up", stepUpPercentages: resolvedP });
+                      }}
+                      className={`py-1.5 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-75 ${(assumptions.repaymentType || "standard") === "step_up" ? "bg-white text-[#1E2F31] shadow-sm border border-[#D8D8D8]" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                    >
+                      Step-Up / Tranche Repayment
+                    </button>
+                  </div>
+
+                  {(assumptions.repaymentType || "standard") === "step_up" && (
+                    <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-150">
+                      {/* Presets and Status Block */}
+                      <div className="p-3 bg-white border border-[#D8D8D8] rounded-2xl flex flex-col gap-2 shadow-sm">
+                        <div className="flex justify-between items-center text-[10px] font-bold text-[#4C4A4B]">
+                          <span>SCHEDULING PRESETS</span>
+                          <div className="flex gap-1.5">
+                            <button
+                              type="button"
+                              disabled={isLocked}
+                              onClick={() => {
+                                const resolvedP = getInitialStepUpPercentages(amortYears, "tangerang_stepup");
+                                onChange("stepUpPercentages", resolvedP);
+                              }}
+                              className="px-2 py-0.5 bg-[#EFEBE7] hover:bg-[#D8D8D8]/80 disabled:hover:bg-[#EFEBE7] border border-[#D8D8D8] text-[9px] font-black text-[#1C6048] rounded-[6px] transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              Step-Up
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isLocked}
+                              onClick={() => {
+                                const resolvedP = getInitialStepUpPercentages(amortYears, "equal");
+                                onChange("stepUpPercentages", resolvedP);
+                              }}
+                              className="px-2 py-0.5 bg-[#EFEBE7] hover:bg-[#D8D8D8]/80 disabled:hover:bg-[#EFEBE7] border border-[#D8D8D8] text-[9px] font-black text-[#1C6048] rounded-[6px] transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              Equal Division
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-between items-center pt-1 border-t border-[#D8D8D8] mt-1 text-[9px] font-bold text-[#4C4A4B]">
+                          <span>ALLOCATED PRINCIPAL SUM</span>
+                          {(() => {
+                            const resolvedP = ensureArray(assumptions.stepUpPercentages);
+                            let pList = [...resolvedP];
+                            if (pList.length !== amortYears) {
+                              pList = getInitialStepUpPercentages(amortYears, "tangerang_stepup");
+                            }
+                            const pSum = pList.reduce((sum, v) => sum + v, 0);
+                            const isFullyAllocated = Math.abs(pSum - 100) < 0.05;
+                            return (
+                              <div className="flex items-center gap-1.5">
+                                <span className={`px-2 py-0.5 rounded font-mono font-black ${isFullyAllocated ? "bg-[#1C6048]/10 text-[#1C6048]" : "bg-amber-500/10 text-amber-600 animate-pulse"}`}>
+                                  {pSum.toFixed(2)}% / 100%
+                                </span>
+                                {!isFullyAllocated && (
+                                  <button
+                                    type="button"
+                                    disabled={isLocked}
+                                    onClick={() => {
+                                      const sumVal = pSum;
+                                      if (sumVal === 0) {
+                                        const eq = getInitialStepUpPercentages(amortYears, "equal");
+                                        onChange("stepUpPercentages", eq);
+                                      } else {
+                                        const factor = 100 / sumVal;
+                                        const norm = pList.map(v => parseFloat((v * factor).toFixed(2)));
+                                        const diff = 100 - norm.reduce((a, b) => a + b, 0);
+                                        if (Math.abs(diff) > 0.001) {
+                                          norm[norm.length - 1] = parseFloat((norm[norm.length - 1] + diff).toFixed(2));
+                                        }
+                                        onChange("stepUpPercentages", norm);
+                                      }
+                                    }}
+                                    className="text-[9px] font-black bg-amber-500 hover:bg-amber-600 text-white px-2 py-0.5 rounded-[6px] transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                                  >
+                                    Auto-Balance
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      </div>
+
+                      {/* Step-Up Year-by-Year Sliders List */}
+                      <div className="max-h-[320px] overflow-y-auto pr-1 space-y-2 border border-[#D8D8D8] rounded-[16px] p-2 bg-white">
+                        {(() => {
+                          const resolvedP = ensureArray(assumptions.stepUpPercentages);
+                          let pList = [...resolvedP];
+                          if (pList.length !== amortYears) {
+                            pList = getInitialStepUpPercentages(amortYears, "tangerang_stepup");
+                          }
+                          
+                          return pList.map((val, idx) => {
+                            const opYearNum = idx + 1 + (assumptions.ioGracePeriodYears || 2);
+                            return (
+                              <div key={idx} className="flex flex-col gap-1.5 p-2 hover:bg-[#F9F8F6]/40 rounded-xl border border-transparent hover:border-[#D8D8D8] transition-all">
+                                <div className="flex justify-between items-center text-[10px] font-bold text-[#1E2F31]">
+                                  <span className="flex items-center gap-1.5 font-mono">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#1C6048]"></span>
+                                    Amortization Year {idx + 1}
+                                    <span className="text-[8px] font-medium text-[#8A8175] font-sans">
+                                      (Op. Year {opYearNum} / calendar {2025 + opYearNum})
+                                    </span>
+                                  </span>
+                                  <div className="flex items-center gap-1">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      max="100"
+                                      step="0.1"
+                                      value={val}
+                                      disabled={isLocked}
+                                      onChange={(e) => {
+                                        const newval = Math.max(0, Math.min(100, parseFloat(e.target.value) || 0));
+                                        const nextP = [...pList];
+                                        nextP[idx] = parseFloat(newval.toFixed(2));
+                                        onChange("stepUpPercentages", nextP);
+                                      }}
+                                      className="w-12 px-1 py-0.5 text-right font-mono text-[10px] border border-[#D8D8D8] rounded focus:border-[#1C6048] outline-none disabled:bg-[#F9F8F6] disabled:text-[#8A8175] disabled:cursor-not-allowed"
+                                    />
+                                    <span className="text-[9px] font-bold text-[#8A8175]">%</span>
+                                  </div>
+                                </div>
+                                <input
+                                  type="range"
+                                  min="0"
+                                  max="100"
+                                  step="0.5"
+                                  value={val}
+                                  disabled={isLocked}
+                                  onChange={(e) => {
+                                    const newVal = parseFloat(e.target.value);
+                                    const nextP = [...pList];
+                                    nextP[idx] = parseFloat(newVal.toFixed(2));
+                                    onChange("stepUpPercentages", nextP);
+                                  }}
+                                  className="w-full h-2.5 md:h-2 bg-[#D8D8D8] rounded-lg appearance-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 accent-[#1C6048] outline-none transition-all my-1.5 py-0.5 focus:ring-1 focus:ring-[#1C6048]"
+                                />
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
             <AssumptionRow
               label="Discount Rate"
               val={assumptions.discountRate}
@@ -16818,11 +17007,13 @@ export default function App() {
       })),
     [],
   );
-  const handlePropCoChange = useCallback(
-    (k, v) =>
-      setPropCoAssumptions((p) => ({
-        ...p,
-        [k]: [
+  const handlePropCoChange = useCallback((k, v) => {
+    setPropCoAssumptions((p) => {
+      const next = { ...p };
+      const updates = typeof k === "object" ? k : { [k]: v };
+      
+      Object.entries(updates).forEach(([key, val]) => {
+        next[key] = [
           "linkToOpCo",
           "includeLand",
           "includeMedEq",
@@ -16837,12 +17028,15 @@ export default function App() {
           "includeFinancing",
           "drawdownScenario",
           "drawdownTranches",
-        ].includes(k)
-          ? v
-          : (v === "" ? 0 : parseFloat(v)) || 0,
-      })),
-    [],
-  );
+          "repaymentType",
+          "stepUpPercentages",
+        ].includes(key)
+          ? val
+          : (val === "" ? 0 : parseFloat(val)) || 0;
+      });
+      return next;
+    });
+  }, []);
 
   const syncEquityWithSharing = useCallback(() => {
     setOpCoAssumptions((p) => {

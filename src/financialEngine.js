@@ -143,10 +143,12 @@ const DEFAULT_PROPCO_ASSUMPTIONS = {
   includeFinancing: false,
   drawdownScenario: "tranches",
   drawdownTranches: [20, 40, 60, 80, 100],
-  ltv: 70,
-  interestRate: 8.5,
+  ltv: 100,
+  interestRate: 8.25,
   loanTenor: 15,
-  ioGracePeriodYears: 3,
+  ioGracePeriodYears: 2,
+  repaymentType: "step_up",
+  stepUpPercentages: [2, 2, 3, 3, 6, 6, 8, 8, 10, 10, 14, 14, 14],
   maintRate: 0,
   propTaxRate: 0,
   corporateTax: 22,
@@ -2189,6 +2191,16 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
   let licenseBasis_vat = 0;
   let licenseBasis_contingency = licenseContingency;
 
+  const initialDebtAtStartOfOperations = outstandingDebt;
+  const initialDebtAtStartOfOperationsExLand = outstandingDebtExLand;
+
+  const repaymentType = assumptions.repaymentType || "standard";
+  let stepUpPercentages = ensureArray(assumptions.stepUpPercentages);
+  if (repaymentType === "step_up" && stepUpPercentages.length === 0) {
+    const amortYears = Math.max(1, (assumptions.loanTenor || 15) - (assumptions.ioGracePeriodYears || 2));
+    stepUpPercentages = getInitialStepUpPercentages(amortYears, "tangerang_stepup");
+  }
+
   // Run operating phase month-by-month and group annually
   for (let i = 1; i <= projYears; i++) {
     let annualRevenue = assumptions.linkToOpCo
@@ -2388,21 +2400,41 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
 
       if (outstandingDebt > 0.01) {
         m_interest = outstandingDebt * rateMonthly;
-        m_principal =
-          m_op <= ioGraceMonths
-            ? 0
-            : Math.min(outstandingDebt, postIoPmtMonthly - m_interest);
+        if (m_op <= ioGraceMonths) {
+          m_principal = 0;
+        } else if (repaymentType === "step_up") {
+          const amortYearIdx = Math.floor((m_op - 1 - ioGraceMonths) / 12);
+          if (m_op >= loanTenorMonths) {
+            m_principal = outstandingDebt;
+          } else {
+            const yearPct = stepUpPercentages[amortYearIdx] || 0;
+            const annualPrincipal = initialDebtAtStartOfOperations * (yearPct / 100);
+            m_principal = Math.min(outstandingDebt, annualPrincipal / 12);
+          }
+        } else {
+          m_principal = Math.min(outstandingDebt, postIoPmtMonthly - m_interest);
+        }
         outstandingDebt -= m_principal;
       }
       if (outstandingDebtExLand > 0.01) {
         m_interestExLand = outstandingDebtExLand * rateMonthly;
-        m_principalExLand =
-          m_op <= ioGraceMonths
-            ? 0
-            : Math.min(
-                outstandingDebtExLand,
-                postIoPmtExLandMonthly - m_interestExLand,
-              );
+        if (m_op <= ioGraceMonths) {
+          m_principalExLand = 0;
+        } else if (repaymentType === "step_up") {
+          const amortYearIdx = Math.floor((m_op - 1 - ioGraceMonths) / 12);
+          if (m_op >= loanTenorMonths) {
+            m_principalExLand = outstandingDebtExLand;
+          } else {
+            const yearPct = stepUpPercentages[amortYearIdx] || 0;
+            const annualPrincipalExLand = initialDebtAtStartOfOperationsExLand * (yearPct / 100);
+            m_principalExLand = Math.min(outstandingDebtExLand, annualPrincipalExLand / 12);
+          }
+        } else {
+          m_principalExLand = Math.min(
+            outstandingDebtExLand,
+            postIoPmtExLandMonthly - m_interestExLand,
+          );
+        }
         outstandingDebtExLand -= m_principalExLand;
       }
 
@@ -3365,6 +3397,60 @@ const runConsolidatedEngine = (opCoData, propCoData, opCoAssumptions) => {
   };
 };
 
+const getInitialStepUpPercentages = (amortYears, presetType = "tangerang_stepup") => {
+  if (amortYears <= 0) return [];
+  if (presetType === "tangerang_stepup" && amortYears === 13) {
+    return [2, 2, 3, 3, 6, 6, 8, 8, 10, 10, 14, 14, 14];
+  }
+  if (presetType === "tangerang_stepup") {
+    // Scale Tangerang step-up to general amortYears
+    const basePreset = [2, 2, 3, 3, 6, 6, 8, 8, 10, 10, 14, 14, 14];
+    const result = [];
+    for (let i = 0; i < amortYears; i++) {
+      const ratio = i / (amortYears - 1 || 1);
+      const baseIdx = ratio * (basePreset.length - 1);
+      const low = Math.floor(baseIdx);
+      const high = Math.min(basePreset.length - 1, Math.ceil(baseIdx));
+      const val = basePreset[low] + (basePreset[high] - basePreset[low]) * (baseIdx - low);
+      result.push(val);
+    }
+    // Normalize to sum of 100
+    const sum = result.reduce((a, b) => a + b, 0);
+    const rounded = result.map(v => parseFloat(((v / sum) * 100).toFixed(2)));
+    // Adjust any rounding error in the final element to guarantee exactly 100%
+    const currentSum = rounded.reduce((a, b) => a + b, 0);
+    const diff = 100 - currentSum;
+    if (Math.abs(diff) > 0.001) {
+      rounded[rounded.length - 1] = parseFloat((rounded[rounded.length - 1] + diff).toFixed(2));
+    }
+    return rounded;
+  }
+  // Equal division
+  const pct = parseFloat((100 / amortYears).toFixed(2));
+  const result = Array(amortYears).fill(pct);
+  const currentSum = result.reduce((a, b) => a + b, 0);
+  const diff = 100 - currentSum;
+  if (Math.abs(diff) > 0.001) {
+    result[result.length - 1] = parseFloat((result[result.length - 1] + diff).toFixed(2));
+  }
+  return result;
+};
+
+const ensureArray = (val) => {
+  if (Array.isArray(val)) return val;
+  if (val && typeof val === "object") {
+    const arr = [];
+    let i = 0;
+    while (i in val) {
+      arr.push(val[i]);
+      i++;
+    }
+    if (arr.length > 0) return arr;
+    return Object.values(val);
+  }
+  return [];
+};
+
 export {
   calculatePMT,
   calculatePayback,
@@ -3378,4 +3464,6 @@ export {
   CANCER_DATA,
   INSURANCE_DATA,
   callGemini,
+  getInitialStepUpPercentages,
+  ensureArray,
 };
