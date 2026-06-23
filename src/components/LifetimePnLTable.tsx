@@ -196,12 +196,6 @@ export const LifetimePnLTable: React.FC<LifetimePnLTableProps> = ({
           })}
         </tbody>
       </table>
-      <div className="p-3 bg-[#F9F8F6] border-t border-[#D8D8D8] flex items-center gap-2">
-        <Info size={14} className="text-[#1C6048] shrink-0" />
-        <p className="text-[10px] text-[#8A8175] leading-tight font-sans">
-          <strong>Underwriting Context:</strong> {advisoryText}
-        </p>
-      </div>
     </div>
   );
 };
