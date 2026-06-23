@@ -1,7 +1,18 @@
-const calculatePMT = (rate, nper, pv) =>
+import {
+  OpCoAssumptions,
+  PropCoAssumptions,
+  OpCoModelData,
+  PropCoModelData,
+  ConsolidatedModelData,
+  ProjConfig,
+  EngineTotals,
+  EntityModelData
+} from "./types";
+
+export const calculatePMT = (rate: number, nper: number, pv: number): number =>
   rate === 0 ? -(pv / nper) : -(pv * rate) / (1 - Math.pow(1 + rate, -nper));
 
-const calculatePayback = (cfs, frequency = "annual") => {
+export const calculatePayback = (cfs: number[], frequency: string = "annual"): number => {
   if (!cfs || cfs.length === 0) return 0;
   let cumulative = 0;
   for (let i = 0; i < cfs.length; i++) {
@@ -16,7 +27,7 @@ const calculatePayback = (cfs, frequency = "annual") => {
   return 0; // Return 0 if the project never catches up, preventing fake extrapolation
 };
 
-const calculateIRR = (cfs, frequency = "annual") => {
+export const calculateIRR = (cfs: number[], frequency: string = "annual"): number => {
   if (!cfs || cfs.length === 0) return 0;
   let rate = frequency === "monthly" ? 0.01 : 0.1;
   for (let i = 0; i < 150; i++) {
@@ -42,7 +53,7 @@ const calculateIRR = (cfs, frequency = "annual") => {
   return 0;
 };
 
-const calculateNPV = (cfs, rate, frequency = "annual") => {
+export const calculateNPV = (cfs: number[], rate: number, frequency: string = "annual"): number => {
   if (!cfs) return 0;
   const discountRate = rate || 12;
   if (frequency === "monthly") {
@@ -58,7 +69,7 @@ const calculateNPV = (cfs, rate, frequency = "annual") => {
   );
 };
 
-const DEFAULT_OPCO_ASSUMPTIONS = {
+export const DEFAULT_OPCO_ASSUMPTIONS: OpCoAssumptions = {
   beds: 120,
   alos: 4,
   opIpRatio: 40,
@@ -106,7 +117,7 @@ const DEFAULT_OPCO_ASSUMPTIONS = {
   dividendPayoutRatio: 80,
 };
 
-const DEFAULT_PROPCO_ASSUMPTIONS = {
+export const DEFAULT_PROPCO_ASSUMPTIONS: PropCoAssumptions = {
   linkToOpCo: true,
   manualBaseRent: 35,
   manualRentEscalation: 3,
@@ -171,7 +182,7 @@ const DEFAULT_PROPCO_ASSUMPTIONS = {
   sellingCosts: 0,
 };
 
-const CANCER_DATA = [
+export const CANCER_DATA = [
   { name: "Breast", cases: 66271, fill: "#1C6048" },
   { name: "Lung", cases: 38904, fill: "#9B8B70" },
   { name: "Cervical", cases: 36964, fill: "#99B6AA" },
@@ -179,7 +190,7 @@ const CANCER_DATA = [
   { name: "Liver", cases: 23805, fill: "#D8D8D8" },
 ];
 
-const INSURANCE_DATA = [
+export const INSURANCE_DATA = [
   { year: "2021", value: 14.3 },
   { year: "2022", value: 16.2 },
   { year: "2023", value: 18.8 },
@@ -188,7 +199,7 @@ const INSURANCE_DATA = [
   { year: "2026", value: 27.2 },
 ];
 
-const callGemini = async (prompt, systemInstruction) => {
+export const callGemini = async (prompt: string, systemInstruction: string) => {
   for (let i = 0; i < 3; i++) {
     try {
       const response = await fetch("/api/gemini", {
@@ -217,7 +228,7 @@ const callGemini = async (prompt, systemInstruction) => {
 // ==========================================
 // 2. FINANCIAL ENGINES
 // ==========================================
-const runOpCoEngine = (assumptions, config) => {
+export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig): OpCoModelData => {
   const requestedYears = config?.projYears || 10;
   const projYears = Math.min(requestedYears, 30);
   const totalDevMonths = assumptions.devDurationMonths || 24;
@@ -1462,7 +1473,7 @@ const runOpCoEngine = (assumptions, config) => {
   };
 };
 
-const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
+export const runPropCoEngine = (assumptions: PropCoAssumptions, opCoModelData?: OpCoModelData | null, config?: ProjConfig, groups: any[] = []): PropCoModelData => {
   const requestedYears = config?.projYears || 10;
   const projYears = Math.min(requestedYears, 30);
 
@@ -1991,7 +2002,7 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       cumNonLandCapex += m_nonLandCapex;
       const progress = cumNonLandCapex / totalCapexExLand;
 
-      const tranches = assumptions.drawdownTranches || [20, 40, 60, 80, 100];
+      const tranches: number[] = ensureArray(assumptions.drawdownTranches || [20, 40, 60, 80, 100]).map(Number);
       const p = progress * 100 + 0.0001; // Allow for floating point precision
 
       let targetTrancheDebtPct = 0;
@@ -3412,7 +3423,21 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
   };
 };
 
-const runConsolidatedEngine = (opCoData, propCoData, opCoAssumptions) => {
+export const runNodeAggregationEngine = (entities: EntityModelData[], config: ProjConfig): ConsolidatedModelData => {
+  // Option A (Dynamic Entities) placeholder logic for abstract consolidation.
+  // Instead of static opCoData + propCoData, this engine iterates array of EntityModelData.
+  
+  let annualData: AnnualData[] = [];
+  // For now, return empty placeholder aligning to ConsolidatedModelData shape
+  return {
+    annualData,
+    totals: {},
+    irrConsolidated: 0,
+    npvConsolidated: 0
+  };
+};
+
+export const runConsolidatedEngine = (opCoData: OpCoModelData | null, propCoData: PropCoModelData | null, opCoAssumptions: OpCoAssumptions): ConsolidatedModelData => {
   let annualData = [],
     consolidatedCfs = [];
   let cumCf = 0;
@@ -3560,7 +3585,7 @@ const runConsolidatedEngine = (opCoData, propCoData, opCoAssumptions) => {
     });
   });
 
-  const totals = {
+  const totals: EngineTotals = {
     propCoInvestmentFlow: annualData.reduce(
       (acc, d) => acc + d.propCoInvestmentFlow,
       0,
@@ -3602,8 +3627,8 @@ const runConsolidatedEngine = (opCoData, propCoData, opCoAssumptions) => {
 
   // Compile monthly consolidated cash flows for monthly compounding IRR/NPV
   let consolidatedCfsMonthly = [];
-  const propCoCfs = propCoData.equityCfsMonthly || [];
-  const opCoCfs = opCoData.partnerBCfsMonthly || [];
+  const propCoCfs = propCoData?.equityCfsMonthly || [];
+  const opCoCfs = opCoData?.partnerBCfsMonthly || [];
   const totalMonths = Math.max(propCoCfs.length, opCoCfs.length);
 
   for (let m = 0; m < totalMonths; m++) {
@@ -3641,10 +3666,10 @@ const runConsolidatedEngine = (opCoData, propCoData, opCoAssumptions) => {
   };
 };
 
-const getInitialStepUpPercentages = (
-  amortYears,
-  presetType = "tangerang_stepup",
-) => {
+export const getInitialStepUpPercentages = (
+  amortYears: number,
+  presetType: string = "tangerang_stepup",
+): number[] => {
   if (amortYears <= 0) return [];
   if (presetType === "tangerang_stepup" && amortYears === 13) {
     return [2, 2, 3, 3, 6, 6, 8, 8, 10, 10, 14, 14, 14];
@@ -3689,7 +3714,7 @@ const getInitialStepUpPercentages = (
   return result;
 };
 
-const ensureArray = (val) => {
+export const ensureArray = (val: any): any[] => {
   if (Array.isArray(val)) return val;
   if (val && typeof val === "object") {
     const arr = [];
@@ -3702,21 +3727,4 @@ const ensureArray = (val) => {
     return Object.values(val);
   }
   return [];
-};
-
-export {
-  calculatePMT,
-  calculatePayback,
-  calculateIRR,
-  calculateNPV,
-  runOpCoEngine,
-  runPropCoEngine,
-  runConsolidatedEngine,
-  DEFAULT_OPCO_ASSUMPTIONS,
-  DEFAULT_PROPCO_ASSUMPTIONS,
-  CANCER_DATA,
-  INSURANCE_DATA,
-  callGemini,
-  getInitialStepUpPercentages,
-  ensureArray,
 };

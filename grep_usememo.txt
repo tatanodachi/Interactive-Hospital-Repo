@@ -1,0 +1,13 @@
+4516:    const combinedCfs = useMemo(() => {
+4535:    const projectMoic = useMemo(() => {
+6019:    const pieData = useMemo(() => {
+6754:    const enrichedColumns = useMemo(() => {
+6769:    const totalOpex = useMemo(() => {
+8532:    const columns = useMemo(() => {
+8671:    const totals = useMemo(() => {
+8724:    const chartData = useMemo(() => {
+8755:    const stats = useMemo(() => {
+10943:  const columns = useMemo(() => {
+11492:  const resolvedDevDuration = useMemo(() => {
+11503:  const projConfig = useMemo(() => {
+11582:  const propCoProjConfig = useMemo(() => {
