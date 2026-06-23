@@ -42,7 +42,6 @@ import {
   AlignLeft,
   AlignRight,
   EyeOff,
-  Maximize2,
   ArrowUpRight,
   Link2,
   Coins,
@@ -109,7 +108,9 @@ import {
   Zap,
   Monitor,
   Workflow,
+  Download,
 } from "lucide-react";
+import { exportToExcel } from "./exportExcel";
 import { ExecutiveSummaryView } from "./ExecutiveSummaryView";
 import {
   calculatePMT,
@@ -1915,12 +1916,10 @@ const TableRow = memo(
         className={`group transition-all ${isExpandable ? "cursor-pointer select-none" : ""} ${highlight || isHeader ? "" : "hover:bg-[#F9F8F6]"}`}
         onClick={isExpandable ? onExpand : undefined}
       >
-        <td
-          className={firstColClass}
-        >
+        <td className={firstColClass}>
           <div className="flex items-center justify-between gap-2 overflow-hidden w-full">
-            <div 
-              className={`flex items-center gap-1.5 overflow-hidden min-w-0 ${isExpandable ? 'cursor-pointer hover:opacity-80 active:scale-95 transition-all' : ''}`}
+            <div
+              className={`flex items-center gap-1.5 overflow-hidden min-w-0 ${isExpandable ? "cursor-pointer hover:opacity-80 active:scale-95 transition-all" : ""}`}
               onClick={(e) => {
                 if (isExpandable && onExpand) {
                   e.stopPropagation();
@@ -1940,7 +1939,7 @@ const TableRow = memo(
 
               {hasDoubleConnector && (
                 <span className="font-mono select-none text-[9px] tracking-tighter text-[#9B8B70]/80 mr-1 flex-shrink-0 whitespace-nowrap">
-                  │  └─
+                  │ └─
                 </span>
               )}
               {hasConnector && !hasDoubleConnector && (
@@ -1949,7 +1948,9 @@ const TableRow = memo(
                 </span>
               )}
 
-              <span className={`truncate ${isHeader ? "font-bold text-[#1E2F31]" : highlight ? "font-bold text-[#1E2F31]" : "text-[#4C4A4B]"}`}>
+              <span
+                className={`truncate ${isHeader ? "font-bold text-[#1E2F31]" : highlight ? "font-bold text-[#1E2F31]" : "text-[#4C4A4B]"}`}
+              >
                 {label}
               </span>
             </div>
@@ -1981,9 +1982,8 @@ const TableRow = memo(
                   : "-"
                 : formattedVal;
 
-          const hoverBgClass = !highlight && !isHeader
-            ? "group-hover:bg-[#F9F8F6]"
-            : "";
+          const hoverBgClass =
+            !highlight && !isHeader ? "group-hover:bg-[#F9F8F6]" : "";
 
           return (
             <td
@@ -3684,30 +3684,41 @@ const InteractiveDemographicMap = memo(() => {
       return;
     }
 
-    // Since scripts are loaded statically in index.html, let's poll a few times quickly to verify if loaded
-    let attempts = 0;
-    const interval = setInterval(() => {
-      attempts++;
-      if (window.L && window.L.GestureHandling) {
-        setLeafletReady(true);
-        clearInterval(interval);
-      } else if (attempts >= 10) {
-        // Fall back gracefully after 10 quick checks (1 second) to allow offline render template
-        setLeafletReady(true);
-        clearInterval(interval);
-      }
-    }, 100);
+    const loadGestureHandling = () => {
+      const ghCSS = document.createElement("link");
+      ghCSS.rel = "stylesheet";
+      ghCSS.href =
+        "https://unpkg.com/leaflet-gesture-handling@1.2.2/dist/leaflet-gesture-handling.min.css";
+      document.head.appendChild(ghCSS);
 
-    return () => clearInterval(interval);
+      const ghJS = document.createElement("script");
+      ghJS.crossOrigin = "anonymous";
+      ghJS.src =
+        "https://unpkg.com/leaflet-gesture-handling@1.2.2/dist/leaflet-gesture-handling.min.js";
+      ghJS.onload = () => setLeafletReady(true);
+      document.body.appendChild(ghJS);
+    };
+
+    if (window.L) {
+      loadGestureHandling();
+      return;
+    }
+
+    const leafletCSS = document.createElement("link");
+    leafletCSS.rel = "stylesheet";
+    leafletCSS.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+    document.head.appendChild(leafletCSS);
+
+    const leafletJS = document.createElement("script");
+    leafletJS.crossOrigin = "anonymous";
+    leafletJS.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+    leafletJS.onload = loadGestureHandling;
+    document.body.appendChild(leafletJS);
   }, []);
 
   useEffect(() => {
     if (!leafletReady || mapRef.current) return;
     const L = window.L;
-    if (!L) {
-      console.warn("Leaflet is not available on window. Falling back to offline map template.");
-      return;
-    }
 
     // SAFEGUARD: Wipe dead ghost layers so they don't persist across React 18 remounts
     regionsLayersRef.current = {};
@@ -3715,64 +3726,50 @@ const InteractiveDemographicMap = memo(() => {
 
     // SAFEGUARD: Clear residual map IDs
     const container = document.getElementById("demographics-map");
-    if (!container) return;
-    if (container._leaflet_id) {
+    if (container && container._leaflet_id) {
       container._leaflet_id = null;
     }
 
-    try {
-      const map = L.map("demographics-map", {
-        zoomControl: false,
-        gestureHandling: true,
-      }).setView([-6.1543, 106.7398], 11);
-      L.control.zoom({ position: "bottomleft" }).addTo(map);
+    const map = L.map("demographics-map", {
+      zoomControl: false,
+      gestureHandling: true,
+    }).setView([-6.1543, 106.7398], 11);
+    L.control.zoom({ position: "bottomleft" }).addTo(map);
 
-      map.createPane("labelsPane");
-      const lp = map.getPane("labelsPane");
-      if (lp) lp.style.zIndex = "405";
-      
-      map.createPane("ringsPane");
-      const rp = map.getPane("ringsPane");
-      if (rp) rp.style.zIndex = "410";
-      
-      map.createPane("markersPane");
-      const mp = map.getPane("markersPane");
-      if (mp) mp.style.zIndex = "420";
+    map.createPane("labelsPane");
+    map.getPane("labelsPane").style.zIndex = 405;
+    map.createPane("ringsPane");
+    map.getPane("ringsPane").style.zIndex = 410;
+    map.createPane("markersPane");
+    map.getPane("markersPane").style.zIndex = 420;
 
-      L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",
-        { maxZoom: 19, attribution: "&copy; CARTO" },
-      ).addTo(map);
+    L.tileLayer(
+      "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",
+      { maxZoom: 19, attribution: "&copy; CARTO" },
+    ).addTo(map);
 
-      hoverTooltipRef.current = L.tooltip({
-        className: "custom-tooltip",
-        direction: "top",
-        offset: [0, -10],
-      });
-      poiGroupRef.current = L.layerGroup().addTo(map);
+    hoverTooltipRef.current = L.tooltip({
+      className: "custom-tooltip",
+      direction: "top",
+      offset: [0, -10],
+    });
+    poiGroupRef.current = L.layerGroup().addTo(map);
 
-      map.on("click", () => {
-        if (activeClickedPoiRef.current) {
-          const prevId = activeClickedPoiRef.current;
-          activeClickedPoiRef.current = null;
-          handlePoiHover(prevId, false);
-        }
-      });
+    map.on("click", () => {
+      if (activeClickedPoiRef.current) {
+        const prevId = activeClickedPoiRef.current;
+        activeClickedPoiRef.current = null;
+        handlePoiHover(prevId, false);
+      }
+    });
 
-      mapRef.current = map;
-      initPOIs(map);
-      setIsMapReady(true);
-    } catch (err) {
-      console.error("Map initialization exception handled gracefully:", err);
-    }
+    mapRef.current = map;
+    initPOIs(map);
+    setIsMapReady(true);
 
     return () => {
       if (mapRef.current) {
-        try {
-          mapRef.current.remove();
-        } catch (removeErr) {
-          console.warn("Error removing map instance:", removeErr);
-        }
+        mapRef.current.remove();
         mapRef.current = null;
       }
     };
@@ -4789,23 +4786,7 @@ const InteractiveDemographicMap = memo(() => {
             `}</style>
 
       <div className="vignette"></div>
-      <div id="demographics-map" className="w-full h-full z-[1] relative flex items-center justify-center bg-[#F9F8F6]">
-        {!leafletReady && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-[1000] bg-[#F9F8F6]">
-            <RefreshCcw size={20} className="text-[#1C6048] animate-spin mb-2" />
-            <p className="text-[10px] text-[#9B8B70] font-black uppercase tracking-wider">Loading Spatial Assets...</p>
-          </div>
-        )}
-        {leafletReady && !window.L && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-[1000] bg-[#F9F8F6] border border-[#D8D8D8]">
-            <Map size={32} className="text-[#9B8B70]/60 mb-2 shrink-0" />
-            <p className="text-xs text-[#1E2F31] font-black uppercase tracking-wider">Demographic Catchment Model</p>
-            <p className="text-[10px] text-[#4C4A4B] max-w-sm mt-1.5 font-medium leading-relaxed">
-              Connection to CDN servers is restricted within this secure environment frame. All regional demographic funnel data (7.37M TAM, 1.33M premium lives) remain fully responsive and underwritten offline.
-            </p>
-          </div>
-        )}
-      </div>
+      <div id="demographics-map" className="w-full h-full z-[1]"></div>
 
       {/* Dynamic Dual Map Legend */}
       {legendInfo && !isLegendOpen && (
@@ -8371,21 +8352,14 @@ const OpCoCascadeView = memo(
               }
               className={`px-3 py-3 text-right border-b-2 border-r border-[#D8D8D8] ${
                 col.colType === "year"
-                  ? "cursor-pointer hover:bg-[#EFEBE7] font-black group "
+                  ? "cursor-pointer hover:bg-[#EFEBE7] font-black underline decoration-dashed underline-offset-4 "
                   : "font-medium text-[10px] "
               } ${!col.isOperating ? "bg-[#F9F8F6] text-[#9B8B70]" : "bg-white text-[#1E2F31]"} ${col.isMonth ? "min-w-[65px] whitespace-nowrap" : "min-w-[90px]"}`}
             >
               {col.colType === "year" ? (
-                <div className="flex items-center justify-end gap-1.5">
-                  <span className="text-[14px] font-black">{expandedYears[col.defaultLabel] ? "-" : "+"}</span>
-                  <div className="flex flex-col items-center">
-                    <span className="border-b-[1.5px] border-dashed border-transparent group-hover:border-current pb-[2px]">{String(col.defaultLabel)}</span>
-                    {String(col.defaultLabel).startsWith("Year ") && !isNaN(Number(String(col.defaultLabel).replace("Year ", ""))) && (
-                      <span className="text-[10px] font-mono font-normal tracking-tight border-b-[1.5px] border-dashed border-transparent group-hover:border-current pb-[2px]">
-                        ({2025 + Number(String(col.defaultLabel).replace("Year ", ""))})
-                      </span>
-                    )}
-                  </div>
+                <div className="flex items-center justify-end gap-1">
+                  {expandedYears[col.defaultLabel] ? "-" : "+"}
+                  {String(col.defaultLabel)}
                 </div>
               ) : (
                 <div className="text-center w-full">
@@ -8557,8 +8531,11 @@ const OpCoCascadeView = memo(
                 <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
                   <button
                     onClick={() => {
-                      const tables = document.querySelectorAll('.opco-table-scroll');
-                      tables.forEach(t => t.scrollBy({ left: -300, behavior: 'smooth' }));
+                      const tables =
+                        document.querySelectorAll(".opco-table-scroll");
+                      tables.forEach((t) =>
+                        t.scrollBy({ left: -300, behavior: "smooth" }),
+                      );
                     }}
                     className="p-1 rounded bg-white text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#F9F8F6] transition-colors"
                     title="Scroll Left"
@@ -8568,8 +8545,11 @@ const OpCoCascadeView = memo(
                   <div className="w-[1px] bg-[#D8D8D8] my-1 opacity-50"></div>
                   <button
                     onClick={() => {
-                      const tables = document.querySelectorAll('.opco-table-scroll');
-                      tables.forEach(t => t.scrollBy({ left: 300, behavior: 'smooth' }));
+                      const tables =
+                        document.querySelectorAll(".opco-table-scroll");
+                      tables.forEach((t) =>
+                        t.scrollBy({ left: 300, behavior: "smooth" }),
+                      );
                     }}
                     className="p-1 rounded bg-white text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#F9F8F6] transition-colors"
                     title="Scroll Right"
@@ -8886,7 +8866,9 @@ const OpCoCascadeView = memo(
                               hasConnector
                               isExpandable
                               isExpanded={expandedCfoOut}
-                              onExpand={() => setExpandedCfoOut(!expandedCfoOut)}
+                              onExpand={() =>
+                                setExpandedCfoOut(!expandedCfoOut)
+                              }
                               tooltip="OPEX costs (staffing, rent, doc fees, supplies, utilities, marketing, insurance, management fees, corporate taxes)."
                             />
                             {expandedCfoOut && (
@@ -9052,7 +9034,9 @@ const OpCoCascadeView = memo(
                               hasConnector
                               isExpandable
                               isExpanded={expandedCfiOut}
-                              onExpand={() => setExpandedCfiOut(!expandedCfiOut)}
+                              onExpand={() =>
+                                setExpandedCfiOut(!expandedCfiOut)
+                              }
                               tooltip="Initial pre-operating working capital outlays (Year 3 operational buffer)."
                             />
                             {expandedCfiOut && (
@@ -9115,7 +9099,9 @@ const OpCoCascadeView = memo(
                               hasConnector
                               isExpandable
                               isExpanded={expandedCffOut}
-                              onExpand={() => setExpandedCffOut(!expandedCffOut)}
+                              onExpand={() =>
+                                setExpandedCffOut(!expandedCffOut)
+                              }
                               tooltip="Standard cash dividends paid to Operator & Sponsor Partners and exit payouts."
                             />
                             {expandedCffOut && (
@@ -9133,6 +9119,15 @@ const OpCoCascadeView = memo(
                           </>
                         )}
 
+                        <TableRow
+                          label="Project Free Cash Flow (FCF)"
+                          data={columns}
+                          dk="fcf"
+                          total={data.totals.fcf}
+                          highlight
+                          indigo
+                          tooltip="Unlevered Free Cash Flow (Pre-financing, Pre-tax Ex-Land) representing the core asset performance."
+                        />
                         <TableRow
                           label="Total Net Cash Flow"
                           data={columns}
@@ -9430,7 +9425,13 @@ const PropCoDashboardView = memo(
           <div className="bg-white p-4 rounded-2xl shadow-sm border border-[#D8D8D8] flex flex-col gap-3">
             <div>
               <h3 className="text-sm font-bold text-[#1E2F31] flex items-center gap-2">
-                <Target size={16} className={propCoLocked ? "text-[#1C6048]/50" : "text-[#1C6048]"} /> PropCo Asset Exit Strategy
+                <Target
+                  size={16}
+                  className={
+                    propCoLocked ? "text-[#1C6048]/50" : "text-[#1C6048]"
+                  }
+                />{" "}
+                PropCo Asset Exit Strategy
                 {propCoLocked && (
                   <span className="inline-flex items-center gap-1.5 text-[9px] bg-[#EFEBE7] text-[#9B8B70] px-2 py-0.5 rounded-full font-bold border border-[#D8D8D8]">
                     <Lock size={10} /> Locked to Master
@@ -9443,7 +9444,9 @@ const PropCoDashboardView = memo(
                   : "Configure standalone property-level holding horizons and exit scenarios purely driven by PropCo covenants and asset yields."}
               </p>
             </div>
-            <div className={`flex flex-wrap gap-1.5 mt-1 ${propCoLocked ? "pointer-events-none opacity-85" : ""}`}>
+            <div
+              className={`flex flex-wrap gap-1.5 mt-1 ${propCoLocked ? "pointer-events-none opacity-85" : ""}`}
+            >
               <div className="flex-1 min-w-[100px] relative group flex flex-col justify-start">
                 <button
                   disabled={propCoLocked}
@@ -9461,7 +9464,9 @@ const PropCoDashboardView = memo(
                   Manual (Settings)
                 </button>
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
-                  {propCoLocked ? "Locked to Master HoldCo exit strategy" : "Uses the exit settings defined in PropCo assumptions"}
+                  {propCoLocked
+                    ? "Locked to Master HoldCo exit strategy"
+                    : "Uses the exit settings defined in PropCo assumptions"}
                   <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
                 </div>
               </div>
@@ -9483,7 +9488,9 @@ const PropCoDashboardView = memo(
                   Exit in Yr 10
                 </button>
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
-                  {propCoLocked ? "Locked to Master HoldCo exit strategy" : "Forces the exit on Year 10"}
+                  {propCoLocked
+                    ? "Locked to Master HoldCo exit strategy"
+                    : "Forces the exit on Year 10"}
                   <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
                 </div>
               </div>
@@ -9505,7 +9512,9 @@ const PropCoDashboardView = memo(
                   Exit at Breakeven
                 </button>
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
-                  {propCoLocked ? "Locked to Master HoldCo exit strategy" : "Exits at the end of the year standalone PropCo achieves cumulative equity cash flow breakeven"}
+                  {propCoLocked
+                    ? "Locked to Master HoldCo exit strategy"
+                    : "Exits at the end of the year standalone PropCo achieves cumulative equity cash flow breakeven"}
                   <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
                 </div>
               </div>
@@ -9555,7 +9564,9 @@ const PropCoDashboardView = memo(
                   No Exit (Yield)
                 </button>
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
-                  {propCoLocked ? "Locked to Master HoldCo exit strategy" : "No exit is calculated; evaluates pure operating yields over 30 years"}
+                  {propCoLocked
+                    ? "Locked to Master HoldCo exit strategy"
+                    : "No exit is calculated; evaluates pure operating yields over 30 years"}
                   <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
                 </div>
               </div>
@@ -9569,7 +9580,8 @@ const PropCoDashboardView = memo(
                   {/* Bank Debt Financing Toggle */}
                   <div className="flex items-center justify-between bg-[#F9F8F6] px-3 py-2 rounded-xl border border-[#D8D8D8]/40 hover:border-[#1C6048]/20 transition-all">
                     <span className="text-[10px] font-bold text-[#4C4A4B] flex items-center gap-1.5 whitespace-nowrap">
-                      <Landmark size={13} className="text-[#9B8B70]" /> Bank Debt Financing
+                      <Landmark size={13} className="text-[#9B8B70]" /> Bank
+                      Debt Financing
                     </span>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
@@ -9587,7 +9599,8 @@ const PropCoDashboardView = memo(
                   {/* Include Land Cost Toggle */}
                   <div className="flex items-center justify-between bg-[#F9F8F6] px-3 py-2 rounded-xl border border-[#D8D8D8]/40 hover:border-[#1C6048]/20 transition-all">
                     <span className="text-[10px] font-bold text-[#4C4A4B] flex items-center gap-1.5 whitespace-nowrap">
-                      <Map size={13} className="text-[#9B8B70]" /> Include Land Cost
+                      <Map size={13} className="text-[#9B8B70]" /> Include Land
+                      Cost
                     </span>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
@@ -9608,7 +9621,9 @@ const PropCoDashboardView = memo(
                       <span className="text-[10px] font-bold text-[#4C4A4B] flex items-center gap-1.5 whitespace-nowrap">
                         <Lock
                           size={13}
-                          className={holdCoLocked ? "text-[#1C6048]" : "text-[#9B8B70]"}
+                          className={
+                            holdCoLocked ? "text-[#1C6048]" : "text-[#9B8B70]"
+                          }
                         />{" "}
                         Lock Master to PropCo
                       </span>
@@ -9684,15 +9699,23 @@ const PropCoDashboardView = memo(
                   <AlertTriangle size={24} />
                 </div>
                 <div>
-                  <h4 className="text-[#991B1B] font-bold text-base">Working Capital Shortfall Detected</h4>
+                  <h4 className="text-[#991B1B] font-bold text-base">
+                    Working Capital Shortfall Detected
+                  </h4>
                   <p className="text-sm text-[#B91C1C] mt-1 pr-4">
-                    Projected operating cash flow is insufficient to cover early expenditures or debt service. Additional equity injection is required during operations.
+                    Projected operating cash flow is insufficient to cover early
+                    expenditures or debt service. Additional equity injection is
+                    required during operations.
                   </p>
                 </div>
               </div>
               <div className="text-left md:text-right shrink-0 bg-white/60 p-3 rounded-xl border border-[#FECACA]/50">
-                <p className="text-[10px] text-[#B91C1C] font-bold uppercase tracking-widest opacity-80 mb-1">Total Shortfall Equity</p>
-                <div className="text-xl font-bold text-[#991B1B]">{formatCurrency(data.totals.shortfallEquity)}</div>
+                <p className="text-[10px] text-[#B91C1C] font-bold uppercase tracking-widest opacity-80 mb-1">
+                  Total Shortfall Equity
+                </p>
+                <div className="text-xl font-bold text-[#991B1B]">
+                  {formatCurrency(data.totals.shortfallEquity)}
+                </div>
               </div>
             </div>
           )}
@@ -9888,12 +9911,20 @@ const PropCoDashboardView = memo(
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             <MiniKPICard
               title="Equity Payback"
-              value={data.metrics.payback > 0 ? `${formatNumber(Math.max(0, data.metrics.payback - devYears), 1)} Yrs` : "Never"}
+              value={
+                data.metrics.payback > 0
+                  ? `${formatNumber(Math.max(0, data.metrics.payback - devYears), 1)} Yrs`
+                  : "Never"
+              }
               subtitle="From Operations"
             />
             <MiniKPICard
               title="Op. Payback"
-              value={data.metrics.operatingPayback > 0 ? `${formatNumber(Math.max(0, data.metrics.operatingPayback - devYears), 1)} Yrs` : "Never"}
+              value={
+                data.metrics.operatingPayback > 0
+                  ? `${formatNumber(Math.max(0, data.metrics.operatingPayback - devYears), 1)} Yrs`
+                  : "Never"
+              }
               subtitle="From Operations"
             />
             <MiniKPICard
@@ -10079,21 +10110,14 @@ const PropCoCascadeView = memo(
               }
               className={`px-3 py-3 text-right border-b-2 border-r border-[#D8D8D8] ${
                 col.colType === "year"
-                  ? "cursor-pointer hover:bg-white font-black group "
+                  ? "cursor-pointer hover:bg-white font-black underline decoration-dashed underline-offset-4 "
                   : "font-medium text-[10px] "
               } bg-[#EFEBE7] ${!col.isOperating ? "text-[#9B8B70]" : "text-[#1E2F31]"} ${col.isMonth ? "min-w-[65px] whitespace-nowrap" : "min-w-[90px]"}`}
             >
               {col.colType === "year" ? (
-                <div className="flex items-center justify-end gap-1.5">
-                  <span className="text-[14px] font-black">{expandedYears[col.defaultLabel] ? "-" : "+"}</span>
-                  <div className="flex flex-col items-center">
-                    <span className="border-b-[1.5px] border-dashed border-transparent group-hover:border-current pb-[2px]">{String(col.defaultLabel)}</span>
-                    {String(col.defaultLabel).startsWith("Year ") && !isNaN(Number(String(col.defaultLabel).replace("Year ", ""))) && (
-                      <span className="text-[10px] font-mono font-normal tracking-tight border-b-[1.5px] border-dashed border-transparent group-hover:border-current pb-[2px]">
-                        ({2025 + Number(String(col.defaultLabel).replace("Year ", ""))})
-                      </span>
-                    )}
-                  </div>
+                <div className="flex items-center justify-end gap-1">
+                  {expandedYears[col.defaultLabel] ? "-" : "+"}
+                  {String(col.defaultLabel)}
                 </div>
               ) : (
                 <div className="text-center w-full">
@@ -10221,6 +10245,15 @@ const PropCoCascadeView = memo(
                       isIndent
                     />
                     <CapexRow
+                      label="Pre-Operating Costs"
+                      amount={
+                        data.capexDetails.devGaCost +
+                        data.capexDetails.devCarCost
+                      }
+                      total={data.metrics.totalCapex}
+                      isHeader
+                    />
+                    <CapexRow
                       label="Dev. G&A"
                       amount={data.capexDetails.devGaCost}
                       total={data.metrics.totalCapex}
@@ -10318,8 +10351,12 @@ const PropCoCascadeView = memo(
                 <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
                   <button
                     onClick={() => {
-                      const tables = document.querySelectorAll('.propco-table-scroll');
-                      tables.forEach(t => t.scrollBy({ left: -300, behavior: 'smooth' }));
+                      const tables = document.querySelectorAll(
+                        ".propco-table-scroll",
+                      );
+                      tables.forEach((t) =>
+                        t.scrollBy({ left: -300, behavior: "smooth" }),
+                      );
                     }}
                     className="p-1 rounded bg-white text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#F9F8F6] transition-colors"
                     title="Scroll Left"
@@ -10329,8 +10366,12 @@ const PropCoCascadeView = memo(
                   <div className="w-[1px] bg-[#D8D8D8] my-1 opacity-50"></div>
                   <button
                     onClick={() => {
-                      const tables = document.querySelectorAll('.propco-table-scroll');
-                      tables.forEach(t => t.scrollBy({ left: 300, behavior: 'smooth' }));
+                      const tables = document.querySelectorAll(
+                        ".propco-table-scroll",
+                      );
+                      tables.forEach((t) =>
+                        t.scrollBy({ left: 300, behavior: "smooth" }),
+                      );
                     }}
                     className="p-1 rounded bg-white text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#F9F8F6] transition-colors"
                     title="Scroll Right"
@@ -10374,7 +10415,8 @@ const PropCoCascadeView = memo(
                           isSubtractor
                           tooltip={{
                             desc: "Total operational and developmental property expenditures.",
-                            formula: "Total OpEx = Pre-Opening & Dev + Maintenance + Tax + Overhead + Equipment Lease",
+                            formula:
+                              "Total OpEx = Pre-Opening & Dev + Maintenance + Tax + Overhead + Equipment Lease",
                           }}
                         />
 
@@ -10648,7 +10690,9 @@ const PropCoCascadeView = memo(
                               hasConnector
                               isExpandable
                               isExpanded={expandedCfoOut}
-                              onExpand={() => setExpandedCfoOut(!expandedCfoOut)}
+                              onExpand={() =>
+                                setExpandedCfoOut(!expandedCfoOut)
+                              }
                               tooltip="Operating outflows paid during PropCo operations, including maintenance OPEX, FF&E reserve payments, financing interest, and corporate income taxes."
                             />
                             {expandedCfoOut && (
@@ -10783,7 +10827,9 @@ const PropCoCascadeView = memo(
                               hasConnector
                               isExpandable
                               isExpanded={expandedCfiOut}
-                              onExpand={() => setExpandedCfiOut(!expandedCfiOut)}
+                              onExpand={() =>
+                                setExpandedCfiOut(!expandedCfiOut)
+                              }
                               tooltip="Pre-operating development capital expenditures incurred across hard, soft, and land spends."
                             />
                             {expandedCfiOut && (
@@ -10817,6 +10863,16 @@ const PropCoCascadeView = memo(
                                   hasDoubleConnector
                                   isSubtractor
                                   tooltip="Consultant fees, licensing, VAT, and contingency reserves."
+                                />
+                                <TableRow
+                                  label="Pre-Operating Costs"
+                                  data={columns}
+                                  dk="preOpeningDev"
+                                  total={data.totals.preOpeningDev}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="Pre-opening direct operational outlays including Dev G&A and CAR."
                                 />
                               </>
                             )}
@@ -10879,7 +10935,9 @@ const PropCoCascadeView = memo(
                               hasConnector
                               isExpandable
                               isExpanded={expandedCffOut}
-                              onExpand={() => setExpandedCffOut(!expandedCffOut)}
+                              onExpand={() =>
+                                setExpandedCffOut(!expandedCffOut)
+                              }
                               tooltip="Subsequent debt principal amortization repayments and net operational free distributions paid to stakeholders."
                             />
                             {expandedCffOut && (
@@ -11020,6 +11078,15 @@ const PropCoCascadeView = memo(
                               dk: "contingencySpend",
                               total: data.totals.contingencySpend,
                             },
+                          ]}
+                        />
+                        <ExpandableDataRowGroup
+                          parentLabel="Pre-Operating Costs"
+                          parentDk="preOpeningDev"
+                          parentTotal={data.totals.preOpeningDev}
+                          data={columns}
+                          parentTooltip="Pre-opening direct operational outlays including Dev G&A and CAR."
+                          childrenData={[
                             {
                               label: "Dev. G&A",
                               dk: "devGa",
@@ -11263,7 +11330,13 @@ const ConsolidatedDashboardView = memo(
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-[#D8D8D8] flex flex-col gap-3">
           <div>
             <h3 className="text-sm font-bold text-[#1E2F31] flex items-center gap-2">
-              <Target size={16} className={holdCoLocked ? "text-[#1C6048]/50" : "text-[#1C6048]"} /> Master Exit Strategy
+              <Target
+                size={16}
+                className={
+                  holdCoLocked ? "text-[#1C6048]/50" : "text-[#1C6048]"
+                }
+              />{" "}
+              Master Exit Strategy
               {holdCoLocked && (
                 <span className="inline-flex items-center gap-1.5 text-[9px] bg-[#EFEBE7] text-[#9B8B70] px-2 py-0.5 rounded-full font-bold border border-[#D8D8D8]">
                   <Lock size={10} /> Locked to PropCo
@@ -11276,7 +11349,9 @@ const ConsolidatedDashboardView = memo(
                 : "Override individual security and entity settings to simulate combined Master exits and long-term portfolio yields."}
             </p>
           </div>
-          <div className={`flex flex-wrap gap-1.5 mt-1 ${holdCoLocked ? "pointer-events-none opacity-85" : ""}`}>
+          <div
+            className={`flex flex-wrap gap-1.5 mt-1 ${holdCoLocked ? "pointer-events-none opacity-85" : ""}`}
+          >
             <div className="flex-1 min-w-[100px] relative group flex">
               <button
                 disabled={holdCoLocked}
@@ -11294,7 +11369,9 @@ const ConsolidatedDashboardView = memo(
                 Manual (Settings)
               </button>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
-                {holdCoLocked ? "Locked to PropCo exit strategy" : "Uses the exit settings defined in the project assumptions"}
+                {holdCoLocked
+                  ? "Locked to PropCo exit strategy"
+                  : "Uses the exit settings defined in the project assumptions"}
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
               </div>
             </div>
@@ -11316,7 +11393,9 @@ const ConsolidatedDashboardView = memo(
                 Exit in Yr 10
               </button>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
-                {holdCoLocked ? "Locked to PropCo exit strategy" : "Forces the exit to occur exactly at the end of Year 10"}
+                {holdCoLocked
+                  ? "Locked to PropCo exit strategy"
+                  : "Forces the exit to occur exactly at the end of Year 10"}
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
               </div>
             </div>
@@ -11338,7 +11417,9 @@ const ConsolidatedDashboardView = memo(
                 Exit at Breakeven
               </button>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
-                {holdCoLocked ? "Locked to PropCo exit strategy" : "Exits at the end of the year the project achieves operational breakeven"}
+                {holdCoLocked
+                  ? "Locked to PropCo exit strategy"
+                  : "Exits at the end of the year the project achieves operational breakeven"}
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
               </div>
             </div>
@@ -11388,7 +11469,9 @@ const ConsolidatedDashboardView = memo(
                 No Exit (Yield)
               </button>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[180px] whitespace-normal px-2 py-1.5 bg-[#1E2F31] text-white text-[10px] leading-tight font-medium rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-center">
-                {holdCoLocked ? "Locked to PropCo exit strategy" : "No exit is calculated; evaluates pure operating yield over a long period"}
+                {holdCoLocked
+                  ? "Locked to PropCo exit strategy"
+                  : "No exit is calculated; evaluates pure operating yield over a long period"}
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1E2F31]"></div>
               </div>
             </div>
@@ -11432,7 +11515,13 @@ const ConsolidatedDashboardView = memo(
               {/* Lock PropCo to Master */}
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-[#4C4A4B] flex items-center gap-1.5">
-                  <Lock size={14} className={propCoLocked ? "text-[#1C6048]" : "text-[#4C4A4B]/40"} /> Lock PropCo to Master
+                  <Lock
+                    size={14}
+                    className={
+                      propCoLocked ? "text-[#1C6048]" : "text-[#4C4A4B]/40"
+                    }
+                  />{" "}
+                  Lock PropCo to Master
                 </span>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
@@ -11477,7 +11566,11 @@ const ConsolidatedDashboardView = memo(
           />
           <KPICard
             title="Blended Payback"
-            value={data.metrics.payback > 0 ? `${formatNumber(data.metrics.payback, 2)} Yrs` : "Never"}
+            value={
+              data.metrics.payback > 0
+                ? `${formatNumber(data.metrics.payback, 2)} Yrs`
+                : "Never"
+            }
             icon={<Clock size={18} />}
             color="indigo"
             subtitle="From Year 1"
@@ -11726,15 +11819,16 @@ const ConsolidatedDashboardView = memo(
 
 const ConsolidatedCascadeView = memo(
   ({ data, opcoData, propcoData, viewResolution, setViewResolution }) => {
-    const { columns: rawColumns, expandedYears, toggleYear } = useMonthlyColumns(
-      data.annualData,
-      viewResolution,
-    );
+    const {
+      columns: rawColumns,
+      expandedYears,
+      toggleYear,
+    } = useMonthlyColumns(data.annualData, viewResolution);
     const scrollRef = useRef(null);
     const [isFullScreen, setIsFullScreen] = useState(false);
-    
+
     // viewMode defines table visibility: 'all' | 'statement' | 'cascade'
-    const [viewMode, setViewMode] = useState("all"); 
+    const [viewMode, setViewMode] = useState("all");
 
     const [expandedPropCo, setExpandedPropCo] = useState(false);
     const [expandedOpCo, setExpandedOpCo] = useState(false);
@@ -11747,10 +11841,10 @@ const ConsolidatedCascadeView = memo(
       return rawColumns.map((col) => {
         const yr = col.parentYear || col.year;
         const yrIdx = data.annualData.findIndex((d) => d.year === yr);
-        
+
         const pY = propcoData?.annualData?.[yrIdx] || {};
         const oY = opcoData?.annualData?.[yrIdx] || {};
-        
+
         const isMonth = col.colType === "month";
         let mIdx = 0;
         if (isMonth) {
@@ -11761,38 +11855,65 @@ const ConsolidatedCascadeView = memo(
         const sharePct = 0.49;
 
         // Operating Flow lookups
-        const pEbitda = isMonth ? (pY.monthly?.ebitda?.[mIdx] || 0) : (pY.ebitda || 0);
-        const oEbitda = isMonth ? (oY.monthly?.ebitda?.[mIdx] || 0) : (oY.ebitda || 0);
-        const ltEbitda = col.lookThroughEbitda || (pEbitda + oEbitda * sharePct);
+        const pEbitda = isMonth
+          ? pY.monthly?.ebitda?.[mIdx] || 0
+          : pY.ebitda || 0;
+        const oEbitda = isMonth
+          ? oY.monthly?.ebitda?.[mIdx] || 0
+          : oY.ebitda || 0;
+        const ltEbitda = col.lookThroughEbitda || pEbitda + oEbitda * sharePct;
 
-        const pTax = isMonth ? (pY.monthly?.corpTax?.[mIdx] || 0) : (pY.corpTax || 0);
-        const oTax = isMonth ? (oY.monthly?.tax?.[mIdx] || 0) : (oY.tax || 0);
+        const pTax = isMonth
+          ? pY.monthly?.corpTax?.[mIdx] || 0
+          : pY.corpTax || 0;
+        const oTax = isMonth ? oY.monthly?.tax?.[mIdx] || 0 : oY.tax || 0;
         const ltTax = pTax + oTax * sharePct;
         const ltCfo = ltEbitda - ltTax;
 
         // Investing Flow lookups (Capex & setups)
-        const pLand = isMonth ? (pY.monthly?.landSpend?.[mIdx] || 0) : (pY.landSpend || 0);
-        const pHard = isMonth ? (pY.monthly?.hardSpend?.[mIdx] || 0) : (pY.hardSpend || 0);
-        const pSoft = isMonth ? (pY.monthly?.softSpend?.[mIdx] || 0) : (pY.softSpend || 0);
-        const pDevGa = isMonth ? (pY.monthly?.devGa?.[mIdx] || 0) : (pY.devGa || 0);
-        const pDevCar = isMonth ? (pY.monthly?.devCar?.[mIdx] || 0) : (pY.devCar || 0);
-        const pConInt = isMonth ? (pY.monthly?.conInt?.[mIdx] || 0) : (pY.conInt || 0);
-        
-        const oSetupOutlay = isMonth ? (oY.monthly?.pB_Outlay?.[mIdx] || 0) : (oY.pB_Outlay || 0);
+        const pLand = isMonth
+          ? pY.monthly?.landSpend?.[mIdx] || 0
+          : pY.landSpend || 0;
+        const pHard = isMonth
+          ? pY.monthly?.hardSpend?.[mIdx] || 0
+          : pY.hardSpend || 0;
+        const pSoft = isMonth
+          ? pY.monthly?.softSpend?.[mIdx] || 0
+          : pY.softSpend || 0;
+        const pDevGa = isMonth ? pY.monthly?.devGa?.[mIdx] || 0 : pY.devGa || 0;
+        const pDevCar = isMonth
+          ? pY.monthly?.devCar?.[mIdx] || 0
+          : pY.devCar || 0;
+        const pConInt = isMonth
+          ? pY.monthly?.conInt?.[mIdx] || 0
+          : pY.conInt || 0;
 
-        const ltPropCoCapex = pLand + pHard + pSoft + pDevGa + pDevCar + pConInt;
+        const oSetupOutlay = isMonth
+          ? oY.monthly?.pB_Outlay?.[mIdx] || 0
+          : oY.pB_Outlay || 0;
+
+        const ltPropCoCapex =
+          pLand + pHard + pSoft + pDevGa + pDevCar + pConInt;
         const ltOpCoCapex = oSetupOutlay;
         const ltCapex = ltPropCoCapex + ltOpCoCapex;
 
-        const pExit = isMonth ? (pY.monthly?.exit?.[mIdx] || 0) : (pY.exit || 0);
-        const oExit = isMonth ? (oY.monthly?.pB_Exit?.[mIdx] || 0) : (oY.pB_Exit || 0);
+        const pExit = isMonth ? pY.monthly?.exit?.[mIdx] || 0 : pY.exit || 0;
+        const oExit = isMonth
+          ? oY.monthly?.pB_Exit?.[mIdx] || 0
+          : oY.pB_Exit || 0;
         const ltExit = pExit + oExit;
         const ltCfi = -ltCapex + ltExit;
 
         // Financing Flow lookups (PropCo Debt)
-        const pDebtDraw = isMonth ? (pY.monthly?.debtDraw?.[mIdx] || 0) : (pY.debtDraw || 0);
-        const pPrincipal = isMonth ? (pY.monthly?.principal?.[mIdx] || 0) : (pY.principal || 0);
-        const pInterest = isMonth ? (pY.monthly?.interest?.[mIdx] || 0) : (pY.interest || 0);
+        const pDebtDraw = isMonth
+          ? pY.monthly?.debtDraw?.[mIdx] || 0
+          : pY.debtDraw || 0;
+        const pPrincipal = isMonth
+          ? pY.monthly?.principal?.[mIdx] || 0
+          : pY.principal || 0;
+        const pInterest = isMonth
+          ? pY.monthly?.interest?.[mIdx] || 0
+          : pY.interest || 0;
 
         const ltDebtDraw = pDebtDraw;
         const ltDebtPrincipal = pPrincipal;
@@ -11800,10 +11921,16 @@ const ConsolidatedCascadeView = memo(
         const ltCffPay = ltDebtDraw - ltDebtPrincipal - ltDebtInterest;
 
         // Cascading Distributions split to Sponsors
-        const pFcfe = isMonth ? (pY.monthly?.fcfe?.[mIdx] || 0) : (pY.fcfe || 0);
-        const oShareB = isMonth ? (oY.monthly?.shareB?.[mIdx] || 0) : (oY.shareB || 0);
-        const oOutlayB = isMonth ? (oY.monthly?.pB_Outlay?.[mIdx] || 0) : (oY.pB_Outlay || 0);
-        const oExitB = isMonth ? (oY.monthly?.pB_Exit?.[mIdx] || 0) : (oY.pB_Exit || 0);
+        const pFcfe = isMonth ? pY.monthly?.fcfe?.[mIdx] || 0 : pY.fcfe || 0;
+        const oShareB = isMonth
+          ? oY.monthly?.shareB?.[mIdx] || 0
+          : oY.shareB || 0;
+        const oOutlayB = isMonth
+          ? oY.monthly?.pB_Outlay?.[mIdx] || 0
+          : oY.pB_Outlay || 0;
+        const oExitB = isMonth
+          ? oY.monthly?.pB_Exit?.[mIdx] || 0
+          : oY.pB_Exit || 0;
 
         const partnerPropCoFlow = pFcfe;
         const partnerOpCoFlow = oOutlayB + oShareB + oExitB;
@@ -11847,10 +11974,20 @@ const ConsolidatedCascadeView = memo(
 
     // Pre-calculate exact lookup totals over year columns
     const totals = useMemo(() => {
-      let Ebitda = 0, Tax = 0, Cfo = 0;
-      let PropCapex = 0, OpCapex = 0, Capex = 0, Exit = 0, Cfi = 0;
-      let DebtDraw = 0, DebtPrincipal = 0, DebtInterest = 0, CffPay = 0;
-      let PartnerPropCo = 0, PartnerOpCo = 0;
+      let Ebitda = 0,
+        Tax = 0,
+        Cfo = 0;
+      let PropCapex = 0,
+        OpCapex = 0,
+        Capex = 0,
+        Exit = 0,
+        Cfi = 0;
+      let DebtDraw = 0,
+        DebtPrincipal = 0,
+        DebtInterest = 0,
+        CffPay = 0;
+      let PartnerPropCo = 0,
+        PartnerOpCo = 0;
 
       columns.forEach((col) => {
         if (col.colType === "year") {
@@ -11901,7 +12038,8 @@ const ConsolidatedCascadeView = memo(
         const yrInflow = propCoIn + opCoOpIn + opCoExitIn;
 
         const propCoOut = d.propCoFlow < 0 ? Math.abs(d.propCoFlow) : 0;
-        const opCoOpOut = d.opCoOperatingFlow < 0 ? Math.abs(d.opCoOperatingFlow) : 0;
+        const opCoOpOut =
+          d.opCoOperatingFlow < 0 ? Math.abs(d.opCoOperatingFlow) : 0;
         const opCoExitOut = d.opCoExitFlow < 0 ? Math.abs(d.opCoExitFlow) : 0;
         const yrOutflow = propCoOut + opCoOpOut + opCoExitOut;
 
@@ -11930,7 +12068,8 @@ const ConsolidatedCascadeView = memo(
         totalReturns += propCoIn + opCoOpIn + opCoExitIn;
 
         const propCoOut = d.propCoFlow < 0 ? Math.abs(d.propCoFlow) : 0;
-        const opCoOpOut = d.opCoOperatingFlow < 0 ? Math.abs(d.opCoOperatingFlow) : 0;
+        const opCoOpOut =
+          d.opCoOperatingFlow < 0 ? Math.abs(d.opCoOperatingFlow) : 0;
         const opCoExitOut = d.opCoExitFlow < 0 ? Math.abs(d.opCoExitFlow) : 0;
         totalInjections += propCoOut + opCoOpOut + opCoExitOut;
       });
@@ -11962,21 +12101,14 @@ const ConsolidatedCascadeView = memo(
               }
               className={`px-3 py-3 text-right border-b-2 border-r border-[#D8D8D8] ${
                 col.colType === "year"
-                  ? "cursor-pointer hover:bg-white font-black group "
+                  ? "cursor-pointer hover:bg-white font-black underline decoration-dashed underline-offset-4 "
                   : "font-medium text-[10px] "
               } bg-[#EFEBE7] ${!col.isOperating ? "text-[#9B8B70]" : "text-[#1E2F31]"} ${col.isMonth ? "min-w-[65px] whitespace-nowrap" : "min-w-[90px]"}`}
             >
               {col.colType === "year" ? (
-                <div className="flex items-center justify-end gap-1.5">
-                  <span className="text-[14px] font-black">{expandedYears[col.defaultLabel] ? "-" : "+"}</span>
-                  <div className="flex flex-col items-center">
-                    <span className="border-b-[1.5px] border-dashed border-transparent group-hover:border-current pb-[2px]">{String(col.defaultLabel)}</span>
-                    {String(col.defaultLabel).startsWith("Year ") && !isNaN(Number(String(col.defaultLabel).replace("Year ", ""))) && (
-                      <span className="text-[10px] font-mono font-normal tracking-tight border-b-[1.5px] border-dashed border-transparent group-hover:border-current pb-[2px]">
-                        ({2025 + Number(String(col.defaultLabel).replace("Year ", ""))})
-                      </span>
-                    )}
-                  </div>
+                <div className="flex items-center justify-end gap-1">
+                  {expandedYears[col.defaultLabel] ? "-" : "+"}
+                  {String(col.defaultLabel)}
                 </div>
               ) : (
                 <div className="text-center w-full">
@@ -12002,7 +12134,8 @@ const ConsolidatedCascadeView = memo(
         >
           <div className="p-4 bg-white rounded-xl shadow-sm border border-[#D8D8D8] flex justify-between items-center shrink-0">
             <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
-              <List size={14} /> Look-Through Statement of Cash Flows & Cascade Waterfall
+              <List size={14} /> Look-Through Statement of Cash Flows & Cascade
+              Waterfall
             </h3>
             <div className="flex items-center gap-2">
               {/* Table Selection Mode */}
@@ -12066,8 +12199,11 @@ const ConsolidatedCascadeView = memo(
               <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
                 <button
                   onClick={() => {
-                    const tables = document.querySelectorAll('.cons-table-scroll');
-                    tables.forEach(t => t.scrollBy({ left: -300, behavior: 'smooth' }));
+                    const tables =
+                      document.querySelectorAll(".cons-table-scroll");
+                    tables.forEach((t) =>
+                      t.scrollBy({ left: -300, behavior: "smooth" }),
+                    );
                   }}
                   className="p-1 rounded bg-white text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#F9F8F6] transition-colors"
                   title="Scroll Left"
@@ -12077,8 +12213,11 @@ const ConsolidatedCascadeView = memo(
                 <div className="w-[1px] bg-[#D8D8D8] my-1 opacity-50"></div>
                 <button
                   onClick={() => {
-                    const tables = document.querySelectorAll('.cons-table-scroll');
-                    tables.forEach(t => t.scrollBy({ left: 300, behavior: 'smooth' }));
+                    const tables =
+                      document.querySelectorAll(".cons-table-scroll");
+                    tables.forEach((t) =>
+                      t.scrollBy({ left: 300, behavior: "smooth" }),
+                    );
                   }}
                   className="p-1 rounded bg-white text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-[#F9F8F6] transition-colors"
                   title="Scroll Right"
@@ -12106,40 +12245,40 @@ const ConsolidatedCascadeView = memo(
                   <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
                     {renderTableHeaders()}
                     <tbody>
-                    <TableRow
-                      label="Look-Through Combined Revenue"
-                      data={columns}
-                      dk="lookThroughRevenue"
-                      total={data.totals.lookThroughRevenue}
-                      isIndent
-                      tooltip={CONSOLIDATED_FORMULAS.lookThroughRevenue}
-                    />
-                    <TableRow
-                      label="Look-Through Combined EBITDA"
-                      data={columns}
-                      dk="lookThroughEbitda"
-                      total={data.totals.lookThroughEbitda}
-                      isIndent
-                      tooltip={CONSOLIDATED_FORMULAS.lookThroughEbitda}
-                    />
-                    <TableRow
-                      label="Look-Through Combined Net Income"
-                      data={columns}
-                      dk="lookThroughNetIncome"
-                      total={data.totals.lookThroughNetIncome}
-                      highlight
-                      tooltip={CONSOLIDATED_FORMULAS.lookThroughNetIncome}
-                    />
-                    <TableRow
-                      label="Blended Combined Net Margin (%)"
-                      data={columns}
-                      dk="lookThroughMargin"
-                      total={data.totals.lookThroughMargin}
-                      highlight
-                      isPercent
-                      indigo
-                      tooltip={CONSOLIDATED_FORMULAS.lookThroughMargin}
-                    />
+                      <TableRow
+                        label="Look-Through Combined Revenue"
+                        data={columns}
+                        dk="lookThroughRevenue"
+                        total={data.totals.lookThroughRevenue}
+                        isIndent
+                        tooltip={CONSOLIDATED_FORMULAS.lookThroughRevenue}
+                      />
+                      <TableRow
+                        label="Look-Through Combined EBITDA"
+                        data={columns}
+                        dk="lookThroughEbitda"
+                        total={data.totals.lookThroughEbitda}
+                        isIndent
+                        tooltip={CONSOLIDATED_FORMULAS.lookThroughEbitda}
+                      />
+                      <TableRow
+                        label="Look-Through Combined Net Income"
+                        data={columns}
+                        dk="lookThroughNetIncome"
+                        total={data.totals.lookThroughNetIncome}
+                        highlight
+                        tooltip={CONSOLIDATED_FORMULAS.lookThroughNetIncome}
+                      />
+                      <TableRow
+                        label="Blended Combined Net Margin (%)"
+                        data={columns}
+                        dk="lookThroughMargin"
+                        total={data.totals.lookThroughMargin}
+                        highlight
+                        isPercent
+                        indigo
+                        tooltip={CONSOLIDATED_FORMULAS.lookThroughMargin}
+                      />
                     </tbody>
                   </table>
                 </div>
@@ -12158,136 +12297,136 @@ const ConsolidatedCascadeView = memo(
                   <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
                     {renderTableHeaders()}
                     <tbody>
-                    {/* OPERATING CFO */}
-                    <TableRow
-                      label="1. Cash Flow from Operating Activities"
-                      data={columns}
-                      isHeader
-                    />
-                    <TableRow
-                      label="Look-Through Combined Operating EBITDA"
-                      data={columns}
-                      dk="ltEbitda"
-                      total={totals.ltEbitda}
-                      isIndent
-                      tooltip="Combines 100% of PropCo EBITDA and 49% of OpCo operating EBITDA (eliminating internal rents)"
-                    />
-                    <TableRow
-                      label="Less: Corporate Income Taxes Paid"
-                      data={columns}
-                      dk="ltTax"
-                      total={totals.ltTax}
-                      isIndent
-                      isSubtractor
-                      tooltip="PropCo tax + 49% share of clinical OpCo tax"
-                    />
-                    <TableRow
-                      label="Net Cash from Operating Activities (CFO)"
-                      data={columns}
-                      dk="ltCfo"
-                      total={totals.ltCfo}
-                      highlight
-                      indigo
-                      tooltip="Cash surplus generated from pure medical and rental business segments"
-                    />
+                      {/* OPERATING CFO */}
+                      <TableRow
+                        label="1. Cash Flow from Operating Activities"
+                        data={columns}
+                        isHeader
+                      />
+                      <TableRow
+                        label="Look-Through Combined Operating EBITDA"
+                        data={columns}
+                        dk="ltEbitda"
+                        total={totals.ltEbitda}
+                        isIndent
+                        tooltip="Combines 100% of PropCo EBITDA and 49% of OpCo operating EBITDA (eliminating internal rents)"
+                      />
+                      <TableRow
+                        label="Less: Corporate Income Taxes Paid"
+                        data={columns}
+                        dk="ltTax"
+                        total={totals.ltTax}
+                        isIndent
+                        isSubtractor
+                        tooltip="PropCo tax + 49% share of clinical OpCo tax"
+                      />
+                      <TableRow
+                        label="Net Cash from Operating Activities (CFO)"
+                        data={columns}
+                        dk="ltCfo"
+                        total={totals.ltCfo}
+                        highlight
+                        indigo
+                        tooltip="Cash surplus generated from pure medical and rental business segments"
+                      />
 
-                    {/* INVESTING CFI */}
-                    <TableRow
-                      label="2. Cash Flow from Investing Activities"
-                      data={columns}
-                      isHeader
-                    />
-                    <TableRow
-                      label="Look-Through Construction Capex & Setups"
-                      data={columns}
-                      dk="ltCapex"
-                      total={totals.ltCapex}
-                      isIndent
-                      isSubtractor
-                      tooltip="All PropCo land & hard spend + OpCo setup outlays pro-rated"
-                    />
-                    <TableRow
-                      label="Look-Through Capital Disposal / Exit Proceeds"
-                      data={columns}
-                      dk="ltExit"
-                      total={totals.ltExit}
-                      isIndent
-                      tooltip="Proceeds from estate and clinical equity buyback liquidation"
-                    />
-                    <TableRow
-                      label="Net Cash from Investing Activities (CFI)"
-                      data={columns}
-                      dk="ltCfi"
-                      total={totals.ltCfi}
-                      highlight
-                      indigo
-                    />
+                      {/* INVESTING CFI */}
+                      <TableRow
+                        label="2. Cash Flow from Investing Activities"
+                        data={columns}
+                        isHeader
+                      />
+                      <TableRow
+                        label="Look-Through Construction Capex & Setups"
+                        data={columns}
+                        dk="ltCapex"
+                        total={totals.ltCapex}
+                        isIndent
+                        isSubtractor
+                        tooltip="All PropCo land & hard spend + OpCo setup outlays pro-rated"
+                      />
+                      <TableRow
+                        label="Look-Through Capital Disposal / Exit Proceeds"
+                        data={columns}
+                        dk="ltExit"
+                        total={totals.ltExit}
+                        isIndent
+                        tooltip="Proceeds from estate and clinical equity buyback liquidation"
+                      />
+                      <TableRow
+                        label="Net Cash from Investing Activities (CFI)"
+                        data={columns}
+                        dk="ltCfi"
+                        total={totals.ltCfi}
+                        highlight
+                        indigo
+                      />
 
-                    {/* FINANCING CFF */}
-                    <TableRow
-                      label="3. Cash Flow from Financing Activities"
-                      data={columns}
-                      isHeader
-                    />
-                    <TableRow
-                      label="Bank Debt Disbursements (PropCo Drawdown)"
-                      data={columns}
-                      dk="ltDebtDraw"
-                      total={totals.ltDebtDraw}
-                      isIndent
-                      tooltip="Debt funding injected to cover property construction spend"
-                    />
-                    <TableRow
-                      label="Less: Principal Amortization paid"
-                      data={columns}
-                      dk="ltDebtPrincipal"
-                      total={totals.ltDebtPrincipal}
-                      isIndent
-                      isSubtractor
-                      tooltip="Repayment of senior loan key"
-                    />
-                    <TableRow
-                      label="Less: Bank Interest Paid"
-                      data={columns}
-                      dk="ltDebtInterest"
-                      total={totals.ltDebtInterest}
-                      isIndent
-                      isSubtractor
-                    />
-                    <TableRow
-                      label="Net Cash from Financing Activities (CFF)"
-                      data={columns}
-                      dk="ltCffPay"
-                      total={totals.ltCffPay}
-                      highlight
-                      indigo
-                    />
+                      {/* FINANCING CFF */}
+                      <TableRow
+                        label="3. Cash Flow from Financing Activities"
+                        data={columns}
+                        isHeader
+                      />
+                      <TableRow
+                        label="Bank Debt Disbursements (PropCo Drawdown)"
+                        data={columns}
+                        dk="ltDebtDraw"
+                        total={totals.ltDebtDraw}
+                        isIndent
+                        tooltip="Debt funding injected to cover property construction spend"
+                      />
+                      <TableRow
+                        label="Less: Principal Amortization paid"
+                        data={columns}
+                        dk="ltDebtPrincipal"
+                        total={totals.ltDebtPrincipal}
+                        isIndent
+                        isSubtractor
+                        tooltip="Repayment of senior loan key"
+                      />
+                      <TableRow
+                        label="Less: Bank Interest Paid"
+                        data={columns}
+                        dk="ltDebtInterest"
+                        total={totals.ltDebtInterest}
+                        isIndent
+                        isSubtractor
+                      />
+                      <TableRow
+                        label="Net Cash from Financing Activities (CFF)"
+                        data={columns}
+                        dk="ltCffPay"
+                        total={totals.ltCffPay}
+                        highlight
+                        indigo
+                      />
 
-                    {/* RECONCILIATION SUMMARY */}
-                    <TableSection
-                      title="CFO + CFI + CFF RECONCILIATION"
-                      colSpan={columns.length + 2}
-                      type="emerald"
-                    />
-                    <TableRow
-                      label="NET COMBINED FREE CASH FLOW"
-                      data={columns}
-                      dk="netFlow"
-                      total={data.totals.netFlow}
-                      highlight
-                      emerald
-                      tooltip="Net change in cash position across all segments for HoldCo"
-                    />
-                    <TableRow
-                      label="Cumulative Combined Cash Position"
-                      data={columns}
-                      dk="cumCf"
-                      highlight
-                      crossover
-                      bold
-                      indigo
-                      tooltip="Aggregated wealth balance after net investment offsets"
-                    />
+                      {/* RECONCILIATION SUMMARY */}
+                      <TableSection
+                        title="CFO + CFI + CFF RECONCILIATION"
+                        colSpan={columns.length + 2}
+                        type="emerald"
+                      />
+                      <TableRow
+                        label="NET COMBINED FREE CASH FLOW"
+                        data={columns}
+                        dk="netFlow"
+                        total={data.totals.netFlow}
+                        highlight
+                        emerald
+                        tooltip="Net change in cash position across all segments for HoldCo"
+                      />
+                      <TableRow
+                        label="Cumulative Combined Cash Position"
+                        data={columns}
+                        dk="cumCf"
+                        highlight
+                        crossover
+                        bold
+                        indigo
+                        tooltip="Aggregated wealth balance after net investment offsets"
+                      />
                     </tbody>
                   </table>
                 </div>
@@ -12306,123 +12445,124 @@ const ConsolidatedCascadeView = memo(
                   <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
                     {renderTableHeaders()}
                     <tbody>
-                    <TableRow
-                      label="HoldCo Cash Available for Outflows"
-                      data={columns}
-                      dk="netFlow"
-                      total={data.totals.netFlow}
-                      highlight
-                      emerald
-                    />
-                    
-                    <TableRow
-                      label="Sponsor Cascade 1: Real Estate Partner (100% PropCo FCFE)"
-                      data={columns}
-                      dk="partnerPropCoFlow"
-                      total={totals.partnerPropCo}
-                      isHeader
-                      isExpandable
-                      isExpanded={expandedPropCo}
-                      onExpand={() => setExpandedPropCo((prev) => !prev)}
-                      tooltip={CONSOLIDATED_FORMULAS.propCoFlow}
-                    />
-                    {expandedPropCo && (
-                      <>
-                        <TableRow
-                          label="PropCo Investment"
-                          data={columns}
-                          dk="propCoInvestmentFlow"
-                          total={data.totals.propCoInvestmentFlow}
-                          isIndent
-                          hasConnector
-                          tooltip={CONSOLIDATED_FORMULAS.propCoInvestmentFlow}
-                        />
-                        <TableRow
-                          label="PropCo Operating FCFE"
-                          data={columns}
-                          dk="propCoOperatingFlow"
-                          total={data.totals.propCoOperatingFlow}
-                          isIndent
-                          hasConnector
-                          tooltip={CONSOLIDATED_FORMULAS.propCoOperatingFlow}
-                        />
-                        <TableRow
-                          label="PropCo Exit Proceeds"
-                          data={columns}
-                          dk="propCoExitFlow"
-                          total={data.totals.propCoExitFlow}
-                          isIndent
-                          hasConnector
-                          tooltip={CONSOLIDATED_FORMULAS.propCoExitFlow}
-                        />
-                      </>
-                    )}
+                      <TableRow
+                        label="HoldCo Cash Available for Outflows"
+                        data={columns}
+                        dk="netFlow"
+                        total={data.totals.netFlow}
+                        highlight
+                        emerald
+                      />
 
-                    <TableRow
-                      label="Sponsor Cascade 2: Clinical Operator (49% OpCo Dividends)"
-                      data={columns}
-                      dk="partnerOpCoFlow"
-                      total={totals.partnerOpCo}
-                      isHeader
-                      isExpandable
-                      isExpanded={expandedOpCo}
-                      onExpand={() => setExpandedOpCo((prev) => !prev)}
-                      tooltip={CONSOLIDATED_FORMULAS.opCoFlow}
-                    />
-                    {expandedOpCo && (
-                      <>
-                        <TableRow
-                          label="OpCo Investment"
-                          data={columns}
-                          dk="opCoInvestmentFlow"
-                          total={data.totals.opCoInvestmentFlow}
-                          isIndent
-                          hasConnector
-                          tooltip={CONSOLIDATED_FORMULAS.opCoInvestmentFlow}
-                        />
-                        <TableRow
-                          label="OpCo Operating Dividend"
-                          data={columns}
-                          dk="opCoOperatingDividendFlow"
-                          total={data.totals.opCoOperatingDividendFlow}
-                          isIndent
-                          hasConnector
-                          tooltip={CONSOLIDATED_FORMULAS.opCoOperatingDividendFlow}
-                        />
-                        <TableRow
-                          label="OpCo Exit Proceeds"
-                          data={columns}
-                          dk="opCoExitFlow"
-                          total={data.totals.opCoExitFlow}
-                          isIndent
-                          hasConnector
-                          tooltip={CONSOLIDATED_FORMULAS.opCoExitFlow}
-                        />
-                      </>
-                    )}
+                      <TableRow
+                        label="Sponsor Cascade 1: Real Estate Partner (100% PropCo FCFE)"
+                        data={columns}
+                        dk="partnerPropCoFlow"
+                        total={totals.partnerPropCo}
+                        isHeader
+                        isExpandable
+                        isExpanded={expandedPropCo}
+                        onExpand={() => setExpandedPropCo((prev) => !prev)}
+                        tooltip={CONSOLIDATED_FORMULAS.propCoFlow}
+                      />
+                      {expandedPropCo && (
+                        <>
+                          <TableRow
+                            label="PropCo Investment"
+                            data={columns}
+                            dk="propCoInvestmentFlow"
+                            total={data.totals.propCoInvestmentFlow}
+                            isIndent
+                            hasConnector
+                            tooltip={CONSOLIDATED_FORMULAS.propCoInvestmentFlow}
+                          />
+                          <TableRow
+                            label="PropCo Operating FCFE"
+                            data={columns}
+                            dk="propCoOperatingFlow"
+                            total={data.totals.propCoOperatingFlow}
+                            isIndent
+                            hasConnector
+                            tooltip={CONSOLIDATED_FORMULAS.propCoOperatingFlow}
+                          />
+                          <TableRow
+                            label="PropCo Exit Proceeds"
+                            data={columns}
+                            dk="propCoExitFlow"
+                            total={data.totals.propCoExitFlow}
+                            isIndent
+                            hasConnector
+                            tooltip={CONSOLIDATED_FORMULAS.propCoExitFlow}
+                          />
+                        </>
+                      )}
 
-                    <TableSection
-                      title="CUMULATIVE CASCADE STATUS"
-                      colSpan={columns.length + 2}
-                    />
-                    <TableRow
-                      label="Cumulative Real Estate Sponsor Cash Flow"
-                      data={columns}
-                      dk="cumPartnerPropCo"
-                      bold
-                    />
-                    <TableRow
-                      label="Cumulative Clinical Operator Sponsor Cash Flow"
-                      data={columns}
-                      dk="cumPartnerOpCo"
-                      bold
-                    />
+                      <TableRow
+                        label="Sponsor Cascade 2: Clinical Operator (49% OpCo Dividends)"
+                        data={columns}
+                        dk="partnerOpCoFlow"
+                        total={totals.partnerOpCo}
+                        isHeader
+                        isExpandable
+                        isExpanded={expandedOpCo}
+                        onExpand={() => setExpandedOpCo((prev) => !prev)}
+                        tooltip={CONSOLIDATED_FORMULAS.opCoFlow}
+                      />
+                      {expandedOpCo && (
+                        <>
+                          <TableRow
+                            label="OpCo Investment"
+                            data={columns}
+                            dk="opCoInvestmentFlow"
+                            total={data.totals.opCoInvestmentFlow}
+                            isIndent
+                            hasConnector
+                            tooltip={CONSOLIDATED_FORMULAS.opCoInvestmentFlow}
+                          />
+                          <TableRow
+                            label="OpCo Operating Dividend"
+                            data={columns}
+                            dk="opCoOperatingDividendFlow"
+                            total={data.totals.opCoOperatingDividendFlow}
+                            isIndent
+                            hasConnector
+                            tooltip={
+                              CONSOLIDATED_FORMULAS.opCoOperatingDividendFlow
+                            }
+                          />
+                          <TableRow
+                            label="OpCo Exit Proceeds"
+                            data={columns}
+                            dk="opCoExitFlow"
+                            total={data.totals.opCoExitFlow}
+                            isIndent
+                            hasConnector
+                            tooltip={CONSOLIDATED_FORMULAS.opCoExitFlow}
+                          />
+                        </>
+                      )}
+
+                      <TableSection
+                        title="CUMULATIVE CASCADE STATUS"
+                        colSpan={columns.length + 2}
+                      />
+                      <TableRow
+                        label="Cumulative Real Estate Sponsor Cash Flow"
+                        data={columns}
+                        dk="cumPartnerPropCo"
+                        bold
+                      />
+                      <TableRow
+                        label="Cumulative Clinical Operator Sponsor Cash Flow"
+                        data={columns}
+                        dk="cumPartnerOpCo"
+                        bold
+                      />
                     </tbody>
                   </table>
                 </div>
               </div>
             )}
-
           </div>
         </div>
       </div>
@@ -13138,18 +13278,27 @@ const PropCoSettingsView = memo(
             />
             {assumptions.includeFinancing && (
               <>
+                <ToggleRow
+                  label="Include Pre-Op in Debt Sizing"
+                  desc="Base LTV on Capex inclusive of Pre-Op Costs (Dev G&A, CAR)."
+                  checked={assumptions.includePreOpInLtv ?? true}
+                  onChange={(v) => onChange("includePreOpInLtv", v)}
+                  isLocked={isLocked}
+                />
                 <div className="flex justify-between items-center bg-[#EFEBE7] p-2 rounded mb-2">
                   <div>
                     <span className="text-[10px] uppercase font-bold text-[#8A8175] mr-2">
                       Debt Calculation Basis
                     </span>
                     <p className="text-[8px] text-[#8A8175]/80 font-medium leading-tight mt-0.5">
-                      LTV applies solely to non-land capex
+                      {(assumptions.includePreOpInLtv ?? true)
+                        ? "LTV applies to all non-land capex"
+                        : "LTV applies to capex excluding land & pre-op costs"}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-black text-[#1E2F31]">
-                      {formatNumber(data?.metrics?.totalCapexExLand || 0, 1)}
+                      {formatNumber(data?.metrics?.debtSizingBase || 0, 1)}
                     </span>
                     <span className="text-[10px] text-[#8A8175] font-bold">
                       B
@@ -13278,193 +13427,258 @@ const PropCoSettingsView = memo(
               unit="Yrs"
               isLocked={isLocked || !assumptions.includeFinancing}
             />
-            {assumptions.includeFinancing && (() => {
-              const amortYears = Math.max(1, (assumptions.loanTenor || 15) - (assumptions.ioGracePeriodYears || 2));
-              return (
-                <div id="propco-amortization-scheme" className="bg-[#F9F8F6] p-4 border border-[#D8D8D8] rounded-[16px] mt-4 space-y-4">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black uppercase text-[#1C6048] tracking-wider block">
-                          Amortization Scheme
-                        </span>
-                        {isLocked && (
-                          <span className="text-[8px] bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
-                            Locked
+            {assumptions.includeFinancing &&
+              (() => {
+                const amortYears = Math.max(
+                  1,
+                  (assumptions.loanTenor || 15) -
+                    (assumptions.ioGracePeriodYears || 2),
+                );
+                return (
+                  <div
+                    id="propco-amortization-scheme"
+                    className="bg-[#F9F8F6] p-4 border border-[#D8D8D8] rounded-[16px] mt-4 space-y-4"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-black uppercase text-[#1C6048] tracking-wider block">
+                            Amortization Scheme
                           </span>
-                        )}
+                          {isLocked && (
+                            <span className="text-[8px] bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                              Locked
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[9px] text-[#4C4A4B] font-medium font-mono">
+                          {isLocked
+                            ? 'Click "Unlock" at top-right of section to edit'
+                            : "Select how the principal loan balance is repaid over time"}
+                        </span>
                       </div>
-                      <span className="text-[9px] text-[#4C4A4B] font-medium font-mono">
-                        {isLocked ? "Click \"Unlock\" at top-right of section to edit" : "Select how the principal loan balance is repaid over time"}
-                      </span>
                     </div>
-                  </div>
 
-                  {/* Repayment Type Tabs */}
-                  <div className="grid grid-cols-2 gap-1 bg-[#D8D8D8]/55 p-1 rounded-xl">
-                    <button
-                      type="button"
-                      disabled={isLocked}
-                      onClick={() => onChange("repaymentType", "standard")}
-                      className={`py-1.5 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-75 ${(assumptions.repaymentType || "standard") === "standard" ? "bg-white text-[#1E2F31] shadow-sm border border-[#D8D8D8]" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
-                    >
-                      Standard Sinking Fund
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isLocked}
-                      onClick={() => {
-                        const resolvedP = getInitialStepUpPercentages(amortYears, "tangerang_stepup");
-                        onChange({ repaymentType: "step_up", stepUpPercentages: resolvedP });
-                      }}
-                      className={`py-1.5 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-75 ${(assumptions.repaymentType || "standard") === "step_up" ? "bg-white text-[#1E2F31] shadow-sm border border-[#D8D8D8]" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
-                    >
-                      Step-Up / Tranche Repayment
-                    </button>
-                  </div>
+                    {/* Repayment Type Tabs */}
+                    <div className="grid grid-cols-2 gap-1 bg-[#D8D8D8]/55 p-1 rounded-xl">
+                      <button
+                        type="button"
+                        disabled={isLocked}
+                        onClick={() => onChange("repaymentType", "standard")}
+                        className={`py-1.5 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-75 ${(assumptions.repaymentType || "standard") === "standard" ? "bg-white text-[#1E2F31] shadow-sm border border-[#D8D8D8]" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                      >
+                        Standard Sinking Fund
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isLocked}
+                        onClick={() => {
+                          const resolvedP = getInitialStepUpPercentages(
+                            amortYears,
+                            "tangerang_stepup",
+                          );
+                          onChange({
+                            repaymentType: "step_up",
+                            stepUpPercentages: resolvedP,
+                          });
+                        }}
+                        className={`py-1.5 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-75 ${(assumptions.repaymentType || "standard") === "step_up" ? "bg-white text-[#1E2F31] shadow-sm border border-[#D8D8D8]" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                      >
+                        Step-Up / Tranche Repayment
+                      </button>
+                    </div>
 
-                  {(assumptions.repaymentType || "standard") === "step_up" && (
-                    <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-150">
-                      {/* Presets and Status Block */}
-                      <div className="p-3 bg-white border border-[#D8D8D8] rounded-2xl flex flex-col gap-2 shadow-sm">
-                        <div className="flex justify-between items-center text-[10px] font-bold text-[#4C4A4B]">
-                          <span>SCHEDULING PRESETS</span>
-                          <div className="flex gap-1.5">
-                            <button
-                              type="button"
-                              disabled={isLocked}
-                              onClick={() => {
-                                const resolvedP = getInitialStepUpPercentages(amortYears, "tangerang_stepup");
-                                onChange("stepUpPercentages", resolvedP);
-                              }}
-                              className="px-2 py-0.5 bg-[#EFEBE7] hover:bg-[#D8D8D8]/80 disabled:hover:bg-[#EFEBE7] border border-[#D8D8D8] text-[9px] font-black text-[#1C6048] rounded-[6px] transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                              Step-Up
-                            </button>
-                            <button
-                              type="button"
-                              disabled={isLocked}
-                              onClick={() => {
-                                const resolvedP = getInitialStepUpPercentages(amortYears, "equal");
-                                onChange("stepUpPercentages", resolvedP);
-                              }}
-                              className="px-2 py-0.5 bg-[#EFEBE7] hover:bg-[#D8D8D8]/80 disabled:hover:bg-[#EFEBE7] border border-[#D8D8D8] text-[9px] font-black text-[#1C6048] rounded-[6px] transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                              Equal Division
-                            </button>
+                    {(assumptions.repaymentType || "standard") ===
+                      "step_up" && (
+                      <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-150">
+                        {/* Presets and Status Block */}
+                        <div className="p-3 bg-white border border-[#D8D8D8] rounded-2xl flex flex-col gap-2 shadow-sm">
+                          <div className="flex justify-between items-center text-[10px] font-bold text-[#4C4A4B]">
+                            <span>SCHEDULING PRESETS</span>
+                            <div className="flex gap-1.5">
+                              <button
+                                type="button"
+                                disabled={isLocked}
+                                onClick={() => {
+                                  const resolvedP = getInitialStepUpPercentages(
+                                    amortYears,
+                                    "tangerang_stepup",
+                                  );
+                                  onChange("stepUpPercentages", resolvedP);
+                                }}
+                                className="px-2 py-0.5 bg-[#EFEBE7] hover:bg-[#D8D8D8]/80 disabled:hover:bg-[#EFEBE7] border border-[#D8D8D8] text-[9px] font-black text-[#1C6048] rounded-[6px] transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                Step-Up
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isLocked}
+                                onClick={() => {
+                                  const resolvedP = getInitialStepUpPercentages(
+                                    amortYears,
+                                    "equal",
+                                  );
+                                  onChange("stepUpPercentages", resolvedP);
+                                }}
+                                className="px-2 py-0.5 bg-[#EFEBE7] hover:bg-[#D8D8D8]/80 disabled:hover:bg-[#EFEBE7] border border-[#D8D8D8] text-[9px] font-black text-[#1C6048] rounded-[6px] transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                Equal Division
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="flex justify-between items-center pt-1 border-t border-[#D8D8D8] mt-1 text-[9px] font-bold text-[#4C4A4B]">
+                            <span>ALLOCATED PRINCIPAL SUM</span>
+                            {(() => {
+                              const resolvedP = ensureArray(
+                                assumptions.stepUpPercentages,
+                              );
+                              let pList = [...resolvedP];
+                              if (pList.length !== amortYears) {
+                                pList = getInitialStepUpPercentages(
+                                  amortYears,
+                                  "tangerang_stepup",
+                                );
+                              }
+                              const pSum = pList.reduce((sum, v) => sum + v, 0);
+                              const isFullyAllocated =
+                                Math.abs(pSum - 100) < 0.05;
+                              return (
+                                <div className="flex items-center gap-1.5">
+                                  <span
+                                    className={`px-2 py-0.5 rounded font-mono font-black ${isFullyAllocated ? "bg-[#1C6048]/10 text-[#1C6048]" : "bg-amber-500/10 text-amber-600 animate-pulse"}`}
+                                  >
+                                    {pSum.toFixed(2)}% / 100%
+                                  </span>
+                                  {!isFullyAllocated && (
+                                    <button
+                                      type="button"
+                                      disabled={isLocked}
+                                      onClick={() => {
+                                        const sumVal = pSum;
+                                        if (sumVal === 0) {
+                                          const eq =
+                                            getInitialStepUpPercentages(
+                                              amortYears,
+                                              "equal",
+                                            );
+                                          onChange("stepUpPercentages", eq);
+                                        } else {
+                                          const factor = 100 / sumVal;
+                                          const norm = pList.map((v) =>
+                                            parseFloat((v * factor).toFixed(2)),
+                                          );
+                                          const diff =
+                                            100 -
+                                            norm.reduce((a, b) => a + b, 0);
+                                          if (Math.abs(diff) > 0.001) {
+                                            norm[norm.length - 1] = parseFloat(
+                                              (
+                                                norm[norm.length - 1] + diff
+                                              ).toFixed(2),
+                                            );
+                                          }
+                                          onChange("stepUpPercentages", norm);
+                                        }
+                                      }}
+                                      className="text-[9px] font-black bg-amber-500 hover:bg-amber-600 text-white px-2 py-0.5 rounded-[6px] transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                      Auto-Balance
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </div>
                         </div>
 
-                        <div className="flex justify-between items-center pt-1 border-t border-[#D8D8D8] mt-1 text-[9px] font-bold text-[#4C4A4B]">
-                          <span>ALLOCATED PRINCIPAL SUM</span>
+                        {/* Step-Up Year-by-Year Sliders List */}
+                        <div className="max-h-[320px] overflow-y-auto pr-1 space-y-2 border border-[#D8D8D8] rounded-[16px] p-2 bg-white">
                           {(() => {
-                            const resolvedP = ensureArray(assumptions.stepUpPercentages);
+                            const resolvedP = ensureArray(
+                              assumptions.stepUpPercentages,
+                            );
                             let pList = [...resolvedP];
                             if (pList.length !== amortYears) {
-                              pList = getInitialStepUpPercentages(amortYears, "tangerang_stepup");
+                              pList = getInitialStepUpPercentages(
+                                amortYears,
+                                "tangerang_stepup",
+                              );
                             }
-                            const pSum = pList.reduce((sum, v) => sum + v, 0);
-                            const isFullyAllocated = Math.abs(pSum - 100) < 0.05;
-                            return (
-                              <div className="flex items-center gap-1.5">
-                                <span className={`px-2 py-0.5 rounded font-mono font-black ${isFullyAllocated ? "bg-[#1C6048]/10 text-[#1C6048]" : "bg-amber-500/10 text-amber-600 animate-pulse"}`}>
-                                  {pSum.toFixed(2)}% / 100%
-                                </span>
-                                {!isFullyAllocated && (
-                                  <button
-                                    type="button"
+
+                            return pList.map((val, idx) => {
+                              const opYearNum =
+                                idx + 1 + (assumptions.ioGracePeriodYears || 2);
+                              return (
+                                <div
+                                  key={idx}
+                                  className="flex flex-col gap-1.5 p-2 hover:bg-[#F9F8F6]/40 rounded-xl border border-transparent hover:border-[#D8D8D8] transition-all"
+                                >
+                                  <div className="flex justify-between items-center text-[10px] font-bold text-[#1E2F31]">
+                                    <span className="flex items-center gap-1.5 font-mono">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-[#1C6048]"></span>
+                                      Amortization Year {idx + 1}
+                                      <span className="text-[8px] font-medium text-[#8A8175] font-sans">
+                                        (Op. Year {opYearNum} / calendar{" "}
+                                        {2025 + opYearNum})
+                                      </span>
+                                    </span>
+                                    <div className="flex items-center gap-1">
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        step="0.1"
+                                        value={val}
+                                        disabled={isLocked}
+                                        onChange={(e) => {
+                                          const newval = Math.max(
+                                            0,
+                                            Math.min(
+                                              100,
+                                              parseFloat(e.target.value) || 0,
+                                            ),
+                                          );
+                                          const nextP = [...pList];
+                                          nextP[idx] = parseFloat(
+                                            newval.toFixed(2),
+                                          );
+                                          onChange("stepUpPercentages", nextP);
+                                        }}
+                                        className="w-12 px-1 py-0.5 text-right font-mono text-[10px] border border-[#D8D8D8] rounded focus:border-[#1C6048] outline-none disabled:bg-[#F9F8F6] disabled:text-[#8A8175] disabled:cursor-not-allowed"
+                                      />
+                                      <span className="text-[9px] font-bold text-[#8A8175]">
+                                        %
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    step="0.5"
+                                    value={val}
                                     disabled={isLocked}
-                                    onClick={() => {
-                                      const sumVal = pSum;
-                                      if (sumVal === 0) {
-                                        const eq = getInitialStepUpPercentages(amortYears, "equal");
-                                        onChange("stepUpPercentages", eq);
-                                      } else {
-                                        const factor = 100 / sumVal;
-                                        const norm = pList.map(v => parseFloat((v * factor).toFixed(2)));
-                                        const diff = 100 - norm.reduce((a, b) => a + b, 0);
-                                        if (Math.abs(diff) > 0.001) {
-                                          norm[norm.length - 1] = parseFloat((norm[norm.length - 1] + diff).toFixed(2));
-                                        }
-                                        onChange("stepUpPercentages", norm);
-                                      }
+                                    onChange={(e) => {
+                                      const newVal = parseFloat(e.target.value);
+                                      const nextP = [...pList];
+                                      nextP[idx] = parseFloat(
+                                        newVal.toFixed(2),
+                                      );
+                                      onChange("stepUpPercentages", nextP);
                                     }}
-                                    className="text-[9px] font-black bg-amber-500 hover:bg-amber-600 text-white px-2 py-0.5 rounded-[6px] transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-                                  >
-                                    Auto-Balance
-                                  </button>
-                                )}
-                              </div>
-                            );
+                                    className="w-full h-2.5 md:h-2 bg-[#D8D8D8] rounded-lg appearance-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 accent-[#1C6048] outline-none transition-all my-1.5 py-0.5 focus:ring-1 focus:ring-[#1C6048]"
+                                  />
+                                </div>
+                              );
+                            });
                           })()}
                         </div>
                       </div>
-
-                      {/* Step-Up Year-by-Year Sliders List */}
-                      <div className="max-h-[320px] overflow-y-auto pr-1 space-y-2 border border-[#D8D8D8] rounded-[16px] p-2 bg-white">
-                        {(() => {
-                          const resolvedP = ensureArray(assumptions.stepUpPercentages);
-                          let pList = [...resolvedP];
-                          if (pList.length !== amortYears) {
-                            pList = getInitialStepUpPercentages(amortYears, "tangerang_stepup");
-                          }
-                          
-                          return pList.map((val, idx) => {
-                            const opYearNum = idx + 1 + (assumptions.ioGracePeriodYears || 2);
-                            return (
-                              <div key={idx} className="flex flex-col gap-1.5 p-2 hover:bg-[#F9F8F6]/40 rounded-xl border border-transparent hover:border-[#D8D8D8] transition-all">
-                                <div className="flex justify-between items-center text-[10px] font-bold text-[#1E2F31]">
-                                  <span className="flex items-center gap-1.5 font-mono">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-[#1C6048]"></span>
-                                    Amortization Year {idx + 1}
-                                    <span className="text-[8px] font-medium text-[#8A8175] font-sans">
-                                      (Op. Year {opYearNum} / calendar {2025 + opYearNum})
-                                    </span>
-                                  </span>
-                                  <div className="flex items-center gap-1">
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      max="100"
-                                      step="0.1"
-                                      value={val}
-                                      disabled={isLocked}
-                                      onChange={(e) => {
-                                        const newval = Math.max(0, Math.min(100, parseFloat(e.target.value) || 0));
-                                        const nextP = [...pList];
-                                        nextP[idx] = parseFloat(newval.toFixed(2));
-                                        onChange("stepUpPercentages", nextP);
-                                      }}
-                                      className="w-12 px-1 py-0.5 text-right font-mono text-[10px] border border-[#D8D8D8] rounded focus:border-[#1C6048] outline-none disabled:bg-[#F9F8F6] disabled:text-[#8A8175] disabled:cursor-not-allowed"
-                                    />
-                                    <span className="text-[9px] font-bold text-[#8A8175]">%</span>
-                                  </div>
-                                </div>
-                                <input
-                                  type="range"
-                                  min="0"
-                                  max="100"
-                                  step="0.5"
-                                  value={val}
-                                  disabled={isLocked}
-                                  onChange={(e) => {
-                                    const newVal = parseFloat(e.target.value);
-                                    const nextP = [...pList];
-                                    nextP[idx] = parseFloat(newVal.toFixed(2));
-                                    onChange("stepUpPercentages", nextP);
-                                  }}
-                                  className="w-full h-2.5 md:h-2 bg-[#D8D8D8] rounded-lg appearance-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 accent-[#1C6048] outline-none transition-all my-1.5 py-0.5 focus:ring-1 focus:ring-[#1C6048]"
-                                />
-                              </div>
-                            );
-                          });
-                        })()}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
+                    )}
+                  </div>
+                );
+              })()}
             <AssumptionRow
               label="Discount Rate"
               val={assumptions.discountRate}
@@ -13994,7 +14208,8 @@ function AIAuditView({
 const TIMELINE_PRESETS = {
   baseline: {
     name: "Scenario 1: Baseline (24-Month Build)",
-    description: "Standard clinical rollouts, commercial opening in Month 25 (default baseline).",
+    description:
+      "Standard clinical rollouts, commercial opening in Month 25 (default baseline).",
     badge: "24-Mo Baseline",
     badgeColor: "bg-[#1C6048]/10 text-[#1C6048] border border-[#1C6048]/20",
     tasks: {
@@ -14015,11 +14230,12 @@ const TIMELINE_PRESETS = {
       t11: { start: 19, duration: 3 },
       t12: { start: 22, duration: 3 },
       t13: { start: 25, duration: 1 },
-    }
+    },
   },
   fast_track: {
     name: "Scenario 2: Fast-Track (18-Month Build)",
-    description: "Accelerated licensing and construction phases, commercial opening in Month 19.",
+    description:
+      "Accelerated licensing and construction phases, commercial opening in Month 19.",
     badge: "18-Mo Fast-Track",
     badgeColor: "bg-indigo-50 text-indigo-700 border border-indigo-200/50",
     tasks: {
@@ -14040,11 +14256,12 @@ const TIMELINE_PRESETS = {
       t11: { start: 14, duration: 2 },
       t12: { start: 16, duration: 2 },
       t13: { start: 19, duration: 1 },
-    }
+    },
   },
   delayed: {
     name: "Scenario 3: Delayed/Phased (30-Month Build)",
-    description: "Extended regulatory approvals and complex excavations, commercial opening in Month 31.",
+    description:
+      "Extended regulatory approvals and complex excavations, commercial opening in Month 31.",
     badge: "30-Mo Delayed",
     badgeColor: "bg-[#9B8B70]/10 text-[#4C4A4B] border border-[#9B8B70]/25",
     tasks: {
@@ -14065,8 +14282,8 @@ const TIMELINE_PRESETS = {
       t11: { start: 24, duration: 4 },
       t12: { start: 27, duration: 4 },
       t13: { start: 31, duration: 1 },
-    }
-  }
+    },
+  },
 };
 
 const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
@@ -14866,12 +15083,14 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
                     : "text-[#4C4A4B] hover:text-[#1E2F31]"
                 }`}
               >
-                <span className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-[#1C6048]" : "bg-[#4C4A4B]/20"}`}></span>
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-[#1C6048]" : "bg-[#4C4A4B]/20"}`}
+                ></span>
                 {preset.badge}
               </button>
             );
           })}
-          
+
           {detectedScenarioKey === "custom" && (
             <div className="px-3 py-1.5 text-[9px] font-black uppercase text-amber-700 bg-amber-50/50 rounded-lg border border-amber-200/40 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
@@ -14884,11 +15103,17 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
         <div className="hidden lg:flex items-center gap-2 max-w-sm text-right text-[10px] text-[#4C4A4B] font-medium leading-normal">
           {detectedScenarioKey !== "custom" ? (
             <span>
-              Active Preset: <strong className="text-[#1E2F31] font-black">{TIMELINE_PRESETS[detectedScenarioKey]?.name}</strong>. Commercial Opening at Month {TIMELINE_PRESETS[detectedScenarioKey]?.tasks.t13.start}.
+              Active Preset:{" "}
+              <strong className="text-[#1E2F31] font-black">
+                {TIMELINE_PRESETS[detectedScenarioKey]?.name}
+              </strong>
+              . Commercial Opening at Month{" "}
+              {TIMELINE_PRESETS[detectedScenarioKey]?.tasks.t13.start}.
             </span>
           ) : (
             <span className="text-amber-800 font-semibold">
-              Sandbox Active: Timings manually optimized. Fully reactive to financial metrics.
+              Sandbox Active: Timings manually optimized. Fully reactive to
+              financial metrics.
             </span>
           )}
         </div>
@@ -14904,7 +15129,12 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
                 Confirm Scenario Shift
               </span>
               <span className="text-[10px] text-[#4C4A4B] mt-0.5 leading-snug max-w-xl">
-                Ready to shift to <strong className="text-[#1E2F31] font-black">"{TIMELINE_PRESETS[pendingScenarioKey]?.name}"</strong>? This will overwrite your active manual timing adjustments for all milestones.
+                Ready to shift to{" "}
+                <strong className="text-[#1E2F31] font-black">
+                  "{TIMELINE_PRESETS[pendingScenarioKey]?.name}"
+                </strong>
+                ? This will overwrite your active manual timing adjustments for
+                all milestones.
               </span>
             </div>
           </div>
@@ -16441,9 +16671,12 @@ export default function App() {
   const resolvedDevDuration = useMemo(() => {
     const allTasks = groups.flatMap((g) => g.tasks || []);
     const commOpeningTask = allTasks.find(
-      (t) => t.id === "t13" || t.name.toLowerCase().includes("commercial opening")
+      (t) =>
+        t.id === "t13" || t.name.toLowerCase().includes("commercial opening"),
     );
-    return commOpeningTask ? Math.max(1, commOpeningTask.start - 1) : propCoAssumptions.devDurationMonths || 24;
+    return commOpeningTask
+      ? Math.max(1, commOpeningTask.start - 1)
+      : propCoAssumptions.devDurationMonths || 24;
   }, [groups, propCoAssumptions.devDurationMonths]);
 
   const projConfig = useMemo(() => {
@@ -16459,14 +16692,19 @@ export default function App() {
     if (holdCoScenario === "yr10") return { exitYear: 10, projYears: 10 };
     if (holdCoScenario === "debt_free") {
       const p1 = { exitYear: -1, projYears: 30 };
-      const op1 = runOpCoEngine({ ...opCoAssumptions, devDurationMonths: resolvedDevDuration }, p1);
-      const pr1 = runPropCoEngine({ ...propCoAssumptions, devDurationMonths: resolvedDevDuration }, op1, p1, groups);
+      const op1 = runOpCoEngine(
+        { ...opCoAssumptions, devDurationMonths: resolvedDevDuration },
+        p1,
+      );
+      const pr1 = runPropCoEngine(
+        { ...propCoAssumptions, devDurationMonths: resolvedDevDuration },
+        op1,
+        p1,
+        groups,
+      );
       const cons1 = runConsolidatedEngine(op1, pr1, opCoAssumptions);
 
-      const devYears = Math.max(
-        1,
-        Math.ceil(resolvedDevDuration / 12),
-      );
+      const devYears = Math.max(1, Math.ceil(resolvedDevDuration / 12));
       const exactOverallPayback = cons1.metrics.payback;
       let beOpYear =
         exactOverallPayback > 0
@@ -16482,14 +16720,19 @@ export default function App() {
     }
     if (holdCoScenario === "breakeven") {
       const p1 = { exitYear: -1, projYears: 30 }; // -1 forces the engine to ignore individual settings and test pure operations
-      const op1 = runOpCoEngine({ ...opCoAssumptions, devDurationMonths: resolvedDevDuration }, p1);
-      const pr1 = runPropCoEngine({ ...propCoAssumptions, devDurationMonths: resolvedDevDuration }, op1, p1, groups);
+      const op1 = runOpCoEngine(
+        { ...opCoAssumptions, devDurationMonths: resolvedDevDuration },
+        p1,
+      );
+      const pr1 = runPropCoEngine(
+        { ...propCoAssumptions, devDurationMonths: resolvedDevDuration },
+        op1,
+        p1,
+        groups,
+      );
       const cons1 = runConsolidatedEngine(op1, pr1, opCoAssumptions);
 
-      const devYears = Math.max(
-        1,
-        Math.ceil(resolvedDevDuration / 12),
-      );
+      const devYears = Math.max(1, Math.ceil(resolvedDevDuration / 12));
       const exactOverallPayback = cons1.metrics.payback; // this is the exact payback year without exit
 
       let beOpYear =
@@ -16500,14 +16743,20 @@ export default function App() {
 
       // We set the exit to occur at the end of the breakeven year
       // (Option 1: Calendar Year-End).
-      
+
       return {
         exitYear: Math.min(beOpYear, 30),
         projYears: Math.min(beOpYear, 30),
       };
     }
     return { exitYear: 10, projYears: 10 };
-  }, [holdCoScenario, opCoAssumptions, propCoAssumptions, groups, resolvedDevDuration]);
+  }, [
+    holdCoScenario,
+    opCoAssumptions,
+    propCoAssumptions,
+    groups,
+    resolvedDevDuration,
+  ]);
 
   const propCoProjConfig = useMemo(() => {
     if (propCoScenario === "manual")
@@ -16522,13 +16771,18 @@ export default function App() {
     if (propCoScenario === "yr10") return { exitYear: 10, projYears: 10 };
     if (propCoScenario === "debt_free") {
       const p1 = { exitYear: -1, projYears: 30 };
-      const op1 = runOpCoEngine({ ...opCoAssumptions, devDurationMonths: resolvedDevDuration }, p1);
-      const pr1 = runPropCoEngine({ ...propCoAssumptions, devDurationMonths: resolvedDevDuration }, op1, p1, groups);
-
-      const devYears = Math.max(
-        1,
-        Math.ceil(resolvedDevDuration / 12),
+      const op1 = runOpCoEngine(
+        { ...opCoAssumptions, devDurationMonths: resolvedDevDuration },
+        p1,
       );
+      const pr1 = runPropCoEngine(
+        { ...propCoAssumptions, devDurationMonths: resolvedDevDuration },
+        op1,
+        p1,
+        groups,
+      );
+
+      const devYears = Math.max(1, Math.ceil(resolvedDevDuration / 12));
       const exactOverallPayback = pr1.metrics.payback;
       let beOpYear =
         exactOverallPayback > 0
@@ -16544,13 +16798,18 @@ export default function App() {
     }
     if (propCoScenario === "breakeven") {
       const p1 = { exitYear: -1, projYears: 30 };
-      const op1 = runOpCoEngine({ ...opCoAssumptions, devDurationMonths: resolvedDevDuration }, p1);
-      const pr1 = runPropCoEngine({ ...propCoAssumptions, devDurationMonths: resolvedDevDuration }, op1, p1, groups);
-
-      const devYears = Math.max(
-        1,
-        Math.ceil(resolvedDevDuration / 12),
+      const op1 = runOpCoEngine(
+        { ...opCoAssumptions, devDurationMonths: resolvedDevDuration },
+        p1,
       );
+      const pr1 = runPropCoEngine(
+        { ...propCoAssumptions, devDurationMonths: resolvedDevDuration },
+        op1,
+        p1,
+        groups,
+      );
+
+      const devYears = Math.max(1, Math.ceil(resolvedDevDuration / 12));
       const exactOverallPayback = pr1.metrics.payback;
 
       let beOpYear =
@@ -16568,24 +16827,56 @@ export default function App() {
       };
     }
     return { exitYear: 10, projYears: 10 };
-  }, [propCoScenario, opCoAssumptions, propCoAssumptions, groups, resolvedDevDuration]);
+  }, [
+    propCoScenario,
+    opCoAssumptions,
+    propCoAssumptions,
+    groups,
+    resolvedDevDuration,
+  ]);
 
   const standalonePropCoOpCoData = useMemo(
-    () => runOpCoEngine({ ...opCoAssumptions, devDurationMonths: resolvedDevDuration }, propCoProjConfig),
+    () =>
+      runOpCoEngine(
+        { ...opCoAssumptions, devDurationMonths: resolvedDevDuration },
+        propCoProjConfig,
+      ),
     [opCoAssumptions, propCoProjConfig, resolvedDevDuration],
   );
 
   const standalonePropCoData = useMemo(
-    () => runPropCoEngine({ ...propCoAssumptions, devDurationMonths: resolvedDevDuration }, standalonePropCoOpCoData, propCoProjConfig, groups),
-    [propCoAssumptions, standalonePropCoOpCoData, propCoProjConfig, groups, resolvedDevDuration],
+    () =>
+      runPropCoEngine(
+        { ...propCoAssumptions, devDurationMonths: resolvedDevDuration },
+        standalonePropCoOpCoData,
+        propCoProjConfig,
+        groups,
+      ),
+    [
+      propCoAssumptions,
+      standalonePropCoOpCoData,
+      propCoProjConfig,
+      groups,
+      resolvedDevDuration,
+    ],
   );
 
   const opCoModelData = useMemo(
-    () => runOpCoEngine({ ...opCoAssumptions, devDurationMonths: resolvedDevDuration }, projConfig),
+    () =>
+      runOpCoEngine(
+        { ...opCoAssumptions, devDurationMonths: resolvedDevDuration },
+        projConfig,
+      ),
     [opCoAssumptions, projConfig, resolvedDevDuration],
   );
   const propCoModelData = useMemo(
-    () => runPropCoEngine({ ...propCoAssumptions, devDurationMonths: resolvedDevDuration }, opCoModelData, projConfig, groups),
+    () =>
+      runPropCoEngine(
+        { ...propCoAssumptions, devDurationMonths: resolvedDevDuration },
+        opCoModelData,
+        projConfig,
+        groups,
+      ),
     [propCoAssumptions, opCoModelData, projConfig, groups, resolvedDevDuration],
   );
   const consolidatedModelData = useMemo(
@@ -17053,7 +17344,7 @@ export default function App() {
     setPropCoAssumptions((p) => {
       const next = { ...p };
       const updates = typeof k === "object" ? k : { [k]: v };
-      
+
       Object.entries(updates).forEach(([key, val]) => {
         next[key] = [
           "linkToOpCo",
@@ -17253,6 +17544,23 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-3 lg:gap-4">
+            <button
+              onClick={() =>
+                exportToExcel(
+                  opCoAssumptions,
+                  propCoAssumptions,
+                  opCoModelData,
+                  propCoModelData,
+                  consolidatedModelData,
+                )
+              }
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border shadow-sm bg-[#1C6048] text-white border-[#1C6048] hover:bg-opacity-90"
+              title="Export Full Model as Excel (.xlsx)"
+            >
+              <Download size={14} />
+              <span className="hidden sm:inline">Export .xlsx</span>
+            </button>
+
             <button
               onClick={() => setIsPresenting(!isPresenting)}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border shadow-sm ${
@@ -18055,7 +18363,13 @@ export default function App() {
               {/* Lock PropCo to Master */}
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
-                  <Lock size={14} className={propCoLocked ? "text-[#1C6048]" : "text-[#4C4A4B]/40"} /> Lock PropCo to Master
+                  <Lock
+                    size={14}
+                    className={
+                      propCoLocked ? "text-[#1C6048]" : "text-[#4C4A4B]/40"
+                    }
+                  />{" "}
+                  Lock PropCo to Master
                 </span>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
@@ -18071,7 +18385,13 @@ export default function App() {
             {/* Dropdown: Master Exit Strategy */}
             <div className="flex items-center justify-between mt-2">
               <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
-                <Target size={14} className={holdCoLocked ? "text-[#1C6048]/50" : "text-[#1C6048]"} /> Master Exit
+                <Target
+                  size={14}
+                  className={
+                    holdCoLocked ? "text-[#1C6048]/50" : "text-[#1C6048]"
+                  }
+                />{" "}
+                Master Exit
                 {holdCoLocked && <Lock size={10} className="text-[#1C6048]" />}
               </span>
               <select
@@ -18099,7 +18419,13 @@ export default function App() {
             {/* Dropdown: PropCo Exit Strategy */}
             <div className="flex items-center justify-between mt-2">
               <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
-                <Target size={14} className={propCoLocked ? "text-[#9B8B70]/50" : "text-[#9B8B70]"} /> PropCo Exit
+                <Target
+                  size={14}
+                  className={
+                    propCoLocked ? "text-[#9B8B70]/50" : "text-[#9B8B70]"
+                  }
+                />{" "}
+                PropCo Exit
                 {propCoLocked && <Lock size={10} className="text-[#9B8B70]" />}
               </span>
               <select

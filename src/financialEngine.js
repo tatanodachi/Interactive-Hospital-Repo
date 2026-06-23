@@ -141,6 +141,7 @@ const DEFAULT_PROPCO_ASSUMPTIONS = {
   opOverheadInc: 4,
   ffeReservePct: 2,
   includeFinancing: false,
+  includePreOpInLtv: true,
   drawdownScenario: "tranches",
   drawdownTranches: [20, 40, 60, 80, 100],
   ltv: 100,
@@ -255,14 +256,20 @@ const runOpCoEngine = (assumptions, config) => {
     cumulativeNetIncome += net_month;
     // Adjust outlays to span the entire totalDevMonths
     // A simplified approach: divide the required equity evenly over the months
-    // but preserving the Y1 vs Y2+ split. 
+    // but preserving the Y1 vs Y2+ split.
     // If devDurationMonths is 24, Y1 has 12, Y2 has 12.
     // Let's use a simpler spread for equityOutlay based on totalDevMonths.
     // The original outlay formula divded by 12 for Y1 and Y2 respectively.
-    const splitFactor = isY1 ? assumptions.equitySplitY1 / 100 : (100 - assumptions.equitySplitY1) / 100;
-    const monthsInThisSplit = isY1 ? Math.min(12, totalDevMonths) : Math.max(1, totalDevMonths - 12);
-    const m_pA_Outlay = (-assumptions.partnerAEquity * splitFactor) / monthsInThisSplit;
-    const m_pB_Outlay = (-assumptions.partnerBEquity * splitFactor) / monthsInThisSplit;
+    const splitFactor = isY1
+      ? assumptions.equitySplitY1 / 100
+      : (100 - assumptions.equitySplitY1) / 100;
+    const monthsInThisSplit = isY1
+      ? Math.min(12, totalDevMonths)
+      : Math.max(1, totalDevMonths - 12);
+    const m_pA_Outlay =
+      (-assumptions.partnerAEquity * splitFactor) / monthsInThisSplit;
+    const m_pB_Outlay =
+      (-assumptions.partnerBEquity * splitFactor) / monthsInThisSplit;
 
     partnerA_CumCF += m_pA_Outlay;
     partnerB_CumCF += m_pB_Outlay;
@@ -275,16 +282,18 @@ const runOpCoEngine = (assumptions, config) => {
   // Pre-operating years: Create annual reporting blocks based on devYears
   const devYearsCount = Math.ceil(totalDevMonths / 12) || 1;
   const preOp = [];
-  
+
   for (let y = 1; y <= devYearsCount; y++) {
     const isY1 = y === 1;
-    const split = isY1 ? assumptions.equitySplitY1 / 100 : (100 - assumptions.equitySplitY1) / 100;
+    const split = isY1
+      ? assumptions.equitySplitY1 / 100
+      : (100 - assumptions.equitySplitY1) / 100;
     const monthsInThisYear = Math.min(12, totalDevMonths - (y - 1) * 12);
-    
+
     let netThisYear = 0;
     // Jva occurs in year 1
     if (isY1) netThisYear += -assumptions.jvaOpex;
-    
+
     // CommOpex occurs ONLY in the exact last 6 months of totalDevMonths.
     for (let m = 0; m < monthsInThisYear; m++) {
       const monthIndex = (y - 1) * 12 + m;
@@ -305,9 +314,20 @@ const runOpCoEngine = (assumptions, config) => {
   preOp.forEach((p, idx) => {
     const net = p.net;
     // Split the outlay properly for the year block
-    const pA_Outlay = (-assumptions.partnerAEquity * p.split) * (p.months / (idx === 0 ? Math.min(12, totalDevMonths) : Math.max(1, totalDevMonths - 12)));
-    const pB_Outlay = (-assumptions.partnerBEquity * p.split) * (p.months / (idx === 0 ? Math.min(12, totalDevMonths) : Math.max(1, totalDevMonths - 12)));
-
+    const pA_Outlay =
+      -assumptions.partnerAEquity *
+      p.split *
+      (p.months /
+        (idx === 0
+          ? Math.min(12, totalDevMonths)
+          : Math.max(1, totalDevMonths - 12)));
+    const pB_Outlay =
+      -assumptions.partnerBEquity *
+      p.split *
+      (p.months /
+        (idx === 0
+          ? Math.min(12, totalDevMonths)
+          : Math.max(1, totalDevMonths - 12)));
 
     let monthly = {
       ipRev: [],
@@ -365,19 +385,21 @@ const runOpCoEngine = (assumptions, config) => {
       monthly.staffCost.push(0);
 
       // Check the exact month in the overall projection
-      const monthIndex = p.startM + m - 1; 
+      const monthIndex = p.startM + m - 1;
 
       let m_recOpex = 0;
       if (monthIndex === 0) {
         m_recOpex = assumptions.jvaOpex;
-      } else if (monthIndex >= totalDevMonths - 6 && monthIndex < totalDevMonths) {
+      } else if (
+        monthIndex >= totalDevMonths - 6 &&
+        monthIndex < totalDevMonths
+      ) {
         m_recOpex = assumptions.commOpex / 6;
       }
 
       let m_ebitdar = -m_recOpex;
       let m_ebitda = -m_recOpex;
       let m_netInc = -m_recOpex;
-
 
       monthly.recurringOpex.push(m_recOpex);
       monthly.ebitdar.push(m_ebitdar);
@@ -396,8 +418,8 @@ const runOpCoEngine = (assumptions, config) => {
       // Cumulative Net Income chain
       let cum_net_up_to_month = 0;
       let prior_net = 0;
-      for(let prev = 0; prev < idx; prev++) prior_net += preOp[prev].net;
-      
+      for (let prev = 0; prev < idx; prev++) prior_net += preOp[prev].net;
+
       let currentMonthNet = 0;
       for (let pm = 0; pm <= m; pm++) {
         const pmIndex = p.startM + pm - 1;
@@ -407,7 +429,7 @@ const runOpCoEngine = (assumptions, config) => {
           currentMonthNet += -(assumptions.commOpex / 6);
         }
       }
-      
+
       cum_net_up_to_month = prior_net + currentMonthNet;
       monthly.cumNI.push(cum_net_up_to_month);
 
@@ -432,10 +454,16 @@ const runOpCoEngine = (assumptions, config) => {
       let prior_pA_Outlay = 0;
       let prior_pB_Outlay = 0;
       for (let prev = 0; prev < idx; prev++) {
-         const pastP = preOp[prev];
-         const pastFactor = pastP.months / (prev === 0 ? Math.min(12, totalDevMonths) : Math.max(1, totalDevMonths - 12));
-         prior_pA_Outlay += (-assumptions.partnerAEquity * pastP.split) * pastFactor;
-         prior_pB_Outlay += (-assumptions.partnerBEquity * pastP.split) * pastFactor;
+        const pastP = preOp[prev];
+        const pastFactor =
+          pastP.months /
+          (prev === 0
+            ? Math.min(12, totalDevMonths)
+            : Math.max(1, totalDevMonths - 12));
+        prior_pA_Outlay +=
+          -assumptions.partnerAEquity * pastP.split * pastFactor;
+        prior_pB_Outlay +=
+          -assumptions.partnerBEquity * pastP.split * pastFactor;
       }
 
       if (m < p.months) {
@@ -453,7 +481,7 @@ const runOpCoEngine = (assumptions, config) => {
       monthly.pB_Net.push(m < p.months ? m_pB_OutlayMonth : 0);
       monthly.pB_Outlay.push(m < p.months ? m_pB_OutlayMonth : 0);
       monthly.pB_Cum.push(pB_CumVal);
-      monthly.fcf.push(m < p.months ? (m_pA_OutlayMonth + m_pB_OutlayMonth) : 0);
+      monthly.fcf.push(m < p.months ? m_pA_OutlayMonth + m_pB_OutlayMonth : 0);
       monthly.bor.push(0);
       monthly.pA_Yield.push(0);
       monthly.pB_Yield.push(0);
@@ -465,16 +493,26 @@ const runOpCoEngine = (assumptions, config) => {
     for (let prev = 0; prev < idx; prev++) priorNI += preOp[prev].net;
     let prior_pA_Outlay_Total = 0;
     for (let prev = 0; prev < idx; prev++) {
-       const pastP = preOp[prev];
-       const pastFactor = pastP.months / (prev === 0 ? Math.min(12, totalDevMonths) : Math.max(1, totalDevMonths - 12));
-       prior_pA_Outlay_Total += (-assumptions.partnerAEquity * pastP.split) * pastFactor;
+      const pastP = preOp[prev];
+      const pastFactor =
+        pastP.months /
+        (prev === 0
+          ? Math.min(12, totalDevMonths)
+          : Math.max(1, totalDevMonths - 12));
+      prior_pA_Outlay_Total +=
+        -assumptions.partnerAEquity * pastP.split * pastFactor;
     }
 
     let prior_pB_Outlay_Total = 0;
     for (let prev = 0; prev < idx; prev++) {
-       const pastP = preOp[prev];
-       const pastFactor = pastP.months / (prev === 0 ? Math.min(12, totalDevMonths) : Math.max(1, totalDevMonths - 12));
-       prior_pB_Outlay_Total += (-assumptions.partnerBEquity * pastP.split) * pastFactor;
+      const pastP = preOp[prev];
+      const pastFactor =
+        pastP.months /
+        (prev === 0
+          ? Math.min(12, totalDevMonths)
+          : Math.max(1, totalDevMonths - 12));
+      prior_pB_Outlay_Total +=
+        -assumptions.partnerBEquity * pastP.split * pastFactor;
     }
 
     annualData.push({
@@ -528,15 +566,20 @@ const runOpCoEngine = (assumptions, config) => {
     });
   });
 
-  const transitionOpMonths = totalDevMonths % 12 === 0 ? 0 : 12 - (totalDevMonths % 12);
+  const transitionOpMonths =
+    totalDevMonths % 12 === 0 ? 0 : 12 - (totalDevMonths % 12);
   if (transitionOpMonths > 0 && annualData.length > 0) {
     const tYear = annualData[annualData.length - 1];
     const mo = tYear.monthly;
-    
+
     // Use Year 1 operating parameters for the transition months
-    const i = 1; 
+    const i = 1;
     const currentYear = 2025 + devYearsCount;
-    const daysInYear = (currentYear % 4 === 0 && currentYear % 100 !== 0) || currentYear % 400 === 0 ? 366 : 365;
+    const daysInYear =
+      (currentYear % 4 === 0 && currentYear % 100 !== 0) ||
+      currentYear % 400 === 0
+        ? 366
+        : 365;
 
     let bor = Math.min(assumptions.borMax / 100, assumptions.borStart / 100);
     let bedDays = assumptions.beds * daysInYear * bor;
@@ -549,25 +592,51 @@ const runOpCoEngine = (assumptions, config) => {
     let totalRev = ipRev + opRev;
 
     let costMultiplier = 1;
-    let totalMedSupp = ((ipCases * assumptions.ipMedSupply + opVisits * assumptions.opMedSupply) * costMultiplier) / 1000;
-    let totalDocFee = (assumptions.docFeeIp / 100) * ipRev + (assumptions.docFeeOp / 100) * opRev;
+    let totalMedSupp =
+      ((ipCases * assumptions.ipMedSupply +
+        opVisits * assumptions.opMedSupply) *
+        costMultiplier) /
+      1000;
+    let totalDocFee =
+      (assumptions.docFeeIp / 100) * ipRev +
+      (assumptions.docFeeOp / 100) * opRev;
     let grossProfit = totalRev - totalMedSupp - totalDocFee;
 
     let staffCost = assumptions.monthlyStaffCost * 12;
-    let otherOpex = ((assumptions.adminExpRate + assumptions.utilExpRate + assumptions.mktgExpRate + assumptions.operatorFeeRate) / 100) * totalRev + (assumptions.insuranceMonthly * 12) / 1000;
+    let otherOpex =
+      ((assumptions.adminExpRate +
+        assumptions.utilExpRate +
+        assumptions.mktgExpRate +
+        assumptions.operatorFeeRate) /
+        100) *
+        totalRev +
+      (assumptions.insuranceMonthly * 12) / 1000;
     let recurringOpex = staffCost + otherOpex;
     let ebitdar = grossProfit - recurringOpex;
 
     let annualRent = 0;
     if (assumptions.rentStructureType === "flatEbitdar") {
-      annualRent = ebitdar > 0 ? ((assumptions.rentFlatEbitdarRate ?? 15) / 100) * ebitdar : 0;
+      annualRent =
+        ebitdar > 0
+          ? ((assumptions.rentFlatEbitdarRate ?? 15) / 100) * ebitdar
+          : 0;
     } else if (assumptions.rentStructureType === "revAndProfit") {
       let revRent = ((assumptions.rentRevRate ?? 5) / 100) * totalRev;
       let remainingProfit = Math.max(0, ebitdar - revRent);
-      annualRent = revRent + (remainingProfit > 0 ? ((assumptions.rentProfitRate ?? 10) / 100) * remainingProfit : 0);
+      annualRent =
+        revRent +
+        (remainingProfit > 0
+          ? ((assumptions.rentProfitRate ?? 10) / 100) * remainingProfit
+          : 0);
     } else {
-      let currentRevPab = assumptions.beds > 0 ? totalRev / assumptions.beds : 0;
-      let rentRate = currentRevPab < assumptions.rentTier1Limit ? assumptions.rentTier1Rate : currentRevPab < assumptions.rentTier2Limit ? assumptions.rentTier2Rate : assumptions.rentTier3Rate;
+      let currentRevPab =
+        assumptions.beds > 0 ? totalRev / assumptions.beds : 0;
+      let rentRate =
+        currentRevPab < assumptions.rentTier1Limit
+          ? assumptions.rentTier1Rate
+          : currentRevPab < assumptions.rentTier2Limit
+            ? assumptions.rentTier2Rate
+            : assumptions.rentTier3Rate;
       annualRent = ebitdar > 0 ? (rentRate / 100) * ebitdar : 0;
     }
 
@@ -586,26 +655,38 @@ const runOpCoEngine = (assumptions, config) => {
       let m_grossProfit = grossProfit * (days / daysInYear);
       let m_staffCost = staffCost / 12;
 
-      let m_adminOpex = ((assumptions.adminExpRate || 0) / 100) * totalRev * (days / daysInYear);
-      let m_utilOpex = ((assumptions.utilExpRate || 0) / 100) * totalRev * (days / daysInYear);
-      let m_mktgOpex = ((assumptions.mktgExpRate || 0) / 100) * totalRev * (days / daysInYear);
-      let m_operatorOpex = ((assumptions.operatorFeeRate || 0) / 100) * totalRev * (days / daysInYear);
+      let m_adminOpex =
+        ((assumptions.adminExpRate || 0) / 100) *
+        totalRev *
+        (days / daysInYear);
+      let m_utilOpex =
+        ((assumptions.utilExpRate || 0) / 100) * totalRev * (days / daysInYear);
+      let m_mktgOpex =
+        ((assumptions.mktgExpRate || 0) / 100) * totalRev * (days / daysInYear);
+      let m_operatorOpex =
+        ((assumptions.operatorFeeRate || 0) / 100) *
+        totalRev *
+        (days / daysInYear);
       let m_insOpex = (assumptions.insuranceMonthly || 0) / 1000;
-      let m_otherOpex = m_adminOpex + m_utilOpex + m_mktgOpex + m_operatorOpex + m_insOpex;
-      
+      let m_otherOpex =
+        m_adminOpex + m_utilOpex + m_mktgOpex + m_operatorOpex + m_insOpex;
+
       let m_recurringOpex = m_staffCost + m_otherOpex;
 
       let m_ebitdar = m_grossProfit - m_recurringOpex;
       let m_rent = annualRent * (days / daysInYear);
       let m_ebitda = m_ebitdar - m_rent;
-      
+
       ytdEbitda += m_ebitda;
-      let m_tax = (m === 12 && ytdEbitda > 0) ? ytdEbitda * (assumptions.corporateTax / 100) : 0;
+      let m_tax =
+        m === 12 && ytdEbitda > 0
+          ? ytdEbitda * (assumptions.corporateTax / 100)
+          : 0;
       let m_netIncome = m_ebitda - m_tax;
 
       let prevCumNI = cumulativeNetIncome;
       cumulativeNetIncome += m_netIncome;
-      
+
       let m_availableForDistribution = 0;
       if (m === 12) {
         m_availableForDistribution = Math.max(
@@ -614,15 +695,20 @@ const runOpCoEngine = (assumptions, config) => {
             ? cumNI_startOfYear < 0
               ? cumulativeNetIncome
               : cumulativeNetIncome - cumNI_startOfYear
-            : 0
+            : 0,
         );
       }
-      let m_distributableProfit = m_availableForDistribution * ((assumptions.dividendPayoutRatio ?? 100) / 100);
-      let m_retainedThisYear = m_availableForDistribution - m_distributableProfit;
+      let m_distributableProfit =
+        m_availableForDistribution *
+        ((assumptions.dividendPayoutRatio ?? 100) / 100);
+      let m_retainedThisYear =
+        m_availableForDistribution - m_distributableProfit;
 
       cumulativeRetainedEarnings += m_retainedThisYear;
-      let m_shareA = m_distributableProfit * ((assumptions.sharingPercentA ?? 51) / 100);
-      let m_shareB = m_distributableProfit * (1 - (assumptions.sharingPercentA ?? 51) / 100);
+      let m_shareA =
+        m_distributableProfit * ((assumptions.sharingPercentA ?? 51) / 100);
+      let m_shareB =
+        m_distributableProfit * (1 - (assumptions.sharingPercentA ?? 51) / 100);
 
       mo.ipCases[m - 1] = m_ipCases;
       mo.opVisits[m - 1] = m_opVisits;
@@ -880,8 +966,7 @@ const runOpCoEngine = (assumptions, config) => {
         ((assumptions.operatorFeeRate || 0) / 100) *
         totalRev *
         (days / daysInYear);
-      let m_insOpex =
-        (assumptions.insuranceMonthly || 0) / 1000;
+      let m_insOpex = (assumptions.insuranceMonthly || 0) / 1000;
       let m_otherOpex =
         m_adminOpex + m_utilOpex + m_mktgOpex + m_operatorOpex + m_insOpex;
 
@@ -892,10 +977,12 @@ const runOpCoEngine = (assumptions, config) => {
       // Distributed monthly:
       let m_rent = annualRent * (days / daysInYear);
       let m_ebitda = m_ebitdar - m_rent;
-      
+
       ytdEbitda += m_ebitda;
       let m_tax =
-        (m === 12 && ytdEbitda > 0) ? ytdEbitda * (assumptions.corporateTax / 100) : 0;
+        m === 12 && ytdEbitda > 0
+          ? ytdEbitda * (assumptions.corporateTax / 100)
+          : 0;
       let m_netIncome = m_ebitda - m_tax;
 
       let prevCumNI = cumulativeNetIncome;
@@ -909,18 +996,18 @@ const runOpCoEngine = (assumptions, config) => {
             ? cumNI_startOfYear < 0
               ? cumulativeNetIncome
               : cumulativeNetIncome - cumNI_startOfYear
-            : 0
+            : 0,
         );
       }
-      
+
       let m_distributableProfit =
         m_availableForDistribution *
         ((assumptions.dividendPayoutRatio ?? 100) / 100);
       let m_retainedThisYear =
         m_availableForDistribution - m_distributableProfit;
-      
+
       if (m === 12) {
-         cumulativeRetainedEarnings += m_retainedThisYear;
+        cumulativeRetainedEarnings += m_retainedThisYear;
       }
 
       let m_shareA =
@@ -950,7 +1037,7 @@ const runOpCoEngine = (assumptions, config) => {
       partnerBCfsMonthly.push(m_shareB + m_pB_Exit);
 
       const wcOpex_month =
-        i === 1 && m === 1 ? assumptions.workingCapitalOpex : 0;
+        i === 1 && m === 1 ? -assumptions.workingCapitalOpex : 0;
       let m_fcf = m_netIncome + wcOpex_month + m_opCoExit;
       projectCfsMonthly.push(m_fcf);
 
@@ -1104,7 +1191,7 @@ const runOpCoEngine = (assumptions, config) => {
           : 0,
       fcf:
         year_netIncome +
-        (i === 1 ? assumptions.workingCapitalOpex : 0) +
+        (i === 1 ? -assumptions.workingCapitalOpex : 0) +
         year_opCoExit,
       ebitdaMargin: year_totalRev > 0 ? (year_ebitda / year_totalRev) * 100 : 0,
       ebitdarMargin:
@@ -1122,13 +1209,14 @@ const runOpCoEngine = (assumptions, config) => {
   }
 
   // Add CF Statement Standard Items for OpCo
-  annualData = annualData.map(d => {
+  annualData = annualData.map((d) => {
     const cfo = d.netIncome;
     const cfo_in = d.totalRev || 0;
     const cfo_out = cfo - cfo_in;
 
-    const isY3 = d.isOperating && d.year === 'Year 3';
-    const cfi = (isY3 ? -(assumptions.workingCapitalOpex || 0) : 0) + (d.opCoExit || 0);
+    const isY3 = d.isOperating && d.year === "Year 3";
+    const cfi =
+      (isY3 ? -(assumptions.workingCapitalOpex || 0) : 0) + (d.opCoExit || 0);
     const cfi_in = d.opCoExit || 0;
     const cfi_out = isY3 ? -(assumptions.workingCapitalOpex || 0) : 0;
 
@@ -1136,42 +1224,74 @@ const runOpCoEngine = (assumptions, config) => {
     const exitRetained = d.opCoExit ? Math.max(0, d.opCoExit - (d.ev || 0)) : 0;
 
     const cff_in = -((d.pA_Outlay || 0) + (d.pB_Outlay || 0));
-    const cff_out = -((d.shareA || 0) + (d.shareB || 0)) - ((d.pA_Exit || 0) + (d.pB_Exit || 0));
+    const cff_out =
+      -((d.shareA || 0) + (d.shareB || 0)) -
+      ((d.pA_Exit || 0) + (d.pB_Exit || 0));
     const cff = cff_in + cff_out;
 
     const netFlow = cfo + cfi + cff;
-    
+
     if (d.monthly) {
-        d.monthly.cfo = d.monthly.netIncome.map(x => x);
-        d.monthly.cfo_in = d.monthly.totalRev.map(x => x || 0);
-        d.monthly.cfo_out = d.monthly.netIncome.map((x, i) => x - (d.monthly.totalRev[i] || 0));
+      d.monthly.cfo = d.monthly.netIncome.map((x) => x);
+      d.monthly.cfo_in = d.monthly.totalRev.map((x) => x || 0);
+      d.monthly.cfo_out = d.monthly.netIncome.map(
+        (x, i) => x - (d.monthly.totalRev[i] || 0),
+      );
 
-        d.monthly.cfi = d.monthly.opCoExit.map((x, i) => (isY3 && i===0 ? -(assumptions.workingCapitalOpex || 0) : 0) + x);
-        d.monthly.cfi_in = d.monthly.opCoExit.map(x => x || 0);
-        d.monthly.cfi_out = d.monthly.opCoExit.map((_, i) => (isY3 && i===0 ? -(assumptions.workingCapitalOpex || 0) : 0));
+      d.monthly.cfi = d.monthly.opCoExit.map(
+        (x, i) =>
+          (isY3 && i === 0 ? -(assumptions.workingCapitalOpex || 0) : 0) + x,
+      );
+      d.monthly.cfi_in = d.monthly.opCoExit.map((x) => x || 0);
+      d.monthly.cfi_out = d.monthly.opCoExit.map((_, i) =>
+        isY3 && i === 0 ? -(assumptions.workingCapitalOpex || 0) : 0,
+      );
 
-        d.monthly.exitEv = (d.monthly.ev || []).map(x => x || 0);
-        d.monthly.exitRetained = d.monthly.opCoExit.map((x, i) => {
-          const ev_val = (d.monthly.ev || [])[i] || 0;
-          return x ? Math.max(0, x - ev_val) : 0;
-        });
+      d.monthly.exitEv = (d.monthly.ev || []).map((x) => x || 0);
+      d.monthly.exitRetained = d.monthly.opCoExit.map((x, i) => {
+        const ev_val = (d.monthly.ev || [])[i] || 0;
+        return x ? Math.max(0, x - ev_val) : 0;
+      });
 
-        d.monthly.cff_in = d.monthly.pA_Outlay.map((_, i) => -((d.monthly.pA_Outlay[i] || 0) + (d.monthly.pB_Outlay[i] || 0)));
-        d.monthly.cff_out = d.monthly.shareA.map((_, i) => -((d.monthly.shareA[i] || 0) + (d.monthly.shareB[i] || 0)) - ((d.monthly.pA_Exit[i] || 0) + (d.monthly.pB_Exit[i] || 0)));
-        d.monthly.cff = d.monthly.cff_in.map((x, i) => x + d.monthly.cff_out[i]);
+      d.monthly.cff_in = d.monthly.pA_Outlay.map(
+        (_, i) =>
+          -((d.monthly.pA_Outlay[i] || 0) + (d.monthly.pB_Outlay[i] || 0)),
+      );
+      d.monthly.cff_out = d.monthly.shareA.map(
+        (_, i) =>
+          -((d.monthly.shareA[i] || 0) + (d.monthly.shareB[i] || 0)) -
+          ((d.monthly.pA_Exit[i] || 0) + (d.monthly.pB_Exit[i] || 0)),
+      );
+      d.monthly.cff = d.monthly.cff_in.map((x, i) => x + d.monthly.cff_out[i]);
 
-        d.monthly.netFlow = d.monthly.cfo.map((x, i) => x + d.monthly.cfi[i] + d.monthly.cff[i]);
+      d.monthly.netFlow = d.monthly.cfo.map(
+        (x, i) => x + d.monthly.cfi[i] + d.monthly.cff[i],
+      );
     }
-    
-    return { ...d, cfo, cfo_in, cfo_out, cfi, cfi_in, cfi_out, cff, cff_in, cff_out, netFlow, exitEv, exitRetained };
+
+    return {
+      ...d,
+      cfo,
+      cfo_in,
+      cfo_out,
+      cfi,
+      cfi_in,
+      cfi_out,
+      cff,
+      cff_in,
+      cff_out,
+      netFlow,
+      exitEv,
+      exitRetained,
+    };
   });
-  
+
   let currentCash = 0;
-  annualData = annualData.map(d => {
-      currentCash += d.netFlow;
-      return { ...d, endCash: currentCash };
+  annualData = annualData.map((d) => {
+    currentCash += d.netFlow;
+    return { ...d, endCash: currentCash };
   });
-  
+
   const operatingData = annualData.filter((d) => d.isOperating);
   const stabilizedYear =
     operatingData.find((y) => y.bor >= assumptions.borMax) ||
@@ -1224,7 +1344,10 @@ const runOpCoEngine = (assumptions, config) => {
       ),
       ev: annualData.reduce((acc, d) => acc + (d.ev || 0), 0),
       exitEv: annualData.reduce((acc, d) => acc + (d.exitEv || 0), 0),
-      exitRetained: annualData.reduce((acc, d) => acc + (d.exitRetained || 0), 0),
+      exitRetained: annualData.reduce(
+        (acc, d) => acc + (d.exitRetained || 0),
+        0,
+      ),
       opCoExit: annualData.reduce((acc, d) => acc + (d.opCoExit || 0), 0),
       pA_Exit: annualData.reduce((acc, d) => acc + (d.pA_Exit || 0), 0),
       pB_Exit: annualData.reduce((acc, d) => acc + (d.pB_Exit || 0), 0),
@@ -1535,7 +1658,13 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
   const effectiveLtv = assumptions.includeFinancing ? assumptions.ltv : 0;
 
   const totalCapexExLand = upfrontTotalCapex - landCost;
-  const totalDebt = Math.max(0, totalCapexExLand) * (effectiveLtv / 100);
+  const devAndCarCost = devGaTotalCost + carCost;
+  const debtSizingBase =
+    (assumptions.includePreOpInLtv ?? true)
+      ? totalCapexExLand
+      : totalCapexExLand - devAndCarCost;
+
+  const totalDebt = Math.max(0, debtSizingBase) * (effectiveLtv / 100);
   const totalEquity = upfrontTotalCapex - totalDebt;
 
   const ioYears = assumptions.ioGracePeriodYears || 0;
@@ -1609,9 +1738,24 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
   let contingencySpendMonthlyArr = [];
 
   const genericCapex = totalCapex - consultantCost - licenseCost - leasedMedEq;
-  const genericEquity = genericCapex * (1 - effectiveLtv / 100);
+
+  const devAndCarCostForGeneric = devGaTotalCost + carCost;
+  const genericDebtSizingBase =
+    (assumptions.includePreOpInLtv ?? true)
+      ? genericCapex
+      : genericCapex - devAndCarCostForGeneric;
+  const genericDebtSizingBaseExLand =
+    (assumptions.includePreOpInLtv ?? true)
+      ? genericCapex - landCost
+      : genericCapex - landCost - devAndCarCostForGeneric;
+  const genericPreOpExclusion =
+    (assumptions.includePreOpInLtv ?? true) ? 0 : devAndCarCostForGeneric;
+
+  const genericEquity =
+    genericDebtSizingBase * (1 - effectiveLtv / 100) + genericPreOpExclusion;
   const genericEquityExLand =
-    (genericCapex - landCost) * (1 - effectiveLtv / 100);
+    genericDebtSizingBaseExLand * (1 - effectiveLtv / 100) +
+    genericPreOpExclusion;
 
   let cumNonLandCapex = 0;
   let cumDebtDrawn = 0;
@@ -1706,7 +1850,8 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       m_contingency = t_contingency;
 
       m_hard = t_build + t_eq + t_infra + t_ffe + t_sharing;
-      m_soft = t_consultant + t_license + t_vat + t_contingency + t_car + m_ga;
+      m_soft = t_consultant + t_license + t_vat + t_contingency;
+      const m_preOp = t_car + m_ga;
 
       capDrawBase_month =
         (landTiming
@@ -1715,9 +1860,24 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
             ? landCost
             : 0) +
         m_hard +
-        m_soft; // INCLUDING LAND
-      eqDrawBase_month = capDrawBase_month * (1 - effectiveLtv / 100);
-      eqDrawExLandBase_month = (m_hard + m_soft) * (1 - effectiveLtv / 100);
+        m_soft +
+        m_preOp; // INCLUDING LAND
+
+      const m_debtSizingBase =
+        (assumptions.includePreOpInLtv ?? true)
+          ? capDrawBase_month
+          : capDrawBase_month - m_preOp;
+      const m_debtSizingBaseExLand =
+        (assumptions.includePreOpInLtv ?? true)
+          ? m_hard + m_soft
+          : m_hard + m_soft - m_preOp;
+      const m_preOpExclusion =
+        (assumptions.includePreOpInLtv ?? true) ? 0 : m_preOp;
+
+      eqDrawBase_month =
+        m_debtSizingBase * (1 - effectiveLtv / 100) + m_preOpExclusion;
+      eqDrawExLandBase_month =
+        m_debtSizingBaseExLand * (1 - effectiveLtv / 100) + m_preOpExclusion;
     } else {
       let genericCapDraw_month, genericEqDraw_month, genericEqDrawExLand_month;
       if (devYears > 1) {
@@ -1866,7 +2026,8 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
     );
     const m_unleveredCf = -capDrawBase_month;
 
-    const projectSpend_month = m_land_final + m_hard + m_soft;
+    const m_preOp = m_ga + fallback_m_car;
+    const projectSpend_month = m_land_final + m_hard + m_soft + m_preOp;
 
     landSpendMonthly.push(m_land_final);
     hardSpendMonthly.push(m_hard);
@@ -2197,8 +2358,14 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
   const repaymentType = assumptions.repaymentType || "standard";
   let stepUpPercentages = ensureArray(assumptions.stepUpPercentages);
   if (repaymentType === "step_up" && stepUpPercentages.length === 0) {
-    const amortYears = Math.max(1, (assumptions.loanTenor || 15) - (assumptions.ioGracePeriodYears || 2));
-    stepUpPercentages = getInitialStepUpPercentages(amortYears, "tangerang_stepup");
+    const amortYears = Math.max(
+      1,
+      (assumptions.loanTenor || 15) - (assumptions.ioGracePeriodYears || 2),
+    );
+    stepUpPercentages = getInitialStepUpPercentages(
+      amortYears,
+      "tangerang_stepup",
+    );
   }
 
   // Run operating phase month-by-month and group annually
@@ -2408,11 +2575,15 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
             m_principal = outstandingDebt;
           } else {
             const yearPct = stepUpPercentages[amortYearIdx] || 0;
-            const annualPrincipal = initialDebtAtStartOfOperations * (yearPct / 100);
+            const annualPrincipal =
+              initialDebtAtStartOfOperations * (yearPct / 100);
             m_principal = Math.min(outstandingDebt, annualPrincipal / 12);
           }
         } else {
-          m_principal = Math.min(outstandingDebt, postIoPmtMonthly - m_interest);
+          m_principal = Math.min(
+            outstandingDebt,
+            postIoPmtMonthly - m_interest,
+          );
         }
         outstandingDebt -= m_principal;
       }
@@ -2426,8 +2597,12 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
             m_principalExLand = outstandingDebtExLand;
           } else {
             const yearPct = stepUpPercentages[amortYearIdx] || 0;
-            const annualPrincipalExLand = initialDebtAtStartOfOperationsExLand * (yearPct / 100);
-            m_principalExLand = Math.min(outstandingDebtExLand, annualPrincipalExLand / 12);
+            const annualPrincipalExLand =
+              initialDebtAtStartOfOperationsExLand * (yearPct / 100);
+            m_principalExLand = Math.min(
+              outstandingDebtExLand,
+              annualPrincipalExLand / 12,
+            );
           }
         } else {
           m_principalExLand = Math.min(
@@ -2658,9 +2833,10 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       const m_dep = m_d1 + m_d2 + m_d3 + m_d4 + m_dSharing + m_d5;
 
       const m_ebt = m_ebitda - m_interest - m_dep;
-      
+
       ytdEbt += m_ebt;
-      const m_tax = (m === 12 && ytdEbt > 0) ? ytdEbt * (assumptions.corporateTax / 100) : 0;
+      const m_tax =
+        m === 12 && ytdEbt > 0 ? ytdEbt * (assumptions.corporateTax / 100) : 0;
       const m_netIncome = m_ebt - m_tax;
 
       let m_exit = 0,
@@ -2914,44 +3090,111 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
   }
 
   // Add CF Statement Standard Items for PropCo
-  annualData = annualData.map(d => {
+  annualData = annualData.map((d) => {
     const cfo = (d.netIncome || 0) + (d.dep || 0);
     const cfo_in = d.revenue || 0;
     const cfo_out = cfo - cfo_in;
 
-    const cfi = -((d.hardSpend||0) + (d.softSpend||0) + (d.landSpend||0)) + (d.exit || 0);
+    const cfi =
+      -((d.hardSpend || 0) + (d.softSpend || 0) + (d.landSpend || 0)) +
+      (d.exit || 0);
     const cfi_in = d.exit || 0;
-    const cfi_out = -((d.hardSpend||0) + (d.softSpend||0) + (d.landSpend||0));
+    const cfi_out = -(
+      (d.hardSpend || 0) +
+      (d.softSpend || 0) +
+      (d.landSpend || 0)
+    );
 
-    const cff = (d.debtDraw||0) - (d.principal||0) + (d.shortfallEquity||0) - (d.fcfe||0);
-    const cff_in = (d.debtDraw||0) + (d.shortfallEquity||0);
-    const cff_out = -(d.principal||0) - (d.fcfe||0);
+    const cff =
+      (d.debtDraw || 0) -
+      (d.principal || 0) +
+      (d.shortfallEquity || 0) -
+      (d.fcfe || 0);
+    const cff_in = (d.debtDraw || 0) + (d.shortfallEquity || 0);
+    const cff_out = -(d.principal || 0) - (d.fcfe || 0);
 
     const netFlow = cfo + cfi + cff;
-    
+
     if (d.monthly) {
-        d.monthly.cfo = Array.from({length: 12}, (_, i) => (d.monthly?.netIncome?.[i] || 0) + (d.monthly?.dep?.[i] || 0));
-        d.monthly.cfo_in = Array.from({length: 12}, (_, i) => d.monthly?.revenue?.[i] || 0);
-        d.monthly.cfo_out = d.monthly.cfo.map((x, i) => x - (d.monthly.cfo_in[i] || 0));
+      d.monthly.cfo = Array.from(
+        { length: 12 },
+        (_, i) => (d.monthly?.netIncome?.[i] || 0) + (d.monthly?.dep?.[i] || 0),
+      );
+      d.monthly.cfo_in = Array.from(
+        { length: 12 },
+        (_, i) => d.monthly?.revenue?.[i] || 0,
+      );
+      d.monthly.cfo_out = d.monthly.cfo.map(
+        (x, i) => x - (d.monthly.cfo_in[i] || 0),
+      );
 
-        d.monthly.cfi = Array.from({length: 12}, (_, i) => -((d.monthly?.hardSpend?.[i] || 0) + (d.monthly?.softSpend?.[i] || 0) + (d.monthly?.landSpend?.[i] || 0)) + (d.monthly?.exit?.[i] || 0));
-        d.monthly.cfi_in = Array.from({length: 12}, (_, i) => d.monthly?.exit?.[i] || 0);
-        d.monthly.cfi_out = Array.from({length: 12}, (_, i) => -((d.monthly?.hardSpend?.[i] || 0) + (d.monthly?.softSpend?.[i] || 0) + (d.monthly?.landSpend?.[i] || 0)));
+      d.monthly.cfi = Array.from(
+        { length: 12 },
+        (_, i) =>
+          -(
+            (d.monthly?.hardSpend?.[i] || 0) +
+            (d.monthly?.softSpend?.[i] || 0) +
+            (d.monthly?.landSpend?.[i] || 0)
+          ) + (d.monthly?.exit?.[i] || 0),
+      );
+      d.monthly.cfi_in = Array.from(
+        { length: 12 },
+        (_, i) => d.monthly?.exit?.[i] || 0,
+      );
+      d.monthly.cfi_out = Array.from(
+        { length: 12 },
+        (_, i) =>
+          -(
+            (d.monthly?.hardSpend?.[i] || 0) +
+            (d.monthly?.softSpend?.[i] || 0) +
+            (d.monthly?.landSpend?.[i] || 0)
+          ),
+      );
 
-        d.monthly.cff = Array.from({length: 12}, (_, i) => (d.monthly?.debtDraw?.[i] || 0) - (d.monthly?.principal?.[i] || 0) + (d.monthly?.shortfallEquity?.[i] || 0) - (d.monthly?.fcfe?.[i] || 0));
-        d.monthly.cff_in = Array.from({length: 12}, (_, i) => (d.monthly?.debtDraw?.[i] || 0) + (d.monthly?.shortfallEquity?.[i] || 0));
-        d.monthly.cff_out = Array.from({length: 12}, (_, i) => -(d.monthly?.principal?.[i] || 0) - (d.monthly?.fcfe?.[i] || 0));
+      d.monthly.cff = Array.from(
+        { length: 12 },
+        (_, i) =>
+          (d.monthly?.debtDraw?.[i] || 0) -
+          (d.monthly?.principal?.[i] || 0) +
+          (d.monthly?.shortfallEquity?.[i] || 0) -
+          (d.monthly?.fcfe?.[i] || 0),
+      );
+      d.monthly.cff_in = Array.from(
+        { length: 12 },
+        (_, i) =>
+          (d.monthly?.debtDraw?.[i] || 0) +
+          (d.monthly?.shortfallEquity?.[i] || 0),
+      );
+      d.monthly.cff_out = Array.from(
+        { length: 12 },
+        (_, i) =>
+          -(d.monthly?.principal?.[i] || 0) - (d.monthly?.fcfe?.[i] || 0),
+      );
 
-        d.monthly.netFlow = d.monthly.cfo.map((x, i) => x + d.monthly.cfi[i] + d.monthly.cff[i]);
+      d.monthly.netFlow = d.monthly.cfo.map(
+        (x, i) => x + d.monthly.cfi[i] + d.monthly.cff[i],
+      );
     }
-    
-    return { ...d, cfo, cfo_in, cfo_out, cfi, cfi_in, cfi_out, cff, cff_in, cff_out, netFlow };
+
+    return {
+      ...d,
+      cfo,
+      cfo_in,
+      cfo_out,
+      cfi,
+      cfi_in,
+      cfi_out,
+      cff,
+      cff_in,
+      cff_out,
+      netFlow,
+    };
   });
-  
+
   let currentCash = 0;
-  annualData = annualData.map(d => {
-      currentCash += d.netFlow;
-      return { ...d, endCash: currentCash };
+  annualData = annualData.map((d) => {
+    currentCash += d.netFlow;
+    return { ...d, endCash: currentCash };
   });
 
   const operatingData = annualData.filter((d) => d.isOperating);
@@ -2964,6 +3207,7 @@ const runPropCoEngine = (assumptions, opCoModelData, config, groups = []) => {
       totalCapex,
       upfrontTotalCapex,
       totalCapexExLand,
+      debtSizingBase,
       totalDebt,
       totalEquity: peakEquityRequired,
       totalInvestment: peakTotalInvestment,
@@ -3397,7 +3641,10 @@ const runConsolidatedEngine = (opCoData, propCoData, opCoAssumptions) => {
   };
 };
 
-const getInitialStepUpPercentages = (amortYears, presetType = "tangerang_stepup") => {
+const getInitialStepUpPercentages = (
+  amortYears,
+  presetType = "tangerang_stepup",
+) => {
   if (amortYears <= 0) return [];
   if (presetType === "tangerang_stepup" && amortYears === 13) {
     return [2, 2, 3, 3, 6, 6, 8, 8, 10, 10, 14, 14, 14];
@@ -3411,17 +3658,21 @@ const getInitialStepUpPercentages = (amortYears, presetType = "tangerang_stepup"
       const baseIdx = ratio * (basePreset.length - 1);
       const low = Math.floor(baseIdx);
       const high = Math.min(basePreset.length - 1, Math.ceil(baseIdx));
-      const val = basePreset[low] + (basePreset[high] - basePreset[low]) * (baseIdx - low);
+      const val =
+        basePreset[low] +
+        (basePreset[high] - basePreset[low]) * (baseIdx - low);
       result.push(val);
     }
     // Normalize to sum of 100
     const sum = result.reduce((a, b) => a + b, 0);
-    const rounded = result.map(v => parseFloat(((v / sum) * 100).toFixed(2)));
+    const rounded = result.map((v) => parseFloat(((v / sum) * 100).toFixed(2)));
     // Adjust any rounding error in the final element to guarantee exactly 100%
     const currentSum = rounded.reduce((a, b) => a + b, 0);
     const diff = 100 - currentSum;
     if (Math.abs(diff) > 0.001) {
-      rounded[rounded.length - 1] = parseFloat((rounded[rounded.length - 1] + diff).toFixed(2));
+      rounded[rounded.length - 1] = parseFloat(
+        (rounded[rounded.length - 1] + diff).toFixed(2),
+      );
     }
     return rounded;
   }
@@ -3431,7 +3682,9 @@ const getInitialStepUpPercentages = (amortYears, presetType = "tangerang_stepup"
   const currentSum = result.reduce((a, b) => a + b, 0);
   const diff = 100 - currentSum;
   if (Math.abs(diff) > 0.001) {
-    result[result.length - 1] = parseFloat((result[result.length - 1] + diff).toFixed(2));
+    result[result.length - 1] = parseFloat(
+      (result[result.length - 1] + diff).toFixed(2),
+    );
   }
   return result;
 };

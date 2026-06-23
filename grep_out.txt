@@ -1,0 +1,93 @@
+const LazyResponsiveContainer = memo(({ children, ...props }) => {
+const CHART_MARGINS_BAR = { top: 20, right: 0, left: 0, bottom: 0 };
+const CHART_MARGINS_LINE = { top: 40, right: 35, left: 20, bottom: 0 };
+const TOOLTIP_STYLE = {
+const CHART_CURSOR_STYLE = { fill: "#F9F8F6" };
+const LEGEND_STYLE = { fontSize: "11px", paddingTop: "20px" };
+const TICK_STYLE = { fontSize: 10, fill: "#4C4A4B" };
+const PREM_MKT_PIE_DATA = [
+const formatCancerCases = (val) => new Intl.NumberFormat("en-US").format(val);
+const formatInsuranceTooltip = (val) => val.toFixed(2) + "T IDR";
+const formatInsuranceLabel = (val) => val.toFixed(2);
+const LINE_LABEL_STYLE = {
+const renderPieLabel = ({
+const START_YEAR = 2026;
+const DEFAULT_END_YEAR = 2028;
+const MONTH_NAMES_SHORT = [
+const generateTimelineMonths = (start, end) => {
+const INITIAL_GROUPS = [
+const formatNumber = (val, decimals = 1) => {
+const formatCurrency = (val) => {
+const AIMicroscopeIcon = memo(({ size = 14, className = "" }) => {
+const CustomBedIcon = memo(({ size = 24, className = "" }) => (
+const CustomScaleIcon = memo(({ size = 24, className = "" }) => (
+const CustomKnotIcon = memo(({ size = 24, className = "" }) => (
+const CustomStethoscopeIcon = memo(({ size = 24, className = "" }) => (
+const CustomPhysicianIcon = memo(({ size = 24, className = "" }) => (
+const CustomPopulationIcon = memo(({ size = 24, className = "" }) => (
+const CustomDiagnosticsIcon = memo(({ size = 24, className = "" }) => (
+const CustomLinacIcon = memo(({ size = 24, className = "" }) => (
+const CustomOverseasIcon = memo(({ size = 24, className = "" }) => (
+const CustomPalliativeIcon = memo(({ size = 24, className = "" }) => (
+const CustomClipboardIcon = memo(({ size = 24, className = "" }) => (
+const MarkdownRenderer = memo(({ content, className = "" }) => {
+const NavButton = memo(({ active, onClick, icon, label, disabled }) => (
+const useTooltip = (tooltip) => {
+const KPITooltipIcon = memo(
+const StatefulTooltipIcon = memo(({ tooltip, align = "right" }) => {
+const KPICard = memo(
+const MiniKPICard = memo(
+const DualKPICard = memo(
+const SectionTitle = memo(({ title, icon, color }) => {
+const FormattedInput = memo(
+const AssumptionRow = memo(({ label, val, set, unit, isLocked, tooltip }) => {
+const AssumptionDepreciationGroup = memo(
+const ToggleRow = memo(({ label, desc, checked, onChange, isLocked }) => (
+const AssumptionRowCalculated = memo(
+const AssumptionRowQtyPrice = memo(
+const AssumptionRowQtyPriceWithToggle = memo(
+const SettingsHeader = memo(
+const TableRow = memo(
+const ExpandableDataRowGroup = ({
+const TableSection = memo(({ title, colSpan, type = "default" }) => {
+const CapexRow = memo(
+const ExpandableCapexRow = memo(
+const PartnerReturnCard = ({
+const SensitivityTable = memo(
+const ProjectInfoFieldComp = memo(
+const SelectionPopupComp = memo(({ state, setState, onAsk }) => {
+const MarketValidationDisplay = memo(({ content, loading, onClose, color }) => (
+const BentoBox = memo(
+const BentoIcon = memo(({ icon, color = "blue", className = "" }) => {
+const ProjectOverviewView = memo(({ info, setInfo, isLocked }) => (
+const CollaborationStrategyView = memo(({ isPresenting }) => (
+const targetRegions = [
+const mapLocations = [
+const ageCohorts = [
+const regionGroups = targetRegions.reduce((acc, region) => {
+const getDensityColor = (density) =>
+const getEconomyColor = (income) =>
+const getPopulationColor = (pop) =>
+const getCommuterColor = (rate) =>
+const getAgeColor = (age) =>
+const getGroupColor = (group) =>
+const formatAxisLabel = (val) => {
+const generateFallbackGeoJSON = (centerLat, centerLon, radiusDegrees) => {
+const InteractiveDemographicMap = memo(() => {
+const ClinicalProgrammingView = memo(() => {
+const StudyView = memo(
+const OpCoDashboardView = memo(
+const OpCoCascadeView = memo(
+const PropCoDashboardView = memo(
+const PropCoCascadeView = memo(
+const ConsolidatedDashboardView = memo(
+const ConsolidatedCascadeView = memo(
+const OpCoSettingsView = memo(
+const PropCoSettingsView = memo(
+const OpCoSensitivityView = memo(({ assumptions }) => {
+const PropCoSensitivityView = memo(({ assumptions, opCoModelData, groups }) => {
+const TIMELINE_PRESETS = {
+const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
+const style = document.createElement("style");
+const SettingsPasswordGate = ({ children }) => {
+const localFinancialAuditor = {
