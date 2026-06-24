@@ -1,18 +1,43 @@
 import {
   OpCoAssumptions,
   PropCoAssumptions,
+  HoldCoAssumptions,
   OpCoModelData,
   PropCoModelData,
   ConsolidatedModelData,
   ProjConfig,
   EngineTotals,
-  EntityModelData
+  EntityModelData,
 } from "./types";
+
+export const applySafeMathPrecision = <T>(data: T): T => {
+  if (data === null || data === undefined) return data;
+  if (typeof data === "number") {
+    // Strategic Precision Rounding Wrapper to eliminate IEEE 754 float precision errors
+    return Number(Math.round(data * 1e6) / 1e6) as unknown as T;
+  }
+  if (Array.isArray(data)) {
+    return data.map((item) => applySafeMathPrecision(item)) as unknown as T;
+  }
+  if (typeof data === "object") {
+    const roundedObj: any = {};
+    for (const key in data) {
+      if (Object.prototype.hasOwnProperty.call(data, key)) {
+        roundedObj[key] = applySafeMathPrecision((data as any)[key]);
+      }
+    }
+    return roundedObj as T;
+  }
+  return data;
+};
 
 export const calculatePMT = (rate: number, nper: number, pv: number): number =>
   rate === 0 ? -(pv / nper) : -(pv * rate) / (1 - Math.pow(1 + rate, -nper));
 
-export const calculatePayback = (cfs: number[], frequency: string = "annual"): number => {
+export const calculatePayback = (
+  cfs: number[],
+  frequency: string = "annual",
+): number => {
   if (!cfs || cfs.length === 0) return 0;
   let cumulative = 0;
   for (let i = 0; i < cfs.length; i++) {
@@ -27,7 +52,10 @@ export const calculatePayback = (cfs: number[], frequency: string = "annual"): n
   return 0; // Return 0 if the project never catches up, preventing fake extrapolation
 };
 
-export const calculateIRR = (cfs: number[], frequency: string = "annual"): number => {
+export const calculateIRR = (
+  cfs: number[],
+  frequency: string = "annual",
+): number => {
   if (!cfs || cfs.length === 0) return 0;
   let rate = frequency === "monthly" ? 0.01 : 0.1;
   for (let i = 0; i < 150; i++) {
@@ -53,7 +81,11 @@ export const calculateIRR = (cfs: number[], frequency: string = "annual"): numbe
   return 0;
 };
 
-export const calculateNPV = (cfs: number[], rate: number, frequency: string = "annual"): number => {
+export const calculateNPV = (
+  cfs: number[],
+  rate: number,
+  frequency: string = "annual",
+): number => {
   if (!cfs) return 0;
   const discountRate = rate || 12;
   if (frequency === "monthly") {
@@ -67,6 +99,14 @@ export const calculateNPV = (cfs: number[], rate: number, frequency: string = "a
     (acc, val, i) => acc + (val || 0) / Math.pow(1 + discountRate / 100, i),
     0,
   );
+};
+
+export const DEFAULT_HOLDCO_ASSUMPTIONS: HoldCoAssumptions = {
+  includeFinancing: false,
+  ltvRatio: 100,
+  interestRate: 8.25,
+  loanTenor: 15,
+  ioGracePeriodYears: 2,
 };
 
 export const DEFAULT_OPCO_ASSUMPTIONS: OpCoAssumptions = {
@@ -115,6 +155,12 @@ export const DEFAULT_OPCO_ASSUMPTIONS: OpCoAssumptions = {
   exitMultiple: 15,
   sellingCosts: 0,
   dividendPayoutRatio: 80,
+  includeFinancing: false,
+  ltvRatio: 0,
+  interestRate: 8.25,
+  loanTenor: 15,
+  ioGracePeriodYears: 2,
+  amortizationYears: 10,
 };
 
 export const DEFAULT_PROPCO_ASSUMPTIONS: PropCoAssumptions = {
@@ -122,6 +168,9 @@ export const DEFAULT_PROPCO_ASSUMPTIONS: PropCoAssumptions = {
   manualBaseRent: 35,
   manualRentEscalation: 3,
   includeLand: false,
+  isLandLeased: false,
+  monthlyLandLeaseRateSqm: 48000,
+  landLeaseTermYears: 15,
   landArea: 12643,
   landPrice: 15,
   buildArea: 13000,
@@ -151,7 +200,7 @@ export const DEFAULT_PROPCO_ASSUMPTIONS: PropCoAssumptions = {
   opOverheadMonthly: 0.2,
   opOverheadInc: 4,
   ffeReservePct: 2,
-  includeFinancing: false,
+  includeFinancing: true,
   includePreOpInLtv: true,
   drawdownScenario: "tranches",
   drawdownTranches: [20, 40, 60, 80, 100],
@@ -228,7 +277,10 @@ export const callGemini = async (prompt: string, systemInstruction: string) => {
 // ==========================================
 // 2. FINANCIAL ENGINES
 // ==========================================
-export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig): OpCoModelData => {
+export const runOpCoEngine = (
+  assumptions: OpCoAssumptions,
+  config?: ProjConfig,
+): OpCoModelData => {
   const requestedYears = config?.projYears || 10;
   const projYears = Math.min(requestedYears, 30);
   const totalDevMonths = assumptions.devDurationMonths || 24;
@@ -239,7 +291,26 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
   } else if (assumptions.includeTerminalValue) {
     exitYear = 10;
   }
-  const totalEquity = assumptions.partnerAEquity + assumptions.partnerBEquity;
+
+  // OpCo Level Debt parameters
+  const includeFinancing = assumptions.includeFinancing || false;
+  const ltvRatio = assumptions.ltvRatio || 0;
+  const interestRate = assumptions.interestRate || 10;
+  const loanTenor = assumptions.loanTenor || 15;
+  const ioGracePeriodYears = assumptions.ioGracePeriodYears || 0;
+
+  const totalCap = assumptions.partnerAEquity + assumptions.partnerBEquity;
+  const totalDebt = includeFinancing ? totalCap * (ltvRatio / 100) : 0;
+  const totalEquity = totalCap - totalDebt;
+
+  const resolvedPartnerAEquity = includeFinancing
+    ? totalEquity * (assumptions.sharingPercentA / 100)
+    : assumptions.partnerAEquity;
+
+  const resolvedPartnerBEquity = includeFinancing
+    ? totalEquity * ((100 - assumptions.sharingPercentA) / 100)
+    : assumptions.partnerBEquity;
+
   let annualData = [],
     projectCfsMonthly = [],
     partnerACfsMonthly = [],
@@ -248,6 +319,13 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
     partnerA_CumCF = 0,
     partnerB_CumCF = 0,
     cumulativeRetainedEarnings = 0;
+
+  let outstandingDebt = 0;
+  let idcAccumulated = 0;
+
+  let preOpMonthlyDebtDraws: number[] = [];
+  let preOpMonthlyIdc: number[] = [];
+  let preOpMonthlyDebtBalance: number[] = [];
 
   // Simulate pre-operating months based on totalDevMonths
   for (let m = 1; m <= totalDevMonths; m++) {
@@ -278,16 +356,30 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
       ? Math.min(12, totalDevMonths)
       : Math.max(1, totalDevMonths - 12);
     const m_pA_Outlay =
-      (-assumptions.partnerAEquity * splitFactor) / monthsInThisSplit;
+      (-resolvedPartnerAEquity * splitFactor) / monthsInThisSplit;
     const m_pB_Outlay =
-      (-assumptions.partnerBEquity * splitFactor) / monthsInThisSplit;
+      (-resolvedPartnerBEquity * splitFactor) / monthsInThisSplit;
+
+    // Debt draw monthly during pre-operating phase
+    let m_debtDraw = 0;
+    let m_idc = 0;
+    if (includeFinancing) {
+      m_debtDraw = totalDebt / totalDevMonths;
+      m_idc = outstandingDebt * (interestRate / 100 / 12);
+      outstandingDebt += m_debtDraw + m_idc;
+      idcAccumulated += m_idc;
+    }
+
+    preOpMonthlyDebtDraws.push(m_debtDraw);
+    preOpMonthlyIdc.push(m_idc);
+    preOpMonthlyDebtBalance.push(outstandingDebt);
 
     partnerA_CumCF += m_pA_Outlay;
     partnerB_CumCF += m_pB_Outlay;
 
     partnerACfsMonthly.push(m_pA_Outlay);
     partnerBCfsMonthly.push(m_pB_Outlay);
-    projectCfsMonthly.push(m_pA_Outlay + m_pB_Outlay);
+    projectCfsMonthly.push(m_pA_Outlay + m_pB_Outlay + m_debtDraw);
   }
 
   // Pre-operating years: Create annual reporting blocks based on devYears
@@ -326,21 +418,21 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
     const net = p.net;
     // Split the outlay properly for the year block
     const pA_Outlay =
-      -assumptions.partnerAEquity *
+      -resolvedPartnerAEquity *
       p.split *
       (p.months /
         (idx === 0
           ? Math.min(12, totalDevMonths)
           : Math.max(1, totalDevMonths - 12)));
     const pB_Outlay =
-      -assumptions.partnerBEquity *
+      -resolvedPartnerBEquity *
       p.split *
       (p.months /
         (idx === 0
           ? Math.min(12, totalDevMonths)
           : Math.max(1, totalDevMonths - 12)));
 
-    let monthly = {
+    let monthly: { [key: string]: any } = {
       ipRev: [],
       opRev: [],
       totalRev: [],
@@ -355,6 +447,10 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
       tax: [],
       netIncome: [],
       cumNI: [],
+      debtDraw: [],
+      interest: [],
+      principal: [],
+      debtBalance: [],
       distributableProfit: [],
       retainedThisYear: [],
       cumulativeRetainedEarnings: [],
@@ -472,9 +568,9 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
             ? Math.min(12, totalDevMonths)
             : Math.max(1, totalDevMonths - 12));
         prior_pA_Outlay +=
-          -assumptions.partnerAEquity * pastP.split * pastFactor;
+          -resolvedPartnerAEquity * pastP.split * pastFactor;
         prior_pB_Outlay +=
-          -assumptions.partnerBEquity * pastP.split * pastFactor;
+          -resolvedPartnerBEquity * pastP.split * pastFactor;
       }
 
       if (m < p.months) {
@@ -485,6 +581,16 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
         pB_CumVal = prior_pB_Outlay + pB_Outlay;
       }
 
+      // Monthly debt tracking
+      const m_draw = preOpMonthlyDebtDraws[monthIndex] || 0;
+      const m_interest = preOpMonthlyIdc[monthIndex] || 0;
+      const m_balance = preOpMonthlyDebtBalance[monthIndex] || 0;
+
+      monthly.debtDraw.push(m_draw);
+      monthly.interest.push(m_interest);
+      monthly.principal.push(0);
+      monthly.debtBalance.push(m_balance);
+
       monthly.pA_Net.push(m < p.months ? m_pA_OutlayMonth : 0);
       monthly.pA_Outlay.push(m < p.months ? m_pA_OutlayMonth : 0);
       monthly.pA_Cum.push(pA_CumVal);
@@ -492,7 +598,7 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
       monthly.pB_Net.push(m < p.months ? m_pB_OutlayMonth : 0);
       monthly.pB_Outlay.push(m < p.months ? m_pB_OutlayMonth : 0);
       monthly.pB_Cum.push(pB_CumVal);
-      monthly.fcf.push(m < p.months ? m_pA_OutlayMonth + m_pB_OutlayMonth : 0);
+      monthly.fcf.push(m < p.months ? m_pA_OutlayMonth + m_pB_OutlayMonth + m_draw : 0);
       monthly.bor.push(0);
       monthly.pA_Yield.push(0);
       monthly.pB_Yield.push(0);
@@ -511,7 +617,7 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
           ? Math.min(12, totalDevMonths)
           : Math.max(1, totalDevMonths - 12));
       prior_pA_Outlay_Total +=
-        -assumptions.partnerAEquity * pastP.split * pastFactor;
+        -resolvedPartnerAEquity * pastP.split * pastFactor;
     }
 
     let prior_pB_Outlay_Total = 0;
@@ -523,8 +629,12 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
           ? Math.min(12, totalDevMonths)
           : Math.max(1, totalDevMonths - 12));
       prior_pB_Outlay_Total +=
-        -assumptions.partnerBEquity * pastP.split * pastFactor;
+        -resolvedPartnerBEquity * pastP.split * pastFactor;
     }
+
+    const yearDebtDraw = preOpMonthlyDebtDraws.slice(p.startM - 1, p.startM - 1 + p.months).reduce((a, b) => a + b, 0);
+    const yearInterest = preOpMonthlyIdc.slice(p.startM - 1, p.startM - 1 + p.months).reduce((a, b) => a + b, 0);
+    const yearDebtBalance = preOpMonthlyDebtBalance[p.startM - 1 + p.months - 1] || 0;
 
     annualData.push({
       year: p.y,
@@ -564,8 +674,11 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
       pB_Net: pB_Outlay,
       pB_Cum: prior_pB_Outlay_Total + pB_Outlay,
       pB_Yield: 0,
-
-      fcf: pA_Outlay + pB_Outlay,
+      debtDraw: yearDebtDraw,
+      interest: yearInterest,
+      principal: 0,
+      debtBalance: yearDebtBalance,
+      fcf: pA_Outlay + pB_Outlay + yearDebtDraw,
       ebitdaMargin: 0,
       ebitdarMargin: 0,
       netMargin: 0,
@@ -790,6 +903,15 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
     }
   }
 
+  const initialOperatingDebt = outstandingDebt;
+  const rMonthly = interestRate / 100 / 12;
+  const ioGraceMonths = ioGracePeriodYears * 12;
+  const loanTenorMonths = loanTenor * 12;
+  const amortizingTenorMonths = Math.max(1, loanTenorMonths - ioGraceMonths);
+  const pmt = (includeFinancing && initialOperatingDebt > 0 && rMonthly > 0)
+    ? (initialOperatingDebt * rMonthly) / (1 - Math.pow(1 + rMonthly, -amortizingTenorMonths))
+    : (initialOperatingDebt > 0 ? initialOperatingDebt / amortizingTenorMonths : 0);
+
   // Operating years
   for (let i = 1; i <= projYears; i++) {
     const currentYear = 2025 + devYearsCount + i;
@@ -919,6 +1041,10 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
       mktgOpex: [],
       operatorOpex: [],
       insOpex: [],
+      debtDraw: [],
+      interest: [],
+      principal: [],
+      debtBalance: [],
     };
 
     let year_ipRev = 0,
@@ -950,6 +1076,10 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
       year_ev = 0;
 
     let ytdEbitda = 0;
+    let ytdEbt = 0;
+    let year_interest = 0;
+    let year_principal = 0;
+    let year_debtDraw = 0;
     let cumNI_startOfYear = cumulativeNetIncome;
     for (let m = 1; m <= 12; m++) {
       const days = new Date(currentYear, m, 0).getDate();
@@ -989,12 +1119,36 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
       let m_rent = annualRent * (days / daysInYear);
       let m_ebitda = m_ebitdar - m_rent;
 
+      // Debt service calculation for the month
+      let m_debtDraw = 0;
+      let m_interest = 0;
+      let m_principal = 0;
+      let opMonthIdx = (i - 1) * 12 + (m - 1);
+      if (includeFinancing && outstandingDebt > 0) {
+        m_interest = outstandingDebt * rMonthly;
+        if (opMonthIdx < ioGraceMonths) {
+          m_principal = 0;
+        } else if (opMonthIdx < loanTenorMonths) {
+          m_principal = Math.min(outstandingDebt, pmt - m_interest);
+          if (m_principal < 0) m_principal = 0;
+        } else {
+          // If we reached the end of the loan tenor and there is still debt, pay it all off
+          m_principal = outstandingDebt;
+        }
+        outstandingDebt -= m_principal;
+      }
+      year_interest += m_interest;
+      year_principal += m_principal;
+      year_debtDraw += m_debtDraw;
+
       ytdEbitda += m_ebitda;
+      ytdEbt += (m_ebitda - m_interest);
+
       let m_tax =
-        m === 12 && ytdEbitda > 0
-          ? ytdEbitda * (assumptions.corporateTax / 100)
+        m === 12 && ytdEbt > 0
+          ? ytdEbt * (assumptions.corporateTax / 100)
           : 0;
-      let m_netIncome = m_ebitda - m_tax;
+      let m_netIncome = m_ebitda - m_interest - m_tax;
 
       let prevCumNI = cumulativeNetIncome;
       cumulativeNetIncome += m_netIncome;
@@ -1009,6 +1163,8 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
               : cumulativeNetIncome - cumNI_startOfYear
             : 0,
         );
+        // Principal repayment reduces distributable profit
+        m_availableForDistribution = Math.max(0, m_availableForDistribution - year_principal);
       }
 
       let m_distributableProfit =
@@ -1036,7 +1192,13 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
         if (assumptions.sellingCosts) {
           m_ev = m_ev * (1 - assumptions.sellingCosts / 100);
         }
-        m_opCoExit = m_ev + cumulativeRetainedEarnings;
+        
+        // Outstanding debt is settled at exit!
+        const debtBeforeExit = outstandingDebt;
+        m_opCoExit = m_ev + cumulativeRetainedEarnings - debtBeforeExit;
+        if (m_opCoExit < 0) m_opCoExit = 0;
+        outstandingDebt = 0;
+
         m_pA_Exit = m_opCoExit * (assumptions.sharingPercentA / 100);
         m_pB_Exit = m_opCoExit * ((100 - assumptions.sharingPercentA) / 100);
       }
@@ -1094,14 +1256,20 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
       monthly.pB_Outlay.push(0);
       monthly.fcf.push(m_fcf);
       monthly.bor.push(bor * 100);
+
+      monthly.debtDraw.push(m_debtDraw);
+      monthly.interest.push(m_interest);
+      monthly.principal.push(m_principal);
+      monthly.debtBalance.push(outstandingDebt);
+
       monthly.pA_Yield.push(
-        assumptions.partnerAEquity > 0
-          ? (m_shareA / assumptions.partnerAEquity) * 100
+        resolvedPartnerAEquity > 0
+          ? (m_shareA / resolvedPartnerAEquity) * 100
           : 0,
       );
       monthly.pB_Yield.push(
-        assumptions.partnerBEquity > 0
-          ? (m_shareB / assumptions.partnerBEquity) * 100
+        resolvedPartnerBEquity > 0
+          ? (m_shareB / resolvedPartnerBEquity) * 100
           : 0,
       );
 
@@ -1193,13 +1361,17 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
       pB_Net: year_shareB + year_pB_Exit,
       pB_Cum: partnerB_CumCF,
       pA_Yield:
-        assumptions.partnerAEquity > 0
-          ? (year_shareA / assumptions.partnerAEquity) * 100
+        resolvedPartnerAEquity > 0
+          ? (year_shareA / resolvedPartnerAEquity) * 100
           : 0,
       pB_Yield:
-        assumptions.partnerBEquity > 0
-          ? (year_shareB / assumptions.partnerBEquity) * 100
+        resolvedPartnerBEquity > 0
+          ? (year_shareB / resolvedPartnerBEquity) * 100
           : 0,
+      debtDraw: year_debtDraw,
+      interest: year_interest,
+      principal: year_principal,
+      debtBalance: outstandingDebt,
       fcf:
         year_netIncome +
         (i === 1 ? -assumptions.workingCapitalOpex : 0) +
@@ -1234,10 +1406,13 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
     const exitEv = d.ev || 0;
     const exitRetained = d.opCoExit ? Math.max(0, d.opCoExit - (d.ev || 0)) : 0;
 
-    const cff_in = -((d.pA_Outlay || 0) + (d.pB_Outlay || 0));
-    const cff_out =
+    const sponsorEquity = -((d.pA_Outlay || 0) + (d.pB_Outlay || 0));
+    const distributions =
       -((d.shareA || 0) + (d.shareB || 0)) -
       ((d.pA_Exit || 0) + (d.pB_Exit || 0));
+
+    const cff_in = sponsorEquity + (d.debtDraw || 0);
+    const cff_out = distributions - (d.principal || 0);
     const cff = cff_in + cff_out;
 
     const netFlow = cfo + cfi + cff;
@@ -1264,14 +1439,21 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
         return x ? Math.max(0, x - ev_val) : 0;
       });
 
-      d.monthly.cff_in = d.monthly.pA_Outlay.map(
+      d.monthly.sponsorEquity = d.monthly.pA_Outlay.map(
         (_, i) =>
           -((d.monthly.pA_Outlay[i] || 0) + (d.monthly.pB_Outlay[i] || 0)),
       );
-      d.monthly.cff_out = d.monthly.shareA.map(
+      d.monthly.distributions = d.monthly.shareA.map(
         (_, i) =>
           -((d.monthly.shareA[i] || 0) + (d.monthly.shareB[i] || 0)) -
           ((d.monthly.pA_Exit[i] || 0) + (d.monthly.pB_Exit[i] || 0)),
+      );
+
+      d.monthly.cff_in = d.monthly.sponsorEquity.map(
+        (eq, i) => eq + (d.monthly.debtDraw[i] || 0),
+      );
+      d.monthly.cff_out = d.monthly.distributions.map(
+        (dist, i) => dist - (d.monthly.principal[i] || 0),
       );
       d.monthly.cff = d.monthly.cff_in.map((x, i) => x + d.monthly.cff_out[i]);
 
@@ -1294,6 +1476,8 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
       netFlow,
       exitEv,
       exitRetained,
+      sponsorEquity,
+      distributions,
     };
   });
 
@@ -1309,7 +1493,7 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
     operatingData[operatingData.length - 1] ||
     operatingData[0];
 
-  return {
+  return applySafeMathPrecision({
     assumptions,
     annualData,
     operatingData,
@@ -1364,6 +1548,11 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
       pB_Exit: annualData.reduce((acc, d) => acc + (d.pB_Exit || 0), 0),
       pA_Outlay: annualData.reduce((acc, d) => acc + (d.pA_Outlay || 0), 0),
       pB_Outlay: annualData.reduce((acc, d) => acc + (d.pB_Outlay || 0), 0),
+      interest: annualData.reduce((acc, d) => acc + (d.interest || 0), 0),
+      principal: annualData.reduce((acc, d) => acc + (d.principal || 0), 0),
+      debtDraw: annualData.reduce((acc, d) => acc + (d.debtDraw || 0), 0),
+      sponsorEquity: annualData.reduce((acc, d) => acc + (d.sponsorEquity || 0), 0),
+      distributions: annualData.reduce((acc, d) => acc + (d.distributions || 0), 0),
       cfo: annualData.reduce((acc, d) => acc + (d.cfo || 0), 0),
       cfo_in: annualData.reduce((acc, d) => acc + (d.cfo_in || 0), 0),
       cfo_out: annualData.reduce((acc, d) => acc + (d.cfo_out || 0), 0),
@@ -1470,10 +1659,15 @@ export const runOpCoEngine = (assumptions: OpCoAssumptions, config?: ProjConfig)
     projectCfsMonthly,
     partnerACfsMonthly,
     partnerBCfsMonthly,
-  };
+  });
 };
 
-export const runPropCoEngine = (assumptions: PropCoAssumptions, opCoModelData?: OpCoModelData | null, config?: ProjConfig, groups: any[] = []): PropCoModelData => {
+export const runPropCoEngine = (
+  assumptions: PropCoAssumptions,
+  opCoModelData?: OpCoModelData | null,
+  config?: ProjConfig,
+  groups: any[] = [],
+): PropCoModelData => {
   const requestedYears = config?.projYears || 10;
   const projYears = Math.min(requestedYears, 30);
 
@@ -1565,7 +1759,7 @@ export const runPropCoEngine = (assumptions: PropCoAssumptions, opCoModelData?: 
     totalSpendMonthly = [];
 
   const landCost =
-    (assumptions.includeLand ?? true)
+    (assumptions.includeLand ?? true) && !assumptions.isLandLeased
       ? (assumptions.landArea * assumptions.landPrice) / 1000
       : 0;
   const buildCost = (assumptions.buildArea * assumptions.buildCost) / 1000;
@@ -2002,7 +2196,9 @@ export const runPropCoEngine = (assumptions: PropCoAssumptions, opCoModelData?: 
       cumNonLandCapex += m_nonLandCapex;
       const progress = cumNonLandCapex / totalCapexExLand;
 
-      const tranches: number[] = ensureArray(assumptions.drawdownTranches || [20, 40, 60, 80, 100]).map(Number);
+      const tranches: number[] = ensureArray(
+        assumptions.drawdownTranches || [20, 40, 60, 80, 100],
+      ).map(Number);
       const p = progress * 100 + 0.0001; // Allow for floating point precision
 
       let targetTrancheDebtPct = 0;
@@ -2566,8 +2762,23 @@ export const runPropCoEngine = (assumptions: PropCoAssumptions, opCoModelData?: 
         }
       }
 
+      let m_landLeaseOpex = 0;
+      if (
+        assumptions.isLandLeased &&
+        i <= (assumptions.landLeaseTermYears || 15)
+      ) {
+        // Convert from IDR/sqm/month to Billions/month
+        const rateRp = assumptions.monthlyLandLeaseRateSqm || 48000;
+        m_landLeaseOpex = (rateRp * assumptions.landArea) / 1_000_000_000;
+      }
+
       const m_gop =
-        m_revenue - m_maint - m_taxOp - m_overhead - m_medEqLeaseOpex;
+        m_revenue -
+        m_maint -
+        m_taxOp -
+        m_overhead -
+        m_medEqLeaseOpex -
+        m_landLeaseOpex;
       const m_ebitda = m_gop - m_reserve;
 
       const m_op = (i - 1) * 12 + m;
@@ -2857,20 +3068,72 @@ export const runPropCoEngine = (assumptions: PropCoAssumptions, opCoModelData?: 
         m_grossExitValue = 0;
 
       if (exitYear !== null && i === exitYear && m === 12) {
-        let tv =
-          assumptions.exitMethod === "multiple"
-            ? (annualRevenue -
+        let medEqLease_year = 0;
+        if (
+          assumptions.includeMedEq &&
+          assumptions.medEqProcurement === "lease_operating"
+        ) {
+          medEqLease_year = (assumptions.medEqLeaseMonthly || 0.375) * 12;
+        }
+
+        let landLease_year = 0;
+        if (
+          assumptions.isLandLeased &&
+          i <= (assumptions.landLeaseTermYears || 15)
+        ) {
+          const rateRp = assumptions.monthlyLandLeaseRateSqm || 48000;
+          landLease_year =
+            ((rateRp * assumptions.landArea) / 1_000_000_000) * 12;
+        }
+
+        let noi =
+          annualRevenue -
+          maint_year -
+          taxOp_year -
+          overhead_year -
+          annualRevenue * (assumptions.ffeReservePct / 100) -
+          medEqLease_year -
+          landLease_year;
+
+        let tv = 0;
+        if (assumptions.exitMethod === "dcf") {
+          const remainingYears =
+            (assumptions.landLeaseTermYears || 15) - exitYear;
+          if (remainingYears > 0) {
+            const r = (assumptions.discountRate || 10) / 100;
+            // Project cash flows for the remaining lease term
+            for (let y = 1; y <= remainingYears; y++) {
+              const projYear = exitYear + y;
+              let projRev = assumptions.linkToOpCo
+                ? opCoRents[projYear - 1] || opCoRents[opCoRents.length - 1]
+                : assumptions.manualBaseRent *
+                  Math.pow(
+                    1 + assumptions.manualRentEscalation / 100,
+                    projYear - 1,
+                  );
+
+              const projOverhead =
+                assumptions.opOverheadMonthly *
+                12 *
+                Math.pow(1 + assumptions.opOverheadInc / 100, projYear - 1);
+
+              const projNoi =
+                projRev -
                 maint_year -
                 taxOp_year -
-                overhead_year -
-                annualRevenue * (assumptions.ffeReservePct / 100)) *
-              assumptions.exitMultiple
-            : (annualRevenue -
-                maint_year -
-                taxOp_year -
-                overhead_year -
-                annualRevenue * (assumptions.ffeReservePct / 100)) /
-              (assumptions.exitCapRate / 100);
+                projOverhead -
+                projRev * (assumptions.ffeReservePct / 100) -
+                medEqLease_year -
+                landLease_year;
+
+              tv += projNoi / Math.pow(1 + r, y);
+            }
+          }
+        } else if (assumptions.exitMethod === "multiple") {
+          tv = noi * assumptions.exitMultiple;
+        } else {
+          tv = noi / (assumptions.exitCapRate / 100);
+        }
 
         if (tv > 0) {
           const cost = tv * (assumptions.sellingCosts / 100);
@@ -3210,7 +3473,7 @@ export const runPropCoEngine = (assumptions: PropCoAssumptions, opCoModelData?: 
 
   const operatingData = annualData.filter((d) => d.isOperating);
 
-  return {
+  return applySafeMathPrecision({
     assumptions,
     annualData,
     operatingData,
@@ -3420,24 +3683,32 @@ export const runPropCoEngine = (assumptions: PropCoAssumptions, opCoModelData?: 
     equityCfsExLandMonthly,
     unleveredCfsMonthly,
     operatingCfsMonthly,
-  };
+  });
 };
 
-export const runNodeAggregationEngine = (entities: EntityModelData[], config: ProjConfig): ConsolidatedModelData => {
+export const runNodeAggregationEngine = (
+  entities: EntityModelData[],
+  config: ProjConfig,
+): ConsolidatedModelData => {
   // Option A (Dynamic Entities) placeholder logic for abstract consolidation.
   // Instead of static opCoData + propCoData, this engine iterates array of EntityModelData.
-  
-  let annualData: AnnualData[] = [];
+
+  let annualData: any[] = [];
   // For now, return empty placeholder aligning to ConsolidatedModelData shape
-  return {
+  return applySafeMathPrecision({
     annualData,
     totals: {},
     irrConsolidated: 0,
-    npvConsolidated: 0
-  };
+    npvConsolidated: 0,
+  });
 };
 
-export const runConsolidatedEngine = (opCoData: OpCoModelData | null, propCoData: PropCoModelData | null, opCoAssumptions: OpCoAssumptions): ConsolidatedModelData => {
+export const runConsolidatedEngine = (
+  opCoData: OpCoModelData | null,
+  propCoData: PropCoModelData | null,
+  opCoAssumptions: OpCoAssumptions,
+  holdCoAssumptions: HoldCoAssumptions = DEFAULT_HOLDCO_ASSUMPTIONS,
+): ConsolidatedModelData => {
   let annualData = [],
     consolidatedCfs = [];
   let cumCf = 0;
@@ -3447,6 +3718,11 @@ export const runConsolidatedEngine = (opCoData: OpCoModelData | null, propCoData
   const totalPropCoEq = propCoData.metrics.totalEquity;
   const totalOpCoEq = opCoAssumptions.partnerBEquity; // 49% HoldCo Share
   const totalConsolidatedEquity = totalPropCoEq + totalOpCoEq;
+
+  let holdCoOutstandingDebt = 0;
+  let holdCoPmt = 0;
+  let hasStartedHoldCoAmortization = false;
+  let operatingMonthCounter = 0;
 
   propCoData.annualData.forEach((pData, i) => {
     const oData = opCoData.annualData[i] || {
@@ -3483,6 +3759,11 @@ export const runConsolidatedEngine = (opCoData: OpCoModelData | null, propCoData
       opCoExitFlow: [],
       opCoFlow: [],
       netFlow: [],
+      holdCoDebtDraw: [],
+      holdCoInterest: [],
+      holdCoPrincipal: [],
+      holdCoDebtBalance: [],
+      holdCoCashFlowAfterDebt: [],
       cumCf: [],
       lookThroughRevenue: [],
       lookThroughEbitda: [],
@@ -3491,6 +3772,10 @@ export const runConsolidatedEngine = (opCoData: OpCoModelData | null, propCoData
     };
 
     const sharePct = (100 - opCoAssumptions.sharingPercentA) / 100;
+    let yearHoldCoDebtDraw = 0;
+    let yearHoldCoInterest = 0;
+    let yearHoldCoPrincipal = 0;
+
     for (let m = 0; m < 12; m++) {
       const pSnapshot = pData.monthly || {};
       const oSnapshot = oData.monthly || {};
@@ -3511,6 +3796,67 @@ export const runConsolidatedEngine = (opCoData: OpCoModelData | null, propCoData
         m_opCoInvestmentFlow + m_opCoOperatingDividendFlow + m_opCoExitFlow;
       const m_netFlow = m_propCoFlow + m_opCoFlow;
 
+      // HoldCo Debt Logic
+      let m_holdCoDraw = 0;
+      let m_holdCoInterest = 0;
+      let m_holdCoPrincipal = 0;
+
+      if (holdCoAssumptions?.includeFinancing) {
+        if (m_netFlow < 0 && !pData.isOperating) {
+          m_holdCoDraw =
+            Math.abs(m_netFlow) * ((holdCoAssumptions?.ltvRatio || 0) / 100);
+        }
+
+        m_holdCoInterest =
+          holdCoOutstandingDebt *
+          ((holdCoAssumptions?.interestRate || 0) / 100 / 12);
+
+        if (pData.isOperating) {
+          if (!hasStartedHoldCoAmortization) {
+            const ioMonths = (holdCoAssumptions?.ioGracePeriodYears || 0) * 12;
+            const tenorMonths = (holdCoAssumptions?.loanTenor || 15) * 12;
+            const amortMonths = Math.max(1, tenorMonths - ioMonths);
+            const rMonthly = (holdCoAssumptions?.interestRate || 0) / 100 / 12;
+
+            holdCoPmt =
+              holdCoOutstandingDebt > 0 && rMonthly > 0
+                ? (holdCoOutstandingDebt * rMonthly) /
+                  (1 - Math.pow(1 + rMonthly, -amortMonths))
+                : holdCoOutstandingDebt > 0
+                  ? holdCoOutstandingDebt / amortMonths
+                  : 0;
+            hasStartedHoldCoAmortization = true;
+          }
+
+          const ioMonths = (holdCoAssumptions?.ioGracePeriodYears || 0) * 12;
+          const tenorMonths = (holdCoAssumptions?.loanTenor || 15) * 12;
+
+          if (operatingMonthCounter < ioMonths) {
+            m_holdCoPrincipal = 0;
+          } else if (operatingMonthCounter < tenorMonths) {
+            m_holdCoPrincipal = Math.min(
+              holdCoOutstandingDebt,
+              holdCoPmt - m_holdCoInterest,
+            );
+          } else {
+            m_holdCoPrincipal = holdCoOutstandingDebt;
+          }
+
+          if (m_holdCoPrincipal < 0) m_holdCoPrincipal = 0;
+
+          operatingMonthCounter++;
+        }
+
+        holdCoOutstandingDebt += m_holdCoDraw - m_holdCoPrincipal;
+      }
+
+      const m_holdCoCashFlowAfterDebt =
+        m_netFlow + m_holdCoDraw - m_holdCoInterest - m_holdCoPrincipal;
+
+      yearHoldCoDebtDraw += m_holdCoDraw;
+      yearHoldCoInterest += m_holdCoInterest;
+      yearHoldCoPrincipal += m_holdCoPrincipal;
+
       const m_ltRev =
         ((pSnapshot.revenue || [])[m] || 0) +
         ((oSnapshot.totalRev || [])[m] || 0) * sharePct;
@@ -3530,17 +3876,30 @@ export const runConsolidatedEngine = (opCoData: OpCoModelData | null, propCoData
       monthly.opCoExitFlow.push(m_opCoExitFlow);
       monthly.opCoFlow.push(m_opCoFlow);
       monthly.netFlow.push(m_netFlow);
-      monthly.cumCf.push(cumCf + monthly.netFlow.reduce((a, b) => a + b, 0));
+      monthly.holdCoDebtDraw.push(m_holdCoDraw);
+      monthly.holdCoInterest.push(m_holdCoInterest);
+      monthly.holdCoPrincipal.push(m_holdCoPrincipal);
+      monthly.holdCoDebtBalance.push(holdCoOutstandingDebt);
+      monthly.holdCoCashFlowAfterDebt.push(m_holdCoCashFlowAfterDebt);
+
+      const previousCumCf =
+        monthly.cumCf.length > 0
+          ? monthly.cumCf[monthly.cumCf.length - 1]
+          : cumCf;
+      monthly.cumCf.push(previousCumCf + m_holdCoCashFlowAfterDebt);
+
+      m_ltRev > 0
+        ? monthly.lookThroughMargin.push((m_ltNi / m_ltRev) * 100)
+        : monthly.lookThroughMargin.push(0);
       monthly.lookThroughRevenue.push(m_ltRev);
       monthly.lookThroughEbitda.push(m_ltEbitda);
       monthly.lookThroughNetIncome.push(m_ltNi);
-      monthly.lookThroughMargin.push(
-        m_ltRev > 0 ? (m_ltNi / m_ltRev) * 100 : 0,
-      );
     }
 
-    cumCf += netFlow;
-    consolidatedCfs.push(netFlow);
+    const holdCoCashFlowAfterDebt =
+      netFlow + yearHoldCoDebtDraw - yearHoldCoInterest - yearHoldCoPrincipal;
+    cumCf += holdCoCashFlowAfterDebt;
+    consolidatedCfs.push(holdCoCashFlowAfterDebt);
 
     // Look-Through PnL Metrics
     const lookThroughRevenue =
@@ -3556,11 +3915,21 @@ export const runConsolidatedEngine = (opCoData: OpCoModelData | null, propCoData
 
     // Consolidated DSCR Math
     if (pData.isOperating) {
-      const ds = (pData.principal || 0) + (pData.interest || 0);
-      if (ds > 0) {
-        const cashAvailable = (pData.ebitda || 0) + opCoOperatingDividendFlow;
-        avgConsolidatedDscr += cashAvailable / ds;
-        operatingYearsWithDebt++;
+      if (holdCoAssumptions?.includeFinancing) {
+        const ds = yearHoldCoInterest + yearHoldCoPrincipal;
+        if (ds > 0) {
+          const cashAvailable =
+            netFlow + yearHoldCoInterest + yearHoldCoPrincipal; // Pre-debt cash flow at HoldCo
+          avgConsolidatedDscr += cashAvailable / ds;
+          operatingYearsWithDebt++;
+        }
+      } else {
+        const ds = (pData.principal || 0) + (pData.interest || 0);
+        if (ds > 0) {
+          const cashAvailable = (pData.ebitda || 0) + opCoOperatingDividendFlow;
+          avgConsolidatedDscr += cashAvailable / ds;
+          operatingYearsWithDebt++;
+        }
       }
     }
 
@@ -3576,6 +3945,11 @@ export const runConsolidatedEngine = (opCoData: OpCoModelData | null, propCoData
       opCoExitFlow,
       opCoFlow,
       netFlow,
+      holdCoDebtDraw: yearHoldCoDebtDraw,
+      holdCoInterest: yearHoldCoInterest,
+      holdCoPrincipal: yearHoldCoPrincipal,
+      holdCoDebtBalance: holdCoOutstandingDebt,
+      holdCoCashFlowAfterDebt,
       cumCf,
       lookThroughRevenue,
       lookThroughEbitda,
@@ -3619,6 +3993,22 @@ export const runConsolidatedEngine = (opCoData: OpCoModelData | null, propCoData
       (acc, d) => acc + (d.lookThroughNetIncome || 0),
       0,
     ),
+    holdCoDebtDraw: annualData.reduce(
+      (acc, d) => acc + (d.holdCoDebtDraw || 0),
+      0,
+    ),
+    holdCoInterest: annualData.reduce(
+      (acc, d) => acc + (d.holdCoInterest || 0),
+      0,
+    ),
+    holdCoPrincipal: annualData.reduce(
+      (acc, d) => acc + (d.holdCoPrincipal || 0),
+      0,
+    ),
+    holdCoCashFlowAfterDebt: annualData.reduce(
+      (acc, d) => acc + (d.holdCoCashFlowAfterDebt || 0),
+      0,
+    ),
   };
   totals.lookThroughMargin =
     totals.lookThroughRevenue > 0
@@ -3627,17 +4017,16 @@ export const runConsolidatedEngine = (opCoData: OpCoModelData | null, propCoData
 
   // Compile monthly consolidated cash flows for monthly compounding IRR/NPV
   let consolidatedCfsMonthly = [];
-  const propCoCfs = propCoData?.equityCfsMonthly || [];
-  const opCoCfs = opCoData?.partnerBCfsMonthly || [];
-  const totalMonths = Math.max(propCoCfs.length, opCoCfs.length);
-
-  for (let m = 0; m < totalMonths; m++) {
-    const pCf = propCoCfs[m] || 0;
-    const oCf = opCoCfs[m] || 0;
-    consolidatedCfsMonthly.push(pCf + oCf);
+  for (let i = 0; i < annualData.length; i++) {
+    const mData = annualData[i].monthly;
+    if (mData && mData.holdCoCashFlowAfterDebt) {
+      for (let m = 0; m < mData.holdCoCashFlowAfterDebt.length; m++) {
+        consolidatedCfsMonthly.push(mData.holdCoCashFlowAfterDebt[m]);
+      }
+    }
   }
 
-  return {
+  return applySafeMathPrecision({
     annualData,
     operatingData: annualData.filter((d) => d.isOperating),
     metrics: {
@@ -3663,7 +4052,7 @@ export const runConsolidatedEngine = (opCoData: OpCoModelData | null, propCoData
     },
     totals,
     consolidatedCfsMonthly,
-  };
+  });
 };
 
 export const getInitialStepUpPercentages = (

@@ -1,4 +1,4 @@
-export type EntityType = 
+export type EntityType =
   | "hospital_opco"
   | "real_estate"
   | "retail_opco"
@@ -67,10 +67,17 @@ export interface OpCoAssumptions {
   discountRate: number;
   holdCoDiscountRate: number;
   includeTerminalValue: boolean;
+  exitYear?: number;
   exitMultiple: number;
   sellingCosts: number;
   dividendPayoutRatio: number;
   devDurationMonths?: number;
+  includeFinancing?: boolean;
+  ltvRatio?: number;
+  interestRate?: number;
+  amortizationYears?: number;
+  loanTenor?: number;
+  ioGracePeriodYears?: number;
   [key: string]: any;
 }
 
@@ -79,6 +86,9 @@ export interface PropCoAssumptions {
   manualBaseRent: number;
   manualRentEscalation: number;
   includeLand: boolean;
+  isLandLeased?: boolean;
+  monthlyLandLeaseRateSqm?: number;
+  landLeaseTermYears?: number;
   landArea: number;
   landPrice: number;
   buildArea: number;
@@ -114,6 +124,7 @@ export interface PropCoAssumptions {
   depMethodInfra?: string;
   depMethodFFE?: string;
   includeTerminalValue?: boolean;
+  exitYear?: number;
   exitMethod?: string;
   exitCapRate?: number;
   exitMultiple?: number;
@@ -171,6 +182,14 @@ export interface PropCoModelData {
   moic?: number;
   peakDebt?: number;
   [key: string]: any;
+}
+
+export interface HoldCoAssumptions {
+  includeFinancing: boolean;
+  ltvRatio: number;
+  interestRate: number;
+  loanTenor: number;
+  ioGracePeriodYears: number;
 }
 
 export interface ConsolidatedModelData {

@@ -151,15 +151,28 @@ import {
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
-
-import { 
-  BentoBox, BentoIcon, SectionTitle, MarkdownRenderer, START_YEAR, 
-  DEFAULT_END_YEAR, MONTH_NAMES_SHORT, generateTimelineMonths,
-  CustomBedIcon, CustomScaleIcon, CustomStethoscopeIcon, CustomPhysicianIcon, 
-  CustomClipboardIcon, CustomDiagnosticsIcon, formatCurrency, formatNumber,
-  AssumptionRow, StatefulTooltipIcon, NavButton
+import {
+  BentoBox,
+  BentoIcon,
+  SectionTitle,
+  MarkdownRenderer,
+  START_YEAR,
+  DEFAULT_END_YEAR,
+  MONTH_NAMES_SHORT,
+  generateTimelineMonths,
+  CustomBedIcon,
+  CustomScaleIcon,
+  CustomStethoscopeIcon,
+  CustomPhysicianIcon,
+  CustomClipboardIcon,
+  CustomDiagnosticsIcon,
+  formatCurrency,
+  formatNumber,
+  AssumptionRow,
+  StatefulTooltipIcon,
+  NavButton,
 } from "../App";
-  
+
 const ClinicalProgrammingView = memo(() => {
   const [viewMode, setViewMode] = useState<"moh" | "private">("moh");
 
