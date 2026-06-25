@@ -732,11 +732,11 @@ export const ExecutiveSummaryView = memo(
                   </div>
 
                   {/* Navigation Controls inside narrative */}
-                  <div className="flex justify-between items-center pt-4 border-t border-[#EFEBE7] mt-6">
+                  <div className="flex justify-between items-center pt-4 border-t border-[#EFEBE7] mt-6 gap-3">
                     <button
                       disabled={activeNarrativeStep === 0}
                       onClick={() => setActiveNarrativeStep((prev) => prev - 1)}
-                      className="text-xs font-bold text-[#1E2F31] border border-[#D8D8D8] bg-white rounded-lg px-3 py-1.5 hover:bg-[#F9F8F6] disabled:opacity-30 disabled:pointer-events-none transition-all"
+                      className="text-sm md:text-xs font-bold text-[#1E2F31] border border-[#D8D8D8] bg-white rounded-xl px-5 py-3 md:px-3 md:py-1.5 md:hover:bg-[#F9F8F6] active:bg-[#F9F8F6] active:scale-95 disabled:opacity-30 transition-all cursor-pointer select-none"
                     >
                       Previous Step
                     </button>
@@ -745,7 +745,7 @@ export const ExecutiveSummaryView = memo(
                         activeNarrativeStep === narrativeSteps.length - 1
                       }
                       onClick={() => setActiveNarrativeStep((prev) => prev + 1)}
-                      className="text-xs font-bold text-white bg-[#1C6048] hover:bg-[#154634] rounded-lg px-3.5 py-1.5 flex items-center gap-1.5 disabled:opacity-30 disabled:pointer-events-none transition-all shadow-xs"
+                      className="text-sm md:text-xs font-bold text-white bg-[#1C6048] md:hover:bg-[#154634] active:bg-[#154634] active:scale-95 rounded-xl px-5 py-3 md:px-3.5 md:py-1.5 flex items-center gap-1.5 disabled:opacity-30 transition-all shadow-xs cursor-pointer select-none"
                     >
                       Next Step <ArrowRight size={14} />
                     </button>
