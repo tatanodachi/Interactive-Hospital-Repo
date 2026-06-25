@@ -353,25 +353,15 @@ export const ConsolidatedDashboardView = memo(
         </div>
 
         <div className={`grid grid-cols-2 gap-4`}>
-          <KPICard
-            title="Blended Equity NPV"
-            value={formatCurrency(data.metrics.npv)}
-            icon={<TrendingUp size={18} />}
-            color="emerald"
-            subtitle={`@${String(assumptions.holdCoDiscountRate)}% Disc Rate`}
-          />
-          <KPICard
-            title="Blended Cash Multiple"
-            value={`${formatNumber(data.metrics.moic, 2)}x`}
-            icon={<BarChart3 size={18} />}
-            color="blue"
-            subtitle="Consolidated MOIC"
-            tooltip={{
-              desc: "Consolidated MOIC representing the aggregate wealth creation for the entire HoldCo. It combines both the Strategic Hospital Operator and Financial Partner cash profiles into a single unified multiple.",
-              formula:
-                "Total HoldCo Distributions ÷ Cumulative Equity Contribution",
-            }}
-          />
+          <div className="col-span-2 flex flex-col">
+            <KPICard
+              title="Blended Equity NPV"
+              value={formatCurrency(data.metrics.npv)}
+              icon={<TrendingUp size={18} />}
+              color="emerald"
+              subtitle={`@${String(assumptions.holdCoDiscountRate)}% Disc Rate`}
+            />
+          </div>
           <KPICard
             title="Blended Equity IRR"
             value={`${formatNumber((data.metrics.irr || 0) * 100, 2)}%`}
