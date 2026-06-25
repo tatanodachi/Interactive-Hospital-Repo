@@ -211,7 +211,7 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
     for (const [key, preset] of Object.entries(TIMELINE_PRESETS)) {
       let match = true;
       for (const [taskId, vals] of Object.entries(preset.tasks)) {
-        if (taskId === "t10") continue; // t10 represents the Oncology Lease, which is dynamically derived in the synchronize hook and overrides manual schedule values.
+        if (taskId === "t10" || taskId.startsWith("c")) continue; // Skip dynamically computed rollups (c1-c8) and dynamic medical equipment setup (t10)
         if (
           !flat[taskId] ||
           Number(flat[taskId].start) !== vals.start ||
@@ -974,7 +974,7 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-[#1C6048]" : "bg-[#4C4A4B]/20"}`}
                 ></span>
-                {preset.badge}
+                {preset.badge || preset.name}
               </button>
             );
           })}
