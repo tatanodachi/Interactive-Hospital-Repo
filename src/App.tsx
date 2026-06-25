@@ -3895,8 +3895,7 @@ export default function App() {
   const handleCompanyChange = useCallback((comp) => {
     setActiveCompany(comp);
     setActiveTab((prev) =>
-      comp === "consolidated" &&
-      (prev === "assumptions" || prev === "sensitivity")
+      comp === "consolidated" && prev === "assumptions"
         ? "dashboard"
         : prev,
     );
@@ -4271,10 +4270,10 @@ export default function App() {
 
   return (
     <div
-      className={`min-h-screen bg-[#F9F8F6] text-[#1E2F31] font-sans pb-12 relative text-xs`}
+      className={`min-h-screen bg-[#F9F8F6] text-[#1E2F31] font-sans pb-40 relative text-xs`}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700;800&family=League+Spartan:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700;800&family=League+Spartan:wght@400;500;600;700;800&display=swap');
         
         /* Modern, geometric UI font for general text */
         .font-sans { 
@@ -4286,10 +4285,11 @@ export default function App() {
             font-family: 'League Spartan', sans-serif !important; 
         }
         
-        /* True monospaced font for perfect vertical alignment in financial tables */
+        /* Monospace equivalent numeric alignment using the beautiful Jost font with tabular-nums */
         .font-mono { 
-            font-family: 'JetBrains Mono', monospace !important; 
-            letter-spacing: -0.03em;
+            font-family: 'Jost', sans-serif !important; 
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.01em;
         }
       `}</style>
 
@@ -4776,6 +4776,7 @@ export default function App() {
                   resolvedDevDuration={resolvedDevDuration}
                   projConfig={projConfig}
                   groups={groups}
+                  setOpCoAssumptions={setOpCoAssumptions}
                 />
               )}
             </div>
@@ -5070,11 +5071,11 @@ export default function App() {
       )}
 
       {/* Floating Action Menu for Global Toggles */}
-      <div className="fixed bottom-6 left-6 z-[9000] flex flex-col-reverse items-start gap-3">
+      <div className="fixed bottom-6 left-6 z-[9000] flex flex-col-reverse items-start gap-3 pointer-events-none">
         {/* Toggle Button */}
         <button
           onClick={() => setIsFloatingPanelVisible(!isFloatingPanelVisible)}
-          className={`flex items-center justify-center p-3 rounded-full shadow-lg transition-colors ${
+          className={`flex items-center justify-center p-3 rounded-full shadow-lg transition-colors pointer-events-auto ${
             isFloatingPanelVisible
               ? "bg-[#1E2F31] text-[#EFEBE7]"
               : "bg-white text-[#1E2F31] border border-[#D8D8D8]"
@@ -5092,7 +5093,7 @@ export default function App() {
         <div
           className={`bg-white border border-[#D8D8D8] rounded-2xl shadow-xl w-72 overflow-hidden transition-all duration-300 origin-bottom-left ${
             isFloatingPanelVisible
-              ? "opacity-100 scale-100 translate-y-0"
+              ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
               : "opacity-0 scale-95 translate-y-4 pointer-events-none"
           }`}
         >

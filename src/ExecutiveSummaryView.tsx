@@ -715,7 +715,7 @@ export const ExecutiveSummaryView = memo(
                 </div>
 
                 {/* Narrative Content Renderer */}
-                <div className="p-6 bg-[#F9F8F6] rounded-2xl border border-[#D8D8D8]/60 min-h-[220px] flex flex-col justify-between animate-in fade-in duration-300">
+                <div className="p-4 sm:p-5 bg-[#F9F8F6] rounded-2xl border border-[#D8D8D8]/60 min-h-[190px] flex flex-col justify-between animate-in fade-in duration-300">
                   <div>
                     <div className="flex items-center gap-2.5 mb-1">
                       {narrativeSteps[activeNarrativeStep].icon}
@@ -732,11 +732,11 @@ export const ExecutiveSummaryView = memo(
                   </div>
 
                   {/* Navigation Controls inside narrative */}
-                  <div className="flex justify-between items-center pt-4 border-t border-[#EFEBE7] mt-6 gap-3">
+                  <div className="flex justify-between items-center pt-3 border-t border-[#EFEBE7] mt-4 gap-3">
                     <button
                       disabled={activeNarrativeStep === 0}
                       onClick={() => setActiveNarrativeStep((prev) => prev - 1)}
-                      className="text-sm md:text-xs font-bold text-[#1E2F31] border border-[#D8D8D8] bg-white rounded-xl px-5 py-3 md:px-3 md:py-1.5 md:hover:bg-[#F9F8F6] active:bg-[#F9F8F6] disabled:opacity-30 transition-all cursor-pointer"
+                      className="text-xs font-bold text-[#1E2F31] border border-[#D8D8D8] bg-white rounded-xl px-3.5 py-1.5 hover:bg-[#F9F8F6] active:bg-[#F9F8F6] disabled:opacity-30 transition-all cursor-pointer"
                     >
                       Previous Step
                     </button>
@@ -745,7 +745,7 @@ export const ExecutiveSummaryView = memo(
                         activeNarrativeStep === narrativeSteps.length - 1
                       }
                       onClick={() => setActiveNarrativeStep((prev) => prev + 1)}
-                      className="text-sm md:text-xs font-bold text-white bg-[#1C6048] md:hover:bg-[#154634] active:bg-[#154634] rounded-xl px-5 py-3 md:px-3.5 md:py-1.5 flex items-center gap-1.5 disabled:opacity-30 transition-all shadow-xs cursor-pointer"
+                      className="text-xs font-bold text-white bg-[#1C6048] hover:bg-[#154634] active:bg-[#154634] rounded-xl px-3.5 py-1.5 flex items-center gap-1.5 disabled:opacity-30 transition-all shadow-xs cursor-pointer"
                     >
                       Next Step <ArrowRight size={14} />
                     </button>
@@ -874,18 +874,25 @@ export const ExecutiveSummaryView = memo(
                           <Tooltip
                             contentStyle={{
                               fontSize: "9px",
-                              borderRadius: "4px",
+                              borderRadius: "6px",
                               border: "1px solid #D8D8D8",
-                              padding: "3px 6px",
-                              backgroundColor: "#1E2F31",
-                              color: "#fff",
+                              padding: "4px 8px",
+                              backgroundColor: "#FFFFFF",
+                              color: "#1E2F31",
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                             }}
                             cursor={{ stroke: "#EFEBE7", strokeWidth: 1 }}
-                            formatter={(val: number) => [`${val}%`, "BOR"]}
+                            formatter={(val: number) => [`${val}%`, "Target BOR"]}
                             labelStyle={{
-                              color: "#9B8B70",
+                              color: "#4C4A4B",
+                              fontWeight: 700,
+                              fontSize: "8.5px",
+                              marginBottom: "2px",
+                            }}
+                            itemStyle={{
+                              color: "#1C6048",
                               fontWeight: 600,
-                              fontSize: "8px",
+                              fontSize: "9px",
                             }}
                           />
                           <Line

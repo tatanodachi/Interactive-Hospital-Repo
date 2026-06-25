@@ -7,6 +7,8 @@ import {
   Info,
   ArrowUpRight,
   TrendingUp,
+  RefreshCw,
+  Check,
 } from "lucide-react";
 import {
   ComposedChart,
@@ -29,6 +31,7 @@ import {
   runOpCoEngine,
   runPropCoEngine,
   runConsolidatedEngine,
+  DEFAULT_OPCO_ASSUMPTIONS,
 } from "../financialEngine";
 
 interface ScenarioPreset {
@@ -97,6 +100,7 @@ export const ConsolidatedSensitivityView = memo(
     resolvedDevDuration,
     projConfig,
     groups,
+    setOpCoAssumptions,
   }: any) => {
     const [selectedPresetId, setSelectedPresetId] = useState("baseline");
     const [matrixMetric, setMatrixMetric] = useState<"irr" | "npv" | "cash">("irr");
@@ -104,6 +108,14 @@ export const ConsolidatedSensitivityView = memo(
     const currentPreset = useMemo(() => {
       return PRESETS.find((p) => p.id === selectedPresetId) || PRESETS[0];
     }, [selectedPresetId]);
+
+    const isModifiedFromUnderwriting = useMemo(() => {
+      return (
+        opCoAssumptions.borStart !== DEFAULT_OPCO_ASSUMPTIONS.borStart ||
+        opCoAssumptions.borMax !== DEFAULT_OPCO_ASSUMPTIONS.borMax ||
+        opCoAssumptions.borIncrement !== DEFAULT_OPCO_ASSUMPTIONS.borIncrement
+      );
+    }, [opCoAssumptions]);
 
     // Compute Base Case (Baseline)
     const baselineOpCo = useMemo(() => {
@@ -166,6 +178,31 @@ export const ConsolidatedSensitivityView = memo(
         holdCoAssumptions
       );
     }, [presetOpCo, presetPropCo, presetOpCoAssumptions, holdCoAssumptions]);
+
+    const handleApplyPreset = () => {
+      if (selectedPresetId === "baseline") return;
+      if (setOpCoAssumptions) {
+        setOpCoAssumptions((prev: any) => ({
+          ...prev,
+          borStart: presetOpCoAssumptions.borStart,
+          borMax: presetOpCoAssumptions.borMax,
+          borIncrement: presetOpCoAssumptions.borIncrement,
+        }));
+        setSelectedPresetId("baseline");
+      }
+    };
+
+    const handleResetToBaseline = () => {
+      if (setOpCoAssumptions) {
+        setOpCoAssumptions((prev: any) => ({
+          ...prev,
+          borStart: DEFAULT_OPCO_ASSUMPTIONS.borStart,
+          borMax: DEFAULT_OPCO_ASSUMPTIONS.borMax,
+          borIncrement: DEFAULT_OPCO_ASSUMPTIONS.borIncrement,
+        }));
+        setSelectedPresetId("baseline");
+      }
+    };
 
     // Chart data comparison
     const chartData = useMemo(() => {
@@ -347,14 +384,17 @@ export const ConsolidatedSensitivityView = memo(
                     <div>
                       <span className="block text-[7.5px] text-gray-400 uppercase font-sans font-bold">Start BOR</span>
                       <strong className="text-[#1E2F31] text-[9.5px]">{currentPreset.borStart > 0 ? `+${currentPreset.borStart}` : currentPreset.borStart}%</strong>
+                      <span className="block text-[8px] text-[#1C6048] font-bold">({presetOpCoAssumptions.borStart}%)</span>
                     </div>
                     <div>
                       <span className="block text-[7.5px] text-gray-400 uppercase font-sans font-bold">Max BOR</span>
                       <strong className="text-[#1E2F31] text-[9.5px]">{currentPreset.borMax > 0 ? `+${currentPreset.borMax}` : currentPreset.borMax}%</strong>
+                      <span className="block text-[8px] text-[#1C6048] font-bold">({presetOpCoAssumptions.borMax}%)</span>
                     </div>
                     <div>
                       <span className="block text-[7.5px] text-gray-400 uppercase font-sans font-bold">Ramp Rate</span>
                       <strong className="text-[#1E2F31] text-[9.5px]">{currentPreset.borIncrement > 0 ? `+${currentPreset.borIncrement}` : currentPreset.borIncrement}% p.a.</strong>
+                      <span className="block text-[8px] text-[#1C6048] font-bold">({presetOpCoAssumptions.borIncrement}% p.a.)</span>
                     </div>
                   </div>
                 ) : (
@@ -362,6 +402,48 @@ export const ConsolidatedSensitivityView = memo(
                     All assumptions correspond to the primary baseline values.
                   </div>
                 )}
+              </div>
+
+              {/* Model Actions Section */}
+              <div className="mt-3 pt-3 border-t border-[#D8D8D8]/60 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-black text-[#1E2F31] uppercase tracking-wider">
+                    Model Action Engine
+                  </span>
+                  {isModifiedFromUnderwriting && (
+                    <span className="text-[8px] bg-amber-50 text-amber-800 px-1.5 py-0.5 rounded font-black border border-amber-200">
+                      Modified Base
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={handleApplyPreset}
+                    disabled={selectedPresetId === "baseline"}
+                    className={`text-[9.5px] font-bold py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all select-none border ${
+                      selectedPresetId === "baseline"
+                        ? "bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed opacity-60"
+                        : "bg-[#1C6048] text-white border-[#1C6048] hover:bg-[#154634] cursor-pointer shadow-sm active:scale-95"
+                    }`}
+                  >
+                    <Check size={11} /> Apply to Main P&L
+                  </button>
+                  <button
+                    onClick={handleResetToBaseline}
+                    disabled={!isModifiedFromUnderwriting}
+                    className={`text-[9.5px] font-bold py-1.5 px-2 rounded-lg flex items-center justify-center gap-1.5 transition-all select-none border ${
+                      !isModifiedFromUnderwriting
+                        ? "bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed opacity-60"
+                        : "bg-white text-[#1E2F31] border-[#D8D8D8] hover:bg-[#F9F8F6] cursor-pointer active:scale-95"
+                    }`}
+                  >
+                    <RefreshCw size={11} className={isModifiedFromUnderwriting ? "text-amber-700" : ""} /> Reset Baseline
+                  </button>
+                </div>
+                <p className="text-[8px] text-[#4C4A4B]/80 leading-relaxed font-medium">
+                  Applying a scenario updates the main clinical ramp-up variables. This lets you inspect stress factors across all tabs of the model.
+                </p>
               </div>
             </div>
           </div>
@@ -378,74 +460,116 @@ export const ConsolidatedSensitivityView = memo(
             </div>
 
             {/* Impact Metric Cards */}
-            <div className="grid grid-cols-3 gap-2 mb-2">
-              {/* IRR card */}
-              <div className="p-2 bg-[#EFEBE7]/30 border border-[#D8D8D8]/70 rounded-lg flex flex-col justify-between">
-                <span className="text-[8.5px] font-bold text-[#4C4A4B] uppercase tracking-wider flex items-center gap-0.5">
-                  <Percent size={10} className="text-[#1C6048]" /> Combined IRR
-                </span>
-                <div className="mt-1">
-                  <div className="text-sm font-black text-[#1E2F31] font-mono">
-                    {formatNumber((presetConsolidated.metrics.irr || 0) * 100, 2)}%
+            {(() => {
+              const irrDelta = (presetConsolidated.metrics.irr || 0) - (baselineConsolidated.metrics.irr || 0);
+              const npvDelta = (presetConsolidated.metrics.npv || 0) - (baselineConsolidated.metrics.npv || 0);
+              const dscrDelta = (presetConsolidated.metrics.avgConsolidatedDscr || 0) - (baselineConsolidated.metrics.avgConsolidatedDscr || 0);
+              return (
+                <div className="bg-[#F9F8F6] rounded-xl p-3 border border-[#D8D8D8]/80 flex flex-col md:flex-row items-stretch divide-y md:divide-y-0 md:divide-x divide-[#D8D8D8]/70 gap-3 md:gap-0 shadow-xs mb-3">
+                  {/* Combined IRR Column */}
+                  <div className="flex-1 md:px-3 flex flex-col justify-between first:pl-0 last:pr-0 pb-2 md:pb-0">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-bold text-[#4C4A4B] uppercase tracking-widest flex items-center gap-1">
+                        <Percent size={11} className="text-[#1C6048]" /> Combined IRR
+                      </span>
+                      <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded-md font-bold border ${
+                        irrDelta >= 0 
+                          ? "bg-[#1C6048]/10 text-[#1C6048] border-[#1C6048]/20" 
+                          : "bg-red-50 text-red-700 border-red-200/50"
+                      }`}>
+                        {irrDelta >= 0 ? "Optimized" : "Stressed"}
+                      </span>
+                    </div>
+                    <div className="mt-1.5 flex items-baseline justify-between">
+                      <div>
+                        <span className="text-sm md:text-base font-black font-mono text-[#1E2F31] tracking-tight">
+                          {formatNumber((presetConsolidated.metrics.irr || 0) * 100, 2)}%
+                        </span>
+                        <span className="text-[8.5px] font-mono text-[#4C4A4B] ml-1.5">
+                          vs {formatNumber((baselineConsolidated.metrics.irr || 0) * 100, 2)}%
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-1">
+                      <span className={`text-[9px] font-bold font-mono flex items-center gap-0.5 ${
+                        irrDelta >= 0 ? "text-[#1C6048]" : "text-red-700"
+                      }`}>
+                        {irrDelta >= 0 ? "▲ +" : "▼ "}
+                        {formatNumber(Math.abs(irrDelta) * 100, 2)}% Delta
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-[8px] font-mono text-[#4C4A4B]">
-                    Base: {formatNumber((baselineConsolidated.metrics.irr || 0) * 100, 2)}%
-                  </div>
-                </div>
-                <div className={`mt-1 text-[8.5px] font-black font-mono ${
-                  (presetConsolidated.metrics.irr || 0) >= (baselineConsolidated.metrics.irr || 0)
-                    ? "text-[#1C6048]"
-                    : "text-red-700"
-                }`}>
-                  {(presetConsolidated.metrics.irr || 0) >= (baselineConsolidated.metrics.irr || 0) ? "+" : ""}
-                  {formatNumber(((presetConsolidated.metrics.irr || 0) - (baselineConsolidated.metrics.irr || 0)) * 100, 2)}% Delta
-                </div>
-              </div>
 
-              {/* NPV card */}
-              <div className="p-2 bg-[#EFEBE7]/30 border border-[#D8D8D8]/70 rounded-lg flex flex-col justify-between">
-                <span className="text-[8.5px] font-bold text-[#4C4A4B] uppercase tracking-wider flex items-center gap-0.5">
-                  <ArrowUpRight size={10} className="text-[#9B8B70]" /> Combined NPV
-                </span>
-                <div className="mt-1">
-                  <div className="text-sm font-black text-[#1E2F31] font-mono">
-                    {formatCurrency(presetConsolidated.metrics.npv)}
+                  {/* Combined NPV Column */}
+                  <div className="flex-1 md:px-3 flex flex-col justify-between pt-2 md:pt-0 pb-2 md:pb-0">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-bold text-[#4C4A4B] uppercase tracking-widest flex items-center gap-1">
+                        <ArrowUpRight size={11} className="text-[#9B8B70]" /> Combined NPV
+                      </span>
+                      <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded-md font-bold border ${
+                        npvDelta >= 0 
+                          ? "bg-[#1C6048]/10 text-[#1C6048] border-[#1C6048]/20" 
+                          : "bg-red-50 text-red-700 border-red-200/50"
+                      }`}>
+                        {npvDelta >= 0 ? "Surplus" : "Deficit"}
+                      </span>
+                    </div>
+                    <div className="mt-1.5 flex items-baseline justify-between">
+                      <div>
+                        <span className="text-sm md:text-base font-black font-mono text-[#1E2F31] tracking-tight">
+                          {formatCurrency(presetConsolidated.metrics.npv)}
+                        </span>
+                        <span className="text-[8.5px] font-mono text-[#4C4A4B] ml-1.5">
+                          vs {formatCurrency(baselineConsolidated.metrics.npv)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-1">
+                      <span className={`text-[9px] font-bold font-mono flex items-center gap-0.5 ${
+                        npvDelta >= 0 ? "text-[#1C6048]" : "text-red-700"
+                      }`}>
+                        {npvDelta >= 0 ? "▲ +" : "▼ "}
+                        {formatCurrency(Math.abs(npvDelta))} Delta
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-[8px] font-mono text-[#4C4A4B]">
-                    Base: {formatCurrency(baselineConsolidated.metrics.npv)}
-                  </div>
-                </div>
-                <div className={`mt-1 text-[8.5px] font-black font-mono ${
-                  (presetConsolidated.metrics.npv || 0) >= (baselineConsolidated.metrics.npv || 0)
-                    ? "text-[#1C6048]"
-                    : "text-red-700"
-                }`}>
-                  {formatCurrency((presetConsolidated.metrics.npv || 0) - (baselineConsolidated.metrics.npv || 0))} Delta
-                </div>
-              </div>
 
-              {/* DSCR card */}
-              <div className="p-2 bg-[#EFEBE7]/30 border border-[#D8D8D8]/70 rounded-lg flex flex-col justify-between">
-                <span className="text-[8.5px] font-bold text-[#4C4A4B] uppercase tracking-wider flex items-center gap-0.5">
-                  <Info size={10} className="text-[#1E2F31]" /> Avg HoldCo DSCR
-                </span>
-                <div className="mt-1">
-                  <div className="text-sm font-black text-[#1E2F31] font-mono">
-                    {formatNumber(presetConsolidated.metrics.avgConsolidatedDscr, 2)}x
-                  </div>
-                  <div className="text-[8px] font-mono text-[#4C4A4B]">
-                    Base: {formatNumber(baselineConsolidated.metrics.avgConsolidatedDscr, 2)}x
+                  {/* Avg DSCR Column */}
+                  <div className="flex-1 md:px-3 flex flex-col justify-between pt-2 md:pt-0 last:pr-0">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-bold text-[#4C4A4B] uppercase tracking-widest flex items-center gap-1">
+                        <Info size={11} className="text-[#1E2F31]" /> Avg HoldCo DSCR
+                      </span>
+                      <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded-sm font-bold border ${
+                        presetConsolidated.metrics.avgConsolidatedDscr >= 1.2 
+                          ? "bg-[#1C6048]/10 text-[#1C6048] border-[#1C6048]/20" 
+                          : "bg-amber-50 text-amber-800 border-amber-200/50"
+                      }`}>
+                        {presetConsolidated.metrics.avgConsolidatedDscr >= 1.2 ? "Compliant" : "Review"}
+                      </span>
+                    </div>
+                    <div className="mt-1.5 flex items-baseline justify-between">
+                      <div>
+                        <span className="text-sm md:text-base font-black font-mono text-[#1E2F31] tracking-tight">
+                          {formatNumber(presetConsolidated.metrics.avgConsolidatedDscr, 2)}x
+                        </span>
+                        <span className="text-[8.5px] font-mono text-[#4C4A4B] ml-1.5">
+                          vs {formatNumber(baselineConsolidated.metrics.avgConsolidatedDscr, 2)}x
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-1">
+                      <span className={`text-[9px] font-bold font-mono flex items-center gap-0.5 ${
+                        dscrDelta >= 0 ? "text-[#1C6048]" : "text-red-700"
+                      }`}>
+                        {dscrDelta >= 0 ? "▲ +" : "▼ "}
+                        {formatNumber(Math.abs(dscrDelta), 2)}x Delta
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <div className={`mt-1 text-[8.5px] font-black font-mono ${
-                  (presetConsolidated.metrics.avgConsolidatedDscr || 0) >= (baselineConsolidated.metrics.avgConsolidatedDscr || 0)
-                    ? "text-[#1C6048]"
-                    : "text-red-700"
-                }`}>
-                  {formatNumber((presetConsolidated.metrics.avgConsolidatedDscr || 0) - (baselineConsolidated.metrics.avgConsolidatedDscr || 0), 2)}x Delta
-                </div>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* Trajectory comparison Chart */}
             <div className="h-28">
@@ -512,8 +636,8 @@ export const ConsolidatedSensitivityView = memo(
               <thead>
                 <tr>
                   <th className="sticky left-0 top-0 z-30 border-b border-r border-[#D8D8D8] p-2 text-[9.5px] font-black text-right align-bottom bg-[#F9F8F6] text-[#1E2F31]">
-                    Max BOR (%) ⬇ <br />
-                    Ramp Speed ➔
+                    Ramp Speed ➔ <br />
+                    Max BOR (%) ⬇
                   </th>
                   {borIncrementSteps.map((inc, i) => (
                     <th
