@@ -2035,7 +2035,7 @@ export const TableRow = memo(
       else baseColorClass = "bg-[#F4F0EC] font-bold text-[#1E2F31]";
     }
 
-    let firstColClass = `pr-3 py-1.5 sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap transition-all shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] w-[360px] min-w-[360px] max-w-[360px] overflow-hidden text-ellipsis ${baseColorClass} ${isTripleIndent ? "pl-5 text-[9px]" : isDoubleIndent ? "pl-3.5 text-[9.5px]" : isIndent ? "pl-3.5 text-[10px]" : "pl-1 text-[11px]"} ${!highlight && !isHeader ? "group-hover:bg-[#F9F8F6]" : ""}`;
+    let firstColClass = `pr-3 py-1.5 sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap transition-all shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] w-[360px] min-w-[360px] max-w-[360px] overflow-hidden text-ellipsis ${baseColorClass} ${isTripleIndent ? "pl-3.5 text-[9px]" : isDoubleIndent ? "pl-3.5 text-[9.5px]" : isIndent ? "pl-3.5 text-[10px]" : "pl-1 text-[11px]"} ${!highlight && !isHeader ? "group-hover:bg-[#F9F8F6]" : ""}`;
     let totalColClass = `px-2 py-1.5 text-right font-bold font-mono border-l border-b border-[#D8D8D8] sticky right-0 z-[40] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] ${baseColorClass} ${!highlight && !isHeader ? "group-hover:bg-[#F9F8F6]" : ""}`;
 
     return (
@@ -2066,17 +2066,17 @@ export const TableRow = memo(
 
               {hasTripleConnector && (
                 <span className="font-mono select-none text-[9px] tracking-tighter text-[#9B8B70]/80 mr-1 flex-shrink-0 whitespace-nowrap">
-                  │ │ └─
+                  {"│ │ ╰─"}
                 </span>
               )}
               {hasDoubleConnector && !hasTripleConnector && (
                 <span className="font-mono select-none text-[9px] tracking-tighter text-[#9B8B70]/80 mr-1 flex-shrink-0 whitespace-nowrap">
-                  │ └─
+                  {"│ ╰─"}
                 </span>
               )}
               {hasConnector && !hasDoubleConnector && !hasTripleConnector && (
                 <span className="font-mono select-none text-[9px] tracking-tighter text-[#9B8B70]/80 mr-1 flex-shrink-0 whitespace-nowrap">
-                  └─
+                  {"╰─"}
                 </span>
               )}
 
@@ -4628,164 +4628,161 @@ export default function App() {
           activeTab !== "collab" &&
           activeTab !== "timeline" &&
           activeTab !== "ai" &&
-          activeCompany === "opco" &&
           activeGroup === "financials" && (
             <div className="animate-in fade-in duration-500">
-              {activeTab === "dashboard" && (
-                <OpCoDashboardView
-                  data={opCoModelData}
-                  assumptions={opCoAssumptions}
-                  generateTeaser={generateTeaser}
-                  isTeaserLoading={isTeaserLoading}
-                  showTeaser={showTeaser}
-                  setShowTeaser={setShowTeaser}
-                  teaserContent={teaserContent}
-                  isPresenting={isPresenting}
-                />
-              )}
-              {activeTab === "comprehensive" && (
-                <OpCoCascadeView
-                  data={opCoModelData}
-                  assumptions={opCoAssumptions}
-                  viewResolution={viewResolution}
-                  setViewResolution={setViewResolution}
-                />
-              )}
-              {activeTab === "sensitivity" && (
-                <OpCoSensitivityView assumptions={opCoAssumptions} />
-              )}
-              {activeTab === "assumptions" && (
-                <SettingsPasswordGate>
-                  <OpCoSettingsView
+              {/* OPCO SECTION */}
+              <div className={activeCompany === "opco" ? "block" : "hidden"}>
+                {activeTab === "dashboard" && (
+                  <OpCoDashboardView
+                    data={opCoModelData}
                     assumptions={opCoAssumptions}
-                    onChange={handleOpCoChange}
-                    onSyncEquity={syncEquityWithSharing}
-                    onValidate={validateAssumptions}
-                    isLocked={isLockedOpCo}
-                    onToggleLock={() => setIsLockedOpCo(!isLockedOpCo)}
-                    onSave={() => saveDefaultsToCloud("opco")}
-                    saveStatus={saveStatusOpCo}
-                    onReset={() => setOpCoAssumptions(DEFAULT_OPCO_ASSUMPTIONS)}
-                    isCloudSync={isCloudSync}
+                    generateTeaser={generateTeaser}
+                    isTeaserLoading={isTeaserLoading}
+                    showTeaser={showTeaser}
+                    setShowTeaser={setShowTeaser}
+                    teaserContent={teaserContent}
                     isPresenting={isPresenting}
                   />
-                </SettingsPasswordGate>
-              )}
-            </div>
-          )}
+                )}
+                
+                {/* Preserve DOM for CascadeView */}
+                <div className={activeTab === "comprehensive" ? "block" : "hidden"}>
+                  <OpCoCascadeView
+                    data={opCoModelData}
+                    assumptions={opCoAssumptions}
+                    viewResolution={viewResolution}
+                    setViewResolution={setViewResolution}
+                  />
+                </div>
+                
+                {activeTab === "sensitivity" && (
+                  <OpCoSensitivityView assumptions={opCoAssumptions} />
+                )}
+                {activeTab === "assumptions" && (
+                  <SettingsPasswordGate>
+                    <OpCoSettingsView
+                      assumptions={opCoAssumptions}
+                      onChange={handleOpCoChange}
+                      onSyncEquity={syncEquityWithSharing}
+                      onValidate={validateAssumptions}
+                      isLocked={isLockedOpCo}
+                      onToggleLock={() => setIsLockedOpCo(!isLockedOpCo)}
+                      onSave={() => saveDefaultsToCloud("opco")}
+                      saveStatus={saveStatusOpCo}
+                      onReset={() => setOpCoAssumptions(DEFAULT_OPCO_ASSUMPTIONS)}
+                      isCloudSync={isCloudSync}
+                      isPresenting={isPresenting}
+                    />
+                  </SettingsPasswordGate>
+                )}
+              </div>
 
-        {activeTab !== "overview" &&
-          activeTab !== "study" &&
-          activeTab !== "collab" &&
-          activeTab !== "timeline" &&
-          activeTab !== "ai" &&
-          activeCompany === "propco" &&
-          activeGroup === "financials" && (
-            <div className="animate-in fade-in duration-500">
-              {activeTab === "dashboard" && (
-                <PropCoDashboardView
-                  data={standalonePropCoData}
-                  assumptions={propCoAssumptions}
-                  generateTeaser={generateTeaser}
-                  isTeaserLoading={isTeaserLoading}
-                  showTeaser={showTeaser}
-                  setShowTeaser={setShowTeaser}
-                  teaserContent={teaserContent}
-                  setTab={setActiveTab}
-                  isPresenting={isPresenting}
-                  propCoScenario={propCoScenario}
-                  setPropCoScenario={setPropCoScenario}
-                  onChange={handlePropCoChange}
-                  propCoLocked={propCoLocked}
-                  holdCoLocked={holdCoLocked}
-                  toggleHoldCoLock={toggleHoldCoLock}
-                />
-              )}
-              {activeTab === "comprehensive" && (
-                <PropCoCascadeView
-                  data={standalonePropCoData}
-                  onExport={() => {}}
-                  viewResolution={viewResolution}
-                  setViewResolution={setViewResolution}
-                />
-              )}
-              {activeTab === "sensitivity" && (
-                <PropCoSensitivityView
-                  assumptions={propCoAssumptions}
-                  opCoModelData={standalonePropCoOpCoData}
-                  groups={groups}
-                />
-              )}
-              {activeTab === "assumptions" && (
-                <SettingsPasswordGate>
-                  <PropCoSettingsView
-                    assumptions={propCoAssumptions}
+              {/* PROPCO SECTION */}
+              <div className={activeCompany === "propco" ? "block" : "hidden"}>
+                {activeTab === "dashboard" && (
+                  <PropCoDashboardView
                     data={standalonePropCoData}
-                    onChange={handlePropCoChange}
-                    onValidate={validateAssumptions}
-                    isLocked={isLockedPropCo}
-                    onToggleLock={() => setIsLockedPropCo(!isLockedPropCo)}
-                    onSave={() => saveDefaultsToCloud("propco")}
-                    saveStatus={saveStatusPropCo}
-                    onReset={() =>
-                      setPropCoAssumptions(DEFAULT_PROPCO_ASSUMPTIONS)
-                    }
-                    isCloudSync={isCloudSync}
+                    assumptions={propCoAssumptions}
+                    generateTeaser={generateTeaser}
+                    isTeaserLoading={isTeaserLoading}
+                    showTeaser={showTeaser}
+                    setShowTeaser={setShowTeaser}
+                    teaserContent={teaserContent}
+                    setTab={setActiveTab}
                     isPresenting={isPresenting}
-                    resolvedDevDuration={resolvedDevDuration}
+                    propCoScenario={propCoScenario}
+                    setPropCoScenario={setPropCoScenario}
+                    onChange={handlePropCoChange}
+                    propCoLocked={propCoLocked}
+                    holdCoLocked={holdCoLocked}
+                    toggleHoldCoLock={toggleHoldCoLock}
                   />
-                </SettingsPasswordGate>
-              )}
-            </div>
-          )}
+                )}
+                
+                {/* Preserve DOM for CascadeView */}
+                <div className={activeTab === "comprehensive" ? "block" : "hidden"}>
+                  <PropCoCascadeView
+                    data={standalonePropCoData}
+                    onExport={() => {}}
+                    viewResolution={viewResolution}
+                    setViewResolution={setViewResolution}
+                  />
+                </div>
+                
+                {activeTab === "sensitivity" && (
+                  <PropCoSensitivityView
+                    assumptions={propCoAssumptions}
+                    opCoModelData={standalonePropCoOpCoData}
+                    groups={groups}
+                  />
+                )}
+                {activeTab === "assumptions" && (
+                  <SettingsPasswordGate>
+                    <PropCoSettingsView
+                      assumptions={propCoAssumptions}
+                      data={standalonePropCoData}
+                      onChange={handlePropCoChange}
+                      onValidate={validateAssumptions}
+                      isLocked={isLockedPropCo}
+                      onToggleLock={() => setIsLockedPropCo(!isLockedPropCo)}
+                      onSave={() => saveDefaultsToCloud("propco")}
+                      saveStatus={saveStatusPropCo}
+                      onReset={() =>
+                        setPropCoAssumptions(DEFAULT_PROPCO_ASSUMPTIONS)
+                      }
+                      isCloudSync={isCloudSync}
+                      isPresenting={isPresenting}
+                      resolvedDevDuration={resolvedDevDuration}
+                    />
+                  </SettingsPasswordGate>
+                )}
+              </div>
 
-        {activeTab !== "overview" &&
-          activeTab !== "study" &&
-          activeTab !== "collab" &&
-          activeTab !== "timeline" &&
-          activeTab !== "ai" &&
-          activeCompany === "consolidated" &&
-          activeGroup === "financials" && (
-            <div className="animate-in fade-in duration-500">
-              {activeTab === "dashboard" && (
-                <ConsolidatedDashboardView
-                  data={consolidatedModelData}
-                  assumptions={opCoAssumptions}
-                  propCoAssumptions={propCoAssumptions}
-                  handlePropCoChange={handlePropCoChange}
-                  holdCoAssumptions={holdCoAssumptions}
-                  handleHoldCoChange={handleHoldCoChange}
-                  isPresenting={isPresenting}
-                  holdCoScenario={holdCoScenario}
-                  setHoldCoScenario={setHoldCoScenario}
-                  holdCoLocked={holdCoLocked}
-                  toggleHoldCoLock={toggleHoldCoLock}
-                  propCoLocked={propCoLocked}
-                  togglePropCoLock={togglePropCoLock}
-                />
-              )}
-              {activeTab === "comprehensive" && (
-                <ConsolidatedCascadeView
-                  data={consolidatedModelData}
-                  opcoData={opCoModelData}
-                  propcoData={propCoModelData}
-                  viewResolution={viewResolution}
-                  setViewResolution={setViewResolution}
-                  holdCoAssumptions={holdCoAssumptions}
-                  handleHoldCoChange={handleHoldCoChange}
-                />
-              )}
-              {activeTab === "sensitivity" && (
-                <ConsolidatedSensitivityView
-                  opCoAssumptions={opCoAssumptions}
-                  propCoAssumptions={propCoAssumptions}
-                  holdCoAssumptions={holdCoAssumptions}
-                  resolvedDevDuration={resolvedDevDuration}
-                  projConfig={projConfig}
-                  groups={groups}
-                  setOpCoAssumptions={setOpCoAssumptions}
-                />
-              )}
+              {/* CONSOLIDATED SECTION */}
+              <div className={activeCompany === "consolidated" ? "block" : "hidden"}>
+                {activeTab === "dashboard" && (
+                  <ConsolidatedDashboardView
+                    data={consolidatedModelData}
+                    assumptions={opCoAssumptions}
+                    propCoAssumptions={propCoAssumptions}
+                    handlePropCoChange={handlePropCoChange}
+                    holdCoAssumptions={holdCoAssumptions}
+                    handleHoldCoChange={handleHoldCoChange}
+                    isPresenting={isPresenting}
+                    holdCoScenario={holdCoScenario}
+                    setHoldCoScenario={setHoldCoScenario}
+                    holdCoLocked={holdCoLocked}
+                    toggleHoldCoLock={toggleHoldCoLock}
+                    propCoLocked={propCoLocked}
+                    togglePropCoLock={togglePropCoLock}
+                  />
+                )}
+                
+                {/* Preserve DOM for CascadeView */}
+                <div className={activeTab === "comprehensive" ? "block" : "hidden"}>
+                  <ConsolidatedCascadeView
+                    data={consolidatedModelData}
+                    opcoData={opCoModelData}
+                    propcoData={propCoModelData}
+                    viewResolution={viewResolution}
+                    setViewResolution={setViewResolution}
+                    holdCoAssumptions={holdCoAssumptions}
+                    handleHoldCoChange={handleHoldCoChange}
+                  />
+                </div>
+                
+                {activeTab === "sensitivity" && (
+                  <ConsolidatedSensitivityView
+                    opCoAssumptions={opCoAssumptions}
+                    propCoAssumptions={propCoAssumptions}
+                    holdCoAssumptions={holdCoAssumptions}
+                    resolvedDevDuration={resolvedDevDuration}
+                    projConfig={projConfig}
+                    groups={groups}
+                    setOpCoAssumptions={setOpCoAssumptions}
+                  />
+                )}
+              </div>
             </div>
           )}
 

@@ -1175,16 +1175,6 @@ export const ExecutiveSummaryView = memo(
 
             {/* Lifetime P&L Summary Section */}
             <div className="lg:col-span-12 pt-8">
-              <div className="flex flex-col gap-1 mb-6 border-l-4 border-[#1C6048] pl-4">
-                <h3 className="text-xl font-bold text-[#1E2F31]">
-                  Lifetime Profit & Loss Summary
-                </h3>
-                <p className="text-xs text-[#8A8175] font-medium tracking-tight">
-                  Consolidated clinical and infrastructure performance across
-                  the 10-year operational lifecycle.
-                </p>
-              </div>
-
               <div className="w-full">
                 <LifetimePnLTable
                   opCoData={opCoData}
