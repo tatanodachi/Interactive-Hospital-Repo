@@ -2029,7 +2029,7 @@ export const TableRow = memo(
       if (indigo) baseColorClass = "bg-[#EBEFEE] font-bold text-[#1E2F31]";
       else if (emerald)
         baseColorClass = "bg-[#E8EFEA] font-black text-[#1C6048]";
-      else baseColorClass = "bg-[#EFEBE7] font-bold text-[#1E2F31]";
+      else baseColorClass = "bg-[#F4F0EC] font-bold text-[#1E2F31]";
     }
 
     let firstColClass = `pr-3 py-1.5 sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap transition-all shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] w-[360px] min-w-[360px] max-w-[360px] overflow-hidden text-ellipsis ${baseColorClass} ${isDoubleIndent ? "pl-3.5 text-[9.5px]" : isIndent ? "pl-3.5 text-[10px]" : "pl-1 text-[11px]"} ${!highlight && !isHeader ? "group-hover:bg-[#F9F8F6]" : ""}`;
@@ -2086,12 +2086,12 @@ export const TableRow = memo(
           const val = isSubtractor ? -Math.abs(rawVal) : rawVal;
           const isCrossover =
             crossover && val >= 0 && i > 0 && data[i - 1][dk] < 0;
-          const cellBg = highlight
+          const cellBg = (highlight || isHeader)
             ? indigo
               ? "bg-[#EBEFEE]"
               : emerald
                 ? "bg-[#E8EFEA]"
-                : "bg-[#EFEBE7]/50"
+                : "bg-[#F4F0EC]"
             : "bg-white group-hover:bg-[#F9F8F6]";
 
           const formattedVal = formatNumber(val, 1);
