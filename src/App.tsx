@@ -5123,16 +5123,34 @@ export default function App() {
             </div>
             {/* Toggle Item: Land Cost */}
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
+              <span className={`text-[11px] font-medium flex items-center gap-1.5 ${propCoAssumptions?.isLandLeased ? "text-[#4C4A4B]/40" : "text-[#4C4A4B]"}`}>
                 <Map size={14} className="text-[#9B8B70]" /> Include Land Cost
+              </span>
+              <label className={`relative inline-flex items-center ${propCoAssumptions?.isLandLeased ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  disabled={propCoAssumptions?.isLandLeased || false}
+                  checked={(propCoAssumptions?.includeLand ?? true) && !propCoAssumptions?.isLandLeased}
+                  onChange={(e) =>
+                    handlePropCoChange("includeLand", e.target.checked)
+                  }
+                />
+                <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
+              </label>
+            </div>
+            {/* Toggle Item: Land Lease */}
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
+                <Building size={14} className="text-[#9B8B70]" /> Lease Land Instead of Buy
               </span>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
                   className="sr-only peer"
-                  checked={propCoAssumptions?.includeLand ?? true}
+                  checked={propCoAssumptions?.isLandLeased ?? false}
                   onChange={(e) =>
-                    handlePropCoChange("includeLand", e.target.checked)
+                    handlePropCoChange("isLandLeased", e.target.checked)
                   }
                 />
                 <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
