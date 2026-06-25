@@ -78,6 +78,17 @@ export const PropCoDashboardView = memo(
     holdCoLocked = false,
     toggleHoldCoLock = () => {},
   }) => {
+    const totalIdc = useMemo(() => {
+      if (!data?.annualData) return 0;
+      return data.annualData
+        .filter((d) => !d.isOperating)
+        .reduce((acc, d) => acc + (d.interest || 0), 0);
+    }, [data?.annualData]);
+
+    const totalFundingRequired = useMemo(() => {
+      return (data?.metrics?.totalCapex || 0) + totalIdc;
+    }, [data?.metrics?.totalCapex, totalIdc]);
+
     const pieData = useMemo(() => {
       const leasedMedEq =
         assumptions.medEqProcurement === "lease"
@@ -537,7 +548,7 @@ export const PropCoDashboardView = memo(
                   </LazyResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                     <span className="text-sm font-black text-[#1E2F31]">
-                      {formatNumber(data.metrics.totalCapex, 0)}B
+                      {formatNumber(totalFundingRequired, 0)}B
                     </span>
                   </div>
                 </div>
@@ -592,7 +603,7 @@ export const PropCoDashboardView = memo(
                     icon={<Map size={16} className="text-[#9B8B70]" />}
                     title="Land Acquisition"
                     amount={data.capexDetails.landCost}
-                    totalCapex={data.metrics.totalCapex}
+                    totalCapex={totalFundingRequired}
                   />
                   <ExpandableCapexRow
                     icon={<Building2 size={16} className="text-[#1E2F31]" />}
@@ -603,7 +614,7 @@ export const PropCoDashboardView = memo(
                       data.capexDetails.ffeCost +
                       data.capexDetails.sharingDevCost
                     }
-                    totalCapex={data.metrics.totalCapex}
+                    totalCapex={totalFundingRequired}
                     details={[
                       {
                         label: "Construction",
@@ -625,14 +636,14 @@ export const PropCoDashboardView = memo(
                       icon={<Activity size={16} className="text-[#1C6048]" />}
                       title="Medical Equipment"
                       amount={data.capexDetails.medEqCost}
-                      totalCapex={data.metrics.totalCapex}
+                      totalCapex={totalFundingRequired}
                     />
                   )}
                   <ExpandableCapexRow
                     icon={<Briefcase size={16} className="text-[#99B6AA]" />}
                     title="Soft Costs"
                     amount={data.capexDetails.totalSoftCosts}
-                    totalCapex={data.metrics.totalCapex}
+                    totalCapex={totalFundingRequired}
                     details={[
                       {
                         label: "Consulting & Design",
@@ -657,12 +668,20 @@ export const PropCoDashboardView = memo(
                       },
                     ].filter((d) => d.amount > 0)}
                   />
+                  {totalIdc > 0 && (
+                    <ExpandableCapexRow
+                      icon={<Coins size={16} className="text-[#9B8B70]" />}
+                      title="Interest During Construction (IDC)"
+                      amount={totalIdc}
+                      totalCapex={totalFundingRequired}
+                    />
+                  )}
                   <div className="flex justify-between items-center mt-2 pt-2 border-t-2 border-[#D8D8D8] px-2">
                     <span className="text-[10px] font-black text-[#1E2F31] uppercase tracking-widest">
-                      Total Project Cost
+                      Total Funding Required
                     </span>
                     <span className="font-mono text-sm font-black text-[#1C6048]">
-                      {formatNumber(data.metrics.totalCapex, 1)} B
+                      {formatNumber(totalFundingRequired, 1)} B
                     </span>
                   </div>
                 </div>
