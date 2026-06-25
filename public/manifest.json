@@ -1,0 +1,17 @@
+{
+  "short_name": "Hospital Model",
+  "name": "Hospital Financial & Underwriting Engine",
+  "icons": [
+    {
+      "src": "/app-logo.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#1E2F31",
+  "theme_color": "#1C6048",
+  "display": "standalone",
+  "orientation": "any"
+}

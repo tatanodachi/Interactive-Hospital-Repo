@@ -3108,8 +3108,8 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("executive");
   const [activeMiniTab, setActiveMiniTab] = useState("marketAnalysis");
   const [viewResolution, setViewResolution] = useState("annual");
-  const [isLockedOpCo, setIsLockedOpCo] = useState(true);
-  const [isLockedPropCo, setIsLockedPropCo] = useState(true);
+  const [isLockedOpCo, setIsLockedOpCo] = useState(false);
+  const [isLockedPropCo, setIsLockedPropCo] = useState(false);
   const [isPresenting, setIsPresenting] = useState(false);
   const [isBlanked, setIsBlanked] = useState(false);
   const [isStrictRatio, setIsStrictRatio] = useState(false);
