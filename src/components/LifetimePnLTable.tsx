@@ -341,7 +341,9 @@ export const LifetimePnLTable: React.FC<LifetimePnLTableProps> = ({
           </tr>
         </thead>
         <tbody className="text-[11px]">
-          {rows.map((row, idx) => {
+          {rows
+            .filter((row) => row.value === undefined || row.value === null || Math.abs(row.value) >= 0.0001)
+            .map((row, idx) => {
             const pct =
               revenue > 0 && row.value !== null
                 ? (row.value / revenue) * 100

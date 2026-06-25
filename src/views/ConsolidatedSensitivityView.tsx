@@ -507,80 +507,78 @@ export const ConsolidatedSensitivityView = memo(
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <div className="min-w-[620px] pb-1">
-              <table className="w-full text-center border-collapse">
-                <thead>
-                  <tr>
-                    <th className="border-b border-r border-[#D8D8D8] p-1.5 text-[9.5px] font-black text-right align-bottom bg-[#F9F8F6] text-[#1E2F31]">
-                      Max BOR (%) ⬇ <br />
-                      Ramp Speed ➔
+          <div className="overflow-x-auto max-w-full rounded-xl border border-[#D8D8D8] relative">
+            <table className="w-full min-w-[620px] text-center border-separate border-spacing-0">
+              <thead>
+                <tr>
+                  <th className="sticky left-0 top-0 z-30 border-b border-r border-[#D8D8D8] p-2 text-[9.5px] font-black text-right align-bottom bg-[#F9F8F6] text-[#1E2F31]">
+                    Max BOR (%) ⬇ <br />
+                    Ramp Speed ➔
+                  </th>
+                  {borIncrementSteps.map((inc, i) => (
+                    <th
+                      key={i}
+                      className={`p-2 text-[9.5px] font-black border-b border-r last:border-r-0 border-[#D8D8D8] bg-[#EFEBE7] sticky top-0 z-20 ${
+                        inc === opCoAssumptions.borIncrement ? "text-[#1C6048] ring-1 ring-[#1C6048]" : "text-[#1E2F31]"
+                      }`}
+                    >
+                      {inc}% p.a. {inc === opCoAssumptions.borIncrement && "(Base)"}
                     </th>
-                    {borIncrementSteps.map((inc, i) => (
-                      <th
-                        key={i}
-                        className={`p-1.5 text-[9.5px] font-black border-b border-[#D8D8D8] bg-[#EFEBE7]/40 ${
-                          inc === opCoAssumptions.borIncrement ? "text-[#1C6048] ring-1 ring-[#1C6048]" : "text-[#1E2F31]"
-                        }`}
-                      >
-                        {inc}% p.a. {inc === opCoAssumptions.borIncrement && "(Base)"}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {borMaxSteps.map((maxBor, r) => (
-                    <tr key={r}>
-                      <th
-                        className={`p-1.5 text-[9.5px] font-black border-r border-[#D8D8D8] bg-[#EFEBE7]/40 text-left whitespace-nowrap ${
-                          maxBor === opCoAssumptions.borMax ? "text-[#1C6048] ring-1 ring-[#1C6048]" : "text-[#1E2F31]"
-                        }`}
-                      >
-                        {maxBor}% stabilized {maxBor === opCoAssumptions.borMax && "(Base)"}
-                      </th>
-                      {matrixData[r].map((val, c) => {
-                        const isBaseIntersection =
-                          borMaxSteps[r] === opCoAssumptions.borMax &&
-                          borIncrementSteps[c] === opCoAssumptions.borIncrement;
-
-                        let displayedText = "";
-                        if (matrixMetric === "irr") {
-                          displayedText = formatNumber(val, 1) + "%";
-                        } else if (matrixMetric === "npv") {
-                          displayedText = formatCurrency(val);
-                        } else {
-                          displayedText = formatCurrency(val);
-                        }
-
-                        return (
-                          <td
-                            key={c}
-                            className={`p-1.5 text-[10px] font-mono font-bold transition-all border border-[#D8D8D8]/40 ${getCellColor(
-                              val,
-                              matrixMin,
-                              matrixMax
-                            )} ${
-                              isBaseIntersection
-                                ? "ring-2 ring-[#1E2F31] shadow-sm z-10 scale-105 relative"
-                                : ""
-                            }`}
-                          >
-                            <div className="relative">
-                              <span>{displayedText}</span>
-                              {isBaseIntersection && (
-                                <span className="absolute -top-1.5 -right-1 bg-[#1E2F31] text-[6px] text-[#E6D3AF] font-bold px-0.5 rounded border border-[#D8D8D8]">
-                                  Base
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                        );
-                      })}
-                    </tr>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </tr>
+              </thead>
+              <tbody>
+                {borMaxSteps.map((maxBor, r) => (
+                  <tr key={r}>
+                    <th
+                      className={`p-2 text-[9.5px] font-black border-r border-b border-[#D8D8D8] bg-[#F9F8F6] text-left whitespace-nowrap sticky left-0 z-10 ${
+                        maxBor === opCoAssumptions.borMax ? "text-[#1C6048] ring-1 ring-[#1C6048]" : "text-[#1E2F31]"
+                      }`}
+                    >
+                      {maxBor}% stabilized {maxBor === opCoAssumptions.borMax && "(Base)"}
+                    </th>
+                    {matrixData[r].map((val, c) => {
+                      const isBaseIntersection =
+                        borMaxSteps[r] === opCoAssumptions.borMax &&
+                        borIncrementSteps[c] === opCoAssumptions.borIncrement;
+
+                      let displayedText = "";
+                      if (matrixMetric === "irr") {
+                        displayedText = formatNumber(val, 1) + "%";
+                      } else if (matrixMetric === "npv") {
+                        displayedText = formatCurrency(val);
+                      } else {
+                        displayedText = formatCurrency(val);
+                      }
+
+                      return (
+                        <td
+                          key={c}
+                          className={`p-1.5 text-[10px] font-mono font-bold transition-all border-b border-r last:border-r-0 border-[#D8D8D8]/40 ${getCellColor(
+                            val,
+                            matrixMin,
+                            matrixMax
+                          )} ${
+                            isBaseIntersection
+                              ? "ring-2 ring-[#1E2F31] shadow-sm z-10 scale-105 relative"
+                              : ""
+                          }`}
+                        >
+                          <div className="relative">
+                            <span>{displayedText}</span>
+                            {isBaseIntersection && (
+                              <span className="absolute -top-1.5 -right-1 bg-[#1E2F31] text-[6px] text-[#E6D3AF] font-bold px-0.5 rounded border border-[#D8D8D8]">
+                                Base
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
 
           <div className="bg-[#EFEBE7]/30 py-1.5 px-3 rounded-lg border border-[#D8D8D8] flex items-start gap-1.5 text-[9px] text-[#4C4A4B] leading-relaxed">
