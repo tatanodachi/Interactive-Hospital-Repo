@@ -4270,7 +4270,7 @@ export default function App() {
 
   return (
     <div
-      className={`min-h-screen bg-[#F9F8F6] text-[#1E2F31] font-sans pb-40 relative text-xs`}
+      className={`min-h-screen bg-[#F9F8F6] text-[#1E2F31] font-sans pb-12 relative text-xs`}
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700;800&family=League+Spartan:wght@400;500;600;700;800&display=swap');
