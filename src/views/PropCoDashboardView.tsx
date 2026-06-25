@@ -466,7 +466,7 @@ export const PropCoDashboardView = memo(
             />
           </div>
 
-          {false && data.totals?.shortfallEquity > 0 && (
+          {data.totals?.shortfallEquity > 0 && (
             <div className="bg-[#FEF2F2] p-5 rounded-2xl border border-[#FECACA] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in">
               <div className="flex items-start md:items-center gap-4">
                 <div className="bg-white p-2.5 rounded-xl text-[#EF4444] shadow-sm shrink-0">

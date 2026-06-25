@@ -446,6 +446,7 @@ export const PropCoCascadeView = memo(
                           isIndent
                           tooltip={PROPCO_FORMULAS.maintOpex}
                           isSubtractor
+                          isSubtractor
                         />
                         <TableRow
                           label="Property Tax"
@@ -454,6 +455,7 @@ export const PropCoCascadeView = memo(
                           total={data.totals.taxOpex}
                           isIndent
                           tooltip={PROPCO_FORMULAS.taxOpex}
+                          isSubtractor
                           isSubtractor
                         />
                         <TableRow
@@ -472,6 +474,7 @@ export const PropCoCascadeView = memo(
                           total={data.totals.medEqLeaseOpex}
                           isIndent
                           tooltip={PROPCO_FORMULAS.medEqLeaseOpex}
+                          isSubtractor
                           isSubtractor
                         />
 
@@ -618,6 +621,13 @@ export const PropCoCascadeView = memo(
                           data={columns}
                           dk="dscr"
                           tooltip={PROPCO_FORMULAS.dscr}
+                        />
+                        <TableRow
+                          label="DSCR Cash Buffer"
+                          data={columns}
+                          dk="dscrBuffer"
+                          total={data.totals.dscrBuffer}
+                          tooltip="The monetary variance between cash flow available for debt service and total debt service."
                         />
                       </tbody>
                     </table>
@@ -1139,11 +1149,12 @@ export const PropCoCascadeView = memo(
                           tooltip={PROPCO_FORMULAS.opFcfe}
                         />
                         <TableRow
-                          label="Shortfall Equity"
+                          label={<span className="italic text-[#9B8B70]">of which: Shortfall Equity</span>}
                           data={columns}
                           dk="shortfallEquity"
                           total={data.totals.shortfallEquity}
-                          isIndent
+                          isDoubleIndent
+                          hasDoubleConnector
                           tooltip="Dynamic Operating Shortfall (The Pay As You Go Method). Injected equity to cover negative operating free cash flow to equity."
                         />
                         <TableRow

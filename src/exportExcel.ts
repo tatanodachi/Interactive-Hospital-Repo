@@ -351,6 +351,7 @@ function generateCascadeSheet(
   sheetName: string,
   title: string,
   annualData: any[],
+  totals: any,
   rowsConfig: Array<{
     label: string;
     key?: string;
@@ -381,6 +382,7 @@ function generateCascadeSheet(
   sheet.columns = [
     { header: "", key: "metric", width: 44 },
     ...annualData.map((d, i) => ({ header: "", key: `yr_${i}`, width: 18 })),
+    { header: "", key: "total", width: 22 },
   ];
 
   // Title block
@@ -400,7 +402,7 @@ function generateCascadeSheet(
     fgColor: { argb: "FF1E2F31" }, // Dark Emerald Slate
   };
   titleCell.alignment = { vertical: "middle", horizontal: "left", indent: 1 };
-  sheet.mergeCells(1, 1, 1, annualData.length + 1);
+  sheet.mergeCells(1, 1, 1, annualData.length + 2);
 
   // Metadata block
   sheet.addRow([]); // space
@@ -449,11 +451,12 @@ function generateCascadeSheet(
 
   sheet.addRow([]); // spacing before table
 
-  // Table Headers (Metric, Year 1, Year 2...)
+  // Table Headers (Metric, Year 1, Year 2..., Total)
   const headerRowIdx = sheet.lastRow.number + 1;
   const headerRow = sheet.addRow([
     "Financial Metric",
     ...annualData.map((d) => d.year),
+    "Total",
   ]);
   headerRow.height = 28;
 
@@ -484,6 +487,19 @@ function generateCascadeSheet(
 
   const rowIndices: Record<string, number> = {};
 
+  // Pre-calculate row indices for forward references (like Depreciation sum)
+  let tempRowIdx = sheet.lastRow.number + 1;
+  rowsConfig.forEach((rowConf) => {
+    if (rowConf.key) {
+      rowIndices[rowConf.key.toLowerCase()] = tempRowIdx;
+    }
+    if (rowConf.label) {
+      const normLabel = rowConf.label.toLowerCase().replace(/[^a-z0-9]/g, "");
+      rowIndices[normLabel] = tempRowIdx;
+    }
+    tempRowIdx++;
+  });
+
   // Fill Row by Row
   rowsConfig.forEach((rowConf) => {
     const currentRowIdx = sheet.lastRow.number + 1;
@@ -505,10 +521,10 @@ function generateCascadeSheet(
       };
       cell.alignment = { vertical: "middle", horizontal: "left" };
 
-      sheet.mergeCells(currentRowIdx, 1, currentRowIdx, annualData.length + 1);
+      sheet.mergeCells(currentRowIdx, 1, currentRowIdx, annualData.length + 2);
 
       // Apply borders to the full subheader bar
-      for (let c = 1; c <= annualData.length + 1; c++) {
+      for (let c = 1; c <= annualData.length + 2; c++) {
         row.getCell(c).border = {
           top: { style: "thin", color: { argb: "FFD8D8D8" } },
           bottom: { style: "thin", color: { argb: "FFD8D8D8" } },
@@ -543,17 +559,19 @@ function generateCascadeSheet(
       }
     });
 
+    // Add Total value
+    let totalVal = 0;
+    if (rowConf.key && totals && totals[rowConf.key] !== undefined) {
+      const tVal = totals[rowConf.key] || 0;
+      totalVal = rowConf.isSubtractor ? -Math.abs(tVal) : tVal;
+      if (rowConf.type === "percent") {
+        totalVal = typeof totalVal === "number" ? totalVal / 100 : totalVal;
+      }
+    }
+    values.push(totalVal);
+
     const row = sheet.addRow(values);
     row.height = 20;
-
-    // Register row indices
-    if (rowConf.key) {
-      rowIndices[rowConf.key.toLowerCase()] = currentRowIdx;
-    }
-    if (rowConf.label) {
-      const normLabel = rowConf.label.toLowerCase().replace(/[^a-z0-9]/g, "");
-      rowIndices[normLabel] = currentRowIdx;
-    }
 
     // Apply formatting, borders, and dynamic formulas
     row.eachCell((cell, colIdx) => {
@@ -608,20 +626,48 @@ function generateCascadeSheet(
         return;
       }
 
+      const isTotalColumn = colIdx === annualData.length + 2;
       const yearIdx = colIdx - 2;
       const colLetter = getColLetter(colIdx);
 
-      // Handle custom formula injection
-      if (rowConf.type === "formula" && rowConf.formulaCreator) {
-        let rawResult = 0;
-        if (rowConf.key && annualData[yearIdx]) {
-          const rVal = annualData[yearIdx][rowConf.key] || 0;
-          rawResult = rowConf.isSubtractor ? -Math.abs(rVal) : rVal;
+      // Handle Total column specifically
+      if (isTotalColumn) {
+        if (!rowConf.key || !totals || totals[rowConf.key] === undefined) {
+          cell.value = "";
+        } else {
+          let rawResult = totals[rowConf.key] || 0;
+          rawResult = rowConf.isSubtractor ? -Math.abs(rawResult) : rawResult;
+
+          if (rowConf.type === "formula" && rowConf.formulaCreator) {
+            cell.value = {
+              formula: rowConf.formulaCreator(colLetter, rowIndices),
+              result: rawResult,
+            };
+          } else if (rowConf.type !== "percent") {
+            const startCol = getColLetter(2);
+            const endCol = getColLetter(colIdx - 1);
+            cell.value = {
+              formula: `SUM(${startCol}${cell.row}:${endCol}${cell.row})`,
+              result: rawResult,
+            };
+          } else {
+            // Percent types with a total but no formula
+            cell.value = rawResult / 100;
+          }
         }
-        cell.value = {
-          formula: rowConf.formulaCreator(colLetter, rowIndices),
-          result: rawResult,
-        };
+      } else {
+        // Handle custom formula injection for year columns
+        if (rowConf.type === "formula" && rowConf.formulaCreator) {
+          let rawResult = 0;
+          if (rowConf.key && annualData[yearIdx]) {
+            const rVal = annualData[yearIdx][rowConf.key] || 0;
+            rawResult = rowConf.isSubtractor ? -Math.abs(rVal) : rVal;
+          }
+          cell.value = {
+            formula: rowConf.formulaCreator(colLetter, rowIndices),
+            result: rawResult,
+          };
+        }
       }
 
       // Format custom styles
@@ -1079,6 +1125,7 @@ export const exportToExcel = async (
     "OpCo Cascade",
     "OpCo Cascade Model - Detailed Clinical and Operational Cash Flows",
     opCoData.annualData || [],
+    opCoData.totals || {},
     opCoRowsConfig,
   );
 
@@ -1264,6 +1311,7 @@ export const exportToExcel = async (
       isSubtractor: true,
     },
     { label: "DSCR (Coverage Ratio)", key: "dscr", type: "number" as const },
+    { label: "DSCR Cash Buffer", key: "dscrBuffer", type: "currency" as const },
 
     {
       label: "Property Cash Flows (Statement of Cash Flows)",
@@ -1570,6 +1618,7 @@ export const exportToExcel = async (
     "PropCo Cascade",
     "PropCo Cascade Model - Physical Infrastructure Underwriting & Debt Schedule",
     propCoData.annualData || [],
+    propCoData.totals || {},
     propCoRowsConfig,
   );
 
@@ -1639,6 +1688,11 @@ export const exportToExcel = async (
         `${col}${rows.propcoflowtotallookthrough} + ${col}${rows.opcoflowtotallookthrough}`,
     },
     {
+      label: "Consolidated DSCR Cash Buffer",
+      key: "dscrBuffer",
+      type: "currency" as const,
+    },
+    {
       label: "Cumulative Cash Flow",
       key: "cumCf",
       type: "formula" as const,
@@ -1686,6 +1740,7 @@ export const exportToExcel = async (
     "Consolidated",
     "Consolidated Cascade Model - Multi-Entity Look-Through Performance",
     consolidatedData.annualData || [],
+    consolidatedData.totals || {},
     consRowsConfig,
   );
 

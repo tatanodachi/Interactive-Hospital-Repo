@@ -2015,6 +2015,7 @@ export const TableRow = memo(
     crossover,
     isIndent,
     isDoubleIndent,
+    isTripleIndent,
     tooltip,
     isPercent,
     isExpandable,
@@ -2023,6 +2024,7 @@ export const TableRow = memo(
     isHeader,
     hasConnector,
     hasDoubleConnector,
+    hasTripleConnector,
     isSubtractor,
   }) => {
     let baseColorClass = "bg-white font-medium text-[#4C4A4B]";
@@ -2033,7 +2035,7 @@ export const TableRow = memo(
       else baseColorClass = "bg-[#F4F0EC] font-bold text-[#1E2F31]";
     }
 
-    let firstColClass = `pr-3 py-1.5 sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap transition-all shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] w-[360px] min-w-[360px] max-w-[360px] overflow-hidden text-ellipsis ${baseColorClass} ${isDoubleIndent ? "pl-3.5 text-[9.5px]" : isIndent ? "pl-3.5 text-[10px]" : "pl-1 text-[11px]"} ${!highlight && !isHeader ? "group-hover:bg-[#F9F8F6]" : ""}`;
+    let firstColClass = `pr-3 py-1.5 sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap transition-all shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] w-[360px] min-w-[360px] max-w-[360px] overflow-hidden text-ellipsis ${baseColorClass} ${isTripleIndent ? "pl-5 text-[9px]" : isDoubleIndent ? "pl-3.5 text-[9.5px]" : isIndent ? "pl-3.5 text-[10px]" : "pl-1 text-[11px]"} ${!highlight && !isHeader ? "group-hover:bg-[#F9F8F6]" : ""}`;
     let totalColClass = `px-2 py-1.5 text-right font-bold font-mono border-l border-b border-[#D8D8D8] sticky right-0 z-[40] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] ${baseColorClass} ${!highlight && !isHeader ? "group-hover:bg-[#F9F8F6]" : ""}`;
 
     return (
@@ -2062,12 +2064,17 @@ export const TableRow = memo(
                 <div className="w-5 h-5 -ml-1 flex-shrink-0" />
               )}
 
-              {hasDoubleConnector && (
+              {hasTripleConnector && (
+                <span className="font-mono select-none text-[9px] tracking-tighter text-[#9B8B70]/80 mr-1 flex-shrink-0 whitespace-nowrap">
+                  │ │ └─
+                </span>
+              )}
+              {hasDoubleConnector && !hasTripleConnector && (
                 <span className="font-mono select-none text-[9px] tracking-tighter text-[#9B8B70]/80 mr-1 flex-shrink-0 whitespace-nowrap">
                   │ └─
                 </span>
               )}
-              {hasConnector && !hasDoubleConnector && (
+              {hasConnector && !hasDoubleConnector && !hasTripleConnector && (
                 <span className="font-mono select-none text-[9px] tracking-tighter text-[#9B8B70]/80 mr-1 flex-shrink-0 whitespace-nowrap">
                   └─
                 </span>
@@ -5106,8 +5113,7 @@ export default function App() {
             {/* Toggle Item: Bank Debt */}
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
-                <Landmark size={14} className="text-[#9B8B70]" /> Bank Debt
-                Financing
+                <Landmark size={14} className="text-[#9B8B70]" /> PropCo Bank Debt
               </span>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -5116,6 +5122,23 @@ export default function App() {
                   checked={propCoAssumptions?.includeFinancing || false}
                   onChange={(e) =>
                     handlePropCoChange("includeFinancing", e.target.checked)
+                  }
+                />
+                <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
+              </label>
+            </div>
+            {/* Toggle Item: HoldCo Bank Debt */}
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
+                <Landmark size={14} className="text-[#9B8B70]" /> HoldCo Bank Debt
+              </span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={holdCoAssumptions?.includeFinancing || false}
+                  onChange={(e) =>
+                    handleHoldCoChange("includeFinancing", e.target.checked)
                   }
                 />
                 <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>

@@ -67,6 +67,8 @@ export const ConsolidatedCascadeView = memo(
     const [expandedRevenue, setExpandedRevenue] = useState(false);
     const [expandedEbitda, setExpandedEbitda] = useState(false);
     const [expandedNetIncome, setExpandedNetIncome] = useState(false);
+    const [expandedAdj, setExpandedAdj] = useState(false);
+    const [expandedOpCoAdj, setExpandedOpCoAdj] = useState(false);
 
     // Enrich columns on the fly with true look-through accounting values
     const columns = useMemo(() => {
@@ -222,6 +224,19 @@ export const ConsolidatedCascadeView = memo(
         const ltCfoCfiCffSum = ltCfo + ltCfi + ltCffPay;
         const holdCoAdjustment = actualHoldCoCf - ltCfoCfiCffSum;
 
+        const pCfo = pEbitda - pTax;
+        const pCfi = -ltPropCoCapex + pExit;
+        const adjPropCo = partnerPropCoFlow - (pCfo + pCfi + pCffPay);
+
+        const oCfo = oEbitda - oTax;
+        const adjOpCo = oShareB - (sharePct * oCfo) - oCffPay;
+        const oNetIncomeProxy = (oNetIncomeShare / sharePct);
+        const adjOpCoRetained = oShareB - oNetIncomeShare;
+        const adjOpCoDistributableShare = oShareB;
+        const adjOpCoNetIncomeShare = -oNetIncomeShare;
+        const adjOpCoNonCash = -sharePct * (oEbitda - oTax - oNetIncomeProxy);
+        const adjOpCoDebt = -oCffPay;
+
         return {
           ...col,
           pRevenue,
@@ -269,6 +284,13 @@ export const ConsolidatedCascadeView = memo(
           actualHoldCoCf,
           ltCfoCfiCffSum,
           holdCoAdjustment,
+          adjPropCo,
+          adjOpCo,
+          adjOpCoRetained,
+          adjOpCoDistributableShare,
+          adjOpCoNetIncomeShare,
+          adjOpCoNonCash,
+          adjOpCoDebt,
         };
       });
     }, [rawColumns, opcoData, propcoData, data.annualData]);
@@ -298,7 +320,14 @@ export const ConsolidatedCascadeView = memo(
       let PartnerPropCo = 0,
         PartnerOpCo = 0;
       let LtCfoCfiCffSum = 0,
-        HoldCoAdjustment = 0;
+        HoldCoAdjustment = 0,
+        AdjPropCo = 0,
+        AdjOpCo = 0,
+        AdjOpCoRetained = 0,
+        AdjOpCoDistributableShare = 0,
+        AdjOpCoNetIncomeShare = 0,
+        AdjOpCoNonCash = 0,
+        AdjOpCoDebt = 0;
       let PRevenue = 0,
         ORevenueShare = 0,
         PEbitdaVal = 0,
@@ -332,6 +361,13 @@ export const ConsolidatedCascadeView = memo(
           PartnerOpCo += col.partnerOpCoFlow || 0;
           LtCfoCfiCffSum += col.ltCfoCfiCffSum || 0;
           HoldCoAdjustment += col.holdCoAdjustment || 0;
+          AdjPropCo += col.adjPropCo || 0;
+          AdjOpCo += col.adjOpCo || 0;
+          AdjOpCoRetained += col.adjOpCoRetained || 0;
+          AdjOpCoDistributableShare += col.adjOpCoDistributableShare || 0;
+          AdjOpCoNetIncomeShare += col.adjOpCoNetIncomeShare || 0;
+          AdjOpCoNonCash += col.adjOpCoNonCash || 0;
+          AdjOpCoDebt += col.adjOpCoDebt || 0;
           PRevenue += col.pRevenue || 0;
           ORevenueShare += col.oRevenueShare || 0;
           PEbitdaVal += col.pEbitdaVal || 0;
@@ -366,6 +402,13 @@ export const ConsolidatedCascadeView = memo(
         partnerOpCo: PartnerOpCo,
         ltCfoCfiCffSum: LtCfoCfiCffSum,
         holdCoAdjustment: HoldCoAdjustment,
+        adjPropCo: AdjPropCo,
+        adjOpCo: AdjOpCo,
+        adjOpCoRetained: AdjOpCoRetained,
+        adjOpCoDistributableShare: AdjOpCoDistributableShare,
+        adjOpCoNetIncomeShare: AdjOpCoNetIncomeShare,
+        adjOpCoNonCash: AdjOpCoNonCash,
+        adjOpCoDebt: AdjOpCoDebt,
         pRevenue: PRevenue,
         oRevenueShare: ORevenueShare,
         pEbitdaVal: PEbitdaVal,
@@ -900,8 +943,70 @@ export const ConsolidatedCascadeView = memo(
                         dk="holdCoAdjustment"
                         total={totals.holdCoAdjustment}
                         isIndent
+                        isExpandable
+                        isExpanded={expandedAdj}
+                        onExpand={() => setExpandedAdj(!expandedAdj)}
                         tooltip="Reconciles proxy look-through statement with true HoldCo distributable cash by adjusting for OpCo working capital, non-cash depreciation, and earnings retention."
                       />
+                      {expandedAdj && (
+                        <>
+                          <TableRow
+                            label="PropCo Timing & Non-Cash Adjustments"
+                            data={columns}
+                            dk="adjPropCo"
+                            total={totals.adjPropCo}
+                            isDoubleIndent
+                            hasDoubleConnector
+                          />
+                          <TableRow
+                            label="OpCo Retained Earnings & Debt Distributable Adjustment"
+                            data={columns}
+                            dk="adjOpCo"
+                            total={totals.adjOpCo}
+                            isDoubleIndent
+                            hasDoubleConnector
+                            isExpandable
+                            isExpanded={expandedOpCoAdj}
+                            onExpand={() => setExpandedOpCoAdj(!expandedOpCoAdj)}
+                          />
+                          {expandedOpCoAdj && (
+                            <>
+                              <TableRow
+                                label="Add: OpCo Distributable Cash Share"
+                                data={columns}
+                                dk="adjOpCoDistributableShare"
+                                total={totals.adjOpCoDistributableShare}
+                                isTripleIndent
+                                hasTripleConnector
+                              />
+                              <TableRow
+                                label="Less: OpCo Net Income Share"
+                                data={columns}
+                                dk="adjOpCoNetIncomeShare"
+                                total={totals.adjOpCoNetIncomeShare}
+                                isTripleIndent
+                                hasTripleConnector
+                              />
+                              <TableRow
+                                label="Add / (Less): OpCo Non-Cash & Expense Adjustments"
+                                data={columns}
+                                dk="adjOpCoNonCash"
+                                total={totals.adjOpCoNonCash}
+                                isTripleIndent
+                                hasTripleConnector
+                              />
+                              <TableRow
+                                label="Add / (Less): OpCo Debt Financing Flows"
+                                data={columns}
+                                dk="adjOpCoDebt"
+                                total={totals.adjOpCoDebt}
+                                isTripleIndent
+                                hasTripleConnector
+                              />
+                            </>
+                          )}
+                        </>
+                      )}
                       <TableRow
                         label="NET DISTRIBUTABLE HOLDCO CASH FLOW"
                         data={columns}
@@ -914,6 +1019,16 @@ export const ConsolidatedCascadeView = memo(
                         emerald
                         bold
                         tooltip="Actual net distributable cash generated at the HoldCo level after all OpCo/PropCo retentions and debt service."
+                      />
+                      <TableRow
+                        label="Consolidated DSCR Cash Buffer"
+                        data={columns}
+                        dk="dscrBuffer"
+                        total={data.annualData.reduce(
+                          (acc, d) => acc + (d.dscrBuffer || 0),
+                          0,
+                        )}
+                        tooltip="The monetary variance between total combined cash flow available for debt service and total combined debt service."
                       />
                       <TableRow
                         label="Cumulative Combined Cash Position"
@@ -953,6 +1068,15 @@ export const ConsolidatedCascadeView = memo(
                         highlight
                         emerald
                       />
+                      <TableRow
+                        label={<span className="italic text-[#9B8B70]">of which: HoldCo Operating Shortfall Equity</span>}
+                        data={columns}
+                        dk="netFlowShortfall"
+                        total={data.totals.netFlowShortfall}
+                        isIndent
+                        hasConnector
+                        tooltip="Equity injected specifically to cover consolidated operating deficits at the HoldCo level."
+                      />
 
                       {holdCoAssumptions?.includeFinancing && (
                         <>
@@ -971,26 +1095,26 @@ export const ConsolidatedCascadeView = memo(
                             data={columns}
                             dk="holdCoInterest"
                             total={
-                              -data.annualData.reduce(
+                              data.annualData.reduce(
                                 (acc, d) => acc + (d.holdCoInterest || 0),
                                 0,
                               )
                             }
                             isIndent
-                            isNegative
+                            isSubtractor
                           />
                           <TableRow
                             label="HoldCo Principal Repayment"
                             data={columns}
                             dk="holdCoPrincipal"
                             total={
-                              -data.annualData.reduce(
+                              data.annualData.reduce(
                                 (acc, d) => acc + (d.holdCoPrincipal || 0),
                                 0,
                               )
                             }
                             isIndent
-                            isNegative
+                            isSubtractor
                           />
                           <TableRow
                             label="HoldCo Debt Balance"
@@ -1009,6 +1133,18 @@ export const ConsolidatedCascadeView = memo(
                             )}
                             bold
                             highlight
+                          />
+                          <TableRow
+                            label={<span className="italic text-[#9B8B70]">of which: HoldCo Operating Shortfall Equity</span>}
+                            data={columns}
+                            dk="holdCoCashFlowAfterDebtShortfall"
+                            total={data.annualData.reduce(
+                              (acc, d) =>
+                                acc + (d.holdCoCashFlowAfterDebtShortfall || 0),
+                              0,
+                            )}
+                            isIndent
+                            hasConnector
                           />
                         </>
                       )}
@@ -1043,6 +1179,15 @@ export const ConsolidatedCascadeView = memo(
                             isIndent
                             hasConnector
                             tooltip={CONSOLIDATED_FORMULAS.propCoOperatingFlow}
+                          />
+                          <TableRow
+                            label={<span className="italic text-[#9B8B70]">of which: PropCo Operating Shortfall Equity</span>}
+                            data={columns}
+                            dk="propCoShortfall"
+                            total={data.totals.propCoShortfall}
+                            isDoubleIndent
+                            hasDoubleConnector
+                            tooltip="Equity injected specifically to cover operating deficits in the early years."
                           />
                           <TableRow
                             label="PropCo Exit Proceeds"
