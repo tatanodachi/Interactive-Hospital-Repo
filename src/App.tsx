@@ -117,6 +117,7 @@ import { ClinicalProgrammingView } from "./views/ClinicalProgrammingView";
 import { MasterTimelineView } from "./views/MasterTimelineView";
 import { PropCoSensitivityView } from "./views/PropCoSensitivityView";
 import { OpCoSensitivityView } from "./views/OpCoSensitivityView";
+import { ConsolidatedSensitivityView } from "./views/ConsolidatedSensitivityView";
 import { StudyView } from "./views/StudyView";
 import { CollaborationStrategyView } from "./views/CollaborationStrategyView";
 import { ProjectOverviewView } from "./views/ProjectOverviewView";
@@ -4478,9 +4479,8 @@ export default function App() {
                     <List size={13} /> P&L / CF
                   </button>
                   <button
-                    disabled={activeCompany === "consolidated"}
                     onClick={() => setActiveTab("sensitivity")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap shrink-0 ${activeCompany === "consolidated" ? "opacity-30 cursor-not-allowed text-[#4C4A4B]" : activeTab === "sensitivity" ? "bg-[#1E2F31] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap shrink-0 ${activeTab === "sensitivity" ? "bg-[#1E2F31] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31] hover:bg-white"}`}
                   >
                     <TrendingUp size={13} /> Sensitivity
                   </button>
@@ -4766,6 +4766,16 @@ export default function App() {
                   setViewResolution={setViewResolution}
                   holdCoAssumptions={holdCoAssumptions}
                   handleHoldCoChange={handleHoldCoChange}
+                />
+              )}
+              {activeTab === "sensitivity" && (
+                <ConsolidatedSensitivityView
+                  opCoAssumptions={opCoAssumptions}
+                  propCoAssumptions={propCoAssumptions}
+                  holdCoAssumptions={holdCoAssumptions}
+                  resolvedDevDuration={resolvedDevDuration}
+                  projConfig={projConfig}
+                  groups={groups}
                 />
               )}
             </div>
