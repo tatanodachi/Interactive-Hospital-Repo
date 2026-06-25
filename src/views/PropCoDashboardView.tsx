@@ -600,7 +600,8 @@ export const PropCoDashboardView = memo(
                     amount={
                       data.capexDetails.buildCost +
                       data.capexDetails.infraCost +
-                      data.capexDetails.ffeCost
+                      data.capexDetails.ffeCost +
+                      data.capexDetails.sharingDevCost
                     }
                     totalCapex={data.metrics.totalCapex}
                     details={[
