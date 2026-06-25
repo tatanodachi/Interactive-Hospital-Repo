@@ -64,6 +64,9 @@ export const ConsolidatedCascadeView = memo(
     const [expandedOpCo, setExpandedOpCo] = useState(false);
     const [expandedPropCoDebt, setExpandedPropCoDebt] = useState(false);
     const [expandedOpCoDebt, setExpandedOpCoDebt] = useState(false);
+    const [expandedRevenue, setExpandedRevenue] = useState(false);
+    const [expandedEbitda, setExpandedEbitda] = useState(false);
+    const [expandedNetIncome, setExpandedNetIncome] = useState(false);
 
     // Enrich columns on the fly with true look-through accounting values
     const columns = useMemo(() => {
@@ -199,11 +202,34 @@ export const ConsolidatedCascadeView = memo(
           ? data.annualData[yrIdx]?.monthly?.holdCoCashFlowAfterDebt?.[mIdx] || 0
           : data.annualData[yrIdx]?.holdCoCashFlowAfterDebt || 0;
 
+        const pRevenue = isMonth
+          ? pY.monthly?.revenue?.[mIdx] || 0
+          : pY.revenue || 0;
+        const oRevenueShare = (isMonth
+          ? oY.monthly?.totalRev?.[mIdx] || 0
+          : oY.totalRev || 0) * sharePct;
+
+        const pEbitdaVal = pEbitda;
+        const oEbitdaShare = oEbitda * sharePct;
+
+        const pNetIncome = isMonth
+          ? pY.monthly?.netIncome?.[mIdx] || 0
+          : pY.netIncome || 0;
+        const oNetIncomeShare = (isMonth
+          ? oY.monthly?.netIncome?.[mIdx] || 0
+          : oY.netIncome || 0) * sharePct;
+
         const ltCfoCfiCffSum = ltCfo + ltCfi + ltCffPay;
         const holdCoAdjustment = actualHoldCoCf - ltCfoCfiCffSum;
 
         return {
           ...col,
+          pRevenue,
+          oRevenueShare,
+          pEbitdaVal,
+          oEbitdaShare,
+          pNetIncome,
+          oNetIncomeShare,
           pEbitda,
           oEbitda,
           ltEbitda,
@@ -273,6 +299,12 @@ export const ConsolidatedCascadeView = memo(
         PartnerOpCo = 0;
       let LtCfoCfiCffSum = 0,
         HoldCoAdjustment = 0;
+      let PRevenue = 0,
+        ORevenueShare = 0,
+        PEbitdaVal = 0,
+        OEbitdaShare = 0,
+        PNetIncome = 0,
+        ONetIncomeShare = 0;
 
       columns.forEach((col) => {
         if (col.colType === "year") {
@@ -300,6 +332,12 @@ export const ConsolidatedCascadeView = memo(
           PartnerOpCo += col.partnerOpCoFlow || 0;
           LtCfoCfiCffSum += col.ltCfoCfiCffSum || 0;
           HoldCoAdjustment += col.holdCoAdjustment || 0;
+          PRevenue += col.pRevenue || 0;
+          ORevenueShare += col.oRevenueShare || 0;
+          PEbitdaVal += col.pEbitdaVal || 0;
+          OEbitdaShare += col.oEbitdaShare || 0;
+          PNetIncome += col.pNetIncome || 0;
+          ONetIncomeShare += col.oNetIncomeShare || 0;
         }
       });
 
@@ -328,6 +366,12 @@ export const ConsolidatedCascadeView = memo(
         partnerOpCo: PartnerOpCo,
         ltCfoCfiCffSum: LtCfoCfiCffSum,
         holdCoAdjustment: HoldCoAdjustment,
+        pRevenue: PRevenue,
+        oRevenueShare: ORevenueShare,
+        pEbitdaVal: PEbitdaVal,
+        oEbitdaShare: OEbitdaShare,
+        pNetIncome: PNetIncome,
+        oNetIncomeShare: ONetIncomeShare,
       };
     }, [columns]);
 
@@ -560,24 +604,95 @@ export const ConsolidatedCascadeView = memo(
                         dk="lookThroughRevenue"
                         total={data.totals.lookThroughRevenue}
                         isIndent
+                        isExpandable
+                        isExpanded={expandedRevenue}
+                        onExpand={() => setExpandedRevenue(!expandedRevenue)}
                         tooltip={CONSOLIDATED_FORMULAS.lookThroughRevenue}
                       />
+                      {expandedRevenue && (
+                        <>
+                          <TableRow
+                            label="PropCo Rental Revenue (100% Share)"
+                            data={columns}
+                            dk="pRevenue"
+                            total={totals.pRevenue}
+                            isDoubleIndent
+                            hasConnector
+                            tooltip="PropCo's 100% direct lease rental revenue"
+                          />
+                          <TableRow
+                            label="OpCo Net Clinical Revenue (49% Share)"
+                            data={columns}
+                            dk="oRevenueShare"
+                            total={totals.oRevenueShare}
+                            isDoubleIndent
+                            hasConnector
+                            tooltip="49% of OpCo's total net clinical operating revenue"
+                          />
+                        </>
+                      )}
                       <TableRow
                         label="Look-Through Combined EBITDA"
                         data={columns}
                         dk="lookThroughEbitda"
                         total={data.totals.lookThroughEbitda}
                         isIndent
+                        isExpandable
+                        isExpanded={expandedEbitda}
+                        onExpand={() => setExpandedEbitda(!expandedEbitda)}
                         tooltip={CONSOLIDATED_FORMULAS.lookThroughEbitda}
                       />
+                      {expandedEbitda && (
+                        <>
+                          <TableRow
+                            label="PropCo EBITDA (100% Share)"
+                            data={columns}
+                            dk="pEbitdaVal"
+                            total={totals.pEbitdaVal}
+                            isDoubleIndent
+                            hasConnector
+                          />
+                          <TableRow
+                            label="OpCo EBITDA (49% Share)"
+                            data={columns}
+                            dk="oEbitdaShare"
+                            total={totals.oEbitdaShare}
+                            isDoubleIndent
+                            hasConnector
+                          />
+                        </>
+                      )}
                       <TableRow
                         label="Look-Through Combined Net Income"
                         data={columns}
                         dk="lookThroughNetIncome"
                         total={data.totals.lookThroughNetIncome}
                         highlight
+                        isExpandable
+                        isExpanded={expandedNetIncome}
+                        onExpand={() => setExpandedNetIncome(!expandedNetIncome)}
                         tooltip={CONSOLIDATED_FORMULAS.lookThroughNetIncome}
                       />
+                      {expandedNetIncome && (
+                        <>
+                          <TableRow
+                            label="PropCo Net Income (100% Share)"
+                            data={columns}
+                            dk="pNetIncome"
+                            total={totals.pNetIncome}
+                            isDoubleIndent
+                            hasConnector
+                          />
+                          <TableRow
+                            label="OpCo Net Income (49% Share)"
+                            data={columns}
+                            dk="oNetIncomeShare"
+                            total={totals.oNetIncomeShare}
+                            isDoubleIndent
+                            hasConnector
+                          />
+                        </>
+                      )}
                       <TableRow
                         label="Blended Combined Net Margin (%)"
                         data={columns}

@@ -169,8 +169,10 @@ export const DEFAULT_PROPCO_ASSUMPTIONS: PropCoAssumptions = {
   manualRentEscalation: 3,
   includeLand: false,
   isLandLeased: false,
-  monthlyLandLeaseRateSqm: 48000,
+  monthlyLandLeaseRateSqm: 45000,
   landLeaseTermYears: 15,
+  landLeaseIncrementPct: 5,
+  landLeaseIncrementYears: 5,
   landArea: 12643,
   landPrice: 15,
   buildArea: 13000,
@@ -200,7 +202,7 @@ export const DEFAULT_PROPCO_ASSUMPTIONS: PropCoAssumptions = {
   opOverheadMonthly: 0.2,
   opOverheadInc: 4,
   ffeReservePct: 2,
-  includeFinancing: true,
+  includeFinancing: false,
   includePreOpInLtv: true,
   drawdownScenario: "tranches",
   drawdownTranches: [20, 40, 60, 80, 100],
@@ -225,6 +227,7 @@ export const DEFAULT_PROPCO_ASSUMPTIONS: PropCoAssumptions = {
   depLifeSoftCost: 20,
   depMethodSoftCost: "SL",
   includeTerminalValue: true,
+  exitYear: 10,
   exitMethod: "multiple",
   exitCapRate: 8.5,
   exitMultiple: 15,
@@ -2768,7 +2771,12 @@ export const runPropCoEngine = (
         i <= (assumptions.landLeaseTermYears || 15)
       ) {
         // Convert from IDR/sqm/month to Billions/month
-        const rateRp = assumptions.monthlyLandLeaseRateSqm || 48000;
+        // Starting base rate (e.g., 45000) and increment by custom % every custom years
+        const baseRate = assumptions.monthlyLandLeaseRateSqm || 45000;
+        const incYears = assumptions.landLeaseIncrementYears || 5;
+        const incPct = assumptions.landLeaseIncrementPct !== undefined ? assumptions.landLeaseIncrementPct : 5;
+        const incrementsCount = Math.floor((i - 1) / incYears);
+        const rateRp = baseRate * Math.pow(1 + incPct / 100, incrementsCount);
         m_landLeaseOpex = (rateRp * assumptions.landArea) / 1_000_000_000;
       }
 
@@ -3081,7 +3089,12 @@ export const runPropCoEngine = (
           assumptions.isLandLeased &&
           i <= (assumptions.landLeaseTermYears || 15)
         ) {
-          const rateRp = assumptions.monthlyLandLeaseRateSqm || 48000;
+          // Starting base rate (e.g., 45000) and increment by custom % every custom years
+          const baseRate = assumptions.monthlyLandLeaseRateSqm || 45000;
+          const incYears = assumptions.landLeaseIncrementYears || 5;
+          const incPct = assumptions.landLeaseIncrementPct !== undefined ? assumptions.landLeaseIncrementPct : 5;
+          const incrementsCount = Math.floor((i - 1) / incYears);
+          const rateRp = baseRate * Math.pow(1 + incPct / 100, incrementsCount);
           landLease_year =
             ((rateRp * assumptions.landArea) / 1_000_000_000) * 12;
         }
@@ -3117,6 +3130,15 @@ export const runPropCoEngine = (
                 12 *
                 Math.pow(1 + assumptions.opOverheadInc / 100, projYear - 1);
 
+              // Calculate lease land opex with the custom incremental logic for terminal projection years
+              const projBaseRate = assumptions.monthlyLandLeaseRateSqm || 45000;
+              const projIncYears = assumptions.landLeaseIncrementYears || 5;
+              const projIncPct = assumptions.landLeaseIncrementPct !== undefined ? assumptions.landLeaseIncrementPct : 5;
+              const projIncrements = Math.floor((projYear - 1) / projIncYears);
+              const projRateRp = projBaseRate * Math.pow(1 + projIncPct / 100, projIncrements);
+              const projLandLease_year =
+                ((projRateRp * assumptions.landArea) / 1_000_000_000) * 12;
+
               const projNoi =
                 projRev -
                 maint_year -
@@ -3124,7 +3146,7 @@ export const runPropCoEngine = (
                 projOverhead -
                 projRev * (assumptions.ffeReservePct / 100) -
                 medEqLease_year -
-                landLease_year;
+                projLandLease_year;
 
               tv += projNoi / Math.pow(1 + r, y);
             }

@@ -25,7 +25,7 @@ export const LifetimePnLTable: React.FC<LifetimePnLTableProps> = ({
 }) => {
   const [activeSegment, setActiveSegment] = useState<
     "opco" | "propco" | "holdco"
-  >("propco");
+  >("holdco");
 
   if (!propCoData?.totals || !opCoData?.totals) return null;
 

@@ -217,10 +217,27 @@ export const PropCoSettingsView = memo(
                 <>
                   <AssumptionRow
                     label="Ground Lease Rate"
-                    val={assumptions.monthlyLandLeaseRateSqm || 48000}
+                    val={assumptions.monthlyLandLeaseRateSqm || 45000}
                     set={(v) => onChange("monthlyLandLeaseRateSqm", v)}
                     unit="/Sqm/Mo"
                     isLocked={isLocked}
+                    tooltip="Starts at base rate and dynamically increments at the specified percentage and period (e.g. 5% every 5 years)."
+                  />
+                  <AssumptionRow
+                    label="Lease Rate Increment"
+                    val={assumptions.landLeaseIncrementPct !== undefined ? assumptions.landLeaseIncrementPct : 5}
+                    set={(v) => onChange("landLeaseIncrementPct", v)}
+                    unit="%"
+                    isLocked={isLocked}
+                    tooltip="The percentage rate escalation for each adjustment period (e.g., 5%)."
+                  />
+                  <AssumptionRow
+                    label="Lease Increment Period"
+                    val={assumptions.landLeaseIncrementYears || 5}
+                    set={(v) => onChange("landLeaseIncrementYears", v)}
+                    unit="Yrs"
+                    isLocked={isLocked}
+                    tooltip="Number of years between lease rate adjustments (e.g., every 5 years)."
                   />
                   <AssumptionRow
                     label="Lease Term"

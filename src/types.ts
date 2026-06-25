@@ -89,6 +89,8 @@ export interface PropCoAssumptions {
   isLandLeased?: boolean;
   monthlyLandLeaseRateSqm?: number;
   landLeaseTermYears?: number;
+  landLeaseIncrementPct?: number;
+  landLeaseIncrementYears?: number;
   landArea: number;
   landPrice: number;
   buildArea: number;
