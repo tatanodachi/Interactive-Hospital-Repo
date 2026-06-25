@@ -4295,16 +4295,16 @@ export default function App() {
 
       <div className="bg-[#1E2F31] text-white shadow-md relative z-[130] border-b-4 border-[#1C6048] transition-all">
         <div
-          className={`flex justify-between items-center transition-all duration-300 ${headerContainerClass} ${isPresenting ? "py-1.5" : "py-3"}`}
+          className={`flex justify-between items-center transition-all duration-300 ${headerContainerClass} ${isPresenting ? "py-1" : "py-2.5"}`}
         >
           <div className="flex items-center gap-2 lg:gap-3 shrink-0">
             <div
-              className={`transition-all flex items-center justify-start ${isPresenting ? "h-10" : "h-16"}`}
+              className={`transition-all flex items-center justify-start ${isPresenting ? "h-8" : "h-11"}`}
             >
               <img
                 src="/vasanta-logo-gold.svg"
                 alt="Vasanta Group Logo"
-                className="w-auto h-full object-contain object-left drop-shadow-sm scale-[1.7] origin-left"
+                className="w-auto h-full object-contain object-left drop-shadow-sm"
               />
             </div>
           </div>
