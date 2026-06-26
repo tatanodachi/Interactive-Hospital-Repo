@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   Layers,
   Map,
+  AlertCircle,
 } from "lucide-react";
 import {
   ComposedChart,
@@ -400,6 +401,16 @@ export const ConsolidatedDashboardView = memo(
               holdCoScenario === "debt_free"
             }
           />
+          <div className="col-span-2 flex flex-col">
+            <KPICard
+              title="Sponsor Capital Shortfall"
+              value={formatCurrency(data.totals.holdCoCashFlowAfterDebtShortfall)}
+              icon={<AlertCircle size={18} />}
+              color="indigo"
+              subtitle="Cumulative Deficit Support"
+              tooltip="Sponsor Capital Shortfall: The cumulative additional operating equity infusions required to support negative look-through combined cash flows and debt service."
+            />
+          </div>
         </div>
 
         <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8]">

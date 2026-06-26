@@ -466,33 +466,7 @@ export const PropCoDashboardView = memo(
             />
           </div>
 
-          {data.totals?.shortfallEquity > 0 && (
-            <div className="bg-[#FEF2F2] p-5 rounded-2xl border border-[#FECACA] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in">
-              <div className="flex items-start md:items-center gap-4">
-                <div className="bg-white p-2.5 rounded-xl text-[#EF4444] shadow-sm shrink-0">
-                  <AlertTriangle size={24} />
-                </div>
-                <div>
-                  <h4 className="text-[#991B1B] font-bold text-base">
-                    Working Capital Shortfall Detected
-                  </h4>
-                  <p className="text-sm text-[#B91C1C] mt-1 pr-4">
-                    Projected operating cash flow is insufficient to cover early
-                    expenditures or debt service. Additional equity injection is
-                    required during operations.
-                  </p>
-                </div>
-              </div>
-              <div className="text-left md:text-right shrink-0 bg-white/60 p-3 rounded-xl border border-[#FECACA]/50">
-                <p className="text-[10px] text-[#B91C1C] font-bold uppercase tracking-widest opacity-80 mb-1">
-                  Total Shortfall Equity
-                </p>
-                <div className="text-xl font-bold text-[#991B1B]">
-                  {formatCurrency(data.totals.shortfallEquity)}
-                </div>
-              </div>
-            </div>
-          )}
+
 
           <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8]">
             <div className="flex justify-between items-center mb-6">

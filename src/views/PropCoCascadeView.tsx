@@ -105,7 +105,7 @@ export const PropCoCascadeView = memo(
                 col.colType === "year"
                   ? "cursor-pointer hover:bg-white font-black underline decoration-dashed underline-offset-4 "
                   : "font-medium text-[10px] "
-              } bg-[#EFEBE7] ${!col.isOperating ? "text-[#9B8B70]" : "text-[#1E2F31]"} ${col.isMonth ? "min-w-[65px] whitespace-nowrap" : "min-w-[90px]"}`}
+              } bg-[#EFEBE7] ${!col.isOperating ? "text-[#8A8175]" : "text-[#1E2F31]"} ${col.isMonth ? "min-w-[65px] whitespace-nowrap" : "min-w-[90px]"}`}
             >
               {col.colType === "year" ? (
                 <div className="flex items-center justify-end gap-1">
@@ -290,13 +290,13 @@ export const PropCoCascadeView = memo(
                 <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
                   <button
                     onClick={() => setViewMode("all")}
-                    className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "all" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                    className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "all" ? "bg-[#1E2F31] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
                   >
                     All
                   </button>
                   <button
                     onClick={() => setViewMode("pl")}
-                    className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "pl" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                    className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "pl" ? "bg-[#1E2F31] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
                     title="PropCo Income Statement (P&L)"
                   >
                     P&L
@@ -310,7 +310,7 @@ export const PropCoCascadeView = memo(
                   </button>
                   <button
                     onClick={() => setViewMode("cf")}
-                    className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "cf" ? "bg-[#9B8B70] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                    className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "cf" ? "bg-[#1E2F31] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
                     title="PropCo Capital Cascade"
                   >
                     Cascade
@@ -336,7 +336,7 @@ export const PropCoCascadeView = memo(
                   </button>
                   <button
                     onClick={() => setViewResolution("monthly")}
-                    className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${viewResolution === "monthly" ? "bg-[#9B8B70] text-white" : "text-[#8A8175] hover:text-[#1E2F31] hover:bg-[#F9F8F6]"}`}
+                    className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${viewResolution === "monthly" ? "bg-[#1E2F31] text-white" : "text-[#8A8175] hover:text-[#1E2F31] hover:bg-[#F9F8F6]"}`}
                   >
                     Monthly
                   </button>
@@ -383,7 +383,7 @@ export const PropCoCascadeView = memo(
               {/* TABLE 1: PropCo Operating P&L & Debt Coverage */}
               {(viewMode === "all" || viewMode === "pl") && (
                 <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden">
-                  <div className="p-4 bg-[#9B8B70] border-b border-[#9B8B70] flex justify-between items-center shrink-0">
+                  <div className="p-4 bg-[#1E2F31] border-b border-[#1E2F31] flex justify-between items-center shrink-0">
                     <h3 className="text-xs font-bold uppercase tracking-widest text-white flex items-center gap-2">
                       1. Property P&L & Debt Service
                     </h3>
@@ -446,7 +446,6 @@ export const PropCoCascadeView = memo(
                           isIndent
                           tooltip={PROPCO_FORMULAS.maintOpex}
                           isSubtractor
-                          isSubtractor
                         />
                         <TableRow
                           label="Property Tax"
@@ -455,7 +454,6 @@ export const PropCoCascadeView = memo(
                           total={data.totals.taxOpex}
                           isIndent
                           tooltip={PROPCO_FORMULAS.taxOpex}
-                          isSubtractor
                           isSubtractor
                         />
                         <TableRow
@@ -474,7 +472,6 @@ export const PropCoCascadeView = memo(
                           total={data.totals.medEqLeaseOpex}
                           isIndent
                           tooltip={PROPCO_FORMULAS.medEqLeaseOpex}
-                          isSubtractor
                           isSubtractor
                         />
 
@@ -638,7 +635,7 @@ export const PropCoCascadeView = memo(
               {/* TABLE 2: PropCo Standard Cash Flows */}
               {(viewMode === "all" || viewMode === "statement") && (
                 <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden">
-                  <div className="p-4 bg-[#9B8B70] border-b border-[#9B8B70] flex justify-between items-center shrink-0">
+                  <div className="p-4 bg-[#1E2F31] border-b border-[#1E2F31] flex justify-between items-center shrink-0">
                     <h3 className="text-xs font-bold uppercase tracking-widest text-white flex items-center gap-2">
                       2. Property Cash Flows
                     </h3>
@@ -1004,7 +1001,7 @@ export const PropCoCascadeView = memo(
               {/* TABLE 3: PropCo Capital Cascade & Returns */}
               {(viewMode === "all" || viewMode === "cf") && (
                 <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden">
-                  <div className="p-4 bg-[#9B8B70] border-b border-[#9B8B70] flex justify-between items-center shrink-0">
+                  <div className="p-4 bg-[#1E2F31] border-b border-[#1E2F31] flex justify-between items-center shrink-0">
                     <h3 className="text-xs font-bold uppercase tracking-widest text-white flex items-center gap-2">
                       3. Property Capex & Returns
                     </h3>
@@ -1149,7 +1146,7 @@ export const PropCoCascadeView = memo(
                           tooltip={PROPCO_FORMULAS.opFcfe}
                         />
                         <TableRow
-                          label={<span className="italic text-[#9B8B70]">of which: Shortfall Equity</span>}
+                          label={<span className="italic text-[#1E2F31] opacity-85">of which: Shortfall Equity</span>}
                           data={columns}
                           dk="shortfallEquity"
                           total={data.totals.shortfallEquity}
