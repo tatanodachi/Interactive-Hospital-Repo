@@ -281,11 +281,32 @@ export const LifetimePnLTable: React.FC<LifetimePnLTableProps> = ({
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-[#D8D8D8] overflow-hidden">
       {/* Segmented Controller */}
-      <div className="p-4 bg-[#F4F1EE] border-b border-[#D8D8D8] flex justify-between items-center">
-        <h4 className="text-xs font-bold text-[#1E2F31] uppercase tracking-wider">
+      <div className="p-4 bg-[#F4F1EE] border-b border-[#D8D8D8] flex flex-row justify-between items-center gap-2">
+        <h4 className="text-xs font-bold text-[#1E2F31] uppercase tracking-wider truncate">
           Lifetime P&L Summary
         </h4>
-        <div className="flex bg-[#EFEBE7] p-1 rounded-lg border border-[#D8D8D8]">
+        
+        {/* Mobile Custom Select Dropdown (Option 3B) */}
+        <div className="block md:hidden relative min-w-[120px] max-w-[160px] shrink-0">
+          <select
+            id="lifetime-segment-select"
+            value={activeSegment}
+            onChange={(e) => setActiveSegment(e.target.value as "opco" | "propco" | "holdco")}
+            className="w-full bg-[#EFEBE7] border border-[#D8D8D8] rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-[#1E2F31] focus:outline-none focus:ring-1 focus:ring-[#1C6048] appearance-none pr-8 cursor-pointer shadow-sm"
+          >
+            <option value="opco">🏥 Clinical OpCo</option>
+            <option value="propco">🏢 Property PropCo</option>
+            <option value="holdco">🏦 HoldCo VG</option>
+          </select>
+          <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none text-[#8A8175]">
+            <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20">
+              <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Desktop Segmented Buttons */}
+        <div className="hidden md:flex bg-[#EFEBE7] p-1 rounded-lg border border-[#D8D8D8] shrink-0">
           <button
             onClick={() => setActiveSegment("opco")}
             className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-[11px] font-bold transition-all ${

@@ -524,14 +524,27 @@ export const ConsolidatedCascadeView = memo(
         <div
           className={`flex flex-col gap-4 overflow-hidden ${isFullScreen ? "h-full" : "h-[calc(100vh-240px)]"}`}
         >
-          <div className="p-4 bg-white rounded-xl shadow-sm border border-[#D8D8D8] flex justify-between items-center shrink-0">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
-              <List size={14} /> Look-Through Statement of Cash Flows & Cascade
-              Waterfall
-            </h3>
-            <div className="flex items-center gap-2">
+          <div className="p-4 bg-white rounded-xl shadow-sm border border-[#D8D8D8] flex flex-col lg:flex-row lg:justify-between lg:items-center gap-3 shrink-0">
+            <div className="flex items-center justify-between w-full lg:w-auto">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2 min-w-0">
+                <List size={14} className="shrink-0" /> <span className="truncate">Look-Through Statement of Cash Flows & Cascade Waterfall</span>
+              </h3>
+              <button
+                onClick={() => setIsFullScreen(!isFullScreen)}
+                className="lg:hidden p-1.5 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6] transition-colors"
+                title={isFullScreen ? "Minimize" : "Maximize"}
+              >
+                {isFullScreen ? (
+                  <Minimize2 size={13} strokeWidth={2.5} />
+                ) : (
+                  <Maximize2 size={13} strokeWidth={2.5} />
+                )}
+              </button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start lg:justify-end">
               {/* Table Selection Mode */}
-              <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
+              <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm">
                 <button
                   onClick={() => setViewMode("all")}
                   className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "all" ? "bg-[#1C6048] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
@@ -563,7 +576,7 @@ export const ConsolidatedCascadeView = memo(
 
               <button
                 onClick={() => setIsFullScreen(!isFullScreen)}
-                className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6] transition-colors"
+                className="hidden lg:block p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6] transition-colors"
                 title={isFullScreen ? "Minimize" : "Maximize"}
               >
                 {isFullScreen ? (
@@ -573,7 +586,7 @@ export const ConsolidatedCascadeView = memo(
                 )}
               </button>
 
-              <div className="flex items-center bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
+              <div className="flex items-center bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm">
                 <button
                   onClick={() => setViewResolution("annual")}
                   className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${viewResolution === "annual" ? "bg-[#1C6048] text-white" : "text-[#8A8175] hover:text-[#1E2F31] hover:bg-[#F9F8F6]"}`}
@@ -588,7 +601,7 @@ export const ConsolidatedCascadeView = memo(
                 </button>
               </div>
 
-              <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
+              <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm">
                 <button
                   onClick={() => {
                     const tables =

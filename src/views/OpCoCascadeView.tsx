@@ -191,20 +191,34 @@ export const OpCoCascadeView = memo(
           <div
             className={`${showSetupBudget && !isFullScreen ? "md:col-span-2" : "md:col-span-1"} flex flex-col gap-4 overflow-hidden ${isFullScreen ? "h-full" : "h-[calc(100vh-240px)]"}`}
           >
-            <div className="p-4 bg-white rounded-xl shadow-sm border border-[#D8D8D8] flex justify-between items-center shrink-0">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2">
-                <List size={14} /> OpCo P&L & Cash Flow
-                {!showSetupBudget && (
-                  <button
-                    onClick={() => setShowSetupBudget(true)}
-                    className="ml-2 px-2 py-0.5 border border-[#D8D8D8] bg-white rounded text-[#8A8175] hover:text-[#1E2F31] text-[9px] tracking-wider font-bold shadow-sm leading-tight inline-block flex-shrink-0"
-                  >
-                    Show Setup Budget
-                  </button>
-                )}
-              </h3>
-              <div className="flex items-center gap-2">
-                <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
+            <div className="p-4 bg-white rounded-xl shadow-sm border border-[#D8D8D8] flex flex-col lg:flex-row lg:justify-between lg:items-center gap-3 shrink-0">
+              <div className="flex items-center justify-between w-full lg:w-auto">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-[#1E2F31] flex items-center gap-2 min-w-0">
+                  <List size={14} className="shrink-0" /> <span className="truncate">OpCo P&L & Cash Flow</span>
+                  {!showSetupBudget && (
+                    <button
+                      onClick={() => setShowSetupBudget(true)}
+                      className="ml-2 px-2 py-0.5 border border-[#D8D8D8] bg-white rounded text-[#8A8175] hover:text-[#1E2F31] text-[9px] tracking-wider font-bold shadow-sm leading-tight inline-block flex-shrink-0"
+                    >
+                      Show Setup Budget
+                    </button>
+                  )}
+                </h3>
+                <button
+                  onClick={() => setIsFullScreen(!isFullScreen)}
+                  className="lg:hidden p-1.5 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6] transition-colors"
+                  title={isFullScreen ? "Minimize" : "Maximize"}
+                >
+                  {isFullScreen ? (
+                    <Minimize2 size={13} strokeWidth={2.5} />
+                  ) : (
+                    <Maximize2 size={13} strokeWidth={2.5} />
+                  )}
+                </button>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start lg:justify-end">
+                <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm">
                   <button
                     onClick={() => setViewMode("all")}
                     className={`px-2 py-1 text-[10px] font-bold uppercase rounded ${viewMode === "all" ? "bg-[#1C6048] text-white shadow-sm" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
@@ -235,7 +249,7 @@ export const OpCoCascadeView = memo(
                 </div>
                 <button
                   onClick={() => setIsFullScreen(!isFullScreen)}
-                  className="p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6] transition-colors"
+                  className="hidden lg:block p-1 rounded bg-white border border-[#D8D8D8] text-[#1E2F31] shadow-sm hover:bg-[#F9F8F6] transition-colors"
                   title={isFullScreen ? "Minimize" : "Maximize"}
                 >
                   {isFullScreen ? (
@@ -244,7 +258,7 @@ export const OpCoCascadeView = memo(
                     <Maximize2 size={13} strokeWidth={2.5} />
                   )}
                 </button>
-                <div className="flex items-center bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
+                <div className="flex items-center bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm">
                   <button
                     onClick={() => setViewResolution("annual")}
                     className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded transition-all ${viewResolution === "annual" ? "bg-[#1C6048] text-white" : "text-[#8A8175] hover:text-[#1E2F31] hover:bg-[#F9F8F6]"}`}
@@ -258,7 +272,7 @@ export const OpCoCascadeView = memo(
                     Monthly
                   </button>
                 </div>
-                <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm ml-1 mr-2">
+                <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm">
                   <button
                     onClick={() => {
                       const tables =

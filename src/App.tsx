@@ -3181,6 +3181,7 @@ export default function App() {
   const [saveStatusOpCo, setSaveStatusOpCo] = useState("idle");
   const [saveStatusPropCo, setSaveStatusPropCo] = useState("idle");
   const [groups, setGroups] = useState(INITIAL_GROUPS);
+  const [selectedSensitivityPresetId, setSelectedSensitivityPresetId] = useState("baseline");
 
   const [opCoAssumptions, setOpCoAssumptions] = useState(
     DEFAULT_OPCO_ASSUMPTIONS,
@@ -4430,7 +4431,7 @@ export default function App() {
             className={`grid grid-cols-2 md:flex md:flex-row justify-between items-center gap-2 lg:gap-3 transition-all duration-300 ${isPresenting ? "py-2" : "py-3"}`}
           >
             {/* PILLAR 1: BRANDED TITLE */}
-            <div className="order-1 md:order-1 col-span-1 flex justify-start min-w-0 md:flex-1">
+            <div className={`order-1 md:order-1 ${activeGroup === "summary" ? "col-span-2" : "col-span-1"} flex justify-start min-w-0 md:flex-1`}>
               <h1 className="text-xl font-bold flex items-center gap-2 text-[#1E2F31] truncate">
                 {activeTab === "executive" ? (
                   <Briefcase className="text-[#9B8B70]" />
@@ -4780,6 +4781,8 @@ export default function App() {
                     projConfig={projConfig}
                     groups={groups}
                     setOpCoAssumptions={setOpCoAssumptions}
+                    selectedPresetId={selectedSensitivityPresetId}
+                    setSelectedPresetId={setSelectedSensitivityPresetId}
                   />
                 )}
               </div>

@@ -1,4 +1,4 @@
-import React, { memo, useState, useEffect, useRef } from "react";
+import React, { memo, useState, useEffect, useRef, useMemo } from "react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -11,6 +11,7 @@ import {
 import {
   Sparkles,
   ArrowRight,
+  ArrowDown,
   CheckCircle2,
   MapPin,
   Percent,
@@ -172,6 +173,49 @@ export const ExecutiveSummaryView = memo(
     const costPerSqmM = buildArea
       ? (totalCostBasisBillion * 1000) / buildArea
       : 0;
+
+    // Dynamic BOR Sparkline Calculation
+    const borChartData = useMemo(() => {
+      if (!opCoData?.annualData || !Array.isArray(opCoData.annualData)) {
+        return [
+          { name: "Y1", val: 45 },
+          { name: "Y2", val: 50 },
+          { name: "Y3", val: 55 },
+          { name: "Y4", val: 60 },
+          { name: "Y5+", val: 65 },
+        ];
+      }
+      const operatingYears = opCoData.annualData.filter((d: any) => d.isOperating);
+      if (operatingYears.length === 0) {
+        return [
+          { name: "Y1", val: 45 },
+          { name: "Y2", val: 50 },
+          { name: "Y3", val: 55 },
+          { name: "Y4", val: 60 },
+          { name: "Y5+", val: 65 },
+        ];
+      }
+      return operatingYears.slice(0, 5).map((d: any, idx: number) => {
+        let name = `Y${idx + 1}`;
+        if (idx === 4 && operatingYears.length > 5) {
+          name = "Y5+";
+        }
+        return {
+          name,
+          val: Math.round((d.bor || 0) * 10) / 10,
+        };
+      });
+    }, [opCoData]);
+
+    const borDomain = useMemo(() => {
+      const vals = borChartData.map((d) => d.val);
+      const min = Math.min(...vals, 40);
+      const max = Math.max(...vals, 70);
+      return [
+        Math.max(0, Math.floor((min - 5) / 10) * 10),
+        Math.min(100, Math.ceil((max + 5) / 10) * 10),
+      ];
+    }, [borChartData]);
 
     const narrativeSteps = [
       {
@@ -350,42 +394,44 @@ export const ExecutiveSummaryView = memo(
                 real estate investors while protecting the clinical operational
                 balance sheet:
               </p>
-              <div className="grid grid-cols-12 gap-1 items-center px-1">
-                <div className="col-span-3 flex flex-col gap-1.5">
-                  <div className="bg-[#F9F8F6] p-1.5 rounded-lg border border-[#D8D8D8] text-center shadow-sm">
+              <div className="flex flex-col sm:grid sm:grid-cols-12 gap-3 sm:gap-1 items-center px-1">
+                <div className="w-full sm:col-span-3 flex flex-row sm:flex-col gap-2 sm:gap-1.5">
+                  <div className="flex-1 bg-[#F9F8F6] p-2 sm:p-1.5 rounded-lg border border-[#D8D8D8] text-center shadow-sm">
                     <span className="text-[9px] font-black uppercase text-[#4C4A4B] tracking-wider block">
                       Partner (51%)
                     </span>
                   </div>
-                  <div className="bg-[#F9F8F6] p-1.5 rounded-lg border border-[#D8D8D8] text-center shadow-sm">
+                  <div className="flex-1 bg-[#F9F8F6] p-2 sm:p-1.5 rounded-lg border border-[#D8D8D8] text-center shadow-sm">
                     <span className="text-[9px] font-black uppercase text-[#2A4750] tracking-wider block">
                       VG (49%)
                     </span>
                   </div>
                 </div>
 
-                <div className="col-span-1 flex flex-col justify-around h-14 items-center">
-                  <ArrowRight size={14} className="text-[#4C4A4B] opacity-40" />
-                  <ArrowRight size={14} className="text-[#2A4750] opacity-40" />
+                <div className="sm:col-span-1 flex flex-row sm:flex-col justify-around sm:h-14 items-center gap-1 sm:gap-0">
+                  <ArrowRight size={14} className="hidden sm:block text-[#4C4A4B] opacity-40" />
+                  <ArrowRight size={14} className="hidden sm:block text-[#2A4750] opacity-40" />
+                  <ArrowDown size={14} className="block sm:hidden text-[#4C4A4B] opacity-40 animate-pulse" />
                 </div>
 
-                <div className="col-span-3 bg-[#1C6048] text-white p-2.5 ml-1 rounded-lg text-center shadow-sm">
+                <div className="w-full sm:col-span-3 bg-[#1C6048] text-white p-3 sm:p-2.5 rounded-lg text-center shadow-sm">
                   <div className="text-sm font-bold leading-tight">OpCo</div>
                   <div className="text-[8px] opacity-90 uppercase tracking-widest font-black mt-1">
                     Hospital Operator
                   </div>
                 </div>
 
-                <div className="col-span-2 flex justify-center">
+                <div className="w-full sm:col-span-2 flex flex-col items-center">
                   <div className="w-full flex flex-col items-center px-0.5">
-                    <span className="text-[8px] text-[#9B8B70] font-black uppercase tracking-wider text-center whitespace-nowrap mb-1">
+                    <span className="text-[8px] text-[#9B8B70] font-black uppercase tracking-wider text-center mb-1">
                       EBITDA Sharing
                     </span>
-                    <ArrowRight size={14} className="text-[#9B8B70]" />
+                    <ArrowRight size={14} className="hidden sm:block text-[#9B8B70]" />
+                    <ArrowDown size={14} className="block sm:hidden text-[#9B8B70] animate-pulse" />
                   </div>
                 </div>
 
-                <div className="col-span-3 bg-[#1E2F31] text-white p-2.5 rounded-lg text-center shadow-sm">
+                <div className="w-full sm:col-span-3 bg-[#1E2F31] text-white p-3 sm:p-2.5 rounded-lg text-center shadow-sm">
                   <div className="text-sm font-bold leading-tight">PropCo</div>
                   <div className="text-[8px] opacity-90 uppercase tracking-widest font-black mt-1">
                     Real Estate Asset
@@ -839,13 +885,7 @@ export const ExecutiveSummaryView = memo(
                     <div className="h-[74px] w-full relative bg-[#F9F8F6] rounded-xl border border-[#D8D8D8]/50 p-1.5">
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart
-                          data={[
-                            { name: "Y1", val: 45 },
-                            { name: "Y2", val: 50 },
-                            { name: "Y3", val: 55 },
-                            { name: "Y4", val: 60 },
-                            { name: "Y5+", val: 65 },
-                          ]}
+                          data={borChartData}
                           margin={{ top: 5, right: 8, left: -25, bottom: 0 }}
                         >
                           <CartesianGrid
@@ -868,7 +908,7 @@ export const ExecutiveSummaryView = memo(
                             axisLine={false}
                             tickLine={false}
                             tick={{ fontSize: 8, fill: "#8A8175" }}
-                            domain={[40, 70]}
+                            domain={borDomain}
                             tickFormatter={(val) => val + "%"}
                           />
                           <Tooltip

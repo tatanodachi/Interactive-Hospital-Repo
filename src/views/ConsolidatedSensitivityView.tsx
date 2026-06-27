@@ -92,6 +92,44 @@ const PRESETS: ScenarioPreset[] = [
   },
 ];
 
+const generateShiftingSequence = (
+  base: number,
+  stepSize: number,
+  count: number,
+  minVal: number,
+  maxVal: number
+): number[] => {
+  const k = Math.floor((count - 1) / 2);
+  let start = base - k * stepSize;
+
+  if (start < minVal) {
+    const minShift = Math.ceil((minVal - start) / stepSize) * stepSize;
+    start += minShift;
+  }
+
+  let end = start + (count - 1) * stepSize;
+  if (end > maxVal) {
+    const maxShift = Math.ceil((end - maxVal) / stepSize) * stepSize;
+    start -= maxShift;
+  }
+
+  // Double check start is still >= minVal after shifting down
+  if (start < minVal) {
+    start = minVal;
+  }
+
+  const sequence: number[] = [];
+  for (let i = 0; i < count; i++) {
+    const val = start + i * stepSize;
+    if (val <= maxVal) {
+      sequence.push(val);
+    }
+  }
+
+  // Ensure unique, sorted sequence
+  return Array.from(new Set(sequence)).sort((a, b) => a - b);
+};
+
 export const ConsolidatedSensitivityView = memo(
   ({
     opCoAssumptions,
@@ -101,8 +139,9 @@ export const ConsolidatedSensitivityView = memo(
     projConfig,
     groups,
     setOpCoAssumptions,
+    selectedPresetId = "baseline",
+    setSelectedPresetId,
   }: any) => {
-    const [selectedPresetId, setSelectedPresetId] = useState("baseline");
     const [matrixMetric, setMatrixMetric] = useState<"irr" | "npv" | "cash">("irr");
 
     const currentPreset = useMemo(() => {
@@ -218,36 +257,21 @@ export const ConsolidatedSensitivityView = memo(
 
     // 2D Matrix calculations
     const borMaxSteps = useMemo(() => {
-      const base = opCoAssumptions.borMax;
-      return [
-        Math.max(30, base - 15),
-        Math.max(35, base - 10),
-        Math.max(40, base - 5),
-        base,
-        Math.min(95, base + 5),
-        Math.min(100, base + 10),
-      ];
-    }, [opCoAssumptions.borMax]);
+      const base = presetOpCoAssumptions.borMax;
+      return generateShiftingSequence(base, 5, 6, 30, 100);
+    }, [presetOpCoAssumptions.borMax]);
 
     const borIncrementSteps = useMemo(() => {
-      const base = opCoAssumptions.borIncrement;
-      return [
-        Math.max(1, base - 3),
-        Math.max(2, base - 2),
-        Math.max(3, base - 1),
-        base,
-        Math.min(15, base + 1),
-        Math.min(20, base + 2),
-        Math.min(25, base + 3),
-      ];
-    }, [opCoAssumptions.borIncrement]);
+      const base = presetOpCoAssumptions.borIncrement;
+      return generateShiftingSequence(base, 1, 7, 1, 25);
+    }, [presetOpCoAssumptions.borIncrement]);
 
     const matrixData = useMemo(() => {
       return borMaxSteps.map((maxBor) => {
         return borIncrementSteps.map((inc) => {
           const tempOpCo = runOpCoEngine(
             {
-              ...opCoAssumptions,
+              ...presetOpCoAssumptions,
               borMax: maxBor,
               borIncrement: inc,
               devDurationMonths: resolvedDevDuration,
@@ -263,7 +287,7 @@ export const ConsolidatedSensitivityView = memo(
           const tempCons = runConsolidatedEngine(
             tempOpCo,
             tempPropCo,
-            opCoAssumptions,
+            presetOpCoAssumptions,
             holdCoAssumptions
           );
 
@@ -279,7 +303,7 @@ export const ConsolidatedSensitivityView = memo(
     }, [
       borMaxSteps,
       borIncrementSteps,
-      opCoAssumptions,
+      presetOpCoAssumptions,
       propCoAssumptions,
       holdCoAssumptions,
       resolvedDevDuration,
@@ -643,10 +667,10 @@ export const ConsolidatedSensitivityView = memo(
                     <th
                       key={i}
                       className={`p-2 text-[9.5px] font-black border-b border-r last:border-r-0 border-[#D8D8D8] bg-[#EFEBE7] sticky top-0 z-20 ${
-                        inc === opCoAssumptions.borIncrement ? "text-[#1C6048] ring-1 ring-[#1C6048]" : "text-[#1E2F31]"
+                        inc === presetOpCoAssumptions.borIncrement ? "text-[#1C6048] ring-1 ring-[#1C6048]" : "text-[#1E2F31]"
                       }`}
                     >
-                      {inc}% p.a. {inc === opCoAssumptions.borIncrement && "(Base)"}
+                      {inc}% p.a. {inc === presetOpCoAssumptions.borIncrement && (selectedPresetId === "baseline" ? "(Base)" : "(Active)")}
                     </th>
                   ))}
                 </tr>
@@ -656,15 +680,15 @@ export const ConsolidatedSensitivityView = memo(
                   <tr key={r}>
                     <th
                       className={`p-2 text-[9.5px] font-black border-r border-b border-[#D8D8D8] bg-[#F9F8F6] text-left whitespace-nowrap sticky left-0 z-10 ${
-                        maxBor === opCoAssumptions.borMax ? "text-[#1C6048] ring-1 ring-[#1C6048]" : "text-[#1E2F31]"
+                        maxBor === presetOpCoAssumptions.borMax ? "text-[#1C6048] ring-1 ring-[#1C6048]" : "text-[#1E2F31]"
                       }`}
                     >
-                      {maxBor}% stabilized {maxBor === opCoAssumptions.borMax && "(Base)"}
+                      {maxBor}% stabilized {maxBor === presetOpCoAssumptions.borMax && (selectedPresetId === "baseline" ? "(Base)" : "(Active)")}
                     </th>
                     {matrixData[r].map((val, c) => {
                       const isBaseIntersection =
-                        borMaxSteps[r] === opCoAssumptions.borMax &&
-                        borIncrementSteps[c] === opCoAssumptions.borIncrement;
+                        borMaxSteps[r] === presetOpCoAssumptions.borMax &&
+                        borIncrementSteps[c] === presetOpCoAssumptions.borIncrement;
 
                       let displayedText = "";
                       if (matrixMetric === "irr") {
@@ -692,7 +716,7 @@ export const ConsolidatedSensitivityView = memo(
                             <span>{displayedText}</span>
                             {isBaseIntersection && (
                               <span className="absolute -top-1.5 -right-1 bg-[#1E2F31] text-[6px] text-[#E6D3AF] font-bold px-0.5 rounded border border-[#D8D8D8]">
-                                Base
+                                {selectedPresetId === "baseline" ? "Base" : "Active"}
                               </span>
                             )}
                           </div>
