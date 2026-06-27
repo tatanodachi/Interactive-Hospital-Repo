@@ -4536,49 +4536,63 @@ export default function App() {
             {/* PILLAR 3: SECONDARY LAYER NAV (Tabs / Module Selection) */}
             <div className="order-2 md:order-3 col-span-1 flex justify-end min-w-0 w-full md:w-auto md:flex-1">
               {activeGroup !== "summary" && (
-                <div className="flex p-1 bg-[#EFEBE7] rounded-lg gap-1 overflow-x-auto border border-[#D8D8D8] max-w-full items-center custom-scrollbar">
+                <div className="flex p-1 bg-[#EFEBE7] rounded-xl border border-[#D8D8D8] max-w-full items-center custom-scrollbar">
                   {activeGroup === "context" ? (
-                    <>
-                      <NavButton
-                        active={activeTab === "overview"}
+                    <div className="relative grid grid-cols-3 z-0 w-[180px] sm:w-[300px]">
+                      <div 
+                        className="absolute top-0 bottom-0 w-1/3 bg-white rounded-lg shadow-sm border border-[#D8D8D8] transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] -z-10"
+                        style={{
+                          transform: `translateX(${activeTab === 'overview' ? 0 : activeTab === 'study' ? 100 : 200}%)`,
+                        }}
+                      ></div>
+                      
+                      <button
                         onClick={() => setActiveTab("overview")}
-                        icon={<FileText size={14} />}
-                        label="Overview"
-                      />
-                      <NavButton
-                        active={activeTab === "study"}
+                        className={`flex items-center justify-center gap-1.5 sm:gap-2 py-1.5 px-1 text-xs font-bold transition-colors ${activeTab === "overview" ? "text-[#1E2F31]" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                      >
+                        <FileText size={14} className="shrink-0" /> <span className="hidden sm:inline truncate">Overview</span>
+                      </button>
+                      <button
                         onClick={() => setActiveTab("study")}
-                        icon={<BookOpen size={14} />}
-                        label="Study"
-                      />
-                      <NavButton
-                        active={activeTab === "collab"}
+                        className={`flex items-center justify-center gap-1.5 sm:gap-2 py-1.5 px-1 text-xs font-bold transition-colors ${activeTab === "study" ? "text-[#1E2F31]" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                      >
+                        <BookOpen size={14} className="shrink-0" /> <span className="hidden sm:inline truncate">Study</span>
+                      </button>
+                      <button
                         onClick={() => setActiveTab("collab")}
-                        icon={<Network size={14} />}
-                        label="Collab"
-                      />
-                    </>
+                        className={`flex items-center justify-center gap-1.5 sm:gap-2 py-1.5 px-1 text-xs font-bold transition-colors ${activeTab === "collab" ? "text-[#1E2F31]" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                      >
+                        <Network size={14} className="shrink-0" /> <span className="hidden sm:inline truncate">Collab</span>
+                      </button>
+                    </div>
                   ) : (
-                    <>
-                      <NavButton
-                        active={activeCompany === "opco"}
+                    <div className="relative grid grid-cols-3 z-0 w-[180px] sm:w-[300px]">
+                      <div 
+                        className="absolute top-0 bottom-0 w-1/3 bg-white rounded-lg shadow-sm border border-[#D8D8D8] transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] -z-10"
+                        style={{
+                          transform: `translateX(${activeCompany === 'opco' ? 0 : activeCompany === 'propco' ? 100 : 200}%)`,
+                        }}
+                      ></div>
+                      
+                      <button
                         onClick={() => handleCompanyChange("opco")}
-                        icon={<Activity size={14} />}
-                        label="OpCo"
-                      />
-                      <NavButton
-                        active={activeCompany === "propco"}
+                        className={`flex items-center justify-center gap-1.5 sm:gap-2 py-1.5 px-1 text-xs font-bold transition-colors ${activeCompany === "opco" ? "text-[#1E2F31]" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                      >
+                        <Activity size={14} className="shrink-0" /> <span className="hidden sm:inline truncate">OpCo</span>
+                      </button>
+                      <button
                         onClick={() => handleCompanyChange("propco")}
-                        icon={<Building2 size={14} />}
-                        label="PropCo"
-                      />
-                      <NavButton
-                        active={activeCompany === "consolidated"}
+                        className={`flex items-center justify-center gap-1.5 sm:gap-2 py-1.5 px-1 text-xs font-bold transition-colors ${activeCompany === "propco" ? "text-[#1E2F31]" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                      >
+                        <Building2 size={14} className="shrink-0" /> <span className="hidden sm:inline truncate">PropCo</span>
+                      </button>
+                      <button
                         onClick={() => handleCompanyChange("consolidated")}
-                        icon={<Layers size={14} />}
-                        label="HoldCo"
-                      />
-                    </>
+                        className={`flex items-center justify-center gap-1.5 sm:gap-2 py-1.5 px-1 text-xs font-bold transition-colors ${activeCompany === "consolidated" ? "text-[#1E2F31]" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                      >
+                        <Layers size={14} className="shrink-0" /> <span className="hidden sm:inline truncate">HoldCo</span>
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
@@ -5098,89 +5112,122 @@ export default function App() {
 
         {/* The Panel */}
         <div
-          className={`bg-white border border-[#D8D8D8] rounded-2xl shadow-xl w-72 overflow-hidden transition-all duration-300 origin-bottom-left ${
+          className={`bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl shadow-[0_8px_32px_rgba(30,47,49,0.1)] w-72 overflow-hidden transition-all duration-300 origin-bottom-left ${
             isFloatingPanelVisible
               ? "opacity-100 scale-100 translate-y-0 pointer-events-auto"
               : "opacity-0 scale-95 translate-y-4 pointer-events-none"
           }`}
         >
-          <div className="bg-[#EFEBE7] px-4 py-3 border-b border-[#D8D8D8]">
+          <div className="bg-[#EFEBE7]/50 px-4 py-3 border-b border-[#D8D8D8]/50">
             <h4 className="text-[11px] uppercase font-bold tracking-wider text-[#1E2F31] flex items-center gap-1.5">
               <Settings size={14} /> Global Model Settings
             </h4>
           </div>
-          <div className="p-4 space-y-4">
-            {/* Toggle Item: Bank Debt */}
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
-                <Landmark size={14} className="text-[#9B8B70]" /> PropCo Bank Debt
-              </span>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  checked={propCoAssumptions?.includeFinancing || false}
-                  onChange={(e) =>
-                    handlePropCoChange("includeFinancing", e.target.checked)
-                  }
-                />
-                <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
-              </label>
+          <div className="p-4 space-y-5 max-h-[70vh] overflow-y-auto custom-scrollbar">
+            {/* Group: Financing */}
+            <div className="space-y-3">
+              <h5 className="text-[9px] uppercase tracking-widest text-[#9B8B70] font-bold border-b border-[#D8D8D8]/50 pb-1 mb-2">Financing</h5>
+              {/* Toggle Item: Bank Debt */}
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
+                  <Landmark size={14} className="text-[#9B8B70]" /> PropCo Bank Debt
+                </span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={propCoAssumptions?.includeFinancing || false}
+                    onChange={(e) =>
+                      handlePropCoChange("includeFinancing", e.target.checked)
+                    }
+                  />
+                  <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
+                </label>
+              </div>
+              {/* Toggle Item: HoldCo Bank Debt */}
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
+                  <Landmark size={14} className="text-[#9B8B70]" /> HoldCo Bank Debt
+                </span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={holdCoAssumptions?.includeFinancing || false}
+                    onChange={(e) =>
+                      handleHoldCoChange("includeFinancing", e.target.checked)
+                    }
+                  />
+                  <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
+                </label>
+              </div>
             </div>
-            {/* Toggle Item: HoldCo Bank Debt */}
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
-                <Landmark size={14} className="text-[#9B8B70]" /> HoldCo Bank Debt
-              </span>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  checked={holdCoAssumptions?.includeFinancing || false}
-                  onChange={(e) =>
-                    handleHoldCoChange("includeFinancing", e.target.checked)
-                  }
-                />
-                <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
-              </label>
+
+            {/* Group: Property & Land */}
+            <div className="space-y-3">
+              <h5 className="text-[9px] uppercase tracking-widest text-[#9B8B70] font-bold border-b border-[#D8D8D8]/50 pb-1 mb-2">Property & Land</h5>
+              {/* Toggle Item: Land Cost */}
+              <div className="flex items-center justify-between">
+                <span className={`text-[11px] font-medium flex items-center gap-1.5 ${propCoAssumptions?.isLandLeased ? "text-[#4C4A4B]/40" : "text-[#4C4A4B]"}`}>
+                  <Map size={14} className="text-[#9B8B70]" /> Include Land Cost
+                </span>
+                <label className={`relative inline-flex items-center ${propCoAssumptions?.isLandLeased ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    disabled={propCoAssumptions?.isLandLeased || false}
+                    checked={(propCoAssumptions?.includeLand ?? true) && !propCoAssumptions?.isLandLeased}
+                    onChange={(e) =>
+                      handlePropCoChange("includeLand", e.target.checked)
+                    }
+                  />
+                  <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
+                </label>
+              </div>
+              {/* Toggle Item: Land Lease */}
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
+                  <Building size={14} className="text-[#9B8B70]" /> Lease Land Instead of Buy
+                </span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={propCoAssumptions?.isLandLeased ?? false}
+                    onChange={(e) =>
+                      handlePropCoChange("isLandLeased", e.target.checked)
+                    }
+                  />
+                  <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
+                </label>
+              </div>
             </div>
-            {/* Toggle Item: Land Cost */}
-            <div className="flex items-center justify-between">
-              <span className={`text-[11px] font-medium flex items-center gap-1.5 ${propCoAssumptions?.isLandLeased ? "text-[#4C4A4B]/40" : "text-[#4C4A4B]"}`}>
-                <Map size={14} className="text-[#9B8B70]" /> Include Land Cost
-              </span>
-              <label className={`relative inline-flex items-center ${propCoAssumptions?.isLandLeased ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  disabled={propCoAssumptions?.isLandLeased || false}
-                  checked={(propCoAssumptions?.includeLand ?? true) && !propCoAssumptions?.isLandLeased}
-                  onChange={(e) =>
-                    handlePropCoChange("includeLand", e.target.checked)
-                  }
-                />
-                <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
-              </label>
-            </div>
-            {/* Toggle Item: Land Lease */}
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
-                <Building size={14} className="text-[#9B8B70]" /> Lease Land Instead of Buy
-              </span>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  checked={propCoAssumptions?.isLandLeased ?? false}
-                  onChange={(e) =>
-                    handlePropCoChange("isLandLeased", e.target.checked)
-                  }
-                />
-                <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
-              </label>
-            </div>
-            {/* Symmetrical Exit Locks */}
-            <div className="space-y-2 pt-2 border-t border-[#D8D8D8]/50">
+
+            {/* Group: Exit Strategies */}
+            <div className="space-y-3">
+              <h5 className="text-[9px] uppercase tracking-widest text-[#9B8B70] font-bold border-b border-[#D8D8D8]/50 pb-1 mb-2">Exit Strategies</h5>
+              {/* Symmetrical Exit Locks */}
+              {/* Lock Master to PropCo */}
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
+                  <Lock
+                    size={14}
+                    className={
+                      holdCoLocked ? "text-[#1C6048]" : "text-[#4C4A4B]/40"
+                    }
+                  />{" "}
+                  Lock Master to PropCo
+                </span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={holdCoLocked}
+                    onChange={toggleHoldCoLock}
+                  />
+                  <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
+                </label>
+              </div>
               {/* Lock PropCo to Master */}
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
@@ -5202,80 +5249,80 @@ export default function App() {
                   <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
                 </label>
               </div>
-            </div>
-            {/* Dropdown: Master Exit Strategy */}
-            <div className="flex items-center justify-between mt-2">
-              <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
-                <Target
-                  size={14}
-                  className={
-                    holdCoLocked ? "text-[#1C6048]/50" : "text-[#1C6048]"
-                  }
-                />{" "}
-                Master Exit
-                {holdCoLocked && <Lock size={10} className="text-[#1C6048]" />}
-              </span>
-              <select
-                disabled={holdCoLocked}
-                className={`w-[130px] text-[10px] rounded p-1 font-bold focus:outline-none transition-all ${
-                  holdCoLocked
-                    ? "bg-[#EFEBE7]/80 text-[#9B8B70] cursor-not-allowed border-[#D8D8D8]"
-                    : "bg-white border border-[#D8D8D8] text-[#1E2F31] focus:border-[#1C6048]"
-                }`}
-                value={holdCoScenario}
-                onChange={(e) => setHoldCoScenario(e.target.value)}
-              >
-                <option value="manual">Manual (Settings)</option>
-                <option value="yr10">Exit in Yr 10</option>
-                <option value="breakeven">Exit at Breakeven</option>
-                <option
-                  value="debt_free"
-                  disabled={
-                    !propCoAssumptions?.includeFinancing &&
-                    !holdCoAssumptions?.includeFinancing
-                  }
+              {/* Dropdown: Master Exit Strategy */}
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
+                  <Target
+                    size={14}
+                    className={
+                      holdCoLocked ? "text-[#1C6048]/50" : "text-[#1C6048]"
+                    }
+                  />{" "}
+                  Master Exit
+                  {holdCoLocked && <Lock size={10} className="text-[#1C6048]" />}
+                </span>
+                <select
+                  disabled={holdCoLocked}
+                  className={`w-[130px] text-[10px] rounded p-1 font-bold focus:outline-none transition-all ${
+                    holdCoLocked
+                      ? "bg-[#EFEBE7]/80 text-[#9B8B70] cursor-not-allowed border-[#D8D8D8]"
+                      : "bg-white border border-[#D8D8D8] text-[#1E2F31] focus:border-[#1C6048]"
+                  }`}
+                  value={holdCoScenario}
+                  onChange={(e) => setHoldCoScenario(e.target.value)}
                 >
-                  Exit Post-Debt
-                </option>
-                <option value="none">No Exit (Yield)</option>
-              </select>
-            </div>
-            {/* Dropdown: PropCo Exit Strategy */}
-            <div className="flex items-center justify-between mt-2">
-              <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
-                <Target
-                  size={14}
-                  className={
-                    propCoLocked ? "text-[#9B8B70]/50" : "text-[#9B8B70]"
-                  }
-                />{" "}
-                PropCo Exit
-                {propCoLocked && <Lock size={10} className="text-[#9B8B70]" />}
-              </span>
-              <select
-                disabled={propCoLocked}
-                className={`w-[130px] text-[10px] rounded p-1 font-bold focus:outline-none transition-all ${
-                  propCoLocked
-                    ? "bg-[#EFEBE7]/80 text-[#9B8B70] cursor-not-allowed border-[#D8D8D8]"
-                    : "bg-white border border-[#D8D8D8] text-[#1E2F31] focus:border-[#1C6048]"
-                }`}
-                value={propCoScenario}
-                onChange={(e) => setPropCoScenario(e.target.value)}
-              >
-                <option value="manual">Manual (Settings)</option>
-                <option value="yr10">Exit in Yr 10</option>
-                <option value="breakeven">Exit at Breakeven</option>
-                <option
-                  value="debt_free"
-                  disabled={
-                    !propCoAssumptions?.includeFinancing &&
-                    !holdCoAssumptions?.includeFinancing
-                  }
+                  <option value="manual">Manual (Settings)</option>
+                  <option value="yr10">Exit in Yr 10</option>
+                  <option value="breakeven">Exit at Breakeven</option>
+                  <option
+                    value="debt_free"
+                    disabled={
+                      !propCoAssumptions?.includeFinancing &&
+                      !holdCoAssumptions?.includeFinancing
+                    }
+                  >
+                    Exit Post-Debt
+                  </option>
+                  <option value="none">No Exit (Yield)</option>
+                </select>
+              </div>
+              {/* Dropdown: PropCo Exit Strategy */}
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
+                  <Target
+                    size={14}
+                    className={
+                      propCoLocked ? "text-[#9B8B70]/50" : "text-[#9B8B70]"
+                    }
+                  />{" "}
+                  PropCo Exit
+                  {propCoLocked && <Lock size={10} className="text-[#9B8B70]" />}
+                </span>
+                <select
+                  disabled={propCoLocked}
+                  className={`w-[130px] text-[10px] rounded p-1 font-bold focus:outline-none transition-all ${
+                    propCoLocked
+                      ? "bg-[#EFEBE7]/80 text-[#9B8B70] cursor-not-allowed border-[#D8D8D8]"
+                      : "bg-white border border-[#D8D8D8] text-[#1E2F31] focus:border-[#1C6048]"
+                  }`}
+                  value={propCoScenario}
+                  onChange={(e) => setPropCoScenario(e.target.value)}
                 >
-                  Exit Post-Debt
-                </option>
-                <option value="none">No Exit (Yield)</option>
-              </select>
+                  <option value="manual">Manual (Settings)</option>
+                  <option value="yr10">Exit in Yr 10</option>
+                  <option value="breakeven">Exit at Breakeven</option>
+                  <option
+                    value="debt_free"
+                    disabled={
+                      !propCoAssumptions?.includeFinancing &&
+                      !holdCoAssumptions?.includeFinancing
+                    }
+                  >
+                    Exit Post-Debt
+                  </option>
+                  <option value="none">No Exit (Yield)</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
