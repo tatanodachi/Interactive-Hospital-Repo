@@ -632,28 +632,30 @@ function generateCascadeSheet(
 
       // Handle Total column specifically
       if (isTotalColumn) {
-        if (!rowConf.key || !totals || totals[rowConf.key] === undefined) {
-          cell.value = "";
-        } else {
-          let rawResult = totals[rowConf.key] || 0;
-          rawResult = rowConf.isSubtractor ? -Math.abs(rawResult) : rawResult;
+        let rawResult = (rowConf.key && totals && totals[rowConf.key] !== undefined) ? totals[rowConf.key] || 0 : 0;
+        rawResult = rowConf.isSubtractor ? -Math.abs(rawResult) : rawResult;
 
-          if (rowConf.type === "formula" && rowConf.formulaCreator) {
-            cell.value = {
-              formula: rowConf.formulaCreator(colLetter, rowIndices),
-              result: rawResult,
-            };
-          } else if (rowConf.type !== "percent") {
-            const startCol = getColLetter(2);
-            const endCol = getColLetter(colIdx - 1);
-            cell.value = {
-              formula: `SUM(${startCol}${cell.row}:${endCol}${cell.row})`,
-              result: rawResult,
-            };
-          } else {
-            // Percent types with a total but no formula
+        if (rowConf.type === "formula" && rowConf.formulaCreator) {
+          cell.value = {
+            formula: rowConf.formulaCreator(colLetter, rowIndices),
+            result: rawResult,
+          };
+        } else if (rowConf.type === "currency" || rowConf.type === "number") {
+          const startCol = getColLetter(2);
+          const endCol = getColLetter(colIdx - 1);
+          cell.value = {
+            formula: `SUM(${startCol}${cell.row}:${endCol}${cell.row})`,
+            result: rawResult,
+          };
+        } else if (rowConf.type === "percent") {
+          // Percent types with a total but no formula
+          if (rowConf.key && totals && totals[rowConf.key] !== undefined) {
             cell.value = rawResult / 100;
+          } else {
+            cell.value = "";
           }
+        } else {
+          cell.value = "";
         }
       } else {
         // Handle custom formula injection for year columns
@@ -749,6 +751,7 @@ export const exportToExcel = async (
     { label: "Inpatient Cases", key: "ipCases", type: "number" as const },
     { label: "Outpatient Visits", key: "opVisits", type: "number" as const },
 
+    { label: "1. Clinical Profit & Loss (P&L)", type: "subheader" as const },
     { label: "Operating Revenue Items", type: "subheader" as const },
     {
       label: "Inpatient Clinical Revenue",
@@ -792,7 +795,7 @@ export const exportToExcel = async (
       type: "formula" as const,
       highlight: true,
       formulaCreator: (col: string, rows: Record<string, number>) =>
-        `${col}${rows.totalnetrevenue} - ${col}${rows.medicalsuppliesconsumables} - ${col}${rows.doctorprofessionalfees}`,
+        `${col}${rows.totalclinicalrevenues} + ${col}${rows.medicalsuppliesconsumables} + ${col}${rows.doctorprofessionalfees}`,
     },
 
     { label: "Operating Expenditures (OPEX)", type: "subheader" as const },
@@ -804,38 +807,45 @@ export const exportToExcel = async (
       isSubtractor: true,
     },
     {
-      label: "Administrative Expense",
+      label: "Other OpEx",
+      key: "otherOpex",
+      type: "currency" as const,
+      indent: 1,
+      isSubtractor: true,
+    },
+    {
+      label: "  └─ Administrative Expense",
       key: "adminOpex",
       type: "currency" as const,
-      indent: 1,
+      indent: 2,
       isSubtractor: true,
     },
     {
-      label: "Utilities Expense",
+      label: "  └─ Utilities Expense",
       key: "utilOpex",
       type: "currency" as const,
-      indent: 1,
+      indent: 2,
       isSubtractor: true,
     },
     {
-      label: "Marketing Expense",
+      label: "  └─ Marketing Expense",
       key: "mktgOpex",
       type: "currency" as const,
-      indent: 1,
+      indent: 2,
       isSubtractor: true,
     },
     {
-      label: "Hospital Operator Fee",
+      label: "  └─ Hospital Operator Fee",
       key: "operatorOpex",
       type: "currency" as const,
-      indent: 1,
+      indent: 2,
       isSubtractor: true,
     },
     {
-      label: "Operational Insurance",
+      label: "  └─ Operational Insurance",
       key: "insOpex",
       type: "currency" as const,
-      indent: 1,
+      indent: 2,
       isSubtractor: true,
     },
     {
@@ -844,7 +854,7 @@ export const exportToExcel = async (
       type: "formula" as const,
       highlight: true,
       formulaCreator: (col: string, rows: Record<string, number>) =>
-        `${col}${rows.grossprofitmargin} - ${col}${rows.clinicaladministrativestaffing} - ${col}${rows.administrativeexpense} - ${col}${rows.utilitiesexpense} - ${col}${rows.marketingexpense} - ${col}${rows.hospitaloperatorfee} - ${col}${rows.operationalinsurance}`,
+        `${col}${rows.grossprofitmargin} + ${col}${rows.clinicaladministrativestaffing} + ${col}${rows.otheropex}`,
     },
     {
       label: "EBITDAR Margin (%)",
@@ -870,7 +880,27 @@ export const exportToExcel = async (
       type: "formula" as const,
       highlight: true,
       formulaCreator: (col: string, rows: Record<string, number>) =>
-        `${col}${rows.ebitdar} - ${col}${rows.buildingrental}`,
+        `${col}${rows.ebitdar} + ${col}${rows.buildingrental}`,
+    },
+    {
+      label: "Interest Expense",
+      key: "interest",
+      type: "currency" as const,
+      indent: 1,
+      isSubtractor: true,
+    },
+    {
+      label: "Principal Repayment",
+      key: "principal",
+      type: "currency" as const,
+      indent: 1,
+      isSubtractor: true,
+    },
+    {
+      label: "Ending Debt Balance",
+      key: "debtBalance",
+      type: "currency" as const,
+      indent: 1,
     },
     {
       label: "Corporate Income Tax",
@@ -886,7 +916,7 @@ export const exportToExcel = async (
       highlight: true,
       emerald: true,
       formulaCreator: (col: string, rows: Record<string, number>) =>
-        `${col}${rows.ebitda} - ${col}${rows.corporateincometax}`,
+        `${col}${rows.ebitda} + ${col}${rows.interestexpense} + ${col}${rows.corporateincometax}`,
     },
     {
       label: "Net Profit Margin (%)",
@@ -896,11 +926,11 @@ export const exportToExcel = async (
       emerald: true,
       percent: true,
       formulaCreator: (col: string, rows: Record<string, number>) =>
-        `IF(${col}${rows.totalnetrevenue}=0, 0, ${col}${rows.netoperatingincome} / ${col}${rows.totalnetrevenue})`,
+        `IF(${col}${rows.totalclinicalrevenues}=0, 0, ${col}${rows.netoperatingincome} / ${col}${rows.totalclinicalrevenues})`,
     },
 
     {
-      label: "Clinical Cash Flows (Statement of Cash Flows)",
+      label: "2. Clinical Cash Flows",
       type: "subheader" as const,
     },
     {
@@ -909,7 +939,7 @@ export const exportToExcel = async (
       type: "formula" as const,
       highlight: true,
       formulaCreator: (col: string, rows: Record<string, number>) =>
-        `${col}${rows.netoperatingincome}`,
+        `${col}${rows.cashinflowsclinicalrevenues} - ${col}${rows.cashoutflowsoperatingopextax}`,
     },
     {
       label: "Cash Inflows (Clinical Revenues)",
@@ -926,17 +956,87 @@ export const exportToExcel = async (
     {
       label: "Cash Outflows (Operating OPEX & Tax)",
       key: "cfo_out",
-      type: "formula" as const,
+      type: "currency" as const,
       indent: 1,
       isSubtractor: true,
-      formulaCreator: (col: string, rows: Record<string, number>) =>
-        `${col}${rows.netcashfromoperatingcfo} - ${col}${rows.cashinflowsclinicalrevenues}`,
+    },
+    {
+      label: "  └─ Medical Supplies",
+      key: "totalMedSupp",
+      type: "currency" as const,
+      indent: 2,
+      isSubtractor: true,
+    },
+    {
+      label: "  └─ Doctor Fees",
+      key: "totalDocFee",
+      type: "currency" as const,
+      indent: 2,
+      isSubtractor: true,
+    },
+    {
+      label: "  └─ Staffing Costs",
+      key: "staffCost",
+      type: "currency" as const,
+      indent: 2,
+      isSubtractor: true,
+    },
+    {
+      label: "  └─ Administrative Expense",
+      key: "adminOpex",
+      type: "currency" as const,
+      indent: 2,
+      isSubtractor: true,
+    },
+    {
+      label: "  └─ Utilities Expense",
+      key: "utilOpex",
+      type: "currency" as const,
+      indent: 2,
+      isSubtractor: true,
+    },
+    {
+      label: "  └─ Marketing Expense",
+      key: "mktgOpex",
+      type: "currency" as const,
+      indent: 2,
+      isSubtractor: true,
+    },
+    {
+      label: "  └─ Hospital Operator Fee",
+      key: "operatorOpex",
+      type: "currency" as const,
+      indent: 2,
+      isSubtractor: true,
+    },
+    {
+      label: "  └─ Operational Insurance",
+      key: "insOpex",
+      type: "currency" as const,
+      indent: 2,
+      isSubtractor: true,
+    },
+    {
+      label: "  └─ Facility Lease Rent",
+      key: "rent",
+      type: "currency" as const,
+      indent: 2,
+      isSubtractor: true,
+    },
+    {
+      label: "  └─ Corporate Income Tax",
+      key: "tax",
+      type: "currency" as const,
+      indent: 2,
+      isSubtractor: true,
     },
     {
       label: "Net Cash from Investing (CFI)",
       key: "cfi",
-      type: "currency" as const,
+      type: "formula" as const,
       highlight: true,
+      formulaCreator: (col: string, rows: Record<string, number>) =>
+        `${col}${rows.cashinflowsexitproceeds} - ${col}${rows.cashoutflowssetupworkingcapitalcapex}`,
     },
     {
       label: "Cash Inflows (Exit Proceeds)",
@@ -964,22 +1064,51 @@ export const exportToExcel = async (
       isSubtractor: true,
     },
     {
-      label: "Net Cash from Financing (CFF)",
-      key: "cff",
+      label: "  └─ Pre-Operating Setups & Work Capital",
+      key: "cfi_out",
       type: "currency" as const,
-      highlight: true,
+      indent: 2,
+      isSubtractor: true,
     },
     {
-      label: "Cash Inflows (Sponsor Equity)",
+      label: "Net Cash from Financing (CFF)",
+      key: "cff",
+      type: "formula" as const,
+      highlight: true,
+      formulaCreator: (col: string, rows: Record<string, number>) =>
+        `${col}${rows.cashinflowssponsorequitycontributions} - ${col}${rows.cashoutflowspartnerdistributionsdividends}`,
+    },
+    {
+      label: "Cash Inflows (Sponsor Equity Contributions)",
       key: "cff_in",
       type: "currency" as const,
       indent: 1,
     },
     {
-      label: "Cash Outflows (Partner Dividends & Exit)",
+      label: "  └─ Sponsor Equity",
+      key: "cff_in",
+      type: "currency" as const,
+      indent: 2,
+    },
+    {
+      label: "Cash Outflows (Partner Distributions & Dividends)",
       key: "cff_out",
       type: "currency" as const,
       indent: 1,
+      isSubtractor: true,
+    },
+    {
+      label: "  └─ Clinical Free Cash Flow Distributions",
+      key: "distributions",
+      type: "currency" as const,
+      indent: 2,
+      isSubtractor: true,
+    },
+    {
+      label: "  └─ Debt Principal Repayments",
+      key: "principal",
+      type: "currency" as const,
+      indent: 2,
       isSubtractor: true,
     },
     {
@@ -1014,7 +1143,7 @@ export const exportToExcel = async (
       },
     },
 
-    { label: "Sponsor Cascade & Returns", type: "subheader" as const },
+    { label: "3. OpCo Capital Cascade & Returns", type: "subheader" as const },
     {
       label: "Cumulative Net Income",
       key: "cumNI",
@@ -1131,6 +1260,7 @@ export const exportToExcel = async (
 
   // 3. Generate PropCo Cascade Sheet
   const propCoRowsConfig = [
+    { label: "1. Property P&L & Debt Service", type: "subheader" as const },
     { label: "Revenues & Operating Yields", type: "subheader" as const },
     {
       label: "Lease Revenue (PropCo Lease)",
@@ -1192,7 +1322,7 @@ export const exportToExcel = async (
       type: "formula" as const,
       highlight: true,
       formulaCreator: (col: string, rows: Record<string, number>) =>
-        `${col}${rows.leaserevenuepropcolease} - ${col}${rows.preopeningdevexpenses} - ${col}${rows.facilitymaintenanceopex} - ${col}${rows.propertytax} - ${col}${rows.managementoverheadopex} - ${col}${rows.equipmentleaseopex}`,
+        `${col}${rows.leaserevenuepropcolease} + ${col}${rows.preopeningdevexpenses} + ${col}${rows.facilitymaintenanceopex} + ${col}${rows.propertytax} + ${col}${rows.managementoverheadopex} + ${col}${rows.equipmentleaseopex}`,
     },
     {
       label: "FF&E Reserve Allocation",
@@ -1207,7 +1337,7 @@ export const exportToExcel = async (
       type: "formula" as const,
       highlight: true,
       formulaCreator: (col: string, rows: Record<string, number>) =>
-        `${col}${rows.grossoperatingprofitgop} - ${col}${rows.ffereserveallocation}`,
+        `${col}${rows.grossoperatingprofitgop} + ${col}${rows.ffereserveallocation}`,
     },
 
     { label: "Depreciation (D&A)", type: "subheader" as const },
@@ -1284,7 +1414,7 @@ export const exportToExcel = async (
       type: "formula" as const,
       highlight: true,
       formulaCreator: (col: string, rows: Record<string, number>) =>
-        `${col}${rows.ebit} - ${col}${rows.interestexpensedebt}`,
+        `${col}${rows.ebit} + ${col}${rows.interestexpensedebt}`,
     },
     {
       label: "Corporate Income Tax",
@@ -1299,7 +1429,7 @@ export const exportToExcel = async (
       type: "formula" as const,
       highlight: true,
       formulaCreator: (col: string, rows: Record<string, number>) =>
-        `${col}${rows.ebt} - ${col}${rows.corporateincometax}`,
+        `${col}${rows.ebt} + ${col}${rows.corporateincometax}`,
     },
 
     { label: "Debt Service & Exit", type: "subheader" as const },
@@ -1338,11 +1468,65 @@ export const exportToExcel = async (
     {
       label: "Cash Outflows (Maint, Reserves, Interest & Taxes)",
       key: "cfo_out",
-      type: "formula" as const,
+      type: "currency" as const,
       indent: 1,
       isSubtractor: true,
-      formulaCreator: (col: string, rows: Record<string, number>) =>
-        `${col}${rows.netcashfromoperatingcfo} - ${col}${rows.cashinflowsopcoleaserentals}`,
+    },
+    {
+      label: "  └─ Facility Maintenance OPEX",
+      key: "maintOpex",
+      type: "currency" as const,
+      indent: 2,
+      isSubtractor: true,
+    },
+    {
+      label: "  └─ FF&E Reserve Allocation",
+      key: "ffeReserve",
+      type: "currency" as const,
+      indent: 2,
+      isSubtractor: true,
+    },
+    {
+      label: "  └─ Interest Expense (Debt)",
+      key: "interest",
+      type: "currency" as const,
+      indent: 2,
+      isSubtractor: true,
+    },
+    {
+      label: "  └─ Corporate Income Tax",
+      key: "corpTax",
+      type: "currency" as const,
+      indent: 2,
+      isSubtractor: true,
+    },
+    {
+      label: "  └─ Pre-Opening & Dev Expenses",
+      key: "preOpeningDev",
+      type: "currency" as const,
+      indent: 2,
+      isSubtractor: true,
+    },
+    {
+      label: "  └─ Management / Overhead OPEX",
+      key: "overheadOpex",
+      type: "currency" as const,
+      indent: 2,
+      isSubtractor: true,
+    },
+    {
+      label: "  └─ Property Tax",
+      key: "taxOpex",
+      type: "currency" as const,
+      indent: 2,
+      isSubtractor: true,
+    },
+    {
+      label: "  └─ Equipment Lease OPEX",
+      key: "medEqLeaseOpex",
+      type: "currency" as const,
+      indent: 2,
+      isSubtractor: true,
     },
     {
       label: "Net Cash from Investing (CFI)",
@@ -1549,7 +1733,7 @@ export const exportToExcel = async (
       indent: 1,
     },
 
-    { label: "Return Metrics", type: "subheader" as const },
+    { label: "3. Property Capex & Returns", type: "subheader" as const },
     {
       label: "Deferred MedEq Purchase",
       key: "deferredCapex",
@@ -1625,121 +1809,439 @@ export const exportToExcel = async (
   // 4. Generate Consolidated Cascade Sheet
   const consRowsConfig = [
     {
-      label: "PropCo Cascade look-through cash flows",
+      label: "1. Look-Through P&L",
       type: "subheader" as const,
     },
     {
-      label: "PropCo Investment Capital Flows",
-      key: "propCoInvestmentFlow",
-      type: "currency" as const,
-    },
-    {
-      label: "PropCo Operating Lease Flows",
-      key: "propCoOperatingFlow",
-      type: "currency" as const,
-    },
-    {
-      label: "PropCo Exit Event Liquidity",
-      key: "propCoExitFlow",
-      type: "currency" as const,
-    },
-    {
-      label: "PropCo Flow (Total Look-through)",
-      key: "propCoFlow",
-      type: "formula" as const,
-      formulaCreator: (col: string, rows: Record<string, number>) =>
-        `${col}${rows.propcoinvestmentcapitalflows} + ${col}${rows.propcooperatingleaseflows} + ${col}${rows.propcoexiteventliquidity}`,
-    },
-
-    {
-      label: "OpCo Cascade look-through cash flows",
-      type: "subheader" as const,
-    },
-    {
-      label: "OpCo Inception & Working Capital Outlay",
-      key: "opCoInvestmentFlow",
-      type: "currency" as const,
-    },
-    {
-      label: "OpCo Operating Dividend Dividends",
-      key: "opCoOperatingDividendFlow",
-      type: "currency" as const,
-    },
-    {
-      label: "OpCo Exit & Business Valuation Liquidity",
-      key: "opCoExitFlow",
-      type: "currency" as const,
-    },
-    {
-      label: "OpCo Flow (Total Look-through)",
-      key: "opCoFlow",
-      type: "formula" as const,
-      formulaCreator: (col: string, rows: Record<string, number>) =>
-        `${col}${rows.opcoinceptionworkingcapitaloutlay} + ${col}${rows.opcooperatingdividenddividends} + ${col}${rows.opcoexitbusinessvaluationliquidity}`,
-    },
-
-    { label: "Combined Consolidated Cash Flows", type: "subheader" as const },
-    {
-      label: "Total Net Cash Flow (Project FCF)",
-      key: "netFlow",
+      label: "Look-Through Combined Revenue",
+      key: "lookThroughRevenue",
       type: "formula" as const,
       highlight: true,
       formulaCreator: (col: string, rows: Record<string, number>) =>
-        `${col}${rows.propcoflowtotallookthrough} + ${col}${rows.opcoflowtotallookthrough}`,
+        `${col}${rows.propcorentalrevenue100share} + ${col}${rows.opconetclinicalrevenue49share}`,
     },
     {
-      label: "Consolidated DSCR Cash Buffer",
-      key: "dscrBuffer",
+      label: "  └─ PropCo Rental Revenue (100% Share)",
+      key: "pRevenue",
       type: "currency" as const,
+      indent: 1,
     },
     {
-      label: "Cumulative Cash Flow",
-      key: "cumCf",
+      label: "  └─ OpCo Net Clinical Revenue (49% Share)",
+      key: "oRevenueShare",
+      type: "currency" as const,
+      indent: 1,
+    },
+    {
+      label: "Look-Through Combined EBITDA",
+      key: "lookThroughEbitda",
+      type: "formula" as const,
+      highlight: true,
+      formulaCreator: (col: string, rows: Record<string, number>) =>
+        `${col}${rows.propcoebitda100share} + ${col}${rows.opcoebitda49share}`,
+    },
+    {
+      label: "  └─ PropCo EBITDA (100% Share)",
+      key: "pEbitdaVal",
+      type: "currency" as const,
+      indent: 1,
+    },
+    {
+      label: "  └─ OpCo EBITDA (49% Share)",
+      key: "oEbitdaShare",
+      type: "currency" as const,
+      indent: 1,
+    },
+    {
+      label: "Look-Through Combined Net Income",
+      key: "lookThroughNetIncome",
+      type: "formula" as const,
+      highlight: true,
+      formulaCreator: (col: string, rows: Record<string, number>) =>
+        `${col}${rows.propconetincome100share} + ${col}${rows.opconetincome49share}`,
+    },
+    {
+      label: "  └─ PropCo Net Income (100% Share)",
+      key: "pNetIncome",
+      type: "currency" as const,
+      indent: 1,
+    },
+    {
+      label: "  └─ OpCo Net Income (49% Share)",
+      key: "oNetIncomeShare",
+      type: "currency" as const,
+      indent: 1,
+    },
+    {
+      label: "Blended Combined Net Margin (%)",
+      key: "lookThroughMargin",
       type: "formula" as const,
       highlight: true,
       indigo: true,
-      bold: true,
-      formulaCreator: (col: string, rows: Record<string, number>) => {
-        if (col === "B") {
-          return `${col}${rows.totalnetcashflowprojectfcf}`;
-        }
-        const prevCol = String.fromCharCode(col.charCodeAt(0) - 1);
-        return `${prevCol}${rows.cumulativecashflow} + ${col}${rows.totalnetcashflowprojectfcf}`;
-      },
+      percent: true,
+      formulaCreator: (col: string, rows: Record<string, number>) =>
+        `IF(${col}${rows.lookthroughcombinedrevenue}=0, 0, ${col}${rows.lookthroughcombinednetincome} / ${col}${rows.lookthroughcombinedrevenue})`,
     },
 
     {
-      label: "Combined Look-through Performance Metrics",
+      label: "2. Look-Through Cash Flows",
       type: "subheader" as const,
     },
     {
-      label: "Consolidated Pro-Forma Revenue",
-      key: "lookThroughRevenue",
+      label: "1. Cash Flow from Operating Activities",
+      type: "subheader" as const,
+    },
+    {
+      label: "Look-Through Combined Operating EBITDA",
+      key: "ltEbitda",
       type: "currency" as const,
     },
     {
-      label: "Consolidated Look-through EBITDA",
-      key: "lookThroughEbitda",
+      label: "Less: Corporate Income Taxes Paid",
+      key: "ltTax",
       type: "currency" as const,
+      isSubtractor: true,
     },
     {
-      label: "Consolidated Look-through Net Income",
-      key: "lookThroughNetIncome",
-      type: "currency" as const,
-    },
-    {
-      label: "Consolidated Look-through Margin (%)",
-      key: "lookThroughMargin",
-      type: "percent" as const,
+      label: "Net Cash from Operating Activities (CFO)",
+      key: "ltCfo",
+      type: "formula" as const,
       highlight: true,
+      indigo: true,
+      formulaCreator: (col: string, rows: Record<string, number>) =>
+        `${col}${rows.lookthroughcombinedoperatingebitda} + ${col}${rows.lesscorporateincometaxespaid}`,
+    },
+
+    {
+      label: "2. Cash Flow from Investing Activities",
+      type: "subheader" as const,
+    },
+    {
+      label: "Look-Through Construction Capex & Setups",
+      key: "ltCapex",
+      type: "currency" as const,
+      isSubtractor: true,
+    },
+    {
+      label: "Look-Through Capital Disposal / Exit Proceeds",
+      key: "ltExit",
+      type: "currency" as const,
+    },
+    {
+      label: "Net Cash from Investing Activities (CFI)",
+      key: "ltCfi",
+      type: "formula" as const,
+      highlight: true,
+      indigo: true,
+      formulaCreator: (col: string, rows: Record<string, number>) =>
+        `${col}${rows.lookthroughcapitaldisposalexitproceeds} + ${col}${rows.lookthroughconstructioncapexsetups}`,
+    },
+
+    {
+      label: "3. Cash Flow from Financing Activities",
+      type: "subheader" as const,
+    },
+    {
+      label: "PropCo Debt Financing",
+      key: "pCffPay",
+      type: "formula" as const,
+      formulaCreator: (col: string, rows: Record<string, number>) =>
+        `${col}${rows.propcodebtdrawdown} + ${col}${rows.lesspropcoprincipalamortization} + ${col}${rows.lesspropcobankinterestpaid}`,
+    },
+    {
+      label: "  └─ PropCo Debt Drawdown",
+      key: "pDebtDraw",
+      type: "currency" as const,
+      indent: 1,
+    },
+    {
+      label: "  └─ Less: PropCo Principal Amortization",
+      key: "pDebtPrincipal",
+      type: "currency" as const,
+      indent: 1,
+      isSubtractor: true,
+    },
+    {
+      label: "  └─ Less: PropCo Bank Interest Paid",
+      key: "pDebtInterest",
+      type: "currency" as const,
+      indent: 1,
+      isSubtractor: true,
+    },
+    {
+      label: "OpCo Debt Financing",
+      key: "oCffPay",
+      type: "formula" as const,
+      formulaCreator: (col: string, rows: Record<string, number>) =>
+        `${col}${rows.opcodebtdrawdown} + ${col}${rows.lessopcoprincipalamortization} + ${col}${rows.lessopcobankinterestpaid}`,
+    },
+    {
+      label: "  └─ OpCo Debt Drawdown",
+      key: "oDebtDraw",
+      type: "currency" as const,
+      indent: 1,
+    },
+    {
+      label: "  └─ Less: OpCo Principal Amortization",
+      key: "oDebtPrincipal",
+      type: "currency" as const,
+      indent: 1,
+      isSubtractor: true,
+    },
+    {
+      label: "  └─ Less: OpCo Bank Interest Paid",
+      key: "oDebtInterest",
+      type: "currency" as const,
+      indent: 1,
+      isSubtractor: true,
+    },
+    {
+      label: "Sponsor Equity Inflows & Contributions",
+      key: "ltSponsor",
+      type: "currency" as const,
+    },
+    {
+      label: "Net Cash from Financing Activities (CFF)",
+      key: "ltCff",
+      type: "formula" as const,
+      highlight: true,
+      indigo: true,
+      formulaCreator: (col: string, rows: Record<string, number>) =>
+        `${col}${rows.propcodebtfinancing} + ${col}${rows.opcodebtfinancing} + ${col}${rows.sponsorequityinflowscontributions}`,
+    },
+
+    {
+      label: "Net Cash Flow (Consolidated)",
+      key: "ltFlow",
+      type: "formula" as const,
+      highlight: true,
+      emerald: true,
+      formulaCreator: (col: string, rows: Record<string, number>) =>
+        `${col}${rows.netcashfromoperatingactivitiescfo} + ${col}${rows.netcashfrominvestingactivitiescfi} + ${col}${rows.netcashfromfinancingactivitiescff}`,
+    },
+    {
+      label: "Cumulative Cash Balance (Consolidated)",
+      key: "ltCash",
+      type: "formula" as const,
+      highlight: true,
+      emerald: true,
+      bold: true,
+      formulaCreator: (col: string, rows: Record<string, number>) => {
+        if (col === "B") {
+          return `${col}${rows.netcashflowconsolidated}`;
+        }
+        const prevCol = String.fromCharCode(col.charCodeAt(0) - 1);
+        return `${prevCol}${rows.cumulativecashbalanceconsolidated} + ${col}${rows.netcashflowconsolidated}`;
+      },
+    },
+    {
+      label: "3. Look-Through Cascade & Waterfall",
+      type: "subheader" as const,
+    },
+    {
+      label: "Sponsor Cascade 1: Real Estate Partner (100% PropCo FCFE)",
+      type: "subheader" as const,
+    },
+    {
+      label: "  └─ PropCo Investment",
+      key: "propCoDevCapex",
+      type: "currency" as const,
+      indent: 1,
+      isSubtractor: true,
+    },
+    {
+      label: "  └─ PropCo Operating FCFE",
+      key: "propCoFcfe",
+      type: "currency" as const,
+      indent: 1,
+    },
+    {
+      label: "  └─ PropCo Exit Proceeds",
+      key: "propCoExitProceeds",
+      type: "currency" as const,
+      indent: 1,
+    },
+    {
+      label: "Sponsor Cascade 2: Clinical Operator (49% OpCo Dividends)",
+      type: "subheader" as const,
+    },
+    {
+      label: "  └─ OpCo Investment",
+      key: "opCoCapexVal",
+      type: "currency" as const,
+      indent: 1,
+      isSubtractor: true,
+    },
+    {
+      label: "  └─ OpCo Operating Dividend",
+      key: "opCoDividendVal",
+      type: "currency" as const,
+      indent: 1,
+    },
+    {
+      label: "  └─ OpCo Exit Proceeds",
+      key: "opCoExitProceedsVal",
+      type: "currency" as const,
+      indent: 1,
+    },
+    {
+      label: "Cumulative Real Estate Sponsor Cash Flow",
+      key: "pSponsorFlow",
+      type: "formula" as const,
+      highlight: true,
+      indigo: true,
+      formulaCreator: (col: string, rows: Record<string, number>) => {
+        if (col === "B") {
+          return `${col}${rows.propcooperatingfcfe} + ${col}${rows.propcoexitproceeds} - ${col}${rows.propcoinvestment}`;
+        }
+        const prevCol = String.fromCharCode(col.charCodeAt(0) - 1);
+        return `${prevCol}${rows.cumulativerealestatesponsorcashflow} + (${col}${rows.propcooperatingfcfe} + ${col}${rows.propcoexitproceeds} - ${col}${rows.propcoinvestment})`;
+      },
+    },
+    {
+      label: "Cumulative Clinical Operator Sponsor Cash Flow",
+      key: "oSponsorFlow",
+      type: "formula" as const,
+      highlight: true,
+      indigo: true,
+      formulaCreator: (col: string, rows: Record<string, number>) => {
+        if (col === "B") {
+          return `${col}${rows.opcooperatingdividend} + ${col}${rows.opcoexitproceeds} - ${col}${rows.opcoinvestment}`;
+        }
+        const prevCol = String.fromCharCode(col.charCodeAt(0) - 1);
+        return `${prevCol}${rows.cumulativeclinicaloperatorsponsorcashflow} + (${col}${rows.opcooperatingdividend} + ${col}${rows.opcoexitproceeds} - ${col}${rows.opcoinvestment})`;
+      },
+    },
+    {
+      label: "Cumulative HoldCo Cash Flow",
+      key: "totalSponsorFlow",
+      type: "formula" as const,
+      highlight: true,
+      emerald: true,
+      bold: true,
+      formulaCreator: (col: string, rows: Record<string, number>) => {
+        if (col === "B") {
+          return `${col}${rows.cumulativerealestatesponsorcashflow} + ${col}${rows.cumulativeclinicaloperatorsponsorcashflow}`;
+        }
+        const prevCol = String.fromCharCode(col.charCodeAt(0) - 1);
+        return `${prevCol}${rows.cumulativeholdcocashflow} + (${col}${rows.propcooperatingfcfe} + ${col}${rows.propcoexitproceeds} - ${col}${rows.propcoinvestment}) + (${col}${rows.opcooperatingdividend} + ${col}${rows.opcoexitproceeds} - ${col}${rows.opcoinvestment})`;
+      },
     },
   ];
+
+  const sharePct = (100 - (opCoAssumptions?.sharingPercentA || 51)) / 100;
+  
+  const enrichedConsolidatedData = consolidatedData.annualData.map((ann: any, i: number) => {
+    const oY = opCoData.annualData[i] || {};
+    const pY = propCoData.annualData[i] || {};
+    
+    const pRevenue = pY.revenue || 0;
+    const oRevenueShare = (oY.totalRev || 0) * sharePct;
+    
+    const pEbitdaVal = pY.ebitda || 0;
+    const oEbitdaShare = (oY.ebitda || 0) * sharePct;
+    const ltEbitda = pEbitdaVal + oEbitdaShare;
+    
+    const pNetIncome = pY.netIncome || 0;
+    const oNetIncomeShare = (oY.netIncome || 0) * sharePct;
+    
+    const pTax = pY.tax || 0;
+    const oTax = oY.tax || 0;
+    const ltTax = pTax + oTax * sharePct;
+    const ltCfo = ltEbitda - ltTax;
+    
+    const pLand = pY.landSpend || 0;
+    const pHard = pY.hardSpend || 0;
+    const pSoft = pY.softSpend || 0;
+    const pDevGa = pY.devGa || 0;
+    const pDevCar = pY.devCar || 0;
+    const pConInt = pY.conInt || 0;
+    const ltPropCoCapex = pLand + pHard + pSoft + pDevGa + pDevCar + pConInt;
+    const ltOpCoCapex = oY.pB_Outlay || 0;
+    const ltCapex = ltPropCoCapex + ltOpCoCapex;
+    
+    const ltExit = (pY.exit || 0) + (oY.pB_Exit || 0);
+    const ltCfi = -ltCapex + ltExit;
+    
+    const pDebtDraw = pY.debtDraw || 0;
+    const pDebtPrincipal = pY.principal || 0;
+    const pDebtInterest = pY.interest || 0;
+    const pCffPay = pDebtDraw - pDebtPrincipal - pDebtInterest;
+    
+    const oDebtDraw = oY.debtDraw || 0;
+    const oDebtPrincipal = oY.principal || 0;
+    const oDebtInterest = oY.interest || 0;
+    const oCffPay = oDebtDraw - oDebtPrincipal - oDebtInterest;
+    
+    const hDebtDraw = ann.holdCoDebtDraw || 0;
+    const hPrincipal = ann.holdCoPrincipal || 0;
+    const hInterest = ann.holdCoInterest || 0;
+    
+    const ltDebtDraw = pDebtDraw + oDebtDraw + hDebtDraw;
+    const ltDebtPrincipal = pDebtPrincipal + oDebtPrincipal + hPrincipal;
+    const ltDebtInterest = pDebtInterest + oDebtInterest + hInterest;
+    const ltCffPay = ltDebtDraw - ltDebtPrincipal - ltDebtInterest;
+    
+    const ltSponsor = 0; 
+    const ltCff = ltCffPay + ltSponsor;
+    
+    const ltFlow = ltCfo + ltCfi + ltCff;
+    
+    const propCoDevCapex = pY.totalSpend || 0;
+    const propCoFcfe = pY.fcfe || 0;
+    const propCoExitProceeds = pY.exit || 0;
+    const pSponsorFlow = propCoFcfe + propCoExitProceeds - propCoDevCapex;
+    
+    const opCoCapexVal = (oY.cfi_out || 0) * sharePct;
+    const opCoDividendVal = (oY.distributions || 0) * sharePct;
+    const opCoExitProceedsVal = oY.pB_Exit || 0;
+    const oSponsorFlow = opCoDividendVal + opCoExitProceedsVal - opCoCapexVal;
+    
+    const totalSponsorFlow = pSponsorFlow + oSponsorFlow;
+    
+    return {
+      ...ann,
+      pRevenue,
+      oRevenueShare,
+      pEbitdaVal,
+      oEbitdaShare,
+      ltEbitda,
+      pNetIncome,
+      oNetIncomeShare,
+      ltTax,
+      ltCfo,
+      ltCapex,
+      ltExit,
+      ltCfi,
+      pDebtDraw,
+      pDebtPrincipal,
+      pDebtInterest,
+      pCffPay,
+      oDebtDraw,
+      oDebtPrincipal,
+      oDebtInterest,
+      oCffPay,
+      ltSponsor,
+      ltCff,
+      ltFlow,
+      ltCash: ann.cumCf,
+      propCoDevCapex,
+      propCoFcfe,
+      propCoExitProceeds,
+      pSponsorFlow,
+      opCoCapexVal,
+      opCoDividendVal,
+      opCoExitProceedsVal,
+      oSponsorFlow,
+      totalSponsorFlow
+    };
+  });
 
   generateCascadeSheet(
     workbook,
     "Consolidated",
     "Consolidated Cascade Model - Multi-Entity Look-Through Performance",
-    consolidatedData.annualData || [],
+    enrichedConsolidatedData,
     consolidatedData.totals || {},
     consRowsConfig,
   );
