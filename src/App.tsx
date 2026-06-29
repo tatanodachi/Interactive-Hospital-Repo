@@ -2819,7 +2819,56 @@ style.textContent = `
 document.head.appendChild(style);
 
 const SettingsPasswordGate = ({ children }) => {
-  return <>{children}</>;
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState(false);
+  
+  // Set REQUIRE_PASSWORD to true to enforce password, false to bypass
+  const REQUIRE_PASSWORD = true; 
+  const CORRECT_PASSWORD = "admin"; // Change this to your desired password
+
+  if (!REQUIRE_PASSWORD || isAuthenticated) {
+    return <>{children}</>;
+  }
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (password === CORRECT_PASSWORD) {
+      setIsAuthenticated(true);
+      setError(false);
+    } else {
+      setError(true);
+      setPassword("");
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center p-12 h-full bg-[#F9F8F6] border-b border-[#D8D8D8]">
+      <div className="bg-white p-8 rounded-xl shadow-sm border border-[#D8D8D8] max-w-sm w-full text-center">
+        <Lock className="mx-auto text-[#1C6048] mb-4" size={32} />
+        <h3 className="text-lg font-bold text-[#1E2F31] mb-2">Restricted Access</h3>
+        <p className="text-xs text-[#4C4A4B] mb-6">Please enter the administrator password to access the Financial Engine Settings.</p>
+        
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Enter password..."
+            className="px-3 py-2 text-sm border border-[#D8D8D8] rounded focus:outline-none focus:border-[#1C6048]"
+            autoFocus
+          />
+          {error && <span className="text-red-500 text-xs">Incorrect password</span>}
+          <button 
+            type="submit"
+            className="bg-[#1E2F31] text-white px-4 py-2 text-sm font-bold uppercase rounded hover:bg-[#1C6048] transition-colors"
+          >
+            Unlock Settings
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 };
 
 export const useMonthlyColumns = (annualData, viewResolution = "annual") => {

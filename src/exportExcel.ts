@@ -635,7 +635,9 @@ function generateCascadeSheet(
         let rawResult = (rowConf.key && totals && totals[rowConf.key] !== undefined) ? totals[rowConf.key] || 0 : 0;
         rawResult = rowConf.isSubtractor ? -Math.abs(rawResult) : rawResult;
 
-        if (rowConf.type === "formula" && rowConf.formulaCreator) {
+        if (rowConf.label.toLowerCase().includes("cumulative")) {
+          cell.value = "";
+        } else if (rowConf.type === "formula" && rowConf.formulaCreator) {
           cell.value = {
             formula: rowConf.formulaCreator(colLetter, rowIndices),
             result: rawResult,
@@ -2020,7 +2022,74 @@ export const exportToExcel = async (
         `${col}${rows.netcashfromoperatingactivitiescfo} + ${col}${rows.netcashfrominvestingactivitiescfi} + ${col}${rows.netcashfromfinancingactivitiescff}`,
     },
     {
-      label: "Cumulative Cash Balance (Consolidated)",
+      label: "HOLDCO CASH FLOW RECONCILIATION",
+      type: "subheader" as const,
+    },
+    {
+      label: "Look-Through Proxy Cash Flow (CFO + CFI + CFF)",
+      key: "ltCfoCfiCffSum",
+      type: "currency" as const,
+      highlight: true,
+      emerald: true,
+    },
+    {
+      label: "OpCo Retained Earnings & Non-Cash Adjustments",
+      key: "holdCoAdjustment",
+      type: "currency" as const,
+      indent: 1,
+    },
+    {
+      label: "  └─ PropCo Timing & Non-Cash Adjustments",
+      key: "adjPropCo",
+      type: "currency" as const,
+      indent: 2,
+    },
+    {
+      label: "  └─ OpCo Retained Earnings & Debt Distributable Adjustment",
+      key: "adjOpCo",
+      type: "currency" as const,
+      indent: 2,
+    },
+    {
+      label: "      └─ Add: OpCo Distributable Cash Share",
+      key: "adjOpCoDistributableShare",
+      type: "currency" as const,
+      indent: 3,
+    },
+    {
+      label: "      └─ Less: OpCo Net Income Share",
+      key: "adjOpCoNetIncomeShare",
+      type: "currency" as const,
+      indent: 3,
+      isSubtractor: true,
+    },
+    {
+      label: "      └─ Add / (Less): OpCo Non-Cash & Expense Adjustments",
+      key: "adjOpCoNonCash",
+      type: "currency" as const,
+      indent: 3,
+    },
+    {
+      label: "      └─ Add / (Less): OpCo Debt Financing Flows",
+      key: "adjOpCoDebt",
+      type: "currency" as const,
+      indent: 3,
+    },
+    {
+      label: "NET DISTRIBUTABLE HOLDCO CASH FLOW",
+      key: "holdCoCashFlowAfterDebt",
+      type: "currency" as const,
+      highlight: true,
+      emerald: true,
+      bold: true,
+    },
+    {
+      label: "Consolidated DSCR Cash Buffer",
+      key: "dscrBuffer",
+      type: "currency" as const,
+    },
+    {
+      label: "Cumulative Combined Cash Position",
       key: "ltCash",
       type: "formula" as const,
       highlight: true,
@@ -2028,11 +2097,63 @@ export const exportToExcel = async (
       bold: true,
       formulaCreator: (col: string, rows: Record<string, number>) => {
         if (col === "B") {
-          return `${col}${rows.netcashflowconsolidated}`;
+          return `${col}${rows.netdistributableholdcocashflow}`;
         }
         const prevCol = String.fromCharCode(col.charCodeAt(0) - 1);
-        return `${prevCol}${rows.cumulativecashbalanceconsolidated} + ${col}${rows.netcashflowconsolidated}`;
+        return `${prevCol}${rows.cumulativecombinedcashposition} + ${col}${rows.netdistributableholdcocashflow}`;
       },
+    },
+    {
+      label: "HoldCo Cash Available for Outflows",
+      key: "netFlow",
+      type: "currency" as const,
+      highlight: true,
+      emerald: true,
+    },
+    {
+      label: "of which: HoldCo Operating Shortfall Equity",
+      key: "netFlowShortfall",
+      type: "currency" as const,
+      indent: 1,
+    },
+    {
+      label: "HoldCo Debt Drawdown",
+      key: "holdCoDebtDraw",
+      type: "currency" as const,
+      indent: 1,
+    },
+    {
+      label: "HoldCo Interest Expense",
+      key: "holdCoInterest",
+      type: "currency" as const,
+      indent: 1,
+      isSubtractor: true,
+    },
+    {
+      label: "HoldCo Principal Repayment",
+      key: "holdCoPrincipal",
+      type: "currency" as const,
+      indent: 1,
+      isSubtractor: true,
+    },
+    {
+      label: "HoldCo Debt Balance",
+      key: "holdCoDebtBalance",
+      type: "currency" as const,
+      indent: 1,
+    },
+    {
+      label: "HoldCo Cash Flow (After Debt)",
+      key: "holdCoCashFlowAfterDebt",
+      type: "currency" as const,
+      bold: true,
+      highlight: true,
+    },
+    {
+      label: "of which: HoldCo Operating Shortfall Equity",
+      key: "holdCoCashFlowAfterDebtShortfall",
+      type: "currency" as const,
+      indent: 1,
     },
     {
       label: "3. Look-Through Cascade & Waterfall",
@@ -2092,10 +2213,10 @@ export const exportToExcel = async (
       indigo: true,
       formulaCreator: (col: string, rows: Record<string, number>) => {
         if (col === "B") {
-          return `${col}${rows.propcooperatingfcfe} + ${col}${rows.propcoexitproceeds} - ${col}${rows.propcoinvestment}`;
+          return `${col}${rows.propcooperatingfcfe} + ${col}${rows.propcoexitproceeds} + ${col}${rows.propcoinvestment}`;
         }
         const prevCol = String.fromCharCode(col.charCodeAt(0) - 1);
-        return `${prevCol}${rows.cumulativerealestatesponsorcashflow} + (${col}${rows.propcooperatingfcfe} + ${col}${rows.propcoexitproceeds} - ${col}${rows.propcoinvestment})`;
+        return `${prevCol}${rows.cumulativerealestatesponsorcashflow} + (${col}${rows.propcooperatingfcfe} + ${col}${rows.propcoexitproceeds} + ${col}${rows.propcoinvestment})`;
       },
     },
     {
@@ -2106,10 +2227,10 @@ export const exportToExcel = async (
       indigo: true,
       formulaCreator: (col: string, rows: Record<string, number>) => {
         if (col === "B") {
-          return `${col}${rows.opcooperatingdividend} + ${col}${rows.opcoexitproceeds} - ${col}${rows.opcoinvestment}`;
+          return `${col}${rows.opcooperatingdividend} + ${col}${rows.opcoexitproceeds} + ${col}${rows.opcoinvestment}`;
         }
         const prevCol = String.fromCharCode(col.charCodeAt(0) - 1);
-        return `${prevCol}${rows.cumulativeclinicaloperatorsponsorcashflow} + (${col}${rows.opcooperatingdividend} + ${col}${rows.opcoexitproceeds} - ${col}${rows.opcoinvestment})`;
+        return `${prevCol}${rows.cumulativeclinicaloperatorsponsorcashflow} + (${col}${rows.opcooperatingdividend} + ${col}${rows.opcoexitproceeds} + ${col}${rows.opcoinvestment})`;
       },
     },
     {
@@ -2121,10 +2242,10 @@ export const exportToExcel = async (
       bold: true,
       formulaCreator: (col: string, rows: Record<string, number>) => {
         if (col === "B") {
-          return `${col}${rows.cumulativerealestatesponsorcashflow} + ${col}${rows.cumulativeclinicaloperatorsponsorcashflow}`;
+          return `${col}${rows.netdistributableholdcocashflow}`;
         }
         const prevCol = String.fromCharCode(col.charCodeAt(0) - 1);
-        return `${prevCol}${rows.cumulativeholdcocashflow} + (${col}${rows.propcooperatingfcfe} + ${col}${rows.propcoexitproceeds} - ${col}${rows.propcoinvestment}) + (${col}${rows.opcooperatingdividend} + ${col}${rows.opcoexitproceeds} - ${col}${rows.opcoinvestment})`;
+        return `${prevCol}${rows.cumulativeholdcocashflow} + ${col}${rows.netdistributableholdcocashflow}`;
       },
     },
   ];
@@ -2187,18 +2308,34 @@ export const exportToExcel = async (
     
     const ltFlow = ltCfo + ltCfi + ltCff;
     
-    const propCoDevCapex = pY.totalSpend || 0;
-    const propCoFcfe = pY.fcfe || 0;
-    const propCoExitProceeds = pY.exit || 0;
-    const pSponsorFlow = propCoFcfe + propCoExitProceeds - propCoDevCapex;
+    const propCoDevCapex = ann.propCoInvestmentFlow || 0;
+    const propCoFcfe = ann.propCoOperatingFlow || 0;
+    const propCoExitProceeds = ann.propCoExitFlow || 0;
+    const pSponsorFlow = ann.propCoFlow || 0;
     
-    const opCoCapexVal = (oY.cfi_out || 0) * sharePct;
-    const opCoDividendVal = (oY.distributions || 0) * sharePct;
-    const opCoExitProceedsVal = oY.pB_Exit || 0;
-    const oSponsorFlow = opCoDividendVal + opCoExitProceedsVal - opCoCapexVal;
+    const opCoCapexVal = ann.opCoInvestmentFlow || 0;
+    const opCoDividendVal = ann.opCoOperatingDividendFlow || 0;
+    const opCoExitProceedsVal = ann.opCoExitFlow || 0;
+    const oSponsorFlow = ann.opCoFlow || 0;
     
-    const totalSponsorFlow = pSponsorFlow + oSponsorFlow;
+    const totalSponsorFlow = ann.netFlow || 0;
     
+    // Add missing HoldCo reconciliation fields
+    const ltCfoCfiCffSum = ann.ltCfoCfiCffSum || 0;
+    const holdCoAdjustment = ann.holdCoAdjustment || 0;
+    const adjPropCo = ann.adjPropCo || 0;
+    const adjOpCo = ann.adjOpCo || 0;
+    const adjOpCoDistributableShare = ann.adjOpCoDistributableShare || 0;
+    const adjOpCoNetIncomeShare = ann.adjOpCoNetIncomeShare || 0;
+    const adjOpCoNonCash = ann.adjOpCoNonCash || 0;
+    const adjOpCoDebt = ann.adjOpCoDebt || 0;
+    const holdCoCashFlowAfterDebt = ann.holdCoCashFlowAfterDebt || 0;
+    const dscrBuffer = ann.dscrBuffer || 0;
+    const netFlow = ann.netFlow || 0;
+    const netFlowShortfall = ann.netFlowShortfall || 0;
+    const holdCoDebtBalance = ann.holdCoDebtBalance || 0;
+    const holdCoCashFlowAfterDebtShortfall = ann.holdCoCashFlowAfterDebtShortfall || 0;
+
     return {
       ...ann,
       pRevenue,
@@ -2233,7 +2370,24 @@ export const exportToExcel = async (
       opCoDividendVal,
       opCoExitProceedsVal,
       oSponsorFlow,
-      totalSponsorFlow
+      totalSponsorFlow,
+      ltCfoCfiCffSum,
+      holdCoAdjustment,
+      adjPropCo,
+      adjOpCo,
+      adjOpCoDistributableShare,
+      adjOpCoNetIncomeShare,
+      adjOpCoNonCash,
+      adjOpCoDebt,
+      holdCoCashFlowAfterDebt,
+      dscrBuffer,
+      netFlow,
+      netFlowShortfall,
+      holdCoDebtDraw: hDebtDraw,
+      holdCoInterest: hInterest,
+      holdCoPrincipal: hPrincipal,
+      holdCoDebtBalance,
+      holdCoCashFlowAfterDebtShortfall
     };
   });
 
