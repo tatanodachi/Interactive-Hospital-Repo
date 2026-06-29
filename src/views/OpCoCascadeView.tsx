@@ -15,6 +15,8 @@ import {
   Info,
   List,
   ChevronLeft,
+  ChevronsUpDown,
+  ChevronsDownUp,
 } from "lucide-react";
 import {
   ComposedChart,
@@ -65,6 +67,17 @@ export const OpCoCascadeView = memo(
       (assumptions?.jvaOpex ?? 2.5) +
       (assumptions?.commOpex ?? 15.0) +
       (assumptions?.workingCapitalOpex ?? 64.671175);
+
+    const allExpanded =
+      expandedCfo &&
+      expandedCfoIn &&
+      expandedCfoOut &&
+      expandedCfi &&
+      expandedCfiIn &&
+      expandedCfiOut &&
+      expandedCff &&
+      expandedCffIn &&
+      expandedCffOut;
 
     const renderTableHeaders = () => (
       <thead className="bg-[#EFEBE7] font-bold sticky top-0 z-[50] shadow-md">
@@ -272,6 +285,25 @@ export const OpCoCascadeView = memo(
                     Monthly
                   </button>
                 </div>
+                <button
+                  onClick={() => {
+                    const newState = !allExpanded;
+                    setExpandedCfo(newState);
+                    setExpandedCfoIn(newState);
+                    setExpandedCfoOut(newState);
+                    setExpandedCfi(newState);
+                    setExpandedCfiIn(newState);
+                    setExpandedCfiOut(newState);
+                    setExpandedCff(newState);
+                    setExpandedCffIn(newState);
+                    setExpandedCffOut(newState);
+                  }}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded bg-white border border-[#D8D8D8] text-[#4C4A4B] shadow-sm hover:text-[#1E2F31] hover:bg-[#F9F8F6] transition-colors text-[10px] font-bold uppercase tracking-wider"
+                  title={allExpanded ? "Collapse All Items" : "Expand All Items"}
+                >
+                  {allExpanded ? <ChevronsUpDown size={12} /> : <ChevronsDownUp size={12} />}
+                  <span className="hidden sm:inline">{allExpanded ? "Collapse" : "Expand"}</span>
+                </button>
                 <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm">
                   <button
                     onClick={() => {
@@ -318,7 +350,7 @@ export const OpCoCascadeView = memo(
                     </h3>
                   </div>
                   <div
-                    className={`custom-scrollbar relative opco-table-scroll ${viewMode === "all" ? "overflow-x-auto" : "overflow-auto max-h-[calc(100vh-320px)]"}`}
+                    className={`custom-scrollbar table-scrollbar-offset relative opco-table-scroll ${viewMode === "all" ? "overflow-x-auto" : "overflow-auto max-h-[calc(100vh-320px)]"}`}
                   >
                     <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
                       {renderTableHeaders()}
@@ -427,6 +459,7 @@ export const OpCoCascadeView = memo(
                           data={columns}
                           parentTooltip={OPCO_FORMULAS.recurringOpex}
                           isSubtractor
+                          forceExpanded={allExpanded}
                           childrenData={[
                             {
                               label: "Administrative Expense",
@@ -591,7 +624,7 @@ export const OpCoCascadeView = memo(
                     </h3>
                   </div>
                   <div
-                    className={`custom-scrollbar relative opco-table-scroll ${viewMode === "all" ? "overflow-x-auto" : "overflow-auto max-h-[calc(100vh-320px)]"}`}
+                    className={`custom-scrollbar table-scrollbar-offset relative opco-table-scroll ${viewMode === "all" ? "overflow-x-auto" : "overflow-auto max-h-[calc(100vh-320px)]"}`}
                   >
                     <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
                       {renderTableHeaders()}
@@ -969,7 +1002,7 @@ export const OpCoCascadeView = memo(
                     </h3>
                   </div>
                   <div
-                    className={`custom-scrollbar relative opco-table-scroll ${viewMode === "all" ? "overflow-x-auto" : "overflow-auto max-h-[calc(100vh-320px)]"}`}
+                    className={`custom-scrollbar table-scrollbar-offset relative opco-table-scroll ${viewMode === "all" ? "overflow-x-auto" : "overflow-auto max-h-[calc(100vh-320px)]"}`}
                   >
                     <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
                       {renderTableHeaders()}

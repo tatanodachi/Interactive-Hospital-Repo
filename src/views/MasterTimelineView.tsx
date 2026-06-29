@@ -1205,7 +1205,7 @@ const MasterTimelineView = memo(({ isPresenting, groups, setGroups }) => {
           </div>
           <div
             ref={timelineScrollRef}
-            className="overflow-auto custom-scrollbar w-full flex-1"
+            className="overflow-auto custom-scrollbar timeline-scrollbar-offset w-full flex-1"
           >
             <div
               style={{ width: `${totalTimelineWidth}px` }}

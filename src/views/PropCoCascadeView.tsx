@@ -16,6 +16,8 @@ import {
   List,
   ChevronLeft,
   Map,
+  ChevronsUpDown,
+  ChevronsDownUp,
 } from "lucide-react";
 import {
   ComposedChart,
@@ -86,6 +88,17 @@ export const PropCoCascadeView = memo(
     const [expandedCff, setExpandedCff] = useState(false);
     const [expandedCffIn, setExpandedCffIn] = useState(false);
     const [expandedCffOut, setExpandedCffOut] = useState(false);
+
+    const allExpanded =
+      expandedCfo &&
+      expandedCfoIn &&
+      expandedCfoOut &&
+      expandedCfi &&
+      expandedCfiIn &&
+      expandedCfiOut &&
+      expandedCff &&
+      expandedCffIn &&
+      expandedCffOut;
 
     const renderTableHeaders = () => (
       <thead className="bg-[#EFEBE7] font-bold sticky top-0 z-[50] shadow-md">
@@ -355,6 +368,25 @@ export const PropCoCascadeView = memo(
                     Monthly
                   </button>
                 </div>
+                <button
+                  onClick={() => {
+                    const newState = !allExpanded;
+                    setExpandedCfo(newState);
+                    setExpandedCfoIn(newState);
+                    setExpandedCfoOut(newState);
+                    setExpandedCfi(newState);
+                    setExpandedCfiIn(newState);
+                    setExpandedCfiOut(newState);
+                    setExpandedCff(newState);
+                    setExpandedCffIn(newState);
+                    setExpandedCffOut(newState);
+                  }}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded bg-white border border-[#D8D8D8] text-[#4C4A4B] shadow-sm hover:text-[#1E2F31] hover:bg-[#F9F8F6] transition-colors text-[10px] font-bold uppercase tracking-wider"
+                  title={allExpanded ? "Collapse All Items" : "Expand All Items"}
+                >
+                  {allExpanded ? <ChevronsUpDown size={12} /> : <ChevronsDownUp size={12} />}
+                  <span className="hidden sm:inline">{allExpanded ? "Collapse" : "Expand"}</span>
+                </button>
                 <div className="flex bg-white p-0.5 rounded-md border border-[#D8D8D8] shadow-sm">
                   <button
                     onClick={() => {
@@ -403,7 +435,7 @@ export const PropCoCascadeView = memo(
                     </h3>
                   </div>
                   <div
-                    className={`custom-scrollbar relative propco-table-scroll ${viewMode === "all" ? "overflow-x-auto" : "overflow-auto max-h-[calc(100vh-320px)]"}`}
+                    className={`custom-scrollbar table-scrollbar-offset relative propco-table-scroll ${viewMode === "all" ? "overflow-x-auto" : "overflow-auto max-h-[calc(100vh-320px)]"}`}
                   >
                     <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
                       {renderTableHeaders()}
@@ -438,6 +470,7 @@ export const PropCoCascadeView = memo(
                           data={columns}
                           parentTooltip={PROPCO_FORMULAS.preOpeningDev}
                           isSubtractor
+                          forceExpanded={allExpanded}
                           childrenData={[
                             {
                               label: "Dev. G&A Expense",
@@ -523,6 +556,7 @@ export const PropCoCascadeView = memo(
                           data={columns}
                           parentTooltip={PROPCO_FORMULAS.dep}
                           isSubtractor
+                          forceExpanded={allExpanded}
                           childrenData={[
                             {
                               label: "Construction",
@@ -655,7 +689,7 @@ export const PropCoCascadeView = memo(
                     </h3>
                   </div>
                   <div
-                    className={`custom-scrollbar relative propco-table-scroll ${viewMode === "all" ? "overflow-x-auto" : "overflow-auto max-h-[calc(100vh-320px)]"}`}
+                    className={`custom-scrollbar table-scrollbar-offset relative propco-table-scroll ${viewMode === "all" ? "overflow-x-auto" : "overflow-auto max-h-[calc(100vh-320px)]"}`}
                   >
                     <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
                       {renderTableHeaders()}
@@ -1021,7 +1055,7 @@ export const PropCoCascadeView = memo(
                     </h3>
                   </div>
                   <div
-                    className={`custom-scrollbar relative propco-table-scroll ${viewMode === "all" ? "overflow-x-auto" : "overflow-auto max-h-[calc(100vh-320px)]"}`}
+                    className={`custom-scrollbar table-scrollbar-offset relative propco-table-scroll ${viewMode === "all" ? "overflow-x-auto" : "overflow-auto max-h-[calc(100vh-320px)]"}`}
                   >
                     <table className="w-full text-[11px] text-left border-separate border-spacing-0 min-w-[1000px]">
                       {renderTableHeaders()}
@@ -1045,6 +1079,7 @@ export const PropCoCascadeView = memo(
                           parentTotal={data.totals.hardSpend}
                           data={columns}
                           parentTooltip={PROPCO_FORMULAS.hardSpend}
+                          forceExpanded={allExpanded}
                           childrenData={[
                             {
                               label: "Construction",
@@ -1079,6 +1114,7 @@ export const PropCoCascadeView = memo(
                           parentTotal={data.totals.softSpend}
                           data={columns}
                           parentTooltip={PROPCO_FORMULAS.softSpend}
+                          forceExpanded={allExpanded}
                           childrenData={[
                             {
                               label: "Consultant",
@@ -1108,6 +1144,7 @@ export const PropCoCascadeView = memo(
                           parentTotal={data.totals.preOpeningDev}
                           data={columns}
                           parentTooltip="Pre-opening direct operational outlays including Dev G&A and CAR."
+                          forceExpanded={allExpanded}
                           childrenData={[
                             {
                               label: "Dev. G&A",

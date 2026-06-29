@@ -2065,13 +2065,13 @@ export const TableRow = memo(
               )}
 
               {hasTripleConnector && (
-                <span className="font-mono select-none text-[9px] tracking-tighter text-[#9B8B70]/80 mr-1 flex-shrink-0 whitespace-nowrap">
-                  {"│ │ ╰─"}
+                <span className="font-mono select-none text-[9px] tracking-tighter text-[#9B8B70]/80 mr-1 ml-6 flex-shrink-0 whitespace-nowrap">
+                  {"╰─"}
                 </span>
               )}
               {hasDoubleConnector && !hasTripleConnector && (
-                <span className="font-mono select-none text-[9px] tracking-tighter text-[#9B8B70]/80 mr-1 flex-shrink-0 whitespace-nowrap">
-                  {"│ ╰─"}
+                <span className="font-mono select-none text-[9px] tracking-tighter text-[#9B8B70]/80 mr-1 ml-3 flex-shrink-0 whitespace-nowrap">
+                  {"╰─"}
                 </span>
               )}
               {hasConnector && !hasDoubleConnector && !hasTripleConnector && (
@@ -2151,8 +2151,15 @@ export const ExpandableDataRowGroup = ({
   childrenData,
   parentTooltip,
   isSubtractor = false,
+  forceExpanded = undefined,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  useEffect(() => {
+    if (forceExpanded !== undefined) {
+      setIsExpanded(forceExpanded);
+    }
+  }, [forceExpanded]);
 
   return (
     <>
