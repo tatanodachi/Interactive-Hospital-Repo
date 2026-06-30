@@ -46,6 +46,7 @@ export const ConsolidatedCascadeView = memo(
     data,
     opcoData,
     propcoData,
+    opcoAssumptions,
     viewResolution,
     setViewResolution,
     holdCoAssumptions,
@@ -179,10 +180,14 @@ export const ConsolidatedCascadeView = memo(
         const ltDebtDraw = pDebtDraw + oDebtDraw + hDebtDraw;
         const ltDebtPrincipal = pPrincipal + oPrincipal + hPrincipal;
         const ltDebtInterest = pInterest + oInterest + hInterest;
-        const pCffPay = pDebtDraw - pPrincipal - pInterest;
+        
+        const pCapitalizedInterest = !pY.isOperating ? pInterest : 0;
+        const pCashInterest = pInterest - pCapitalizedInterest;
+        
+        const pCffPay = pDebtDraw - pPrincipal - pCashInterest;
         const oCffPay = oDebtDraw - oPrincipal - oInterest;
         const hCffPay = hDebtDraw - hPrincipal - hInterest;
-        const ltCffPay = ltDebtDraw - ltDebtPrincipal - ltDebtInterest;
+        const ltCffPay = ltDebtDraw - ltDebtPrincipal - (pCashInterest + oInterest + hInterest);
 
         // Cascading Distributions split to Sponsors
         const pFcfe = isMonth ? pY.monthly?.fcfe?.[mIdx] || 0 : pY.fcfe || 0;
@@ -269,7 +274,8 @@ export const ConsolidatedCascadeView = memo(
           ltCfi,
           pDebtDraw,
           pDebtPrincipal: pPrincipal,
-          pDebtInterest: pInterest,
+          pDebtInterest: pCashInterest,
+          pCapitalizedInterest,
           pCffPay,
           oDebtDraw,
           oDebtPrincipal: oPrincipal,
@@ -313,6 +319,7 @@ export const ConsolidatedCascadeView = memo(
       let PDebtDraw = 0,
         PDebtPrincipal = 0,
         PDebtInterest = 0,
+        PCapitalizedInterest = 0,
         PCffPay = 0,
         ODebtDraw = 0,
         ODebtPrincipal = 0,
@@ -356,6 +363,7 @@ export const ConsolidatedCascadeView = memo(
           PDebtDraw += col.pDebtDraw || 0;
           PDebtPrincipal += col.pDebtPrincipal || 0;
           PDebtInterest += col.pDebtInterest || 0;
+          PCapitalizedInterest += col.pCapitalizedInterest || 0;
           PCffPay += col.pCffPay || 0;
           ODebtDraw += col.oDebtDraw || 0;
           ODebtPrincipal += col.oDebtPrincipal || 0;
@@ -400,6 +408,7 @@ export const ConsolidatedCascadeView = memo(
         pDebtDraw: PDebtDraw,
         pDebtPrincipal: PDebtPrincipal,
         pDebtInterest: PDebtInterest,
+        pCapitalizedInterest: PCapitalizedInterest,
         pCffPay: PCffPay,
         oDebtDraw: ODebtDraw,
         oDebtPrincipal: ODebtPrincipal,
@@ -924,12 +933,20 @@ export const ConsolidatedCascadeView = memo(
                             isSubtractor
                           />
                           <TableRow
-                            label="Less: PropCo Bank Interest Paid"
+                            label="Less: PropCo Bank Interest Paid (Cash)"
                             data={columns}
                             dk="pDebtInterest"
                             total={totals.pDebtInterest}
                             isDoubleIndent
                             isSubtractor
+                          />
+                          <TableRow
+                            label="* Capitalized IDC (Non-Cash)"
+                            data={columns}
+                            dk="pCapitalizedInterest"
+                            total={totals.pCapitalizedInterest}
+                            isDoubleIndent
+                            tooltip="Interest accrued during pre-operations is capitalized into the loan balance, requiring no cash outflow."
                           />
                         </>
                       )}

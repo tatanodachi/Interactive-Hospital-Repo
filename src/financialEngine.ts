@@ -3745,8 +3745,6 @@ export const runConsolidatedEngine = (
 
   const totalPropCoEq = propCoData.metrics.totalEquity;
   const totalOpCoEq = opCoAssumptions.partnerBEquity; // 49% HoldCo Share
-  const propCoShortfall = propCoData.totals?.shortfallEquity || 0;
-  const totalConsolidatedEquity = totalPropCoEq + totalOpCoEq + propCoShortfall;
 
   let holdCoOutstandingDebt = 0;
   let holdCoPmt = 0;
@@ -4095,6 +4093,9 @@ export const runConsolidatedEngine = (
       }
     }
   }
+
+  const holdCoShortfall = totals.holdCoCashFlowAfterDebtShortfall || 0;
+  const totalConsolidatedEquity = totalPropCoEq + totalOpCoEq + holdCoShortfall;
 
   return applySafeMathPrecision({
     annualData,

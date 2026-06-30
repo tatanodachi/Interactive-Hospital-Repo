@@ -57,6 +57,8 @@ import {
 export const ConsolidatedDashboardView = memo(
   ({
     data,
+    opcoData,
+    propcoData,
     assumptions,
     propCoAssumptions,
     handlePropCoChange,
@@ -69,15 +71,62 @@ export const ConsolidatedDashboardView = memo(
     toggleHoldCoLock,
     propCoLocked,
     togglePropCoLock,
-  }) => (
-    <div
-      className={
-        isPresenting
-          ? "grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in"
-          : "space-y-6 animate-in fade-in"
-      }
-    >
-      <div className={`space-y-6 ${isPresenting ? "lg:col-span-4" : ""}`}>
+  }) => {
+    const debtTotals = useMemo(() => {
+      let pDebtDraw = 0, holdCoDebtDraw = 0, ltDebtDraw = 0;
+      let pDebtPrincipal = 0, holdCoPrincipal = 0, ltDebtPrincipal = 0;
+      let pDebtInterest = 0, holdCoInterest = 0, ltDebtInterest = 0;
+      let pLoanSettledAtExit = 0;
+      let pCapitalizedInterest = 0;
+
+      data.annualData.forEach((d, i) => {
+        const pY = propcoData?.annualData[i] || {};
+        
+        const pdD = pY.debtDraw || 0;
+        const pdP = pY.principal || 0;
+        const pdI = pY.interest || 0;
+        const pSettled = pY.loanSettledAtExit || 0;
+        
+        // During development, interest is capitalized
+        if (!pY.isOperating) {
+            pCapitalizedInterest += pdI;
+        }
+        
+        const hdD = d.holdCoDebtDraw || 0;
+        const hdP = d.holdCoPrincipal || 0;
+        const hdI = d.holdCoInterest || 0;
+        
+        pDebtDraw += pdD;
+        pDebtPrincipal += pdP;
+        pDebtInterest += pdI;
+        pLoanSettledAtExit += pSettled;
+        
+        holdCoDebtDraw += hdD;
+        holdCoPrincipal += hdP;
+        holdCoInterest += hdI;
+        
+        ltDebtDraw += (pdD + hdD);
+        ltDebtPrincipal += (pdP + hdP + pSettled);
+        ltDebtInterest += (pdI + hdI);
+      });
+
+      return {
+        pDebtDraw, pDebtPrincipal, pDebtInterest, pLoanSettledAtExit, pCapitalizedInterest,
+        holdCoDebtDraw, holdCoPrincipal, holdCoInterest,
+        ltDebtDraw, ltDebtPrincipal, ltDebtInterest
+      };
+    }, [data.annualData, propcoData]);
+
+    return (
+      <div
+        className={
+          isPresenting
+            ? "grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in"
+            : "space-y-6 animate-in fade-in"
+        }
+      >
+        <div className={`space-y-6 ${isPresenting ? "lg:col-span-4" : ""}`}>
+
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-[#D8D8D8] flex flex-col gap-3">
           <div>
             <h3 className="text-sm font-bold text-[#1E2F31] flex items-center gap-2">
@@ -463,6 +512,116 @@ export const ConsolidatedDashboardView = memo(
       </div>
 
       <div className={`space-y-6 ${isPresenting ? "lg:col-span-8" : ""}`}>
+        {/* Capital Structure Summary Block - Ledger Strip Layout */}
+        <div className="bg-white rounded-xl shadow-sm border border-[#D8D8D8] overflow-hidden flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-[#D8D8D8]/50 shrink-0">
+          
+          {/* Total Consolidated Equity */}
+          <div className="flex-1 p-5 relative overflow-hidden group hover:bg-[#F9F8F6]/50 transition-colors">
+            <div className="absolute top-0 right-0 p-5 opacity-5 group-hover:opacity-10 transition-opacity">
+              <Calculator size={56} />
+            </div>
+            <div className="flex flex-col h-full relative z-10">
+              <span className="text-[10px] uppercase font-bold text-[#8A8175] tracking-wider mb-1">Total Equity Funded</span>
+              <span className="text-2xl font-black text-[#1C6048] tracking-tight">{formatCurrency(data.metrics.totalEquity)}</span>
+              
+              <div className="mt-6 pt-3 border-t border-[#D8D8D8]/50 text-[10px] text-[#8A8175] flex flex-col gap-1.5">
+                <div className="flex justify-between items-center">
+                  <span>OpCo Equity</span>
+                  <span className="font-bold text-gray-800">{formatCurrency(assumptions.partnerBEquity)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>PropCo Equity</span>
+                  <span className="font-bold text-gray-800">{formatCurrency(propcoData?.metrics?.totalEquity || 0)}</span>
+                </div>
+                {data.totals?.holdCoCashFlowAfterDebtShortfall > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span>HoldCo Shortfall</span>
+                    <span className="font-bold text-gray-800">{formatCurrency(data.totals.holdCoCashFlowAfterDebtShortfall)}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Consolidated Debt Drawn */}
+          <div className="flex-1 p-5 relative overflow-hidden group hover:bg-[#F9F8F6]/50 transition-colors">
+            <div className="absolute top-0 right-0 p-5 opacity-5 group-hover:opacity-10 transition-opacity">
+              <Briefcase size={56} />
+            </div>
+            <div className="flex flex-col h-full relative z-10">
+              <span className="text-[10px] uppercase font-bold text-[#8A8175] tracking-wider mb-1">Peak Loan Balance</span>
+              <span className="text-2xl font-black text-gray-900 tracking-tight">{formatCurrency(debtTotals.ltDebtDraw + debtTotals.pCapitalizedInterest)}</span>
+              
+              <div className="mt-6 pt-3 border-t border-[#D8D8D8]/50 text-[10px] text-[#8A8175] flex flex-col gap-1.5">
+                <div className="flex justify-between items-center">
+                  <span>Base Debt Drawn</span>
+                  <span className="font-bold text-gray-800">{formatCurrency(debtTotals.ltDebtDraw)}</span>
+                </div>
+                {debtTotals.pCapitalizedInterest > 0 && (
+                  <div className="flex justify-between items-center text-[#99B6AA]">
+                    <span>+ Capitalized IDC</span>
+                    <span className="font-bold">{formatCurrency(debtTotals.pCapitalizedInterest)}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Consolidated Principal Paid */}
+          <div className="flex-1 p-5 relative overflow-hidden group hover:bg-[#F9F8F6]/50 transition-colors">
+            <div className="absolute top-0 right-0 p-5 opacity-5 group-hover:opacity-10 transition-opacity">
+              <Target size={56} />
+            </div>
+            <div className="flex flex-col h-full relative z-10">
+              <span className="text-[10px] uppercase font-bold text-[#8A8175] tracking-wider mb-1">Total Principal Repaid</span>
+              <span className="text-2xl font-black text-gray-900 tracking-tight">{formatCurrency(debtTotals.ltDebtPrincipal)}</span>
+              
+              <div className="mt-6 pt-3 border-t border-[#D8D8D8]/50 text-[10px] text-[#8A8175] flex flex-col gap-1.5">
+                <div className="flex justify-between items-center">
+                  <span>PropCo Amortization</span>
+                  <span className="font-bold text-gray-800">{formatCurrency(debtTotals.pDebtPrincipal)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>HoldCo Amortization</span>
+                  <span className="font-bold text-gray-800">{formatCurrency(debtTotals.holdCoPrincipal)}</span>
+                </div>
+                {debtTotals.pLoanSettledAtExit > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span>PropCo Settled at Exit</span>
+                    <span className="font-bold text-gray-800">{formatCurrency(debtTotals.pLoanSettledAtExit)}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Consolidated Interest Paid */}
+          <div className="flex-1 p-5 relative overflow-hidden group hover:bg-[#F9F8F6]/50 transition-colors">
+            <div className="absolute top-0 right-0 p-5 opacity-5 group-hover:opacity-10 transition-opacity">
+              <Activity size={56} />
+            </div>
+            <div className="flex flex-col h-full relative z-10">
+              <span className="text-[10px] uppercase font-bold text-[#8A8175] tracking-wider mb-1">Cash Interest Paid</span>
+              <span className="text-2xl font-black text-[#1C6048] tracking-tight">
+                {formatCurrency(debtTotals.ltDebtInterest - debtTotals.pCapitalizedInterest)}
+              </span>
+              
+              <div className="mt-6 pt-3 border-t border-[#D8D8D8]/50 text-[10px] text-[#8A8175] flex flex-col gap-1.5">
+                <div className="flex justify-between items-center">
+                  <span>PropCo Interest (Cash)</span>
+                  <span className="font-bold text-gray-800">
+                    {formatCurrency(debtTotals.pDebtInterest - debtTotals.pCapitalizedInterest)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>HoldCo Interest</span>
+                  <span className="font-bold text-gray-800">{formatCurrency(debtTotals.holdCoInterest)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8]">
           <h3 className="font-bold text-[#1E2F31] mb-6 flex items-center gap-2">
             <BarChart3 size={18} className="text-[#99B6AA]" /> Managerial
@@ -632,5 +791,5 @@ export const ConsolidatedDashboardView = memo(
         </div>
       </div>
     </div>
-  ),
-);
+  );
+});

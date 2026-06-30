@@ -4901,6 +4901,8 @@ export default function App() {
                 {activeTab === "dashboard" && (
                   <ConsolidatedDashboardView
                     data={consolidatedModelData}
+                    opcoData={opCoModelData}
+                    propcoData={propCoModelData}
                     assumptions={opCoAssumptions}
                     propCoAssumptions={propCoAssumptions}
                     handlePropCoChange={handlePropCoChange}
@@ -4922,6 +4924,7 @@ export default function App() {
                     data={consolidatedModelData}
                     opcoData={opCoModelData}
                     propcoData={propCoModelData}
+                    opcoAssumptions={opCoAssumptions}
                     viewResolution={viewResolution}
                     setViewResolution={setViewResolution}
                     holdCoAssumptions={holdCoAssumptions}
