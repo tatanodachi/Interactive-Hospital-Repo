@@ -2226,14 +2226,13 @@ export const runPropCoEngine = (
     const m_idc = outstandingDebt * rateMonthly;
     const m_idcExLand = outstandingDebtExLand * rateMonthly;
 
-    outstandingDebt += m_debtDraw;
-    outstandingDebtExLand += m_debtDrawExLand;
+    outstandingDebt += m_debtDraw + m_idc;
+    outstandingDebtExLand += m_debtDrawExLand + m_idcExLand;
 
-    const m_eqDraw = -(capDrawBase_month - m_debtDraw + m_idc);
+    const m_eqDraw = -(capDrawBase_month - m_debtDraw);
     const m_eqDrawExLand = -(
       Math.max(0, capDrawBase_month - m_land_final) -
-      m_debtDrawExLand +
-      m_idcExLand
+      m_debtDrawExLand
     );
     const m_unleveredCf = -capDrawBase_month;
 

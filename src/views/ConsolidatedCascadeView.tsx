@@ -268,13 +268,16 @@ export const ConsolidatedCascadeView = memo(
           ltExit,
           ltCfi,
           pDebtDraw,
-          pPrincipal,
-          pInterest,
+          pDebtPrincipal: pPrincipal,
+          pDebtInterest: pInterest,
           pCffPay,
           oDebtDraw,
-          oPrincipal,
-          oInterest,
+          oDebtPrincipal: oPrincipal,
+          oDebtInterest: oInterest,
           oCffPay,
+          holdCoDebtDraw: hDebtDraw,
+          holdCoPrincipal: hPrincipal,
+          holdCoInterest: hInterest,
           ltDebtDraw,
           ltDebtPrincipal,
           ltDebtInterest,
@@ -315,6 +318,9 @@ export const ConsolidatedCascadeView = memo(
         ODebtPrincipal = 0,
         ODebtInterest = 0,
         OCffPay = 0,
+        HDebtDraw = 0,
+        HDebtPrincipal = 0,
+        HDebtInterest = 0,
         DebtDraw = 0,
         DebtPrincipal = 0,
         DebtInterest = 0,
@@ -348,13 +354,16 @@ export const ConsolidatedCascadeView = memo(
           Exit += col.ltExit || 0;
           Cfi += col.ltCfi || 0;
           PDebtDraw += col.pDebtDraw || 0;
-          PDebtPrincipal += col.pPrincipal || 0;
-          PDebtInterest += col.pInterest || 0;
+          PDebtPrincipal += col.pDebtPrincipal || 0;
+          PDebtInterest += col.pDebtInterest || 0;
           PCffPay += col.pCffPay || 0;
           ODebtDraw += col.oDebtDraw || 0;
-          ODebtPrincipal += col.oPrincipal || 0;
-          ODebtInterest += col.oInterest || 0;
+          ODebtPrincipal += col.oDebtPrincipal || 0;
+          ODebtInterest += col.oDebtInterest || 0;
           OCffPay += col.oCffPay || 0;
+          HDebtDraw += col.holdCoDebtDraw || 0;
+          HDebtPrincipal += col.holdCoPrincipal || 0;
+          HDebtInterest += col.holdCoInterest || 0;
           DebtDraw += col.ltDebtDraw || 0;
           DebtPrincipal += col.ltDebtPrincipal || 0;
           DebtInterest += col.ltDebtInterest || 0;
@@ -396,6 +405,9 @@ export const ConsolidatedCascadeView = memo(
         oDebtPrincipal: ODebtPrincipal,
         oDebtInterest: ODebtInterest,
         oCffPay: OCffPay,
+        holdCoDebtDraw: HDebtDraw,
+        holdCoPrincipal: HDebtPrincipal,
+        holdCoInterest: HDebtInterest,
         ltDebtDraw: DebtDraw,
         ltDebtPrincipal: DebtPrincipal,
         ltDebtInterest: DebtInterest,
