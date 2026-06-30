@@ -97,6 +97,7 @@ export const PropCoDashboardView = memo(
       return [
         { name: "Equity", value: data.metrics.totalEquity },
         { name: "Bank Loan", value: data.metrics.totalDebt },
+        ...(totalIdc > 0 ? [{ name: "Capitalized IDC", value: totalIdc }] : []),
         ...(leasedMedEq > 0
           ? [{ name: "Equipment Lease", value: leasedMedEq }]
           : []),
@@ -106,6 +107,7 @@ export const PropCoDashboardView = memo(
       data.metrics.totalDebt,
       data.capexDetails.medEqCost,
       assumptions.medEqProcurement,
+      totalIdc,
     ]);
 
     const [chartMode, setChartMode] = useState("full");
@@ -504,19 +506,19 @@ export const PropCoDashboardView = memo(
                         className="outline-none focus:outline-none"
                         stroke="none"
                       >
-                        {pieData.map((entry, index) => (
-                          <Cell
-                            key={`cell-src-${index}`}
-                            fill={
-                              index === 0
-                                ? "#1C6048"
-                                : index === 1
-                                  ? "#D8D8D8"
-                                  : "#9B8B70"
-                            }
-                            className="outline-none focus:outline-none"
-                          />
-                        ))}
+                        {pieData.map((entry, index) => {
+                          let fillColor = "#D8D8D8";
+                          if (entry.name === "Equity") fillColor = "#1C6048";
+                          if (entry.name === "Capitalized IDC") fillColor = "#99B6AA";
+                          if (entry.name === "Equipment Lease") fillColor = "#9B8B70";
+                          return (
+                            <Cell
+                              key={`cell-src-${index}`}
+                              fill={fillColor}
+                              className="outline-none focus:outline-none"
+                            />
+                          );
+                        })}
                       </Pie>
                     </RechartsPieChart>
                   </LazyResponsiveContainer>
@@ -527,7 +529,8 @@ export const PropCoDashboardView = memo(
                   </div>
                 </div>
                 <div
-                  className={`w-full grid ${assumptions.medEqProcurement === "lease" && data.capexDetails.medEqCost > 0 ? "grid-cols-3" : "grid-cols-2"} gap-2 mt-4 text-center`}
+                  className="w-full grid gap-2 mt-4 text-center"
+                  style={{ gridTemplateColumns: `repeat(${pieData.length}, minmax(0, 1fr))` }}
                 >
                   <div className="bg-[#EFEBE7] p-2 rounded border border-[#D8D8D8]">
                     <p className="text-[9px] font-bold uppercase text-[#4C4A4B] mb-1">
@@ -551,6 +554,18 @@ export const PropCoDashboardView = memo(
                       {formatCurrency(data.metrics.totalDebt)}
                     </p>
                   </div>
+                  {totalIdc > 0 && (
+                    <div className="bg-[#99B6AA]/10 p-2 rounded border border-[#D8D8D8]">
+                      <p className="text-[9px] font-bold uppercase text-[#1C6048] mb-1 leading-tight">
+                        Capitalized
+                        <br />
+                        IDC
+                      </p>
+                      <p className="font-black text-[#1C6048]">
+                        {formatCurrency(totalIdc)}
+                      </p>
+                    </div>
+                  )}
                   {assumptions.medEqProcurement === "lease" &&
                     data.capexDetails.medEqCost > 0 && (
                       <div className="bg-[#9B8B70]/10 p-2 rounded border border-[#D8D8D8]">

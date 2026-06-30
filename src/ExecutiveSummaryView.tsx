@@ -51,6 +51,12 @@ export const ExecutiveSummaryView = memo(
     const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
     const [caretStyle, setCaretStyle] = useState<React.CSSProperties>({});
 
+    const [showOpCoBreakdown, setShowOpCoBreakdown] = useState<boolean>(false);
+    const opCoContainerRef = useRef<HTMLDivElement>(null);
+    const opCoButtonRef = useRef<HTMLButtonElement>(null);
+    const [opCoTooltipStyle, setOpCoTooltipStyle] = useState<React.CSSProperties>({});
+    const [opCoCaretStyle, setOpCoCaretStyle] = useState<React.CSSProperties>({});
+
     useEffect(() => {
       if (!showPropCoBreakdown) return;
 
@@ -130,6 +136,72 @@ export const ExecutiveSummaryView = memo(
       }
     }, [showPropCoBreakdown]);
 
+    useEffect(() => {
+      if (!showOpCoBreakdown) return;
+
+      const handleClickOutside = (event: MouseEvent) => {
+        if (
+          opCoContainerRef.current &&
+          !opCoContainerRef.current.contains(event.target as Node)
+        ) {
+          setShowOpCoBreakdown(false);
+        }
+      };
+
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }, [showOpCoBreakdown]);
+
+    useEffect(() => {
+      const updatePosition = () => {
+        if (showOpCoBreakdown && opCoContainerRef.current && opCoButtonRef.current) {
+          const cardRect = opCoContainerRef.current.getBoundingClientRect();
+          const buttonRect = opCoButtonRef.current.getBoundingClientRect();
+
+          const buttonCenterRelative =
+            buttonRect.left + buttonRect.width / 2 - cardRect.left;
+          const buttonBottomRelative = buttonRect.bottom - cardRect.top;
+
+          const padding = 12;
+          const tooltipWidth = Math.min(310, cardRect.width - padding * 2);
+          const idealLeft = buttonCenterRelative - tooltipWidth / 2;
+
+          const minLeft = padding;
+          const maxLeft = cardRect.width - tooltipWidth - padding;
+          const finalLeft = Math.max(minLeft, Math.min(idealLeft, maxLeft));
+
+          let caretRelative = buttonCenterRelative - finalLeft;
+          caretRelative = Math.max(
+            16,
+            Math.min(caretRelative, tooltipWidth - 16),
+          );
+
+          setOpCoTooltipStyle({
+            position: "absolute",
+            left: `${finalLeft}px`,
+            width: `${tooltipWidth}px`,
+            top: `${buttonBottomRelative + 8}px`,
+          });
+
+          setOpCoCaretStyle({
+            left: `${caretRelative}px`,
+          });
+        }
+      };
+
+      if (showOpCoBreakdown) {
+        updatePosition();
+        const timer = setTimeout(updatePosition, 50);
+        window.addEventListener("resize", updatePosition);
+        return () => {
+          clearTimeout(timer);
+          window.removeEventListener("resize", updatePosition);
+        };
+      }
+    }, [showOpCoBreakdown]);
+
     // Derive dynamic real-time values from the active interactive model calculations:
     const rawIrr = consolidatedData?.metrics?.irr;
     const currentBlendedIrr =
@@ -153,6 +225,61 @@ export const ExecutiveSummaryView = memo(
         ? `${rawPayback.toFixed(2)} Years`
         : "5.86 Years";
 
+    const debtTotals = useMemo(() => {
+      let pDebtDraw = 0, holdCoDebtDraw = 0, ltDebtDraw = 0;
+      let pDebtPrincipal = 0, holdCoPrincipal = 0, ltDebtPrincipal = 0;
+      let pDebtInterest = 0, holdCoInterest = 0, ltDebtInterest = 0;
+      let pLoanSettledAtExit = 0;
+      let pCapitalizedInterest = 0;
+
+      if (!consolidatedData?.annualData) return {
+        pDebtDraw, holdCoDebtDraw, ltDebtDraw,
+        pDebtPrincipal, holdCoPrincipal, ltDebtPrincipal,
+        pDebtInterest, holdCoInterest, ltDebtInterest,
+        pLoanSettledAtExit, pCapitalizedInterest
+      };
+
+      consolidatedData.annualData.forEach((d: any, i: number) => {
+        const pY = propCoData?.annualData?.[i] || {};
+        
+        const pdD = pY.debtDraw || 0;
+        const pdP = pY.principal || 0;
+        const pdI = pY.interest || 0;
+        const pSettled = pY.loanSettledAtExit || 0;
+        
+        if (!pY.isOperating) {
+            pCapitalizedInterest += pdI;
+        }
+        
+        const hdD = d.holdCoDebtDraw || 0;
+        const hdP = d.holdCoPrincipal || 0;
+        const hdI = d.holdCoInterest || 0;
+        
+        pDebtDraw += pdD;
+        pDebtPrincipal += pdP;
+        pDebtInterest += pdI;
+        pLoanSettledAtExit += pSettled;
+        
+        holdCoDebtDraw += hdD;
+        holdCoPrincipal += hdP;
+        holdCoInterest += hdI;
+        
+        ltDebtDraw += (pdD + hdD);
+        ltDebtPrincipal += (pdP + hdP + pSettled);
+        ltDebtInterest += (pdI + hdI);
+      });
+
+      return {
+        pDebtDraw, holdCoDebtDraw, ltDebtDraw,
+        pDebtPrincipal, holdCoPrincipal, ltDebtPrincipal,
+        pDebtInterest, holdCoInterest, ltDebtInterest,
+        pLoanSettledAtExit, pCapitalizedInterest
+      };
+    }, [consolidatedData?.annualData, propCoData?.annualData]);
+
+    const formatCurrency = (value: number) => `IDR ${value.toFixed(1)} B`;
+    const formatCurrencyM = (value: number) => `IDR ${value.toFixed(2)} B`;
+    
     const rawBeds = opCoData?.opsMetrics?.beds || 120; // default for preview if undefined
     const currentBedsText =
       opCoData?.opsMetrics?.beds !== undefined
@@ -707,6 +834,77 @@ export const ExecutiveSummaryView = memo(
           </div>
         ),
       },
+      {
+        title: "5. Capital Structure",
+        subtitle: "Sources & Uses of Funds",
+        icon: <DollarSign className="text-[#1C6048]" size={18} />,
+        content: (
+          <div className="space-y-4">
+            <p className="text-sm text-[#4C4A4B] leading-relaxed">
+              Consolidated debt sizing is secured at the PropCo level, while total equity reflects both PropCo execution capital and OpCo startup outlay:
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+              {/* Uses / Outlay */}
+              <div className="p-4 bg-white rounded-xl border border-[#D8D8D8] flex flex-col">
+                <span className="text-[9px] uppercase font-black text-[#8A8175] block mb-0.5 tracking-wider">
+                  Combined Group Capital Requirement
+                </span>
+                <p className="text-lg font-bold text-[#1E2F31] font-display mb-4">
+                  {formatCurrency((consolidatedData?.metrics?.totalEquity || 0) + (debtTotals.ltDebtDraw + debtTotals.pCapitalizedInterest))}
+                </p>
+                <div className="border-t border-[#EFEBE7] pt-2 space-y-1.5 text-[10.5px] text-[#4C4A4B] mt-auto">
+                  <div className="flex justify-between hover:bg-[#F9F8F6] p-1 rounded font-bold">
+                    <span>PropCo Development Capex</span>
+                    <span className="text-right">{formatCurrency(propCoData?.metrics?.totalCapex || 0)}</span>
+                  </div>
+                  <div className="flex justify-between hover:bg-[#F9F8F6] p-1 rounded font-bold">
+                    <span>OpCo Startup Outlay</span>
+                    <span className="text-right">{formatCurrencyM(opCoData?.totalEquity || 0)}</span>
+                  </div>
+                  {consolidatedData?.totals?.holdCoCashFlowAfterDebtShortfall > 0 && (
+                    <div className="flex justify-between hover:bg-[#F9F8F6] p-1 rounded text-[#9B8B70] font-bold">
+                      <span>HoldCo Funding Shortfall</span>
+                      <span className="text-right">{formatCurrency(consolidatedData.totals.holdCoCashFlowAfterDebtShortfall)}</span>
+                    </div>
+                  )}
+                  {debtTotals.pCapitalizedInterest > 0 && (
+                    <div className="flex justify-between hover:bg-[#F9F8F6] p-1 rounded text-[#99B6AA] font-bold">
+                      <span>Capitalized IDC</span>
+                      <span className="text-right">{formatCurrency(debtTotals.pCapitalizedInterest)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Sources */}
+              <div className="p-4 bg-[#1E2F31] rounded-xl border border-[#D8D8D8] flex flex-col text-[#EFEBE7]">
+                <span className="text-[9px] uppercase font-black text-[#C4DFD2] block mb-0.5 tracking-wider">
+                  Sources of Funds
+                </span>
+                <p className="text-lg font-bold text-white font-display mb-4">
+                  {formatCurrency((consolidatedData?.metrics?.totalEquity || 0) + (debtTotals.ltDebtDraw + debtTotals.pCapitalizedInterest))}
+                </p>
+                <div className="border-t border-white/10 pt-2 space-y-1.5 text-[10.5px] mt-auto">
+                  <div className="flex justify-between hover:bg-white/5 p-1 rounded font-bold">
+                    <span>Total Equity Funded</span>
+                    <span className="text-right text-[#C4DFD2]">{formatCurrency(consolidatedData?.metrics?.totalEquity || 0)}</span>
+                  </div>
+                  <div className="flex justify-between hover:bg-white/5 p-1 rounded font-bold">
+                    <span>Peak Bank Loan Balance</span>
+                    <span className="text-right text-[#C4DFD2]">{formatCurrency(debtTotals.ltDebtDraw + debtTotals.pCapitalizedInterest)}</span>
+                  </div>
+                  {consolidatedData?.assumptions?.medEqProcurement === "lease" && opCoData?.capexDetails?.medEqCost > 0 && (
+                    <div className="flex justify-between hover:bg-white/5 p-1 rounded font-bold">
+                      <span>Equipment Lease</span>
+                      <span className="text-right text-[#C4DFD2]">{formatCurrency(opCoData.capexDetails.medEqCost)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        ),
+      },
     ];
 
     return (
@@ -725,7 +923,7 @@ export const ExecutiveSummaryView = memo(
                 </div>
 
                 {/* Stepper Steps / Tab Controls */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
                   {narrativeSteps.map((step, idx) => (
                     <button
                       key={idx}
@@ -747,8 +945,9 @@ export const ExecutiveSummaryView = memo(
                             [
                               "Financial",
                               "Market",
-                              "Project & Collaboration",
+                              "Project & Collab",
                               "Budget",
+                              "Capital Stack",
                             ][idx]
                           }
                         </span>
@@ -912,6 +1111,7 @@ export const ExecutiveSummaryView = memo(
                             tickFormatter={(val) => val + "%"}
                           />
                           <Tooltip
+                            allowEscapeViewBox={{ x: true, y: true }}
                             contentStyle={{
                               fontSize: "9px",
                               borderRadius: "6px",
@@ -1125,13 +1325,89 @@ export const ExecutiveSummaryView = memo(
                     </div>
 
                     {/* OpCo Capital row */}
-                    <div className="py-2.5 flex justify-between items-center hover:bg-[#F9F8F6] px-1 transition-colors">
-                      <span className="text-[11px] font-medium text-[#4C4A4B]">
-                        OpCo Clinical Setup Equity
-                      </span>
+                    <div 
+                      ref={opCoContainerRef}
+                      className="py-2.5 flex justify-between items-center hover:bg-[#F9F8F6] px-1 transition-colors relative"
+                    >
+                      <div className="flex items-center gap-1">
+                        <span className="text-[11px] font-medium text-[#4C4A4B]">
+                          OpCo Clinical Setup Equity
+                        </span>
+                        <button
+                          ref={opCoButtonRef}
+                          className="text-[#9B8B70] hover:text-[#1E2F31] transition-colors p-0.5 rounded-full focus:outline-none"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowOpCoBreakdown((prev) => !prev);
+                          }}
+                          title="Show Breakdown"
+                          aria-label="Show Breakdown"
+                        >
+                          <Info size={13} className="inline opacity-90" />
+                        </button>
+                      </div>
                       <span className="text-xs font-bold font-sans text-[#1C6048]">
                         {currentOpCoEquityText}
                       </span>
+                      
+                      {/* Premium Slate Tooltip overlay for OpCo breakdown */}
+                      {showOpCoBreakdown && (
+                        <div
+                          style={opCoTooltipStyle}
+                          className="z-50 bg-[#1E2F31] text-white p-4 rounded-xl shadow-2xl border border-white/10 text-xs text-left animate-in fade-in zoom-in-95 duration-200"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div
+                            style={opCoCaretStyle}
+                            className="absolute w-2.5 h-2.5 bg-[#1E2F31] border-t border-l border-white/10 rotate-45 top-[-5px]"
+                          />
+
+                          <div className="border-b border-[#EFEBE7]/20 pb-2 mb-2 flex justify-between items-center relative z-10">
+                            <div>
+                              <h5 className="font-bold text-[#C4DFD2] uppercase tracking-wider text-[10px] font-display">
+                                OpCo Capital Breakdown
+                              </h5>
+                              <p className="text-[9px] text-[#EFEBE7]/70 font-display">
+                                Detailed clinical setup allocations
+                              </p>
+                            </div>
+                            <button
+                              className="text-[#C4DFD2] hover:text-white font-bold p-1 text-[11px] focus:outline-none"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setShowOpCoBreakdown(false);
+                              }}
+                            >
+                              ✕
+                            </button>
+                          </div>
+
+                          <div className="space-y-2.5 relative z-10">
+                            <div className="flex justify-between items-center pb-1 border-b border-white/10">
+                              <span className="text-[#EFEBE7] opacity-90">Pre-Opening Trailing Deficit</span>
+                              <span className="font-bold font-display text-white">
+                                {opCoData?.capexDetails?.preOpDeficit
+                                  ? `IDR ${opCoData.capexDetails.preOpDeficit.toFixed(1)} B`
+                                  : "IDR 0.0 B"}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center pb-1 border-b border-white/10">
+                              <span className="text-[#EFEBE7] opacity-90">OpCo Setup (IT/Training)</span>
+                              <span className="font-bold font-display text-white">
+                                {opCoData?.capexDetails?.setupCost
+                                  ? `IDR ${opCoData.capexDetails.setupCost.toFixed(1)} B`
+                                  : "IDR 0.0 B"}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center pt-1 border-t border-[#C4DFD2]/20 mt-3">
+                              <strong className="text-[#C4DFD2] uppercase tracking-wider text-[10px]">Total OpCo Setup</strong>
+                              <strong className="font-black font-display text-[#C4DFD2]">
+                                {currentOpCoEquityText}
+                              </strong>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
