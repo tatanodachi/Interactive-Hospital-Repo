@@ -3,6 +3,8 @@ import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signOut,
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
@@ -107,6 +109,36 @@ export async function loginWithGoogle() {
     return result.user;
   } catch (error) {
     console.error("Google login failure:", error);
+    throw error;
+  }
+}
+
+export async function loginWithEmail(email, password) {
+  if (!isCloudConfigured || !auth) {
+    throw new Error(
+      "Cannot login: True Cloud Mode is unconfigured. Please check firebase-applet-config.json",
+    );
+  }
+  try {
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    return result.user;
+  } catch (error) {
+    console.error("Email login failure:", error);
+    throw error;
+  }
+}
+
+export async function registerWithEmail(email, password) {
+  if (!isCloudConfigured || !auth) {
+    throw new Error(
+      "Cannot login: True Cloud Mode is unconfigured. Please check firebase-applet-config.json",
+    );
+  }
+  try {
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    return result.user;
+  } catch (error) {
+    console.error("Email registration failure:", error);
     throw error;
   }
 }

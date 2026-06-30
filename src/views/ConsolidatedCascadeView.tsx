@@ -338,7 +338,7 @@ export const ConsolidatedCascadeView = memo(
         ONetIncomeShare = 0;
 
       columns.forEach((col) => {
-        if (col.colType === "year") {
+        if (col.colType === "year" || (viewResolution === "monthly" && col.colType === "month")) {
           Ebitda += col.ltEbitda || 0;
           Tax += col.ltTax || 0;
           Cfo += col.ltCfo || 0;
