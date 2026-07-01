@@ -168,7 +168,7 @@ import {
   OperationType,
 } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, addDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, addDoc, onSnapshot } from "firebase/firestore";
 
 export const LazyResponsiveContainer = memo(({ children, ...props }) => {
   const [isMounted, setIsMounted] = useState(false);
@@ -3206,6 +3206,28 @@ export default function App() {
   const [newProjectName, setNewProjectName] = useState("");
   const [isCreatingProject, setIsCreatingProject] = useState(false);
 
+  // States for Cloud Collaboration
+  const [projectOwnerId, setProjectOwnerId] = useState<string | null>(null);
+  const [joinedProjects, setJoinedProjects] = useState<{ id: string; ownerId: string; name: string; ownerEmail: string }[]>(() => {
+    try {
+      const saved = localStorage.getItem("joined_projects");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [collabCodeInput, setCollabCodeInput] = useState("");
+  const [collabError, setCollabError] = useState("");
+  const [collabSuccess, setCollabSuccess] = useState("");
+  const [collabEmailInput, setCollabEmailInput] = useState("");
+  const [collabEmailList, setCollabEmailList] = useState<string[]>([]);
+  const [copiedProjectId, setCopiedProjectId] = useState<string | null>(null);
+  const cloudUnsubscribeRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem("joined_projects", JSON.stringify(joinedProjects));
+  }, [joinedProjects]);
+
   const [projectInfo, setProjectInfo] = useState({
     name: "Vasanta Hospital Project Development",
     location: "Daan Mogot Road KM. 13, West Jakarta",
@@ -3982,28 +4004,59 @@ export default function App() {
   // ==========================================
   // TRUE PRODUCTION-READY CLOUD SYNC ENGINE
   // ==========================================
-  const loadFromCloud = useCallback(async (uid, projectId = "default") => {
+  // TRUE PRODUCTION-READY CLOUD SYNC ENGINE - LIVE REAL-TIME SUBSCRIPTION
+  // ==========================================
+  const loadFromCloud = useCallback((uid, projectId = "default", ownerId?: string) => {
     if (!isCloudConfigured || !db || !uid) return;
     try {
       setCloudStatus("connecting");
-      const projectRef = doc(db, "users", uid, "projects", projectId);
-      const projectSnap = await getDoc(projectRef);
-      if (projectSnap.exists()) {
-        const cloudData = projectSnap.data();
-        if (cloudData.opCoAssumptions) {
-          setOpCoAssumptions(cloudData.opCoAssumptions);
-        }
-        if (cloudData.propCoAssumptions) {
-          setPropCoAssumptions(cloudData.propCoAssumptions);
-        }
-        if (cloudData.projectInfo) {
-          setProjectInfo(cloudData.projectInfo);
-        }
-        setCurrentProjectId(projectId);
+      const targetOwnerId = ownerId || uid;
+      const projectRef = doc(db, "users", targetOwnerId, "projects", projectId);
+      
+      // Clean up previous real-time subscriber before making a new subscription
+      if (cloudUnsubscribeRef.current) {
+        cloudUnsubscribeRef.current();
+        cloudUnsubscribeRef.current = null;
       }
-      setCloudStatus("online");
+
+      // Setup live subscription with onSnapshot
+      const unsubscribe = onSnapshot(
+        projectRef,
+        (docSnap) => {
+          if (docSnap.exists()) {
+            // Avoid overwriting local state with pending local writes (already updated in local React states)
+            if (docSnap.metadata.hasPendingWrites) {
+              return;
+            }
+            const cloudData = docSnap.data();
+            if (cloudData.opCoAssumptions) {
+              setOpCoAssumptions(cloudData.opCoAssumptions);
+            }
+            if (cloudData.propCoAssumptions) {
+              setPropCoAssumptions(cloudData.propCoAssumptions);
+            }
+            if (cloudData.projectInfo) {
+              setProjectInfo(cloudData.projectInfo);
+            }
+            if (cloudData.collaborators) {
+              setCollabEmailList(cloudData.collaborators || []);
+            } else {
+              setCollabEmailList([]);
+            }
+            setCurrentProjectId(projectId);
+            setProjectOwnerId(targetOwnerId);
+          }
+          setCloudStatus("online");
+        },
+        (err) => {
+          handleFirestoreError(err, OperationType.GET, `users/${targetOwnerId}/projects/${projectId}`);
+          setCloudStatus("error");
+        }
+      );
+
+      cloudUnsubscribeRef.current = unsubscribe;
     } catch (err) {
-      handleFirestoreError(err, OperationType.GET, `users/${uid}/projects/${projectId}`);
+      handleFirestoreError(err, OperationType.GET, `users/${ownerId || uid}/projects/${projectId}`);
       setCloudStatus("error");
     }
   }, []);
@@ -4015,23 +4068,43 @@ export default function App() {
     }
 
     setCloudStatus("connecting");
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
-        // Under our strict zero-trust rules, emails must be verified. We relax it for now to allow new users easily.
         setCloudStatus("online");
         if (isCloudSync) {
-          await loadFromCloud(currentUser.uid, currentProjectId || "default");
+          loadFromCloud(currentUser.uid, currentProjectId || "default", projectOwnerId || undefined);
+        } else {
+          if (cloudUnsubscribeRef.current) {
+            cloudUnsubscribeRef.current();
+            cloudUnsubscribeRef.current = null;
+          }
         }
       } else {
         setUser(null);
         setCloudStatus("offline");
         setIsCloudSync(false);
+        if (cloudUnsubscribeRef.current) {
+          cloudUnsubscribeRef.current();
+          cloudUnsubscribeRef.current = null;
+        }
       }
     });
 
-    return () => unsubscribe();
-  }, [isCloudSync, loadFromCloud, currentProjectId]);
+    return () => {
+      unsubscribe();
+    };
+  }, [isCloudSync, loadFromCloud, currentProjectId, projectOwnerId]);
+
+  // Clean up subscription on unmount
+  useEffect(() => {
+    return () => {
+      if (cloudUnsubscribeRef.current) {
+        cloudUnsubscribeRef.current();
+        cloudUnsubscribeRef.current = null;
+      }
+    };
+  }, []);
 
   const fetchProjects = useCallback(async () => {
     if (!user || !db) return;
@@ -4084,7 +4157,7 @@ export default function App() {
       });
       setNewProjectName("");
       setIsCreatingProject(false);
-      await loadFromCloud(user.uid, docRef.id);
+      loadFromCloud(user.uid, docRef.id);
       setIsProjectManagerOpen(false);
     } catch (err) {
       console.error("Failed to create project", err);
@@ -4092,8 +4165,8 @@ export default function App() {
     }
   };
 
-  const handleLoadProject = async (projectId) => {
-    await loadFromCloud(user.uid, projectId);
+  const handleLoadProject = (projectId) => {
+    loadFromCloud(user.uid, projectId);
     setIsProjectManagerOpen(false);
   };
 
@@ -4114,19 +4187,28 @@ export default function App() {
 
       try {
         const targetProjectId = currentProjectId || "default";
-        const projectRef = doc(db, "users", user.uid, "projects", targetProjectId);
+        const targetOwnerId = projectOwnerId || user.uid;
+        const projectRef = doc(db, "users", targetOwnerId, "projects", targetProjectId);
         
-        // Use setDoc with merge to only update the relevant assumptions
-        await setDoc(projectRef, {
-          userId: user.uid,
-          userEmail: user.email,
+        const savePayload: any = {
           updatedAt: serverTimestamp(),
           projectInfo: projectInfo,
           [type === "opco" ? "opCoAssumptions" : "propCoAssumptions"]: type === "opco" ? opCoAssumptions : propCoAssumptions
-        }, { merge: true });
+        };
+
+        if (targetOwnerId === user.uid) {
+          savePayload.userId = user.uid;
+          savePayload.userEmail = user.email;
+        }
+        
+        // Use setDoc with merge to only update the relevant assumptions
+        await setDoc(projectRef, savePayload, { merge: true });
         
         if (!currentProjectId) {
           setCurrentProjectId("default");
+        }
+        if (!projectOwnerId) {
+          setProjectOwnerId(user.uid);
         }
         
         setStatus("saved");
@@ -4136,12 +4218,138 @@ export default function App() {
         handleFirestoreError(
           err,
           OperationType.WRITE,
-          `users/${user.uid}/projects/${currentProjectId || "default"}`,
+          `users/${projectOwnerId || user.uid}/projects/${currentProjectId || "default"}`,
         );
       }
     },
-    [user, opCoAssumptions, propCoAssumptions, projectInfo, currentProjectId],
+    [user, opCoAssumptions, propCoAssumptions, projectInfo, currentProjectId, projectOwnerId],
   );
+
+  // Join collaborative workspace via token (Option A)
+  const handleJoinWorkspace = async () => {
+    if (!collabCodeInput.trim() || !user || !db) return;
+    setCollabError("");
+    setCollabSuccess("");
+    try {
+      let ownerId = "";
+      let projectId = "";
+      const rawCode = collabCodeInput.trim();
+      try {
+        const decoded = atob(rawCode);
+        const parts = decoded.split(":");
+        if (parts.length === 2) {
+          ownerId = parts[0];
+          projectId = parts[1];
+        }
+      } catch {
+        const parts = rawCode.split(":");
+        if (parts.length === 2) {
+          ownerId = parts[0];
+          projectId = parts[1];
+        }
+      }
+
+      if (!ownerId || !projectId) {
+        setCollabError("Invalid workspace token format. Please check the code.");
+        return;
+      }
+
+      const projectRef = doc(db, "users", ownerId, "projects", projectId);
+      const projectSnap = await getDoc(projectRef);
+      
+      if (!projectSnap.exists()) {
+        setCollabError("Workspace not found in the cloud.");
+        return;
+      }
+
+      const pData = projectSnap.data();
+      const pName = pData.projectInfo?.name || "Shared Workspace";
+      const pOwnerEmail = pData.userEmail || "Collaborator";
+
+      // Load it
+      loadFromCloud(user.uid, projectId, ownerId);
+
+      // Add to joinedProjects list
+      const exists = joinedProjects.some(p => p.id === projectId && p.ownerId === ownerId);
+      if (!exists) {
+        setJoinedProjects(prev => [...prev, {
+          id: projectId,
+          ownerId: ownerId,
+          name: pName,
+          ownerEmail: pOwnerEmail
+        }]);
+      }
+
+      setCollabSuccess(`Successfully joined "${pName}"!`);
+      setCollabCodeInput("");
+    } catch (err: any) {
+      console.error(err);
+      setCollabError("Error joining workspace. Ensure your email is added as an authorized collaborator.");
+    }
+  };
+
+  // Manage collaborators (Option B)
+  const handleAddCollaborator = async () => {
+    if (!collabEmailInput.trim() || !user || !db || !currentProjectId) return;
+    const targetEmail = collabEmailInput.trim().toLowerCase();
+    
+    if (targetEmail === user.email?.toLowerCase()) {
+      alert("You cannot add yourself as a collaborator.");
+      return;
+    }
+
+    try {
+      const targetOwnerId = projectOwnerId || user.uid;
+      if (targetOwnerId !== user.uid) {
+        alert("Only the owner can manage collaborators.");
+        return;
+      }
+
+      const projectRef = doc(db, "users", user.uid, "projects", currentProjectId);
+      const updatedList = [...collabEmailList.filter(e => e.toLowerCase() !== targetEmail), targetEmail];
+      
+      await setDoc(projectRef, {
+        collaborators: updatedList
+      }, { merge: true });
+
+      setCollabEmailList(updatedList);
+      setCollabEmailInput("");
+    } catch (err) {
+      console.error("Failed to add collaborator", err);
+      alert("Failed to add collaborator. Verify your permissions.");
+    }
+  };
+
+  const handleRemoveCollaborator = async (emailToRemove: string) => {
+    if (!user || !db || !currentProjectId) return;
+    try {
+      const targetOwnerId = projectOwnerId || user.uid;
+      if (targetOwnerId !== user.uid) {
+        alert("Only the owner can manage collaborators.");
+        return;
+      }
+
+      const projectRef = doc(db, "users", user.uid, "projects", currentProjectId);
+      const updatedList = collabEmailList.filter(e => e !== emailToRemove);
+      
+      await setDoc(projectRef, {
+        collaborators: updatedList
+      }, { merge: true });
+
+      setCollabEmailList(updatedList);
+    } catch (err) {
+      console.error("Failed to remove collaborator", err);
+      alert("Failed to remove collaborator.");
+    }
+  };
+
+  const handleLeaveWorkspace = (projectId: string, ownerId: string) => {
+    setJoinedProjects(prev => prev.filter(p => !(p.id === projectId && p.ownerId === ownerId)));
+    if (currentProjectId === projectId && projectOwnerId === ownerId) {
+      setCurrentProjectId(null);
+      setProjectOwnerId(null);
+    }
+  };
 
   const handleTextSelection = useCallback((e) => {
     if (e.target.closest("#ai-selection-popup")) return;
@@ -4772,7 +4980,31 @@ export default function App() {
           />
         )}
         {activeTab === "collab" && (
-          <CollaborationStrategyView isPresenting={isPresenting} />
+          <CollaborationStrategyView 
+            isPresenting={isPresenting}
+            user={user}
+            currentProjectId={currentProjectId}
+            projectOwnerId={projectOwnerId}
+            projectInfo={projectInfo}
+            isCloudSync={isCloudSync}
+            setIsCloudSync={setIsCloudSync}
+            cloudStatus={cloudStatus}
+            collabCodeInput={collabCodeInput}
+            setCollabCodeInput={setCollabCodeInput}
+            collabError={collabError}
+            setCollabError={setCollabError}
+            collabSuccess={collabSuccess}
+            setCollabSuccess={setCollabSuccess}
+            handleJoinWorkspace={handleJoinWorkspace}
+            collabEmailInput={collabEmailInput}
+            setCollabEmailInput={setCollabEmailInput}
+            collabEmailList={collabEmailList}
+            handleAddCollaborator={handleAddCollaborator}
+            handleRemoveCollaborator={handleRemoveCollaborator}
+            joinedProjects={joinedProjects}
+            handleLeaveWorkspace={handleLeaveWorkspace}
+            onLoadProject={loadFromCloud}
+          />
         )}
         {activeTab === "timeline" && (
           <MasterTimelineView
