@@ -2835,7 +2835,7 @@ const SettingsPasswordGate = ({ children }) => {
   const [error, setError] = useState(false);
   
   // Set REQUIRE_PASSWORD to true to enforce password, false to bypass
-  const REQUIRE_PASSWORD = false; 
+  const REQUIRE_PASSWORD = true; 
   const CORRECT_PASSWORD = "admin"; // Change this to your desired password
 
   if (!REQUIRE_PASSWORD || isAuthenticated) {
