@@ -166,6 +166,8 @@ import {
   logoutUser,
   handleFirestoreError,
   OperationType,
+  firebaseConfig,
+  isPlaceholder,
 } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, addDoc, onSnapshot } from "firebase/firestore";
@@ -5333,6 +5335,27 @@ export default function App() {
                       credentials.
                     </li>
                   </ul>
+
+                  <div className="mt-4 p-4 bg-[#F9F8F6] border border-[#D8D8D8] rounded-xl text-xs space-y-2">
+                    <span className="font-bold text-[#1E2F31] block border-b border-[#D8D8D8] pb-1">🔧 Configuration Diagnostics:</span>
+                    <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 font-mono text-gray-600">
+                      <span>Project ID:</span>
+                      <span className={firebaseConfig.projectId && !isPlaceholder(firebaseConfig.projectId) ? "text-emerald-700 font-bold" : "text-amber-600 font-bold"}>
+                        {firebaseConfig.projectId ? (isPlaceholder(firebaseConfig.projectId) ? `Placeholder (${firebaseConfig.projectId})` : firebaseConfig.projectId) : "Not Detected"}
+                      </span>
+                      <span>API Key:</span>
+                      <span className={firebaseConfig.apiKey && !isPlaceholder(firebaseConfig.apiKey) ? "text-emerald-700 font-bold" : "text-amber-600 font-bold"}>
+                        {firebaseConfig.apiKey ? (isPlaceholder(firebaseConfig.apiKey) ? "Placeholder Active" : "Active / Verified") : "Not Detected"}
+                      </span>
+                      <span>App ID:</span>
+                      <span className={firebaseConfig.appId && !isPlaceholder(firebaseConfig.appId) ? "text-emerald-700 font-bold" : "text-amber-600 font-bold"}>
+                        {firebaseConfig.appId ? (isPlaceholder(firebaseConfig.appId) ? "Placeholder Active" : "Active / Verified") : "Not Detected"}
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-gray-500 pt-1 leading-normal">
+                      💡 <strong>Azure App Service Tip:</strong> If you added variables in Azure App Service Configuration, verify they are named <code>FIREBASE_API_KEY</code>, <code>FIREBASE_PROJECT_ID</code>, and <code>FIREBASE_APP_ID</code>, click <strong>Save</strong>, and then <strong>Restart</strong> the App Service to propagate the variables.
+                    </div>
+                  </div>
                 </div>
                 <div className="flex gap-3 justify-end">
                   <button

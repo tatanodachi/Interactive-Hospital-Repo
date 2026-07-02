@@ -10,11 +10,26 @@ import {
 import { getFirestore } from "firebase/firestore";
 import firebaseConfigJson from "../firebase-applet-config.json";
 
+// Helper function to check if a value is a placeholder or default dummy string
+const isPlaceholder = (val: string | undefined): boolean => {
+  if (!val) return true;
+  const upperVal = val.toUpperCase().trim();
+  return (
+    upperVal === "" ||
+    upperVal.includes("PLACEHOLDER") ||
+    upperVal.includes("YOUR_") ||
+    upperVal.includes("ACTUAL") ||
+    upperVal.includes("SENDER_ID") ||
+    upperVal.includes("APP_ID") ||
+    upperVal.includes("API_KEY")
+  );
+};
+
 // Helper function to resolve configuration at runtime or fallback
 const getFirebaseConfig = () => {
   if (typeof window !== "undefined" && (window as any).__FIREBASE_CONFIG__) {
     const injected = (window as any).__FIREBASE_CONFIG__;
-    if (injected.apiKey && !injected.apiKey.includes("PLACEHOLDER") && injected.projectId) {
+    if (injected.apiKey && !isPlaceholder(injected.apiKey) && injected.projectId && !isPlaceholder(injected.projectId)) {
       console.log("[Firebase Debug] Configuration successfully loaded from runtime injected window.__FIREBASE_CONFIG__.", {
         projectId: injected.projectId,
         authDomain: injected.authDomain
@@ -46,7 +61,9 @@ const getFirebaseConfig = () => {
   console.log("[Firebase Debug] Configuration loaded from build-time environment or fallback JSON.", {
     projectId: fallback.projectId,
     authDomain: fallback.authDomain,
-    hasBuildTimeEnv: !!import.meta.env.VITE_FIREBASE_API_KEY
+    hasBuildTimeEnv: !!import.meta.env.VITE_FIREBASE_API_KEY,
+    isApiKeyPlaceholder: isPlaceholder(fallback.apiKey),
+    isProjectIdPlaceholder: isPlaceholder(fallback.projectId)
   });
 
   return fallback;
@@ -57,9 +74,9 @@ const firebaseConfig = getFirebaseConfig();
 // Detect if we are using placeholder credentials
 export const isCloudConfigured =
   firebaseConfig.apiKey &&
-  !firebaseConfig.apiKey.includes("PLACEHOLDER") &&
+  !isPlaceholder(firebaseConfig.apiKey) &&
   firebaseConfig.projectId &&
-  !firebaseConfig.projectId.includes("PLACEHOLDER");
+  !isPlaceholder(firebaseConfig.projectId);
 
 let app;
 let db: any = null;
@@ -79,7 +96,7 @@ if (isCloudConfigured) {
   }
 }
 
-export { db, auth, googleProvider };
+export { db, auth, googleProvider, firebaseConfig, isPlaceholder };
 
 // Standardized Operation Type Enums
 export enum OperationType {
