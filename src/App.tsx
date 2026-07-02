@@ -5351,9 +5351,13 @@ export default function App() {
                       <span className={firebaseConfig.appId && !isPlaceholder(firebaseConfig.appId) ? "text-emerald-700 font-bold" : "text-amber-600 font-bold"}>
                         {firebaseConfig.appId ? (isPlaceholder(firebaseConfig.appId) ? "Placeholder Active" : "Active / Verified") : "Not Detected"}
                       </span>
+                      <span>Auth Domain:</span>
+                      <span className="text-gray-800 break-all">{firebaseConfig.authDomain || "Not Detected"}</span>
+                      <span>Current Host:</span>
+                      <span className="text-gray-800 break-all">{typeof window !== "undefined" ? window.location.hostname : "Unknown"}</span>
                     </div>
-                    <div className="text-[10px] text-gray-500 pt-1 leading-normal">
-                      💡 <strong>Azure App Service Tip:</strong> If you added variables in Azure App Service Configuration, verify they are named <code>FIREBASE_API_KEY</code>, <code>FIREBASE_PROJECT_ID</code>, and <code>FIREBASE_APP_ID</code>, click <strong>Save</strong>, and then <strong>Restart</strong> the App Service to propagate the variables.
+                    <div className="text-[10px] text-gray-500 pt-1 leading-normal border-t border-[#D8D8D8] mt-2">
+                      💡 <strong>Action Required:</strong> For Azure deployments, you must click <strong>Share &gt; Export to GitHub</strong> so your latest changes trigger a new Azure deployment. Also ensure your Azure App Service Configuration variables match your real Firebase project (not the AI Studio one), and <strong>Restart</strong> the Azure App Service.
                     </div>
                   </div>
                 </div>
