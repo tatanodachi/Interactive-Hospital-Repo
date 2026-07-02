@@ -15,6 +15,10 @@ const getFirebaseConfig = () => {
   if (typeof window !== "undefined" && (window as any).__FIREBASE_CONFIG__) {
     const injected = (window as any).__FIREBASE_CONFIG__;
     if (injected.apiKey && !injected.apiKey.includes("PLACEHOLDER") && injected.projectId) {
+      console.log("[Firebase Debug] Configuration successfully loaded from runtime injected window.__FIREBASE_CONFIG__.", {
+        projectId: injected.projectId,
+        authDomain: injected.authDomain
+      });
       return {
         apiKey: injected.apiKey,
         authDomain: injected.authDomain || "",
@@ -28,7 +32,7 @@ const getFirebaseConfig = () => {
     }
   }
 
-  return {
+  const fallback = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY || firebaseConfigJson.apiKey,
     authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfigJson.authDomain,
     projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseConfigJson.projectId,
@@ -38,6 +42,14 @@ const getFirebaseConfig = () => {
     measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || firebaseConfigJson.measurementId,
     firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || firebaseConfigJson.firestoreDatabaseId,
   };
+
+  console.log("[Firebase Debug] Configuration loaded from build-time environment or fallback JSON.", {
+    projectId: fallback.projectId,
+    authDomain: fallback.authDomain,
+    hasBuildTimeEnv: !!import.meta.env.VITE_FIREBASE_API_KEY
+  });
+
+  return fallback;
 };
 
 const firebaseConfig = getFirebaseConfig();

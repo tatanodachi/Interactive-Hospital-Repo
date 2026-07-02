@@ -1,10 +1,10 @@
 {
-  "projectId": "titanium-scholar-tmjvc",
-  "appId": "1:850463072611:web:e3b2cabd65d10bf8d3f356",
-  "apiKey": "AIzaSyC3XS4NN2KSy_dOGveVD0sjEid6vWukocE",
-  "authDomain": "titanium-scholar-tmjvc.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-1e24e95e-f0d6-429d-b32a-912123543144",
-  "storageBucket": "titanium-scholar-tmjvc.firebasestorage.app",
-  "messagingSenderId": "850463072611",
+  "projectId": "shared-fs-7a4fc",
+  "appId": "YOUR_ACTUAL_APP_ID",
+  "apiKey": "YOUR_ACTUAL_API_KEY",
+  "authDomain": "shared-fs-7a4fc.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "shared-fs-7a4fc.firebasestorage.app",
+  "messagingSenderId": "YOUR_SENDER_ID",
   "measurementId": ""
 }
