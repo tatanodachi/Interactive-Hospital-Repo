@@ -5357,7 +5357,12 @@ export default function App() {
                       <span className="text-gray-800 break-all">{typeof window !== "undefined" ? window.location.hostname : "Unknown"}</span>
                     </div>
                     <div className="text-[10px] text-gray-500 pt-1 leading-normal border-t border-[#D8D8D8] mt-2">
-                      💡 <strong>Action Required:</strong> For Azure deployments, you must click <strong>Share &gt; Export to GitHub</strong> so your latest changes trigger a new Azure deployment. Also ensure your Azure App Service Configuration variables match your real Firebase project (not the AI Studio one), and <strong>Restart</strong> the Azure App Service.
+                      💡 <strong>auth/unauthorized-domain error?</strong> 
+                      If you see this, you must add <strong>{typeof window !== "undefined" ? window.location.hostname : "this domain"}</strong> to the Authorized Domains list in your Firebase Console (Authentication &gt; Settings &gt; Authorized domains).
+                      <br /><br />
+                      Note: The Google Sign-In popup will always redirect through your <code>{firebaseConfig.authDomain || "firebaseapp.com"}</code> auth domain. This is normal and secure.
+                      <br /><br />
+                      <strong>Azure Tip:</strong> Export to GitHub to push your changes, and <strong>Restart</strong> the Azure App Service.
                     </div>
                   </div>
                 </div>
@@ -5496,7 +5501,12 @@ export default function App() {
                       <span className="text-gray-800 break-all">{typeof window !== "undefined" ? window.location.hostname : "Unknown"}</span>
                     </div>
                     <div className="text-[10px] text-gray-500 pt-1 leading-normal border-t border-[#D8D8D8] mt-2">
-                      💡 <strong>Action Required:</strong> For Azure deployments, you must click <strong>Share &gt; Export to GitHub</strong> so your latest changes trigger a new Azure deployment. Also ensure your Azure App Service Configuration variables match your real Firebase project (not the AI Studio one), and <strong>Restart</strong> the Azure App Service.
+                      💡 <strong>auth/unauthorized-domain error?</strong> 
+                      If you see this, you must add <strong>{typeof window !== "undefined" ? window.location.hostname : "this domain"}</strong> to the Authorized Domains list in your Firebase Console (Authentication &gt; Settings &gt; Authorized domains).
+                      <br /><br />
+                      Note: The Google Sign-In popup will always redirect through your <code>{firebaseConfig.authDomain || "firebaseapp.com"}</code> auth domain. This is normal and secure.
+                      <br /><br />
+                      <strong>Azure Tip:</strong> Export to GitHub to push your changes, and <strong>Restart</strong> the Azure App Service.
                     </div>
                   </div>
                 </div>

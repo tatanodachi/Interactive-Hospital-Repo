@@ -27,6 +27,32 @@ const isPlaceholder = (val: string | undefined): boolean => {
 
 // Helper function to resolve configuration at runtime or fallback
 const getFirebaseConfig = () => {
+  // Check build-time environment variables first if they are valid and not placeholders
+  const buildTimeConfig = {
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+    firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID,
+  };
+
+  if (
+    buildTimeConfig.apiKey &&
+    !isPlaceholder(buildTimeConfig.apiKey) &&
+    buildTimeConfig.projectId &&
+    !isPlaceholder(buildTimeConfig.projectId)
+  ) {
+    console.log("[Firebase Debug] Configuration successfully loaded from build-time environment variables:", {
+      projectId: buildTimeConfig.projectId,
+      authDomain: buildTimeConfig.authDomain
+    });
+    return buildTimeConfig;
+  }
+
+  // Fallback to runtime injected window config if available
   if (typeof window !== "undefined" && (window as any).__FIREBASE_CONFIG__) {
     const injected = (window as any).__FIREBASE_CONFIG__;
     if (injected.apiKey && !isPlaceholder(injected.apiKey) && injected.projectId && !isPlaceholder(injected.projectId)) {
@@ -48,20 +74,19 @@ const getFirebaseConfig = () => {
   }
 
   const fallback = {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || firebaseConfigJson.apiKey,
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfigJson.authDomain,
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseConfigJson.projectId,
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseConfigJson.storageBucket,
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseConfigJson.messagingSenderId,
-    appId: import.meta.env.VITE_FIREBASE_APP_ID || firebaseConfigJson.appId,
-    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || firebaseConfigJson.measurementId,
-    firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || firebaseConfigJson.firestoreDatabaseId,
+    apiKey: firebaseConfigJson.apiKey,
+    authDomain: firebaseConfigJson.authDomain,
+    projectId: firebaseConfigJson.projectId,
+    storageBucket: firebaseConfigJson.storageBucket,
+    messagingSenderId: firebaseConfigJson.messagingSenderId,
+    appId: firebaseConfigJson.appId,
+    measurementId: firebaseConfigJson.measurementId,
+    firestoreDatabaseId: firebaseConfigJson.firestoreDatabaseId,
   };
 
-  console.log("[Firebase Debug] Configuration loaded from build-time environment or fallback JSON.", {
+  console.log("[Firebase Debug] Configuration loaded from fallback JSON.", {
     projectId: fallback.projectId,
     authDomain: fallback.authDomain,
-    hasBuildTimeEnv: !!import.meta.env.VITE_FIREBASE_API_KEY,
     isApiKeyPlaceholder: isPlaceholder(fallback.apiKey),
     isProjectIdPlaceholder: isPlaceholder(fallback.projectId)
   });
