@@ -10,17 +10,37 @@ import {
 import { getFirestore } from "firebase/firestore";
 import firebaseConfigJson from "../firebase-applet-config.json";
 
-// Allow environment variable overrides (highly recommended for production deployments like Azure Web Apps)
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || firebaseConfigJson.apiKey,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfigJson.authDomain,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseConfigJson.projectId,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseConfigJson.storageBucket,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseConfigJson.messagingSenderId,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || firebaseConfigJson.appId,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || firebaseConfigJson.measurementId,
-  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || firebaseConfigJson.firestoreDatabaseId,
+// Helper function to resolve configuration at runtime or fallback
+const getFirebaseConfig = () => {
+  if (typeof window !== "undefined" && (window as any).__FIREBASE_CONFIG__) {
+    const injected = (window as any).__FIREBASE_CONFIG__;
+    if (injected.apiKey && !injected.apiKey.includes("PLACEHOLDER") && injected.projectId) {
+      return {
+        apiKey: injected.apiKey,
+        authDomain: injected.authDomain || "",
+        projectId: injected.projectId,
+        storageBucket: injected.storageBucket || "",
+        messagingSenderId: injected.messagingSenderId || "",
+        appId: injected.appId || "",
+        measurementId: injected.measurementId || "",
+        firestoreDatabaseId: injected.firestoreDatabaseId || "",
+      };
+    }
+  }
+
+  return {
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || firebaseConfigJson.apiKey,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfigJson.authDomain,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseConfigJson.projectId,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseConfigJson.storageBucket,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseConfigJson.messagingSenderId,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID || firebaseConfigJson.appId,
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || firebaseConfigJson.measurementId,
+    firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || firebaseConfigJson.firestoreDatabaseId,
+  };
 };
+
+const firebaseConfig = getFirebaseConfig();
 
 // Detect if we are using placeholder credentials
 export const isCloudConfigured =

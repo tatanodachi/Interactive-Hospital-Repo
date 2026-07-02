@@ -3,6 +3,7 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
+import fs from "fs";
 
 dotenv.config();
 
@@ -69,9 +70,38 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
+    // Serve static assets, but do not automatically serve index.html
+    app.use(express.static(distPath, { index: false }));
+    
     app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+      const indexPath = path.join(distPath, 'index.html');
+      if (fs.existsSync(indexPath)) {
+        try {
+          let html = fs.readFileSync(indexPath, 'utf8');
+          
+          // Construct config using any available Firebase env variables
+          const runtimeConfig = {
+            apiKey: process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY || "",
+            authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || process.env.FIREBASE_AUTH_DOMAIN || "",
+            projectId: process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || "",
+            storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || process.env.FIREBASE_STORAGE_BUCKET || "",
+            messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || process.env.FIREBASE_MESSAGING_SENDER_ID || "",
+            appId: process.env.VITE_FIREBASE_APP_ID || process.env.FIREBASE_APP_ID || "",
+            measurementId: process.env.VITE_FIREBASE_MEASUREMENT_ID || process.env.FIREBASE_MEASUREMENT_ID || "",
+            firestoreDatabaseId: process.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || process.env.FIRESTORE_DATABASE_ID || ""
+          };
+
+          const scriptTag = `<script>window.__FIREBASE_CONFIG__ = ${JSON.stringify(runtimeConfig)};</script>`;
+          html = html.replace('</head>', `${scriptTag}</head>`);
+          
+          res.send(html);
+        } catch (err) {
+          console.error("Failed to inject runtime config into index.html:", err);
+          res.sendFile(indexPath);
+        }
+      } else {
+        res.status(404).send('Not Found');
+      }
     });
   }
 
