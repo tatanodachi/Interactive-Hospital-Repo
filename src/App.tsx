@@ -2831,6 +2831,88 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
+const ModulePasswordGate = ({ children, moduleName, description }) => {
+  const storageKey = `hcp_unlocked_${moduleName.toLowerCase().replace(/\s+/g, "_")}`;
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    try {
+      return sessionStorage.getItem(storageKey) === "true";
+    } catch (e) {
+      return false;
+    }
+  });
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState(false);
+  
+  const CORRECT_PASSWORDS = ["admin", "clinical2026"];
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (CORRECT_PASSWORDS.includes(password.trim().toLowerCase())) {
+      setIsAuthenticated(true);
+      setError(false);
+      try {
+        sessionStorage.setItem(storageKey, "true");
+      } catch (e) {}
+    } else {
+      setError(true);
+      setPassword("");
+    }
+  };
+
+  if (isAuthenticated) {
+    return <>{children}</>;
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center p-8 sm:p-16 min-h-[500px] w-full bg-[#F9F8F6]">
+      <div className="bg-[#1E2F31] text-[#F9F8F6] p-8 sm:p-10 rounded-2xl shadow-xl border border-[#1C6048]/30 max-w-md w-full text-center flex flex-col items-center gap-6 animate-in fade-in zoom-in duration-300">
+        <div className="p-4 bg-[#1C6048]/20 border border-[#1C6048]/40 rounded-full text-[#9B8B70]">
+          <Lock size={36} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <span className="text-[10px] font-extrabold text-[#9B8B70] uppercase tracking-widest">
+            Restricted Underwriting Asset
+          </span>
+          <h3 className="text-xl font-bold tracking-tight text-white font-sans">
+            {moduleName} Locked
+          </h3>
+          <p className="text-xs text-[#F9F8F6]/85 max-w-xs leading-relaxed">
+            {description || `This section is restricted. Please enter the authorized password to access this analytical suite.`}
+          </p>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5 w-full">
+          <div className="relative">
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter secure password..."
+              className="w-full px-4 py-2.5 bg-white/10 text-white placeholder-white/40 text-sm border border-white/15 rounded-xl focus:outline-none focus:border-[#1C6048] focus:ring-1 focus:ring-[#1C6048]/50 transition-all text-center"
+              autoFocus
+            />
+          </div>
+          {error && (
+            <span className="text-[#F87171] text-xs font-semibold tracking-wide animate-bounce">
+              Incorrect authorization key. Please try again.
+            </span>
+          )}
+          <button 
+            type="submit"
+            className="w-full bg-[#1C6048] hover:bg-[#1C6048]/85 text-white py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md active:scale-[0.98] cursor-pointer"
+          >
+            Authenticate View
+          </button>
+        </form>
+        
+        <div className="text-[10px] text-[#F9F8F6]/45 font-mono">
+          Clinical Underwriting System v2026
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const SettingsPasswordGate = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
@@ -4959,12 +5041,17 @@ export default function App() {
       >
         {/* Content Section */}
         {activeTab === "executive" && (
-          <ExecutiveSummaryView
-            isPresenting={isPresenting}
-            opCoData={opCoModelData}
-            propCoData={propCoModelData}
-            consolidatedData={consolidatedModelData}
-          />
+          <ModulePasswordGate
+            moduleName="Executive Summary"
+            description="Please enter the authorized password to access the consolidated executive feasibility report and high-level project summary."
+          >
+            <ExecutiveSummaryView
+              isPresenting={isPresenting}
+              opCoData={opCoModelData}
+              propCoData={propCoModelData}
+              consolidatedData={consolidatedModelData}
+            />
+          </ModulePasswordGate>
         )}
         {activeTab === "overview" && (
           <ProjectOverviewView
@@ -5021,180 +5108,190 @@ export default function App() {
           activeTab !== "timeline" &&
           activeTab !== "ai" &&
           activeGroup === "financials" && (
-            <div className="animate-in fade-in duration-500">
-              {/* OPCO SECTION */}
-              <div className={activeCompany === "opco" ? "block" : "hidden"}>
-                {activeTab === "dashboard" && (
-                  <OpCoDashboardView
-                    data={opCoModelData}
-                    assumptions={opCoAssumptions}
-                    generateTeaser={generateTeaser}
-                    isTeaserLoading={isTeaserLoading}
-                    showTeaser={showTeaser}
-                    setShowTeaser={setShowTeaser}
-                    teaserContent={teaserContent}
-                    isPresenting={isPresenting}
-                  />
-                )}
-                
-                {/* Preserve DOM for CascadeView */}
-                <div className={activeTab === "comprehensive" ? "block" : "hidden"}>
-                  <OpCoCascadeView
-                    data={opCoModelData}
-                    assumptions={opCoAssumptions}
-                    viewResolution={viewResolution}
-                    setViewResolution={setViewResolution}
-                  />
-                </div>
-                
-                {activeTab === "sensitivity" && (
-                  <OpCoSensitivityView assumptions={opCoAssumptions} />
-                )}
-                {activeTab === "assumptions" && (
-                  <SettingsPasswordGate>
-                    <OpCoSettingsView
+            <ModulePasswordGate
+              moduleName="Financial Engine"
+              description="Please enter the authorized password to access the active clinical and property cash flow models, dashboards, sensitivities, and clinical programming tables."
+            >
+              <div className="animate-in fade-in duration-500">
+                {/* OPCO SECTION */}
+                <div className={activeCompany === "opco" ? "block" : "hidden"}>
+                  {activeTab === "dashboard" && (
+                    <OpCoDashboardView
+                      data={opCoModelData}
                       assumptions={opCoAssumptions}
-                      onChange={handleOpCoChange}
-                      onSyncEquity={syncEquityWithSharing}
-                      onValidate={validateAssumptions}
-                      isLocked={isLockedOpCo}
-                      onToggleLock={() => setIsLockedOpCo(!isLockedOpCo)}
-                      onSave={() => saveDefaultsToCloud("opco")}
-                      saveStatus={saveStatusOpCo}
-                      onReset={() => setOpCoAssumptions(DEFAULT_OPCO_ASSUMPTIONS)}
-                      isCloudSync={isCloudSync}
+                      generateTeaser={generateTeaser}
+                      isTeaserLoading={isTeaserLoading}
+                      showTeaser={showTeaser}
+                      setShowTeaser={setShowTeaser}
+                      teaserContent={teaserContent}
                       isPresenting={isPresenting}
                     />
-                  </SettingsPasswordGate>
-                )}
-              </div>
-
-              {/* PROPCO SECTION */}
-              <div className={activeCompany === "propco" ? "block" : "hidden"}>
-                {activeTab === "dashboard" && (
-                  <PropCoDashboardView
-                    data={standalonePropCoData}
-                    assumptions={propCoAssumptions}
-                    generateTeaser={generateTeaser}
-                    isTeaserLoading={isTeaserLoading}
-                    showTeaser={showTeaser}
-                    setShowTeaser={setShowTeaser}
-                    teaserContent={teaserContent}
-                    setTab={setActiveTab}
-                    isPresenting={isPresenting}
-                    propCoScenario={propCoScenario}
-                    setPropCoScenario={setPropCoScenario}
-                    onChange={handlePropCoChange}
-                    propCoLocked={propCoLocked}
-                    holdCoLocked={holdCoLocked}
-                    toggleHoldCoLock={toggleHoldCoLock}
-                  />
-                )}
-                
-                {/* Preserve DOM for CascadeView */}
-                <div className={activeTab === "comprehensive" ? "block" : "hidden"}>
-                  <PropCoCascadeView
-                    data={standalonePropCoData}
-                    onExport={() => {}}
-                    viewResolution={viewResolution}
-                    setViewResolution={setViewResolution}
-                  />
+                  )}
+                  
+                  {/* Preserve DOM for CascadeView */}
+                  <div className={activeTab === "comprehensive" ? "block" : "hidden"}>
+                    <OpCoCascadeView
+                      data={opCoModelData}
+                      assumptions={opCoAssumptions}
+                      viewResolution={viewResolution}
+                      setViewResolution={setViewResolution}
+                    />
+                  </div>
+                  
+                  {activeTab === "sensitivity" && (
+                    <OpCoSensitivityView assumptions={opCoAssumptions} />
+                  )}
+                  {activeTab === "assumptions" && (
+                    <SettingsPasswordGate>
+                      <OpCoSettingsView
+                        assumptions={opCoAssumptions}
+                        onChange={handleOpCoChange}
+                        onSyncEquity={syncEquityWithSharing}
+                        onValidate={validateAssumptions}
+                        isLocked={isLockedOpCo}
+                        onToggleLock={() => setIsLockedOpCo(!isLockedOpCo)}
+                        onSave={() => saveDefaultsToCloud("opco")}
+                        saveStatus={saveStatusOpCo}
+                        onReset={() => setOpCoAssumptions(DEFAULT_OPCO_ASSUMPTIONS)}
+                        isCloudSync={isCloudSync}
+                        isPresenting={isPresenting}
+                      />
+                    </SettingsPasswordGate>
+                  )}
                 </div>
-                
-                {activeTab === "sensitivity" && (
-                  <PropCoSensitivityView
-                    assumptions={propCoAssumptions}
-                    opCoModelData={standalonePropCoOpCoData}
-                    groups={groups}
-                  />
-                )}
-                {activeTab === "assumptions" && (
-                  <SettingsPasswordGate>
-                    <PropCoSettingsView
-                      assumptions={propCoAssumptions}
+
+                {/* PROPCO SECTION */}
+                <div className={activeCompany === "propco" ? "block" : "hidden"}>
+                  {activeTab === "dashboard" && (
+                    <PropCoDashboardView
                       data={standalonePropCoData}
-                      onChange={handlePropCoChange}
-                      onValidate={validateAssumptions}
-                      isLocked={isLockedPropCo}
-                      onToggleLock={() => setIsLockedPropCo(!isLockedPropCo)}
-                      onSave={() => saveDefaultsToCloud("propco")}
-                      saveStatus={saveStatusPropCo}
-                      onReset={() =>
-                        setPropCoAssumptions(DEFAULT_PROPCO_ASSUMPTIONS)
-                      }
-                      isCloudSync={isCloudSync}
+                      assumptions={propCoAssumptions}
+                      generateTeaser={generateTeaser}
+                      isTeaserLoading={isTeaserLoading}
+                      showTeaser={showTeaser}
+                      setShowTeaser={setShowTeaser}
+                      teaserContent={teaserContent}
+                      setTab={setActiveTab}
                       isPresenting={isPresenting}
-                      resolvedDevDuration={resolvedDevDuration}
+                      propCoScenario={propCoScenario}
+                      setPropCoScenario={setPropCoScenario}
+                      onChange={handlePropCoChange}
+                      propCoLocked={propCoLocked}
+                      holdCoLocked={holdCoLocked}
+                      toggleHoldCoLock={toggleHoldCoLock}
                     />
-                  </SettingsPasswordGate>
-                )}
-              </div>
-
-              {/* CONSOLIDATED SECTION */}
-              <div className={activeCompany === "consolidated" ? "block" : "hidden"}>
-                {activeTab === "dashboard" && (
-                  <ConsolidatedDashboardView
-                    data={consolidatedModelData}
-                    opcoData={opCoModelData}
-                    propcoData={propCoModelData}
-                    assumptions={opCoAssumptions}
-                    propCoAssumptions={propCoAssumptions}
-                    handlePropCoChange={handlePropCoChange}
-                    holdCoAssumptions={holdCoAssumptions}
-                    handleHoldCoChange={handleHoldCoChange}
-                    isPresenting={isPresenting}
-                    holdCoScenario={holdCoScenario}
-                    setHoldCoScenario={setHoldCoScenario}
-                    holdCoLocked={holdCoLocked}
-                    toggleHoldCoLock={toggleHoldCoLock}
-                    propCoLocked={propCoLocked}
-                    togglePropCoLock={togglePropCoLock}
-                  />
-                )}
-                
-                {/* Preserve DOM for CascadeView */}
-                <div className={activeTab === "comprehensive" ? "block" : "hidden"}>
-                  <ConsolidatedCascadeView
-                    data={consolidatedModelData}
-                    opcoData={opCoModelData}
-                    propcoData={propCoModelData}
-                    opcoAssumptions={opCoAssumptions}
-                    viewResolution={viewResolution}
-                    setViewResolution={setViewResolution}
-                    holdCoAssumptions={holdCoAssumptions}
-                    handleHoldCoChange={handleHoldCoChange}
-                  />
+                  )}
+                  
+                  {/* Preserve DOM for CascadeView */}
+                  <div className={activeTab === "comprehensive" ? "block" : "hidden"}>
+                    <PropCoCascadeView
+                      data={standalonePropCoData}
+                      onExport={() => {}}
+                      viewResolution={viewResolution}
+                      setViewResolution={setViewResolution}
+                    />
+                  </div>
+                  
+                  {activeTab === "sensitivity" && (
+                    <PropCoSensitivityView
+                      assumptions={propCoAssumptions}
+                      opCoModelData={standalonePropCoOpCoData}
+                      groups={groups}
+                    />
+                  )}
+                  {activeTab === "assumptions" && (
+                    <SettingsPasswordGate>
+                      <PropCoSettingsView
+                        assumptions={propCoAssumptions}
+                        data={standalonePropCoData}
+                        onChange={handlePropCoChange}
+                        onValidate={validateAssumptions}
+                        isLocked={isLockedPropCo}
+                        onToggleLock={() => setIsLockedPropCo(!isLockedPropCo)}
+                        onSave={() => saveDefaultsToCloud("propco")}
+                        saveStatus={saveStatusPropCo}
+                        onReset={() =>
+                          setPropCoAssumptions(DEFAULT_PROPCO_ASSUMPTIONS)
+                        }
+                        isCloudSync={isCloudSync}
+                        isPresenting={isPresenting}
+                        resolvedDevDuration={resolvedDevDuration}
+                      />
+                    </SettingsPasswordGate>
+                  )}
                 </div>
-                
-                {activeTab === "sensitivity" && (
-                  <ConsolidatedSensitivityView
-                    opCoAssumptions={opCoAssumptions}
-                    propCoAssumptions={propCoAssumptions}
-                    holdCoAssumptions={holdCoAssumptions}
-                    resolvedDevDuration={resolvedDevDuration}
-                    projConfig={projConfig}
-                    groups={groups}
-                    setOpCoAssumptions={setOpCoAssumptions}
-                    selectedPresetId={selectedSensitivityPresetId}
-                    setSelectedPresetId={setSelectedSensitivityPresetId}
-                  />
-                )}
+
+                {/* CONSOLIDATED SECTION */}
+                <div className={activeCompany === "consolidated" ? "block" : "hidden"}>
+                  {activeTab === "dashboard" && (
+                    <ConsolidatedDashboardView
+                      data={consolidatedModelData}
+                      opcoData={opCoModelData}
+                      propcoData={propCoModelData}
+                      assumptions={opCoAssumptions}
+                      propCoAssumptions={propCoAssumptions}
+                      handlePropCoChange={handlePropCoChange}
+                      holdCoAssumptions={holdCoAssumptions}
+                      handleHoldCoChange={handleHoldCoChange}
+                      isPresenting={isPresenting}
+                      holdCoScenario={holdCoScenario}
+                      setHoldCoScenario={setHoldCoScenario}
+                      holdCoLocked={holdCoLocked}
+                      toggleHoldCoLock={toggleHoldCoLock}
+                      propCoLocked={propCoLocked}
+                      togglePropCoLock={togglePropCoLock}
+                    />
+                  )}
+                  
+                  {/* Preserve DOM for CascadeView */}
+                  <div className={activeTab === "comprehensive" ? "block" : "hidden"}>
+                    <ConsolidatedCascadeView
+                      data={consolidatedModelData}
+                      opcoData={opCoModelData}
+                      propcoData={propCoModelData}
+                      opcoAssumptions={opCoAssumptions}
+                      viewResolution={viewResolution}
+                      setViewResolution={setViewResolution}
+                      holdCoAssumptions={holdCoAssumptions}
+                      handleHoldCoChange={handleHoldCoChange}
+                    />
+                  </div>
+                  
+                  {activeTab === "sensitivity" && (
+                    <ConsolidatedSensitivityView
+                      opCoAssumptions={opCoAssumptions}
+                      propCoAssumptions={propCoAssumptions}
+                      holdCoAssumptions={holdCoAssumptions}
+                      resolvedDevDuration={resolvedDevDuration}
+                      projConfig={projConfig}
+                      groups={groups}
+                      setOpCoAssumptions={setOpCoAssumptions}
+                      selectedPresetId={selectedSensitivityPresetId}
+                      setSelectedPresetId={setSelectedSensitivityPresetId}
+                    />
+                  )}
+                </div>
               </div>
-            </div>
+            </ModulePasswordGate>
           )}
 
         {activeTab === "ai" && activeGroup === "financials" && (
-          <AIAuditView
-            activeCompany={activeCompany}
-            aiInsights={aiInsights}
-            isAiLoading={isAiLoading}
-            generateAIInsights={generateAIInsights}
-            askQuery={askQuery}
-            setAskQuery={setAskQuery}
-            handleAskAI={handleAskAI}
-            isAskLoading={isAskLoading}
-            askResponse={askResponse}
-          />
+          <ModulePasswordGate
+            moduleName="Financial Engine"
+            description="Please enter the authorized password to access the active clinical and property cash flow models, dashboards, sensitivities, and clinical programming tables."
+          >
+            <AIAuditView
+              activeCompany={activeCompany}
+              aiInsights={aiInsights}
+              isAiLoading={isAiLoading}
+              generateAIInsights={generateAIInsights}
+              askQuery={askQuery}
+              setAskQuery={setAskQuery}
+              handleAskAI={handleAskAI}
+              isAskLoading={isAskLoading}
+              askResponse={askResponse}
+            />
+          </ModulePasswordGate>
         )}
       </main>
 

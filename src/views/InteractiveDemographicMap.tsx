@@ -1219,6 +1219,14 @@ const generateFallbackGeoJSON = (centerLat, centerLon, radiusDegrees) => {
 const InteractiveDemographicMap = memo(() => {
   const [leafletReady, setLeafletReady] = useState(false);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [showQuickTip, setShowQuickTip] = useState(() => {
+    try {
+      const saved = localStorage.getItem("hcp_map_quick_tip_dismissed");
+      return saved !== "true";
+    } catch (e) {
+      return true;
+    }
+  });
   const [activeTab, setActiveTab] = useState("controls"); // controls | analytics
   const [viewMode, setViewMode] = useState("admin");
   const [regionsSectionExpanded, setRegionsSectionExpanded] = useState(true);
@@ -1245,7 +1253,20 @@ const InteractiveDemographicMap = memo(() => {
   );
   const [showRegionLabels, setShowRegionLabels] = useState(false);
   const [showTollRoads, setShowTollRoads] = useState(true);
-  const [activePOIs, setActivePOIs] = useState(mapLocations.map((l) => l.id));
+  const [activePOIs, setActivePOIs] = useState(() => {
+    return mapLocations
+      .filter((loc) => {
+        if (loc.subGroup === "< 5km Radius") return false;
+        if (loc.subGroup === "5-10km Radius") return false;
+        if (loc.group === "Cancer Hospitals") return false;
+        if (loc.group === "Orthopedic Hospitals") return false;
+        if (loc.group === "Cardiology Hospitals") return false;
+        if (loc.group === "Mother and Children") return false;
+        if (loc.group === "General") return false;
+        return true;
+      })
+      .map((l) => l.id);
+  });
   const [loadingStatus, setLoadingStatus] = useState({
     active: true,
     text: "Initializing...",
@@ -3513,6 +3534,76 @@ const InteractiveDemographicMap = memo(() => {
           <Ruler size={16} strokeWidth={2.5} />
         </a>
       </div>
+
+      {/* Floating Interactive "Quick Tip" Card */}
+      {showQuickTip && (
+        <div className={`absolute bottom-16 left-1/2 -translate-x-1/2 z-[1020] w-[calc(100%-32px)] sm:w-[380px] bg-[#1E2F31]/95 text-[#F9F8F6] border border-[#1C6048]/50 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md flex-col gap-2.5 transition-all duration-300 pointer-events-auto ${
+          isPanelOpen && isLegendOpen
+            ? "hidden"
+            : isPanelOpen || isLegendOpen
+            ? "hidden sm:flex"
+            : "flex"
+        }`}>
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-2.5">
+              <div className="p-1.5 bg-[#1C6048]/30 rounded-lg text-[#1C6048] border border-[#1C6048]/20 mt-0.5 flex-shrink-0">
+                <Sparkles size={14} className="text-[#9B8B70]" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-extrabold text-[#9B8B70] uppercase tracking-wider mb-0.5">
+                  Pro-Feasibility Tip
+                </span>
+                <p className="text-[11px] font-medium leading-relaxed text-[#F9F8F6]/95">
+                  Open the <strong className="text-white">Map Data</strong> and <strong className="text-white">Legend</strong> panels for more information.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setShowQuickTip(false);
+                try {
+                  localStorage.setItem("hcp_map_quick_tip_dismissed", "true");
+                } catch (e) {}
+              }}
+              className="text-[#F9F8F6]/60 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors flex items-center justify-center -mr-1 -mt-1 flex-shrink-0"
+              title="Dismiss Tip"
+            >
+              <X size={14} />
+            </button>
+          </div>
+          <div className="flex items-center gap-2 mt-0.5 justify-end">
+            {!isPanelOpen && (
+              <button
+                onClick={() => setIsPanelOpen(true)}
+                className="px-2.5 py-1 bg-[#1C6048] hover:bg-[#1C6048]/85 text-white font-bold text-[10px] uppercase rounded-md shadow-sm transition-colors cursor-pointer border border-transparent flex items-center gap-1"
+              >
+                <Map size={10} />
+                <span>Open Map Data</span>
+              </button>
+            )}
+            {!isLegendOpen && (
+              <button
+                onClick={() => setIsLegendOpen(true)}
+                className="px-2.5 py-1 bg-[#9B8B70] hover:bg-[#9B8B70]/85 text-[#1E2F31] font-bold text-[10px] uppercase rounded-md shadow-sm transition-colors cursor-pointer border border-transparent flex items-center gap-1"
+              >
+                <Layers size={10} />
+                <span>Open Legend</span>
+              </button>
+            )}
+            {(!isPanelOpen || !isLegendOpen) && (
+              <button
+                onClick={() => {
+                  setIsPanelOpen(true);
+                  setIsLegendOpen(true);
+                }}
+                className="px-2.5 py-1 bg-[#F9F8F6]/10 hover:bg-[#F9F8F6]/20 text-[#F9F8F6] font-bold text-[10px] uppercase rounded-md transition-colors cursor-pointer border border-white/10"
+              >
+                <span>Open Both</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 });
