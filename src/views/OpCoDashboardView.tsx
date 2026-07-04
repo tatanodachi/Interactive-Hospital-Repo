@@ -434,7 +434,7 @@ export const OpCoDashboardView = memo(
               </h3>
               <div className="h-72">
                 <LazyResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={data.operatingData}>
+                  <ComposedChart data={data?.operatingData || []}>
                     <CartesianGrid
                       strokeDasharray="3 3"
                       vertical={false}
@@ -525,7 +525,7 @@ export const OpCoDashboardView = memo(
               </h3>
               <div className="h-72">
                 <LazyResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={data.operatingData}>
+                  <ComposedChart data={data?.operatingData || []}>
                     <CartesianGrid
                       strokeDasharray="3 3"
                       vertical={false}

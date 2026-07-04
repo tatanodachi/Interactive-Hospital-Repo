@@ -760,6 +760,329 @@ const mapLocations = [
     color: "#99B6AA",
   },
 
+  // --- ORTHOPEDIC HOSPITALS (Static/Standalone Group) ---
+  // Class A
+  {
+    id: "mrccc_ortho",
+    name: "MRCCC Siloam",
+    group: "Orthopedic Hospitals",
+    subGroup: "Class A",
+    desc: "Private Comprehensive Center",
+    lat: -6.2201,
+    lon: 106.8155,
+    color: "#5E4B8B",
+  },
+  // Class B
+  {
+    id: "rs_islam_cempaka_putih",
+    name: "Jakarta Islamic Hospital",
+    group: "Orthopedic Hospitals",
+    subGroup: "Class B",
+    desc: "Private (B)",
+    lat: -6.1736,
+    lon: 106.8715,
+    color: "#5E4B8B",
+  },
+  {
+    id: "mayapada_south_jakarta",
+    name: "Mayapada Hospital South Jakarta",
+    group: "Orthopedic Hospitals",
+    subGroup: "Class B",
+    desc: "Private (B)",
+    lat: -6.2915,
+    lon: 106.7815,
+    color: "#5E4B8B",
+  },
+  {
+    id: "medistra",
+    name: "Medistra Hospital",
+    group: "Orthopedic Hospitals",
+    subGroup: "Class B",
+    desc: "Private (B)",
+    lat: -6.2410,
+    lon: 106.8340,
+    color: "#5E4B8B",
+  },
+  {
+    id: "royal_progress",
+    name: "Royal Progress Hospital",
+    group: "Orthopedic Hospitals",
+    subGroup: "Class B",
+    desc: "Private (B)",
+    lat: -6.1364,
+    lon: 106.8582,
+    color: "#5E4B8B",
+  },
+  {
+    id: "mayapada_tangerang",
+    name: "Mayapada Hospital Tangerang",
+    group: "Orthopedic Hospitals",
+    subGroup: "Class B",
+    desc: "Private (B)",
+    lat: -6.2045,
+    lon: 106.6493,
+    color: "#5E4B8B",
+  },
+  {
+    id: "emc_alam_sutera",
+    name: "RS EMC Alam Sutera",
+    group: "Orthopedic Hospitals",
+    subGroup: "Class B",
+    desc: "Private (B)",
+    lat: -6.2411,
+    lon: 106.6620,
+    color: "#5E4B8B",
+  },
+  {
+    id: "premier_bintaro",
+    name: "RS Premier Bintaro",
+    group: "Orthopedic Hospitals",
+    subGroup: "Class B",
+    desc: "Private (B)",
+    lat: -6.2842,
+    lon: 106.7275,
+    color: "#5E4B8B",
+  },
+
+  // --- CARDIOLOGY HOSPITALS ---
+  // Class A
+  {
+    id: "rsjpd_harapan_kita",
+    name: "RSJPD Harapan Kita",
+    group: "Cardiology Hospitals",
+    subGroup: "Class A",
+    desc: "National Cardiovascular Center (Public)",
+    lat: -6.1972,
+    lon: 106.7993,
+    color: "#A22A38",
+  },
+  // Class B
+  {
+    id: "tzuchi_pik_cardio",
+    name: "Tzu Chi Hospital PIK",
+    group: "Cardiology Hospitals",
+    subGroup: "Class B",
+    desc: "Private (B)",
+    lat: -6.106,
+    lon: 106.7392,
+    color: "#A22A38",
+  },
+  {
+    id: "mayapada_south_jakarta_cardio",
+    name: "Mayapada Hospital South Jakarta",
+    group: "Cardiology Hospitals",
+    subGroup: "Class B",
+    desc: "Private (B)",
+    lat: -6.2915,
+    lon: 106.7815,
+    color: "#A22A38",
+  },
+  {
+    id: "medistra_cardio",
+    name: "Medistra Hospital",
+    group: "Cardiology Hospitals",
+    subGroup: "Class B",
+    desc: "Private (B)",
+    lat: -6.2410,
+    lon: 106.8340,
+    color: "#A22A38",
+  },
+  // Class C
+  {
+    id: "heartology_cardio",
+    name: "Heartology Cardiovascular Hospital",
+    group: "Cardiology Hospitals",
+    subGroup: "Class C",
+    desc: "Private (C)",
+    lat: -6.2231,
+    lon: 106.7845,
+    color: "#A22A38",
+  },
+  {
+    id: "brawijaya_saharjo_cardio",
+    name: "Brawijaya Hospital Saharjo",
+    group: "Cardiology Hospitals",
+    subGroup: "Class C",
+    desc: "Private (C)",
+    lat: -6.2163,
+    lon: 106.8436,
+    color: "#A22A38",
+  },
+
+  // --- MOTHER AND CHILDREN ---
+  // Class B
+  {
+    id: "m_bunda_jakarta",
+    name: "RSIA Bunda Jakarta",
+    group: "Mother and Children",
+    subGroup: "Class B",
+    desc: "Private (B)",
+    lat: -6.1950,
+    lon: 106.8379,
+    color: "#DE829B",
+  },
+  {
+    id: "m_kemang_medical",
+    name: "Kemang Medical Care Hospital",
+    group: "Mother and Children",
+    subGroup: "Class B",
+    desc: "Private (B)",
+    lat: -6.2811,
+    lon: 106.8223,
+    color: "#DE829B",
+  },
+  {
+    id: "m_brawijaya_antasari",
+    name: "RSIA Brawijaya Antasari",
+    group: "Mother and Children",
+    subGroup: "Class B",
+    desc: "Private (B)",
+    lat: -6.2572,
+    lon: 106.8083,
+    color: "#DE829B",
+  },
+  // Class C
+  {
+    id: "m_pratiwi",
+    name: "RSIA Pratiwi",
+    group: "Mother and Children",
+    subGroup: "Class C",
+    desc: "Private (C)",
+    lat: -6.2163,
+    lon: 106.7118,
+    color: "#DE829B",
+  },
+  {
+    id: "m_pku_muhammadiyah",
+    name: "RSIA PKU Muhammadiyah",
+    group: "Mother and Children",
+    subGroup: "Class C",
+    desc: "Private (C)",
+    lat: -6.1925,
+    lon: 106.6660,
+    color: "#DE829B",
+  },
+  {
+    id: "m_makiyah",
+    name: "RSIA Makiyah",
+    group: "Mother and Children",
+    subGroup: "Class C",
+    desc: "Private (C)",
+    lat: -6.2114,
+    lon: 106.6805,
+    color: "#DE829B",
+  },
+  {
+    id: "m_gebang_medika",
+    name: "RSIA Gebang Medika",
+    group: "Mother and Children",
+    subGroup: "Class C",
+    desc: "Private (C)",
+    lat: -6.1717,
+    lon: 106.5954,
+    color: "#DE829B",
+  },
+  {
+    id: "m_karunia_bunda",
+    name: "RSIA Karunia Bunda",
+    group: "Mother and Children",
+    subGroup: "Class C",
+    desc: "Private (C)",
+    lat: -6.1990,
+    lon: 106.5880,
+    color: "#DE829B",
+  },
+  {
+    id: "m_metro_kebon_jeruk",
+    name: "RSIA Metro Hospitals Kebon Jeruk",
+    group: "Mother and Children",
+    subGroup: "Class C",
+    desc: "Private (C)",
+    lat: -6.1834,
+    lon: 106.7630,
+    color: "#DE829B",
+  },
+  {
+    id: "m_jwcc_asih",
+    name: "JWCC Asih",
+    group: "Mother and Children",
+    subGroup: "Class C",
+    desc: "Private (C)",
+    lat: -6.2443,
+    lon: 106.7983,
+    color: "#DE829B",
+  },
+  {
+    id: "m_sammarie_wijaya",
+    name: "RSIA SamMarie Wijaya",
+    group: "Mother and Children",
+    subGroup: "Class C",
+    desc: "Private (C)",
+    lat: -6.2427,
+    lon: 106.8125,
+    color: "#DE829B",
+  },
+  {
+    id: "m_brawijaya_duren_tiga",
+    name: "Brawijaya Hospital Duren Tiga",
+    group: "Mother and Children",
+    subGroup: "Class C",
+    desc: "Private (C)",
+    lat: -6.2515,
+    lon: 106.8344,
+    color: "#DE829B",
+  },
+  {
+    id: "m_santo_yusuf",
+    name: "RSIA Santo Yusuf",
+    group: "Mother and Children",
+    subGroup: "Class C",
+    desc: "Private (C)",
+    lat: -6.2338,
+    lon: 106.6139,
+    color: "#DE829B",
+  },
+  {
+    id: "m_eka_pluit",
+    name: "RSIA Eka Hospital Pluit",
+    group: "Mother and Children",
+    subGroup: "Class C",
+    desc: "Private (C)",
+    lat: -6.1158,
+    lon: 106.7891,
+    color: "#DE829B",
+  },
+  {
+    id: "m_eka_pik_grand_family",
+    name: "Eka Hospital PIK Grand Family",
+    group: "Mother and Children",
+    subGroup: "Class C",
+    desc: "Private (C)",
+    lat: -6.1105,
+    lon: 106.7378,
+    color: "#DE829B",
+  },
+  {
+    id: "m_tambak",
+    name: "RSIA Tambak",
+    group: "Mother and Children",
+    subGroup: "Class C",
+    desc: "Private (C)",
+    lat: -6.2081,
+    lon: 106.8489,
+    color: "#DE829B",
+  },
+  {
+    id: "m_assyifa",
+    name: "RSIA Assyifa",
+    group: "Mother and Children",
+    subGroup: "Class C",
+    desc: "Private (C)",
+    lat: -6.1956,
+    lon: 106.6115,
+    color: "#DE829B",
+  },
+
   // --- GENERAL NODES ---
   {
     id: "tb",
@@ -904,11 +1227,16 @@ const InteractiveDemographicMap = memo(() => {
   const [expandedPoiGroups, setExpandedPoiGroups] = useState({
     Vasanta: false,
     "Cancer Hospitals": false,
+    "Orthopedic Hospitals": false,
+    "Cardiology Hospitals": false,
+    "Mother and Children": false,
     General: false,
     Infrastructure: false,
   });
   const [expandedSubGroups, setExpandedSubGroups] = useState({
     "Class A": false,
+    "Class B": false,
+    "Class C": false,
     "< 5km Radius": false,
     "5-10km Radius": false,
   });
@@ -2133,6 +2461,24 @@ const InteractiveDemographicMap = memo(() => {
                 </span>
               </div>
               <div className="flex items-center gap-2">
+                <span className="w-3.5 h-3.5 rounded-full border-2 border-white bg-[#5E4B8B] shadow-sm flex-shrink-0"></span>
+                <span className="text-[10px] font-bold text-[#4C4A4B] leading-tight flex-1">
+                  Orthopedic Hospitals
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3.5 h-3.5 rounded-full border-2 border-white bg-[#A22A38] shadow-sm flex-shrink-0"></span>
+                <span className="text-[10px] font-bold text-[#4C4A4B] leading-tight flex-1">
+                  Cardiology Hospitals
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3.5 h-3.5 rounded-full border-2 border-white bg-[#DE829B] shadow-sm flex-shrink-0"></span>
+                <span className="text-[10px] font-bold text-[#4C4A4B] leading-tight flex-1">
+                  Mother & Children
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
                 <span className="w-3.5 h-3.5 rounded-full border-2 border-white bg-[#1E2F31] shadow-sm flex-shrink-0"></span>
                 <span className="text-[10px] font-bold text-[#4C4A4B] leading-tight flex-1">
                   Class A
@@ -2348,6 +2694,9 @@ const InteractiveDemographicMap = memo(() => {
                   {[
                     "Vasanta",
                     "Cancer Hospitals",
+                    "Orthopedic Hospitals",
+                    "Cardiology Hospitals",
+                    "Mother and Children",
                     "General",
                     "Infrastructure",
                   ].map((groupName) => {

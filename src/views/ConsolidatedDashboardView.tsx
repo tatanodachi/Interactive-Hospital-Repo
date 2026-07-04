@@ -629,7 +629,7 @@ export const ConsolidatedDashboardView = memo(
           </h3>
           <div className={isPresenting ? "h-[300px]" : "h-72"}>
             <LazyResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={data.operatingData}>
+              <ComposedChart data={data?.operatingData || []}>
                 <CartesianGrid
                   strokeDasharray="3 3"
                   vertical={false}
@@ -705,7 +705,7 @@ export const ConsolidatedDashboardView = memo(
           </h3>
           <div className={isPresenting ? "h-[450px]" : "h-80"}>
             <LazyResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={data.annualData}>
+              <ComposedChart data={data?.annualData || []}>
                 <CartesianGrid
                   strokeDasharray="3 3"
                   vertical={false}

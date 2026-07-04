@@ -312,7 +312,7 @@ export const ExecutiveSummaryView = memo(
           { name: "Y5+", val: 65 },
         ];
       }
-      const operatingYears = opCoData.annualData.filter((d: any) => d.isOperating);
+      const operatingYears = opCoData.annualData.filter((d: any) => d && d.isOperating);
       if (operatingYears.length === 0) {
         return [
           { name: "Y1", val: 45 },
@@ -329,15 +329,17 @@ export const ExecutiveSummaryView = memo(
         }
         return {
           name,
-          val: Math.round((d.bor || 0) * 10) / 10,
+          val: Math.round((d?.bor || 0) * 10) / 10,
         };
       });
     }, [opCoData]);
 
     const borDomain = useMemo(() => {
-      const vals = borChartData.map((d) => d.val);
-      const min = Math.min(...vals, 40);
-      const max = Math.max(...vals, 70);
+      const vals = borChartData
+        .map((d) => d.val)
+        .filter((v) => typeof v === "number" && !isNaN(v) && isFinite(v));
+      const min = vals.length > 0 ? Math.min(...vals, 40) : 40;
+      const max = vals.length > 0 ? Math.max(...vals, 70) : 70;
       return [
         Math.max(0, Math.floor((min - 5) / 10) * 10),
         Math.min(100, Math.ceil((max + 5) / 10) * 10),

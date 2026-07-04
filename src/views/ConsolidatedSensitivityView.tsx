@@ -598,7 +598,7 @@ export const ConsolidatedSensitivityView = memo(
             {/* Trajectory comparison Chart */}
             <div className="h-28">
               <LazyResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={chartData} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
+                <ComposedChart data={chartData || []} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#D8D8D8" />
                   <XAxis dataKey="year" tick={{ fontSize: 8, fill: "#4C4A4B" }} axisLine={false} />
                   <YAxis tick={{ fontSize: 8, fill: "#4C4A4B" }} axisLine={false} tickFormatter={(val) => `${val}B`} />

@@ -746,7 +746,7 @@ export const PropCoDashboardView = memo(
             </div>
             <div className={isPresenting ? "h-[450px]" : "h-[400px]"}>
               <LazyResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={chartData}>
+                <ComposedChart data={chartData || []}>
                   <CartesianGrid
                     strokeDasharray="3 3"
                     vertical={false}
