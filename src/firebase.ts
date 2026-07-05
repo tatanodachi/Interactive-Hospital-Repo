@@ -107,6 +107,7 @@ let app;
 let db: any = null;
 let auth: any = null;
 const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: "select_account" });
 
 if (isCloudConfigured) {
   try {
