@@ -2971,7 +2971,7 @@ const SettingsPasswordGate = ({ children }) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter password..."
-              className="w-full px-4 py-2.5 bg-white/10 text-white placeholder-white/40 text-sm border border-white/15 rounded-xl focus:outline-none focus:border-[#1C6048] focus:ring-1 focus:ring-[#1C6048]/50 transition-all text-center"
+              className="w-full px-4 py-2.5 bg-white/10 text-white placeholder-white/40 text-base border border-white/15 rounded-xl focus:outline-none focus:border-[#1C6048] focus:ring-1 focus:ring-[#1C6048]/50 transition-all text-center"
               autoFocus
             />
           </div>
@@ -5530,14 +5530,14 @@ export default function App() {
                     placeholder="Work Email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-3 py-2 border border-[#D8D8D8] rounded-lg text-sm bg-white"
+                    className="w-full px-3 py-2 border border-[#D8D8D8] rounded-lg text-base md:text-sm bg-white"
                   />
                   <input
                     type="password"
                     placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-3 py-2 border border-[#D8D8D8] rounded-lg text-sm bg-white"
+                    className="w-full px-3 py-2 border border-[#D8D8D8] rounded-lg text-base md:text-sm bg-white"
                   />
                   <div className="flex justify-between items-center text-xs">
                     <button 
@@ -5757,7 +5757,7 @@ export default function App() {
                     placeholder="Enter project name..."
                     value={newProjectName}
                     onChange={(e) => setNewProjectName(e.target.value)}
-                    className="flex-1 px-3 py-2 text-sm border border-[#D8D8D8] rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-[#1C6048]"
+                    className="flex-1 px-3 py-2 text-base md:text-sm border border-[#D8D8D8] rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-[#1C6048]"
                   />
                   <button
                     onClick={handleCreateNewProject}
