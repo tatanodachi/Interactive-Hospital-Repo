@@ -2914,12 +2914,18 @@ const ModulePasswordGate = ({ children, moduleName, description }) => {
 };
 
 const SettingsPasswordGate = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    try {
+      return sessionStorage.getItem("hcp_settings_unlocked") === "true";
+    } catch (e) {
+      return false;
+    }
+  });
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
   
   // Set REQUIRE_PASSWORD to true to enforce password, false to bypass
-  const REQUIRE_PASSWORD = false; 
+  const REQUIRE_PASSWORD = true; 
   const CORRECT_PASSWORD = "admin"; // Change this to your desired password
 
   if (!REQUIRE_PASSWORD || isAuthenticated) {
@@ -2931,6 +2937,9 @@ const SettingsPasswordGate = ({ children }) => {
     if (password === CORRECT_PASSWORD) {
       setIsAuthenticated(true);
       setError(false);
+      try {
+        sessionStorage.setItem("hcp_settings_unlocked", "true");
+      } catch (e) {}
     } else {
       setError(true);
       setPassword("");
@@ -2938,29 +2947,50 @@ const SettingsPasswordGate = ({ children }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center p-12 h-full bg-[#F9F8F6] border-b border-[#D8D8D8]">
-      <div className="bg-white p-8 rounded-xl shadow-sm border border-[#D8D8D8] max-w-sm w-full text-center">
-        <Lock className="mx-auto text-[#1C6048] mb-4" size={32} />
-        <h3 className="text-lg font-bold text-[#1E2F31] mb-2">Restricted Access</h3>
-        <p className="text-xs text-[#4C4A4B] mb-6">Please enter the administrator password to access the Financial Engine Settings.</p>
+    <div className="flex flex-col items-center justify-center p-6 sm:p-12 min-h-[500px] w-full bg-[#F9F8F6] border-b border-[#D8D8D8] animate-in fade-in duration-300">
+      <div className="bg-[#1E2F31] text-[#F9F8F6] p-8 sm:p-10 rounded-2xl shadow-xl border border-[#1C6048]/30 max-w-sm w-full text-center flex flex-col items-center gap-6">
+        <div className="p-4 bg-[#1C6048]/20 border border-[#1C6048]/40 rounded-full text-[#9B8B70]">
+          <Lock size={32} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <span className="text-[10px] font-extrabold text-[#9B8B70] uppercase tracking-widest">
+            Restricted Configuration
+          </span>
+          <h3 className="text-lg font-bold tracking-tight text-white font-sans">
+            Settings Locked
+          </h3>
+          <p className="text-xs text-[#F9F8F6]/85 max-w-xs leading-relaxed">
+            Please enter the administrator password to access the Financial Engine Settings.
+          </p>
+        </div>
         
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter password..."
-            className="px-3 py-2 text-sm border border-[#D8D8D8] rounded focus:outline-none focus:border-[#1C6048]"
-            autoFocus
-          />
-          {error && <span className="text-red-500 text-xs">Incorrect password</span>}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5 w-full">
+          <div className="relative">
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter password..."
+              className="w-full px-4 py-2.5 bg-white/10 text-white placeholder-white/40 text-sm border border-white/15 rounded-xl focus:outline-none focus:border-[#1C6048] focus:ring-1 focus:ring-[#1C6048]/50 transition-all text-center"
+              autoFocus
+            />
+          </div>
+          {error && (
+            <span className="text-[#F87171] text-xs font-semibold animate-bounce">
+              Incorrect password
+            </span>
+          )}
           <button 
             type="submit"
-            className="bg-[#1E2F31] text-white px-4 py-2 text-sm font-bold uppercase rounded hover:bg-[#1C6048] transition-colors"
+            className="w-full bg-[#1C6048] hover:bg-[#1C6048]/85 text-white py-2.5 text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md active:scale-[0.98] cursor-pointer"
           >
             Unlock Settings
           </button>
         </form>
+        
+        <div className="text-[10px] text-[#F9F8F6]/45 font-mono">
+          System Administration Suite v2026
+        </div>
       </div>
     </div>
   );
@@ -5400,8 +5430,9 @@ export default function App() {
       />
 
       {syncConfirmDialog.isOpen && (
-        <div className="fixed inset-0 z-[100] bg-[#1E2F31]/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-[#D8D8D8] transform scale-100">
+        <div className="fixed inset-0 z-[200] bg-[#1E2F31]/60 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
+          <div className="min-h-full flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-[#D8D8D8] transform scale-100 my-auto text-left max-h-[90vh] overflow-y-auto">
             {/* Case 1: Firestore is not configured yet */}
             {!isCloudConfigured && syncConfirmDialog.targetState ? (
               <>
@@ -5657,6 +5688,7 @@ export default function App() {
                 </div>
               </>
             )}
+            </div>
           </div>
         </div>
       )}
@@ -5680,8 +5712,9 @@ export default function App() {
 
       {/* Project Manager Modal */}
       {isProjectManagerOpen && (
-        <div className="fixed inset-0 z-[110] bg-[#1E2F31]/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full flex flex-col border border-[#D8D8D8] transform scale-100 max-h-[85vh]">
+        <div className="fixed inset-0 z-[210] bg-[#1E2F31]/60 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
+          <div className="min-h-full flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full flex flex-col border border-[#D8D8D8] transform scale-100 max-h-[85vh] text-left">
             {/* Header */}
             <div className="px-6 py-4 border-b border-[#EFEBE7] flex justify-between items-center bg-[#F9F8F6] rounded-t-2xl">
               <div className="flex items-center gap-3">
@@ -5791,6 +5824,7 @@ export default function App() {
             </div>
           </div>
         </div>
+      </div>
       )}
 
       {/* Floating Action Menu for Global Toggles */}
