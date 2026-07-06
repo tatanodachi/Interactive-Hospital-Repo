@@ -1261,6 +1261,7 @@ const InteractiveDemographicMap = memo(() => {
     targetRegions.filter((r) => !r.defaultOff).map((r) => r.id),
   );
   const [showRegionLabels, setShowRegionLabels] = useState(false);
+  const [showNodeTooltips, setShowNodeTooltips] = useState(false);
   const [showTollRoads, setShowTollRoads] = useState(true);
   const [activePOIs, setActivePOIs] = useState(() => {
     return mapLocations
@@ -1910,6 +1911,7 @@ const InteractiveDemographicMap = memo(() => {
       );
 
       poiLayersRef.current[loc.id] = singlePoiGroup;
+      poiMarkersRef.current[loc.id] = marker;
 
       // Immediate sync: Force POIs to render instantly on map load
       if (activePOIs.includes(loc.id)) {
@@ -1955,6 +1957,48 @@ const InteractiveDemographicMap = memo(() => {
       if (poiLayersRef.current[id]) poiLayersRef.current[id].addTo(group);
     });
   }, [activePOIs]);
+
+  // Synchronize POI tooltips (show/hide currently appearing node tooltips)
+  useEffect(() => {
+    if (!mapRef.current || !isMapReady) return;
+
+    mapLocations.forEach((loc) => {
+      const marker = poiMarkersRef.current[loc.id];
+      if (!marker) return;
+
+      try {
+        marker.unbindTooltip();
+      } catch (e) {}
+
+      if (showNodeTooltips) {
+        marker.bindTooltip(
+          `<b>${loc.name}</b><br><span style="font-size:11px;color:#777;">${loc.desc || loc.population || ""}</span>`,
+          {
+            direction: "top",
+            offset: [0, -10],
+            className: "custom-tooltip",
+            permanent: true,
+            interactive: false,
+          }
+        );
+        if (activePOIs.includes(loc.id)) {
+          try {
+            marker.openTooltip();
+          } catch (e) {}
+        }
+      } else {
+        marker.bindTooltip(
+          `<b>${loc.name}</b><br><span style="font-size:11px;color:#777;">${loc.desc || loc.population || ""}</span>`,
+          {
+            direction: "top",
+            offset: [0, -10],
+            className: "custom-tooltip",
+            permanent: false,
+          }
+        );
+      }
+    });
+  }, [showNodeTooltips, activePOIs, isMapReady]);
 
   const flyToWithOffset = useCallback((bounds, isPoint = false) => {
     if (!mapRef.current || !bounds || !bounds.isValid()) return;
@@ -3545,6 +3589,24 @@ const InteractiveDemographicMap = memo(() => {
           }
         >
           <Ruler size={16} strokeWidth={2.5} />
+        </a>
+        <a
+          onClick={(e) => {
+            e.preventDefault();
+            setShowNodeTooltips(!showNodeTooltips);
+          }}
+          title={showNodeTooltips ? "Hide Node Tooltips" : "Show Node Tooltips"}
+          className={
+            showNodeTooltips
+              ? "!bg-[#E8EFEA] !text-[#1C6048]"
+              : "hover:!text-[#1C6048]"
+          }
+        >
+          {showNodeTooltips ? (
+            <EyeOff size={16} strokeWidth={2.5} />
+          ) : (
+            <Eye size={16} strokeWidth={2.5} />
+          )}
         </a>
       </div>
 
