@@ -2888,7 +2888,7 @@ const ModulePasswordGate = ({ children, moduleName, description }) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter secure password..."
-              className="w-full px-4 py-2.5 bg-white/10 text-white placeholder-white/40 text-sm border border-white/15 rounded-xl focus:outline-none focus:border-[#1C6048] focus:ring-1 focus:ring-[#1C6048]/50 transition-all text-center"
+              className="w-full px-4 py-2.5 bg-white/10 text-white placeholder-white/40 text-base md:text-sm border border-white/15 rounded-xl focus:outline-none focus:border-[#1C6048] focus:ring-1 focus:ring-[#1C6048]/50 transition-all text-center"
               autoFocus
             />
           </div>
