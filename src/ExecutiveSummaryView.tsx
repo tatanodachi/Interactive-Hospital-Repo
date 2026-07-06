@@ -484,7 +484,7 @@ export const ExecutiveSummaryView = memo(
         icon: <Compass className="text-[#1C6048]" size={18} />,
         content: (
           <div className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
               <div className="p-2.5 bg-[#1C6048] rounded-lg border border-[#1C6048]">
                 <div className="flex items-center gap-1.5 mb-1">
                   <MapPin size={10} className="text-[#C4DFD2]" />
@@ -515,6 +515,15 @@ export const ExecutiveSummaryView = memo(
                   </span>
                 </div>
                 <p className="text-[10px] text-[#8A8175]">BSD / Serpong</p>
+              </div>
+              <div className="p-2.5 bg-[#F9F8F6] rounded-lg border border-[#D8D8D8]">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <MapPin size={10} className="text-[#8A8175]" />
+                  <span className="text-[9px] uppercase font-black text-[#4C4A4B] tracking-wider">
+                    Central Jakarta
+                  </span>
+                </div>
+                <p className="text-[10px] text-[#8A8175]">Kemayoran</p>
               </div>
             </div>
             <div className="bg-white p-4 rounded-xl border border-[#D8D8D8] space-y-4">

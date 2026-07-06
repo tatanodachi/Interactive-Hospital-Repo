@@ -1103,6 +1103,15 @@ const mapLocations = [
     color: "#1E3A8A",
   },
   {
+    id: "kemayoran",
+    name: "Kemayoran",
+    group: "Vasanta",
+    desc: "Central/North Jakarta node",
+    lat: -6.150709390197145,
+    lon: 106.84302175228443,
+    color: "#1E3A8A",
+  },
+  {
     id: "pik",
     name: "Pantai Indah Kapuk",
     group: "General",
@@ -2801,7 +2810,9 @@ const InteractiveDemographicMap = memo(() => {
                                 (l) =>
                                   !l.subGroup &&
                                   (groupName !== "Vasanta" ||
-                                    (l.id !== "tb" && l.id !== "new_vasanta")),
+                                    (l.id !== "tb" &&
+                                      l.id !== "new_vasanta" &&
+                                      l.id !== "kemayoran")),
                               )
                               .map((loc, index) => (
                                 <div
@@ -3304,7 +3315,9 @@ const InteractiveDemographicMap = memo(() => {
                               groupLocs
                                 .filter(
                                   (l) =>
-                                    l.id === "tb" || l.id === "new_vasanta",
+                                    l.id === "tb" ||
+                                    l.id === "new_vasanta" ||
+                                    l.id === "kemayoran",
                                 )
                                 .map((loc, index) => (
                                   <div
