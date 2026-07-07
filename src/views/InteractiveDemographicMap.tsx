@@ -1230,7 +1230,7 @@ const InteractiveDemographicMap = memo(() => {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [showQuickTip, setShowQuickTip] = useState(() => {
     try {
-      const saved = localStorage.getItem("hcp_map_quick_tip_dismissed");
+      const saved = sessionStorage.getItem("hcp_map_quick_tip_dismissed");
       return saved !== "true";
     } catch (e) {
       return true;
@@ -3712,7 +3712,7 @@ const InteractiveDemographicMap = memo(() => {
               onClick={() => {
                 setShowQuickTip(false);
                 try {
-                  localStorage.setItem("hcp_map_quick_tip_dismissed", "true");
+                  sessionStorage.setItem("hcp_map_quick_tip_dismissed", "true");
                 } catch (e) {}
               }}
               className="text-[#F9F8F6]/60 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors flex items-center justify-center -mr-1 -mt-1 flex-shrink-0"
