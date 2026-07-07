@@ -2275,10 +2275,16 @@ const InteractiveDemographicMap = memo(() => {
       );
     else setActiveRegions((prev) => [...new Set([...prev, ...groupRegionIds])]);
   };
-  const toggleAllPoi = () =>
-    setActivePOIs((prev) =>
-      prev.length === mapLocations.length ? [] : mapLocations.map((l) => l.id),
-    );
+  const toggleAllPoi = () => {
+    const isAllActive = activePOIs.length === mapLocations.length && showTollRoads;
+    if (isAllActive) {
+      setActivePOIs([]);
+      setShowTollRoads(false);
+    } else {
+      setActivePOIs(mapLocations.map((l) => l.id));
+      setShowTollRoads(true);
+    }
+  };
 
   const getLegendData = () => {
     if (viewMode === "admin")
@@ -2424,6 +2430,12 @@ const InteractiveDemographicMap = memo(() => {
                 .switch.item input:checked + .slider { background-color: #1E2f31; }
                 .switch.group input:checked + .slider:before { transform: translateX(14px); }
                 .switch.item input:checked + .slider:before { transform: translateX(10px); }
+                
+                /* Custom Partial / Indeterminate Switch State (Option C) */
+                .switch.group.partial .slider { background-color: #1C6048; opacity: 0.85; }
+                .switch.group.partial .slider:before { transform: translateX(7px); background-color: #FFFFFF; }
+                .switch.item.partial .slider { background-color: #1E2f31; opacity: 0.7; }
+                .switch.item.partial .slider:before { transform: translateX(5px); background-color: #FFFFFF; }
                 
                 /* Animations */
                 @keyframes breathePulse { 0% { opacity: 0.1; } 100% { opacity: 0.5; } }
@@ -2656,41 +2668,57 @@ const InteractiveDemographicMap = memo(() => {
                 </div>
               </div>
               {regionsSectionExpanded &&
-                Object.entries(regionGroups).map(([groupName, regions]) => (
-                  <div
-                    key={groupName}
-                    className={`flex flex-col transition-all`}
-                  >
+                Object.entries(regionGroups).map(([groupName, regions]) => {
+                  const isGroupAllActive = regions.every((r) =>
+                    activeRegions.includes(r.id),
+                  );
+                  const groupActiveCount = regions.filter((r) =>
+                    activeRegions.includes(r.id),
+                  ).length;
+                  const isGroupPartiallyActive = groupActiveCount > 0 && !isGroupAllActive;
+
+                  return (
                     <div
-                      className={`flex justify-between items-center text-[10px] font-bold text-[#9B8B70] uppercase py-1 bg-[#F9F8F6] px-2 rounded cursor-pointer transition-all`}
-                      onClick={() =>
-                        setExpandedGroups((p) => ({
-                          ...p,
-                          [groupName]: !p[groupName],
-                        }))
-                      }
+                      key={groupName}
+                      className={`flex flex-col transition-all`}
                     >
-                      <div className="flex items-center gap-1.5">
-                        <ChevronDown
-                          size={14}
-                          className={`transition-transform duration-300 ${!expandedGroups[groupName] ? "-rotate-90" : ""}`}
-                        />
-                        <span>{groupName}</span>
-                      </div>
-                      <label
-                        className="switch group"
-                        onClick={(e) => e.stopPropagation()}
+                      <div
+                        className={`flex justify-between items-center text-[10px] font-bold text-[#9B8B70] uppercase py-1 bg-[#F9F8F6] px-2 rounded cursor-pointer transition-all`}
+                        onClick={() =>
+                          setExpandedGroups((p) => ({
+                            ...p,
+                            [groupName]: !p[groupName],
+                          }))
+                        }
                       >
-                        <input
-                          type="checkbox"
-                          checked={regions.every((r) =>
-                            activeRegions.includes(r.id),
+                        <div className="flex items-center gap-1.5">
+                          <ChevronDown
+                            size={14}
+                            className={`transition-transform duration-300 ${!expandedGroups[groupName] ? "-rotate-90" : ""}`}
+                          />
+                          <span>{groupName}</span>
+                          {groupActiveCount > 0 && (
+                            <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-mono normal-case transition-colors ${
+                              isGroupAllActive 
+                                ? "bg-[#9B8B70] text-white border border-[#9B8B70]" 
+                                : "bg-[#EFEBE7] text-[#1C6048] border border-[#D8D8D8]"
+                            }`}>
+                              {groupActiveCount}/{regions.length}
+                            </span>
                           )}
-                          onChange={() => toggleGroup(groupName)}
-                        />
-                        <span className="slider"></span>
-                      </label>
-                    </div>
+                        </div>
+                        <label
+                          className={`switch group ${isGroupPartiallyActive ? "partial" : ""}`}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isGroupAllActive}
+                            onChange={() => toggleGroup(groupName)}
+                          />
+                          <span className="slider"></span>
+                        </label>
+                      </div>
                     {expandedGroups[groupName] &&
                       regions.map((region) => (
                         <div
@@ -2736,33 +2764,51 @@ const InteractiveDemographicMap = memo(() => {
                         </div>
                       ))}
                   </div>
-                ))}
+                );
+              })}
             </div>
 
             <div className="flex flex-col gap-1">
-              <div
-                className="flex justify-between items-center text-[11px] font-extrabold text-[#1C6048] uppercase tracking-wider pb-1 border-b border-dashed border-[#d8d8d8] cursor-pointer pr-2"
-                onClick={() => setPoiSectionExpanded(!poiSectionExpanded)}
-              >
-                <div className="flex items-center gap-1.5">
-                  <span>Locations</span>
-                  <ChevronDown
-                    size={14}
-                    className={`transition-transform duration-300 ${!poiSectionExpanded ? "-rotate-90" : ""}`}
-                  />
-                </div>
-                <label
-                  className="switch group"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <input
-                    type="checkbox"
-                    checked={activePOIs.length === mapLocations.length}
-                    onChange={toggleAllPoi}
-                  />
-                  <span className="slider"></span>
-                </label>
-              </div>
+              {(() => {
+                const totalItems = mapLocations.length + 1;
+                const activeCount = activePOIs.length + (showTollRoads ? 1 : 0);
+                const isPoiAllActive = activeCount === totalItems;
+                const isPoiPartiallyActive = activeCount > 0 && !isPoiAllActive;
+                return (
+                  <div
+                    className="flex justify-between items-center text-[11px] font-extrabold text-[#1C6048] uppercase tracking-wider pb-1 border-b border-dashed border-[#d8d8d8] cursor-pointer pr-2"
+                    onClick={() => setPoiSectionExpanded(!poiSectionExpanded)}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Locations</span>
+                      {activeCount > 0 && (
+                        <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-mono normal-case transition-colors ${
+                          isPoiAllActive 
+                            ? "bg-[#1C6048] text-white border border-[#1C6048]" 
+                            : "bg-[#EFEBE7] text-[#1C6048] border border-[#D8D8D8]"
+                        }`}>
+                          {activeCount}/{totalItems}
+                        </span>
+                      )}
+                      <ChevronDown
+                        size={14}
+                        className={`transition-transform duration-300 ${!poiSectionExpanded ? "-rotate-90" : ""}`}
+                      />
+                    </div>
+                    <label
+                      className={`switch group ${isPoiPartiallyActive ? "partial" : ""}`}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isPoiAllActive}
+                        onChange={toggleAllPoi}
+                      />
+                      <span className="slider"></span>
+                    </label>
+                  </div>
+                );
+              })()}
               {poiSectionExpanded && (
                 <div className="flex flex-col">
                   {[
@@ -2778,6 +2824,11 @@ const InteractiveDemographicMap = memo(() => {
                       (loc) => loc.group === groupName,
                     );
                     if (groupLocs.length === 0) return null;
+
+                    const activeCountInGroup = groupLocs.filter((l) => activePOIs.includes(l.id)).length + (groupName === "Infrastructure" && showTollRoads ? 1 : 0);
+                    const totalInGroup = groupLocs.length + (groupName === "Infrastructure" ? 1 : 0);
+                    const isPoiGroupAllActive = activeCountInGroup === totalInGroup;
+                    const isPoiGroupPartiallyActive = activeCountInGroup > 0 && !isPoiGroupAllActive;
 
                     return (
                       <div
@@ -2804,22 +2855,23 @@ const InteractiveDemographicMap = memo(() => {
                               className={`transition-transform duration-300 ${!expandedPoiGroups[groupName] ? "-rotate-90" : ""}`}
                             />
                             <span>{groupName}</span>
+                            {activeCountInGroup > 0 && (
+                              <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-mono normal-case transition-colors ${
+                                isPoiGroupAllActive 
+                                  ? "bg-[#9B8B70] text-white border border-[#9B8B70]" 
+                                  : "bg-[#EFEBE7] text-[#1C6048] border border-[#D8D8D8]"
+                              }`}>
+                                {activeCountInGroup}/{totalInGroup}
+                              </span>
+                            )}
                           </div>
                           <label
-                            className="switch group"
+                            className={`switch group ${isPoiGroupPartiallyActive ? "partial" : ""}`}
                             onClick={(e) => e.stopPropagation()}
                           >
                             <input
                               type="checkbox"
-                              checked={
-                                groupName === "Infrastructure"
-                                  ? groupLocs.every((l) =>
-                                      activePOIs.includes(l.id),
-                                    ) && showTollRoads
-                                  : groupLocs.every((l) =>
-                                      activePOIs.includes(l.id),
-                                    )
-                              }
+                              checked={isPoiGroupAllActive}
                               onChange={() => {
                                 const ids = groupLocs.map((l) => l.id);
                                 const allActive =
@@ -2927,6 +2979,11 @@ const InteractiveDemographicMap = memo(() => {
                               const isDistanceFolder =
                                 subGroupName.includes("km Radius");
 
+                              const subActiveCount = subGroupLocs.filter((l) => activePOIs.includes(l.id)).length;
+                              const subTotalCount = subGroupLocs.length;
+                              const isSubGroupAllActive = subActiveCount === subTotalCount;
+                              const isSubGroupPartiallyActive = subActiveCount > 0 && !isSubGroupAllActive;
+
                               return (
                                 <div
                                   key={subGroupName}
@@ -2955,16 +3012,23 @@ const InteractiveDemographicMap = memo(() => {
                                           className={`transition-transform duration-300 ${expandedSubGroups[subGroupName] === false ? "-rotate-90" : ""}`}
                                         />
                                         <span>{subGroupName}</span>
+                                        {subActiveCount > 0 && (
+                                          <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[8px] font-mono normal-case tracking-normal transition-colors ${
+                                            isSubGroupAllActive 
+                                              ? "bg-[#1E2F31] text-white border border-[#1E2F31]" 
+                                              : "bg-[#EFEBE7] text-[#1C6048] border border-[#D8D8D8]"
+                                          }`}>
+                                            {subActiveCount}/{subTotalCount}
+                                          </span>
+                                        )}
                                       </div>
                                       <label
-                                        className="switch item scale-75 origin-right"
+                                        className={`switch item scale-75 origin-right ${isSubGroupPartiallyActive ? "partial" : ""}`}
                                         onClick={(e) => e.stopPropagation()}
                                       >
                                         <input
                                           type="checkbox"
-                                          checked={subGroupLocs.every((l) =>
-                                            activePOIs.includes(l.id),
-                                          )}
+                                          checked={isSubGroupAllActive}
                                           onChange={() => {
                                             const ids = subGroupLocs.map(
                                               (l) => l.id,
@@ -3012,16 +3076,23 @@ const InteractiveDemographicMap = memo(() => {
                                           className={`transition-transform duration-300 ${expandedSubGroups[subGroupName] === false ? "-rotate-90" : ""}`}
                                         />
                                         <span>{subGroupName}</span>
+                                        {subActiveCount > 0 && (
+                                          <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[8px] font-mono normal-case tracking-normal transition-colors ${
+                                            isSubGroupAllActive 
+                                              ? "bg-[#1E2F31] text-white border border-[#1E2F31]" 
+                                              : "bg-[#EFEBE7] text-[#1C6048] border border-[#D8D8D8]"
+                                          }`}>
+                                            {subActiveCount}/{subTotalCount}
+                                          </span>
+                                        )}
                                       </div>
                                       <label
-                                        className="switch item scale-75 origin-right"
+                                        className={`switch item scale-75 origin-right ${isSubGroupPartiallyActive ? "partial" : ""}`}
                                         onClick={(e) => e.stopPropagation()}
                                       >
                                         <input
                                           type="checkbox"
-                                          checked={subGroupLocs.every((l) =>
-                                            activePOIs.includes(l.id),
-                                          )}
+                                          checked={isSubGroupAllActive}
                                           onChange={() => {
                                             const ids = subGroupLocs.map(
                                               (l) => l.id,
@@ -3056,87 +3127,89 @@ const InteractiveDemographicMap = memo(() => {
                                       {isDistanceFolder &&
                                         subGroupLocs.some(
                                           (l) => l.tier === "Class A",
-                                        ) && (
-                                          <div
-                                            className="flex justify-between items-center pl-9 pr-2 mt-1 mb-0.5 border-b border-[#D8D8D8]/50 pb-0.5 opacity-60 hover:opacity-100 cursor-pointer"
-                                            onClick={() =>
-                                              setExpandedSubGroups((p) => ({
-                                                ...p,
-                                                [`${subGroupName}_ClassA`]:
-                                                  !p[`${subGroupName}_ClassA`],
-                                              }))
-                                            }
-                                            onMouseEnter={() =>
-                                              handleGroupHover(
-                                                subGroupLocs.filter(
-                                                  (l) => l.tier === "Class A",
-                                                ),
-                                                true,
-                                              )
-                                            }
-                                            onMouseLeave={() =>
-                                              handleGroupHover(
-                                                subGroupLocs.filter(
-                                                  (l) => l.tier === "Class A",
-                                                ),
-                                                false,
-                                              )
-                                            }
-                                          >
-                                            <div className="flex items-center gap-1.5 text-[8px] font-black text-[#1E2F31] uppercase tracking-widest">
-                                              <ChevronDown
-                                                size={10}
-                                                className={`transition-transform duration-300 ${expandedSubGroups[`${subGroupName}_ClassA`] === false ? "-rotate-90" : ""}`}
-                                              />
-                                              <span>
-                                                Class A (Comprehensive)
-                                              </span>
-                                            </div>
-                                            <label
-                                              className="switch item scale-75 origin-right"
-                                              onClick={(e) =>
-                                                e.stopPropagation()
+                                        ) && (() => {
+                                          const classA_locs = subGroupLocs.filter((l) => l.tier === "Class A");
+                                          const classA_activeCount = classA_locs.filter((l) => activePOIs.includes(l.id)).length;
+                                          const classA_totalCount = classA_locs.length;
+                                          const isClassA_AllActive = classA_activeCount === classA_totalCount;
+                                          const isClassA_PartiallyActive = classA_activeCount > 0 && !isClassA_AllActive;
+
+                                          return (
+                                            <div
+                                              className="flex justify-between items-center pl-9 pr-2 mt-1 mb-0.5 border-b border-[#D8D8D8]/50 pb-0.5 opacity-60 hover:opacity-100 cursor-pointer"
+                                              onClick={() =>
+                                                setExpandedSubGroups((p) => ({
+                                                  ...p,
+                                                  [`${subGroupName}_ClassA`]:
+                                                    !p[`${subGroupName}_ClassA`],
+                                                }))
+                                              }
+                                              onMouseEnter={() =>
+                                                handleGroupHover(
+                                                  classA_locs,
+                                                  true,
+                                                )
+                                              }
+                                              onMouseLeave={() =>
+                                                handleGroupHover(
+                                                  classA_locs,
+                                                  false,
+                                                )
                                               }
                                             >
-                                              <input
-                                                type="checkbox"
-                                                checked={subGroupLocs
-                                                  .filter(
-                                                    (l) => l.tier === "Class A",
-                                                  )
-                                                  .every((l) =>
-                                                    activePOIs.includes(l.id),
-                                                  )}
-                                                onChange={() => {
-                                                  const ids = subGroupLocs
-                                                    .filter(
-                                                      (l) =>
-                                                        l.tier === "Class A",
-                                                    )
-                                                    .map((l) => l.id);
-                                                  const allActive = ids.every(
-                                                    (id) =>
-                                                      activePOIs.includes(id),
-                                                  );
-                                                  setActivePOIs((prev) =>
-                                                    allActive
-                                                      ? prev.filter(
-                                                          (id) =>
-                                                            !ids.includes(id),
-                                                        )
-                                                      : [
-                                                          ...new Set([
-                                                            ...prev,
-                                                            ...ids,
-                                                          ]),
-                                                        ],
-                                                  );
-                                                }}
-                                              />
-                                              <span className="slider"></span>
-                                            </label>
-                                          </div>
-                                        )}
+                                              <div className="flex items-center gap-1.5 text-[8px] font-black text-[#1E2F31] uppercase tracking-widest">
+                                                <ChevronDown
+                                                  size={10}
+                                                  className={`transition-transform duration-300 ${expandedSubGroups[`${subGroupName}_ClassA`] === false ? "-rotate-90" : ""}`}
+                                                />
+                                                <span>
+                                                  Class A (Comprehensive)
+                                                </span>
+                                                {classA_activeCount > 0 && (
+                                                  <span className={`ml-1 px-1 py-0.5 rounded-full text-[7px] font-mono normal-case tracking-normal transition-colors ${
+                                                    isClassA_AllActive 
+                                                      ? "bg-[#1E2F31] text-white border border-[#1E2F31]" 
+                                                      : "bg-[#EFEBE7] text-[#1C6048] border border-[#D8D8D8]"
+                                                  }`}>
+                                                    {classA_activeCount}/{classA_totalCount}
+                                                  </span>
+                                                )}
+                                              </div>
+                                              <label
+                                                className={`switch item scale-75 origin-right ${isClassA_PartiallyActive ? "partial" : ""}`}
+                                                onClick={(e) =>
+                                                  e.stopPropagation()
+                                                }
+                                              >
+                                                <input
+                                                  type="checkbox"
+                                                  checked={isClassA_AllActive}
+                                                  onChange={() => {
+                                                    const ids = classA_locs.map((l) => l.id);
+                                                    const allActive = ids.every(
+                                                      (id) =>
+                                                        activePOIs.includes(id),
+                                                    );
+                                                    setActivePOIs((prev) =>
+                                                      allActive
+                                                        ? prev.filter(
+                                                            (id) =>
+                                                              !ids.includes(id),
+                                                          )
+                                                        : [
+                                                            ...new Set([
+                                                              ...prev,
+                                                              ...ids,
+                                                            ]),
+                                                          ],
+                                                    );
+                                                  }}
+                                                />
+                                                <span className="slider"></span>
+                                              </label>
+                                            </div>
+                                          );
+                                        })()}
 
                                       {/* Class A Loop */}
                                       {expandedSubGroups[
@@ -3207,85 +3280,87 @@ const InteractiveDemographicMap = memo(() => {
                                       {isDistanceFolder &&
                                         subGroupLocs.some(
                                           (l) => l.tier === "Class B",
-                                        ) && (
-                                          <div
-                                            className="flex justify-between items-center pl-9 pr-2 mt-1.5 mb-0.5 border-b border-[#D8D8D8]/50 pb-0.5 opacity-60 hover:opacity-100 cursor-pointer"
-                                            onClick={() =>
-                                              setExpandedSubGroups((p) => ({
-                                                ...p,
-                                                [`${subGroupName}_ClassB`]:
-                                                  !p[`${subGroupName}_ClassB`],
-                                              }))
-                                            }
-                                            onMouseEnter={() =>
-                                              handleGroupHover(
-                                                subGroupLocs.filter(
-                                                  (l) => l.tier === "Class B",
-                                                ),
-                                                true,
-                                              )
-                                            }
-                                            onMouseLeave={() =>
-                                              handleGroupHover(
-                                                subGroupLocs.filter(
-                                                  (l) => l.tier === "Class B",
-                                                ),
-                                                false,
-                                              )
-                                            }
-                                          >
-                                            <div className="flex items-center gap-1.5 text-[8px] font-black text-[#1E2F31] uppercase tracking-widest">
-                                              <ChevronDown
-                                                size={10}
-                                                className={`transition-transform duration-300 ${expandedSubGroups[`${subGroupName}_ClassB`] === false ? "-rotate-90" : ""}`}
-                                              />
-                                              <span>Class B (Specialized)</span>
-                                            </div>
-                                            <label
-                                              className="switch item scale-75 origin-right"
-                                              onClick={(e) =>
-                                                e.stopPropagation()
+                                        ) && (() => {
+                                          const classB_locs = subGroupLocs.filter((l) => l.tier === "Class B");
+                                          const classB_activeCount = classB_locs.filter((l) => activePOIs.includes(l.id)).length;
+                                          const classB_totalCount = classB_locs.length;
+                                          const isClassB_AllActive = classB_activeCount === classB_totalCount;
+                                          const isClassB_PartiallyActive = classB_activeCount > 0 && !isClassB_AllActive;
+
+                                          return (
+                                            <div
+                                              className="flex justify-between items-center pl-9 pr-2 mt-1.5 mb-0.5 border-b border-[#D8D8D8]/50 pb-0.5 opacity-60 hover:opacity-100 cursor-pointer"
+                                              onClick={() =>
+                                                setExpandedSubGroups((p) => ({
+                                                  ...p,
+                                                  [`${subGroupName}_ClassB`]:
+                                                    !p[`${subGroupName}_ClassB`],
+                                                }))
+                                              }
+                                              onMouseEnter={() =>
+                                                handleGroupHover(
+                                                  classB_locs,
+                                                  true,
+                                                )
+                                              }
+                                              onMouseLeave={() =>
+                                                handleGroupHover(
+                                                  classB_locs,
+                                                  false,
+                                                )
                                               }
                                             >
-                                              <input
-                                                type="checkbox"
-                                                checked={subGroupLocs
-                                                  .filter(
-                                                    (l) => l.tier === "Class B",
-                                                  )
-                                                  .every((l) =>
-                                                    activePOIs.includes(l.id),
-                                                  )}
-                                                onChange={() => {
-                                                  const ids = subGroupLocs
-                                                    .filter(
-                                                      (l) =>
-                                                        l.tier === "Class B",
-                                                    )
-                                                    .map((l) => l.id);
-                                                  const allActive = ids.every(
-                                                    (id) =>
-                                                      activePOIs.includes(id),
-                                                  );
-                                                  setActivePOIs((prev) =>
-                                                    allActive
-                                                      ? prev.filter(
-                                                          (id) =>
-                                                            !ids.includes(id),
-                                                        )
-                                                      : [
-                                                          ...new Set([
-                                                            ...prev,
-                                                            ...ids,
-                                                          ]),
-                                                        ],
-                                                  );
-                                                }}
-                                              />
-                                              <span className="slider"></span>
-                                            </label>
-                                          </div>
-                                        )}
+                                              <div className="flex items-center gap-1.5 text-[8px] font-black text-[#1E2F31] uppercase tracking-widest">
+                                                <ChevronDown
+                                                  size={10}
+                                                  className={`transition-transform duration-300 ${expandedSubGroups[`${subGroupName}_ClassB`] === false ? "-rotate-90" : ""}`}
+                                                />
+                                                <span>Class B (Specialized)</span>
+                                                {classB_activeCount > 0 && (
+                                                  <span className={`ml-1 px-1 py-0.5 rounded-full text-[7px] font-mono normal-case tracking-normal transition-colors ${
+                                                    isClassB_AllActive 
+                                                      ? "bg-[#1E2F31] text-white border border-[#1E2F31]" 
+                                                      : "bg-[#EFEBE7] text-[#1C6048] border border-[#D8D8D8]"
+                                                  }`}>
+                                                    {classB_activeCount}/{classB_totalCount}
+                                                  </span>
+                                                )}
+                                              </div>
+                                              <label
+                                                className={`switch item scale-75 origin-right ${isClassB_PartiallyActive ? "partial" : ""}`}
+                                                onClick={(e) =>
+                                                  e.stopPropagation()
+                                                }
+                                              >
+                                                <input
+                                                  type="checkbox"
+                                                  checked={isClassB_AllActive}
+                                                  onChange={() => {
+                                                    const ids = classB_locs.map((l) => l.id);
+                                                    const allActive = ids.every(
+                                                      (id) =>
+                                                        activePOIs.includes(id),
+                                                    );
+                                                    setActivePOIs((prev) =>
+                                                      allActive
+                                                        ? prev.filter(
+                                                            (id) =>
+                                                              !ids.includes(id),
+                                                          )
+                                                        : [
+                                                            ...new Set([
+                                                              ...prev,
+                                                              ...ids,
+                                                            ]),
+                                                          ],
+                                                    );
+                                                  }}
+                                                />
+                                                <span className="slider"></span>
+                                              </label>
+                                            </div>
+                                          );
+                                        })()}
 
                                       {/* Class B Loop */}
                                       {expandedSubGroups[
