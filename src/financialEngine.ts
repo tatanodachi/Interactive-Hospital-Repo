@@ -179,7 +179,9 @@ export const DEFAULT_PROPCO_ASSUMPTIONS: PropCoAssumptions = {
   buildCost: 11.5,
   includeMedEq: true,
   medEqProcurement: "lease_operating",
-  medEqLeaseMonthly: 0.375,
+  medEqLeaseMonthly: 0.875,
+  medEqLeaseEscalationPct: 5,
+  medEqLeaseEscalationYears: 3,
   medEqPurchaseOpYear: 4,
   medEqPurchaseAmount: 150000,
   capexMedEqQty: 1,
@@ -203,10 +205,12 @@ export const DEFAULT_PROPCO_ASSUMPTIONS: PropCoAssumptions = {
   opOverheadInc: 4,
   ffeReservePct: 2,
   includeFinancing: true,
+  idcTreatment: "cash_pay",
   includePreOpInLtv: true,
+  includeLandInLtv: false,
   drawdownScenario: "tranches",
   drawdownTranches: [20, 40, 60, 80, 100],
-  ltv: 100,
+  ltv: 80,
   interestRate: 8.25,
   loanTenor: 15,
   ioGracePeriodYears: 2,
@@ -1868,10 +1872,11 @@ export const runPropCoEngine = (
 
   const totalCapexExLand = upfrontTotalCapex - landCost;
   const devAndCarCost = devGaTotalCost + carCost;
+  const baseForDebtSizing = (assumptions.includeLandInLtv ?? false) ? upfrontTotalCapex : totalCapexExLand;
   const debtSizingBase =
     (assumptions.includePreOpInLtv ?? true)
-      ? totalCapexExLand
-      : totalCapexExLand - devAndCarCost;
+      ? baseForDebtSizing
+      : baseForDebtSizing - devAndCarCost;
 
   const totalDebt = Math.max(0, debtSizingBase) * (effectiveLtv / 100);
   const totalEquity = upfrontTotalCapex - totalDebt;
@@ -1886,7 +1891,14 @@ export const runPropCoEngine = (
     calculatePMT(rateMonthly, amortizingTenorMonths, totalDebt),
   );
 
-  const totalDebtExLand = totalDebt;
+  const baseForDebtSizingExLand = totalCapexExLand;
+  const debtSizingBaseExLand =
+    (assumptions.includePreOpInLtv ?? true)
+      ? baseForDebtSizingExLand
+      : baseForDebtSizingExLand - devAndCarCost;
+  const totalDebtExLand = (assumptions.includeLandInLtv ?? false)
+    ? Math.max(0, debtSizingBaseExLand) * (effectiveLtv / 100)
+    : totalDebt;
   const totalEquityExLand = Math.max(0, totalCapexExLand) - totalDebtExLand;
   const postIoPmtExLandMonthly = Math.abs(
     calculatePMT(rateMonthly, amortizingTenorMonths, totalDebtExLand),
@@ -1949,14 +1961,16 @@ export const runPropCoEngine = (
   const genericCapex = totalCapex - consultantCost - licenseCost - leasedMedEq;
 
   const devAndCarCostForGeneric = devGaTotalCost + carCost;
+  const baseForGenericDebtSizing = (assumptions.includeLandInLtv ?? false) ? genericCapex : genericCapex - landCost;
   const genericDebtSizingBase =
     (assumptions.includePreOpInLtv ?? true)
-      ? genericCapex
-      : genericCapex - devAndCarCostForGeneric;
+      ? baseForGenericDebtSizing
+      : baseForGenericDebtSizing - devAndCarCostForGeneric;
+  const baseForGenericDebtSizingExLand = genericCapex - landCost;
   const genericDebtSizingBaseExLand =
     (assumptions.includePreOpInLtv ?? true)
-      ? genericCapex - landCost
-      : genericCapex - landCost - devAndCarCostForGeneric;
+      ? baseForGenericDebtSizingExLand
+      : baseForGenericDebtSizingExLand - devAndCarCostForGeneric;
   const genericPreOpExclusion =
     (assumptions.includePreOpInLtv ?? true) ? 0 : devAndCarCostForGeneric;
 
@@ -2062,24 +2076,28 @@ export const runPropCoEngine = (
       m_soft = t_consultant + t_license + t_vat + t_contingency;
       const m_preOp = t_car + m_ga;
 
+      const m_land_final = landTiming
+        ? landCost * (landTiming[md - 1] || 0)
+        : md === 1
+          ? landCost
+          : 0;
+
       capDrawBase_month =
-        (landTiming
-          ? landCost * (landTiming[md - 1] || 0)
-          : md === 1
-            ? landCost
-            : 0) +
+        m_land_final +
         m_hard +
         m_soft +
         m_preOp; // INCLUDING LAND
 
+      const baseForMDebtSizing = (assumptions.includeLandInLtv ?? false) ? capDrawBase_month : capDrawBase_month - m_land_final;
       const m_debtSizingBase =
         (assumptions.includePreOpInLtv ?? true)
-          ? capDrawBase_month
-          : capDrawBase_month - m_preOp;
+          ? baseForMDebtSizing
+          : baseForMDebtSizing - m_preOp;
+      const baseForMDebtSizingExLand = capDrawBase_month - m_land_final;
       const m_debtSizingBaseExLand =
         (assumptions.includePreOpInLtv ?? true)
-          ? m_hard + m_soft
-          : m_hard + m_soft - m_preOp;
+          ? baseForMDebtSizingExLand
+          : baseForMDebtSizingExLand - m_preOp;
       const m_preOpExclusion =
         (assumptions.includePreOpInLtv ?? true) ? 0 : m_preOp;
 
@@ -2192,13 +2210,15 @@ export const runPropCoEngine = (
           : 0;
     }
 
-    // Track debt drawn based on capEx base month (Land is strictly equity funded)
+    // Track debt drawn based on capEx base month
     let m_debtDraw = 0;
     const m_nonLandCapex = Math.max(0, capDrawBase_month - m_land_final);
+    const m_drawBase = (assumptions.includeLandInLtv ?? false) ? capDrawBase_month : m_nonLandCapex;
+    const totalSizingBase = (assumptions.includeLandInLtv ?? false) ? upfrontTotalCapex : totalCapexExLand;
 
-    if (assumptions.drawdownScenario === "tranches" && totalCapexExLand > 0) {
-      cumNonLandCapex += m_nonLandCapex;
-      const progress = cumNonLandCapex / totalCapexExLand;
+    if (assumptions.drawdownScenario === "tranches" && totalSizingBase > 0) {
+      cumNonLandCapex += m_drawBase;
+      const progress = cumNonLandCapex / totalSizingBase;
 
       const tranches: number[] = ensureArray(
         assumptions.drawdownTranches || [20, 40, 60, 80, 100],
@@ -2218,26 +2238,41 @@ export const runPropCoEngine = (
       m_debtDraw = Math.max(0, targetDebtDrawn - cumDebtDrawn);
       cumDebtDrawn += m_debtDraw;
     } else {
-      m_debtDraw = m_nonLandCapex * (effectiveLtv / 100);
+      m_debtDraw = m_drawBase * (effectiveLtv / 100);
     }
-    const m_debtDrawExLand = m_debtDraw;
+
+    const m_debtDrawExLand = (assumptions.includeLandInLtv ?? false)
+      ? (assumptions.drawdownScenario === "tranches"
+          ? (totalSizingBase > 0 ? m_debtDraw * (totalCapexExLand / totalSizingBase) : 0)
+          : m_nonLandCapex * (effectiveLtv / 100))
+      : m_debtDraw;
 
     // IDC calculated on PRIOR balance (before this month's draw)
     const m_idc = outstandingDebt * rateMonthly;
     const m_idcExLand = outstandingDebtExLand * rateMonthly;
 
-    outstandingDebt += m_debtDraw + m_idc;
-    outstandingDebtExLand += m_debtDrawExLand + m_idcExLand;
+    const isCashPayIdc = (assumptions.idcTreatment || "cash_pay") === "cash_pay";
 
-    const m_eqDraw = -(capDrawBase_month - m_debtDraw);
-    const m_eqDrawExLand = -(
-      Math.max(0, capDrawBase_month - m_land_final) -
-      m_debtDrawExLand
-    );
+    if (isCashPayIdc) {
+      outstandingDebt += m_debtDraw;
+      outstandingDebtExLand += m_debtDrawExLand;
+    } else {
+      outstandingDebt += m_debtDraw + m_idc;
+      outstandingDebtExLand += m_debtDrawExLand + m_idcExLand;
+    }
+
+    const m_eqDraw = isCashPayIdc
+      ? -(capDrawBase_month + m_idc - m_debtDraw)
+      : -(capDrawBase_month - m_debtDraw);
+
+    const m_eqDrawExLand = isCashPayIdc
+      ? -(Math.max(0, capDrawBase_month - m_land_final) + m_idcExLand - m_debtDrawExLand)
+      : -(Math.max(0, capDrawBase_month - m_land_final) - m_debtDrawExLand);
+
     const m_unleveredCf = -capDrawBase_month;
 
     const m_preOp = m_ga + fallback_m_car;
-    const projectSpend_month = m_land_final + m_hard + m_soft + m_preOp;
+    const projectSpend_month = m_land_final + m_hard + m_soft + m_preOp + (isCashPayIdc ? m_idc : 0);
 
     landSpendMonthly.push(m_land_final);
     hardSpendMonthly.push(m_hard);
@@ -2505,8 +2540,12 @@ export const runPropCoEngine = (
     opCoModelData?.annualData
       ?.filter((d) => d.isOperating)
       ?.map((d) => d.rent) || [];
+  const totalIdcAccumulated = idcMonthly.reduce((a, b) => a + b, 0);
+  const isCashPayIdc = (assumptions.idcTreatment || "cash_pay") === "cash_pay";
+  const capitalizedBldgIdc = isCashPayIdc ? totalIdcAccumulated : 0;
+
   // Track book values of each component (base, vat, contingency) separately
-  let bvB_base = buildCost,
+  let bvB_base = buildCost + capitalizedBldgIdc,
     bvB_vat = buildVat,
     bvB_contingency = buildContingency;
 
@@ -2535,7 +2574,7 @@ export const runPropCoEngine = (
     bvLicense_contingency = licenseContingency;
 
   // Active calculation bases for depreciations (allows deferred cost additions)
-  let buildBasis_base = buildCost;
+  let buildBasis_base = buildCost + capitalizedBldgIdc;
   let buildBasis_vat = buildVat;
   let buildBasis_contingency = buildContingency;
 
@@ -2699,7 +2738,7 @@ export const runPropCoEngine = (
         if (assumptions.medEqProcurement === "lease") {
           const purchaseYear = assumptions.medEqPurchaseOpYear || 4;
           if (i < purchaseYear) {
-            m_medEqLeaseOpex = assumptions.medEqLeaseMonthly || 0.375;
+            m_medEqLeaseOpex = assumptions.medEqLeaseMonthly ?? 0.875;
           } else if (i === purchaseYear) {
             if (m <= 3) {
               const m_deferredHard = leasedMedEq / 3;
@@ -2762,7 +2801,11 @@ export const runPropCoEngine = (
             }
           }
         } else if (assumptions.medEqProcurement === "lease_operating") {
-          m_medEqLeaseOpex = assumptions.medEqLeaseMonthly || 0.375;
+          const baseRate = assumptions.medEqLeaseMonthly ?? 0.875;
+          const incYears = assumptions.medEqLeaseEscalationYears || 3;
+          const incPct = assumptions.medEqLeaseEscalationPct !== undefined ? assumptions.medEqLeaseEscalationPct : 5;
+          const incrementsCount = Math.floor((i - 1) / incYears);
+          m_medEqLeaseOpex = baseRate * Math.pow(1 + incPct / 100, incrementsCount);
         }
       }
 
@@ -3078,12 +3121,17 @@ export const runPropCoEngine = (
         m_grossExitValue = 0;
 
       if (exitYear !== null && i === exitYear && m === 12) {
-        let medEqLease_year = 0;
+         let medEqLease_year = 0;
         if (
           assumptions.includeMedEq &&
           assumptions.medEqProcurement === "lease_operating"
         ) {
-          medEqLease_year = (assumptions.medEqLeaseMonthly || 0.375) * 12;
+          const baseRate = assumptions.medEqLeaseMonthly ?? 0.875;
+          const incYears = assumptions.medEqLeaseEscalationYears || 3;
+          const incPct = assumptions.medEqLeaseEscalationPct !== undefined ? assumptions.medEqLeaseEscalationPct : 5;
+          const incrementsCount = Math.floor((i - 1) / incYears);
+          const escalatedRate = baseRate * Math.pow(1 + incPct / 100, incrementsCount);
+          medEqLease_year = escalatedRate * 12;
         }
 
         let landLease_year = 0;

@@ -377,10 +377,26 @@ export const PropCoSettingsView = memo(
                     )}
                     {(assumptions.medEqProcurement || "lease_operating") ===
                       "lease_operating" && (
-                      <div className="bg-[#1C6048]/5 p-2 rounded border border-[#1C6048]/20 text-[9px] text-[#1C6048] font-bold italic text-center">
-                        Pure operating lease (indefinite lease) with zero buyout
-                        capex.
-                      </div>
+                      <>
+                        <AssumptionRow
+                          label="Lease Escalation"
+                          val={assumptions.medEqLeaseEscalationPct !== undefined ? assumptions.medEqLeaseEscalationPct : 5}
+                          set={(v) => onChange("medEqLeaseEscalationPct", v)}
+                          unit="%"
+                          isLocked={isLocked}
+                        />
+                        <AssumptionRow
+                          label="Escalation Step"
+                          val={assumptions.medEqLeaseEscalationYears || 3}
+                          set={(v) => onChange("medEqLeaseEscalationYears", v)}
+                          unit="Yrs"
+                          isLocked={isLocked}
+                        />
+                        <div className="bg-[#1C6048]/5 p-2 rounded border border-[#1C6048]/20 text-[9px] text-[#1C6048] font-bold italic text-center">
+                          Pure operating lease (indefinite lease) with zero buyout
+                          capex. Escalates by {assumptions.medEqLeaseEscalationPct !== undefined ? assumptions.medEqLeaseEscalationPct : 5}% every {assumptions.medEqLeaseEscalationYears || 3} years.
+                        </div>
+                      </>
                     )}
                   </>
                 )}
@@ -443,11 +459,54 @@ export const PropCoSettingsView = memo(
             />
             {assumptions?.includeFinancing && (
               <>
+                <div id="propco-idc-treatment-selector" className="bg-[#F9F8F6] p-4 border border-[#D8D8D8] rounded-[16px] mb-4 space-y-3 shadow-sm">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className="text-[10px] font-black uppercase text-[#1C6048] tracking-wider block">
+                        IDC Treatment (Construction Interest)
+                      </span>
+                      <span className="text-[9px] text-[#4C4A4B] font-medium font-mono">
+                        Select Interest During Construction (IDC) payment and accounting treatment
+                      </span>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1 bg-[#D8D8D8]/55 p-1 rounded-xl">
+                    <button
+                      type="button"
+                      disabled={isLocked}
+                      onClick={() => onChange("idcTreatment", "cash_pay")}
+                      className={`py-1.5 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-75 ${(assumptions.idcTreatment || "cash_pay") === "cash_pay" ? "bg-white text-[#1E2F31] shadow-sm border border-[#D8D8D8]" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                    >
+                      Cash-Pay (PSAK 26)
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isLocked}
+                      onClick={() => onChange("idcTreatment", "capitalized_loan")}
+                      className={`py-1.5 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-75 ${(assumptions.idcTreatment || "cash_pay") === "capitalized_loan" ? "bg-white text-[#1E2F31] shadow-sm border border-[#D8D8D8]" : "text-[#4C4A4B] hover:text-[#1E2F31]"}`}
+                    >
+                      Capitalized to Loan
+                    </button>
+                  </div>
+                  <p className="text-[9px] text-[#4C4A4B] leading-snug font-medium">
+                    {(assumptions.idcTreatment || "cash_pay") === "cash_pay"
+                      ? "Interest during construction is paid monthly in cash using equity, and capitalized as part of the building qualifying asset cost under PSAK 26 (Biaya Pinjaman)."
+                      : "Interest during construction is capitalized (rolled) into the loan principal, increasing the outstanding bank loan balance with no up-front cash outflows."}
+                  </p>
+                </div>
+
                 <ToggleRow
                   label="Include Pre-Op in Debt Sizing"
                   desc="Base LTV on Capex inclusive of Pre-Op Costs (Dev G&A, CAR)."
                   checked={assumptions.includePreOpInLtv ?? true}
                   onChange={(v) => onChange("includePreOpInLtv", v)}
+                  isLocked={isLocked}
+                />
+                <ToggleRow
+                  label="Include Land in Debt Sizing"
+                  desc="Base LTV on Capex inclusive of Land Purchase cost (PropCo Land)."
+                  checked={assumptions.includeLandInLtv ?? false}
+                  onChange={(v) => onChange("includeLandInLtv", v)}
                   isLocked={isLocked}
                 />
                 <div className="flex justify-between items-center bg-[#EFEBE7] p-2 rounded mb-2">
@@ -457,8 +516,8 @@ export const PropCoSettingsView = memo(
                     </span>
                     <p className="text-[8px] text-[#8A8175]/80 font-medium leading-tight mt-0.5">
                       {(assumptions.includePreOpInLtv ?? true)
-                        ? "LTV applies to all non-land capex"
-                        : "LTV applies to capex excluding land & pre-op costs"}
+                        ? (assumptions.includeLandInLtv ? "LTV applies to all upfront capex (including land)" : "LTV applies to all non-land capex")
+                        : (assumptions.includeLandInLtv ? "LTV applies to capex including land but excluding pre-op costs" : "LTV applies to capex excluding land & pre-op costs")}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

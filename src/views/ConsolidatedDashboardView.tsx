@@ -87,8 +87,9 @@ export const ConsolidatedDashboardView = memo(
         const pdI = pY.interest || 0;
         const pSettled = pY.loanSettledAtExit || 0;
         
-        // During development, interest is capitalized
-        if (!pY.isOperating) {
+        // During development, interest is capitalized if not cash pay
+        const isCashPayIdc = (propcoData?.assumptions?.idcTreatment || "cash_pay") === "cash_pay";
+        if (!pY.isOperating && !isCashPayIdc) {
             pCapitalizedInterest += pdI;
         }
         

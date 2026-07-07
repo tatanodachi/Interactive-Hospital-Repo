@@ -98,6 +98,8 @@ export interface PropCoAssumptions {
   includeMedEq: boolean;
   medEqProcurement: string;
   medEqLeaseMonthly: number;
+  medEqLeaseEscalationPct?: number;
+  medEqLeaseEscalationYears?: number;
   medEqPurchaseOpYear: number;
   medEqPurchaseAmount: number;
   capexMedEqQty: number;
@@ -134,12 +136,14 @@ export interface PropCoAssumptions {
   corporateTax?: number;
   includeFinancing?: boolean;
   includePreOpInLtv?: boolean;
+  includeLandInLtv?: boolean;
   drawdownScenario?: string;
   drawdownTranches?: number[];
   repaymentType?: string;
   stepUpPercentages?: number[];
   interestRate?: number;
   ltvRatio?: number;
+  idcTreatment?: string;
   amortizationYears?: number;
   dsraMonths?: number;
   discountRate?: number;

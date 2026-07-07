@@ -247,7 +247,8 @@ export const ExecutiveSummaryView = memo(
         const pdI = pY.interest || 0;
         const pSettled = pY.loanSettledAtExit || 0;
         
-        if (!pY.isOperating) {
+        const isCashPayIdc = (propCoData?.assumptions?.idcTreatment || "cash_pay") === "cash_pay";
+        if (!pY.isOperating && !isCashPayIdc) {
             pCapitalizedInterest += pdI;
         }
         

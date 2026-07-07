@@ -181,7 +181,8 @@ export const ConsolidatedCascadeView = memo(
         const ltDebtPrincipal = pPrincipal + oPrincipal + hPrincipal;
         const ltDebtInterest = pInterest + oInterest + hInterest;
         
-        const pCapitalizedInterest = !pY.isOperating ? pInterest : 0;
+        const isCashPayIdc = (propcoData?.assumptions?.idcTreatment || "cash_pay") === "cash_pay";
+        const pCapitalizedInterest = !pY.isOperating && !isCashPayIdc ? pInterest : 0;
         const pCashInterest = pInterest - pCapitalizedInterest;
         
         const pCffPay = pDebtDraw - pPrincipal - pCashInterest;
