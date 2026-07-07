@@ -2832,6 +2832,7 @@ style.textContent = `
 document.head.appendChild(style);
 
 const ModulePasswordGate = ({ children, moduleName, description }) => {
+  const REQUIRE_PASSWORD = false; // Set to false to bypass password gate for now
   const storageKey = `hcp_unlocked_${moduleName.toLowerCase().replace(/\s+/g, "_")}`;
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     try {
@@ -2859,7 +2860,7 @@ const ModulePasswordGate = ({ children, moduleName, description }) => {
     }
   };
 
-  if (isAuthenticated) {
+  if (!REQUIRE_PASSWORD || isAuthenticated) {
     return <>{children}</>;
   }
 
