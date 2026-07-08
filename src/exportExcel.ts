@@ -2278,7 +2278,7 @@ export const exportToExcel = async (
     const pDevCar = pY.devCar || 0;
     const pConInt = pY.conInt || 0;
     const ltPropCoCapex = pLand + pHard + pSoft + pDevGa + pDevCar + pConInt;
-    const ltOpCoCapex = oY.pB_Outlay || 0;
+    const ltOpCoCapex = Math.abs(oY.pB_Outlay || 0);
     const ltCapex = ltPropCoCapex + ltOpCoCapex;
     
     const ltExit = (pY.exit || 0) + (oY.pB_Exit || 0);

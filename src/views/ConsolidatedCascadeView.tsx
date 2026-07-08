@@ -72,6 +72,9 @@ export const ConsolidatedCascadeView = memo(
     const [expandedNetIncome, setExpandedNetIncome] = useState(false);
     const [expandedAdj, setExpandedAdj] = useState(false);
     const [expandedOpCoAdj, setExpandedOpCoAdj] = useState(false);
+    const [expandedLtCapex, setExpandedLtCapex] = useState(false);
+    const [expandedPropCoLt, setExpandedPropCoLt] = useState(false);
+    const [expandedOpCoLt, setExpandedOpCoLt] = useState(false);
 
     // Enrich columns on the fly with true look-through accounting values
     const columns = useMemo(() => {
@@ -134,7 +137,7 @@ export const ConsolidatedCascadeView = memo(
 
         const ltPropCoCapex =
           pLand + pHard + pSoft + pDevGa + pDevCar + pConInt;
-        const ltOpCoCapex = oSetupOutlay;
+        const ltOpCoCapex = Math.abs(oSetupOutlay);
         const ltCapex = ltPropCoCapex + ltOpCoCapex;
 
         const pExit = isMonth ? pY.monthly?.exit?.[mIdx] || 0 : pY.exit || 0;
@@ -350,6 +353,12 @@ export const ConsolidatedCascadeView = memo(
         OEbitdaShare = 0,
         PNetIncome = 0,
         ONetIncomeShare = 0;
+      let PLand = 0,
+        PHard = 0,
+        PSoft = 0,
+        PDevGa = 0,
+        PDevCar = 0,
+        PConInt = 0;
 
       columns.forEach((col) => {
         if (col.colType === "year" || (viewResolution === "monthly" && col.colType === "month")) {
@@ -394,6 +403,12 @@ export const ConsolidatedCascadeView = memo(
           OEbitdaShare += col.oEbitdaShare || 0;
           PNetIncome += col.pNetIncome || 0;
           ONetIncomeShare += col.oNetIncomeShare || 0;
+          PLand += col.pLand || 0;
+          PHard += col.pHard || 0;
+          PSoft += col.pSoft || 0;
+          PDevGa += col.pDevGa || 0;
+          PDevCar += col.pDevCar || 0;
+          PConInt += col.pConInt || 0;
         }
       });
 
@@ -439,6 +454,12 @@ export const ConsolidatedCascadeView = memo(
         oEbitdaShare: OEbitdaShare,
         pNetIncome: PNetIncome,
         oNetIncomeShare: ONetIncomeShare,
+        pLand: PLand,
+        pHard: PHard,
+        pSoft: PSoft,
+        pDevGa: PDevGa,
+        pDevCar: PDevCar,
+        pConInt: PConInt,
       };
     }, [columns]);
 
@@ -880,8 +901,122 @@ export const ConsolidatedCascadeView = memo(
                         total={totals.ltCapex}
                         isIndent
                         isSubtractor
-                        tooltip="All PropCo land & hard spend + OpCo setup outlays pro-rated"
+                        isExpandable={true}
+                        isExpanded={expandedLtCapex}
+                        onExpand={() => setExpandedLtCapex(!expandedLtCapex)}
+                        tooltip="All PropCo land & hard spend + OpCo setup outlays pro-rated. Click to expand full breakdown."
                       />
+                      {expandedLtCapex && (
+                        <>
+                          {/* PropCo Subgroup */}
+                          <TableRow
+                            label="PropCo: Development Outlays (100% Share)"
+                            data={columns}
+                            dk="ltPropCoCapex"
+                            total={totals.ltPropCoCapex}
+                            isDoubleIndent={true}
+                            hasConnector={true}
+                            isSubtractor={true}
+                            highlight={true}
+                            isExpandable={true}
+                            isExpanded={expandedPropCoLt}
+                            onExpand={() => setExpandedPropCoLt(!expandedPropCoLt)}
+                            tooltip="Subtotal of PropCo's land purchase, construction, soft fees, dev G&A, and interest during construction. Click to toggle breakdown."
+                          />
+                          {expandedPropCoLt && (
+                            <>
+                              <TableRow
+                                label="Land Acquisition & Site Prep"
+                                data={columns}
+                                dk="pLand"
+                                total={totals.pLand}
+                                isTripleIndent={true}
+                                hasDoubleConnector={true}
+                                isSubtractor={true}
+                                tooltip="PropCo's Land Acquisition and Site Preparation cost"
+                              />
+                              <TableRow
+                                label="Hard Costs / Construction"
+                                data={columns}
+                                dk="pHard"
+                                total={totals.pHard}
+                                isTripleIndent={true}
+                                hasDoubleConnector={true}
+                                isSubtractor={true}
+                                tooltip="Direct Construction and hardware development budgets"
+                              />
+                              <TableRow
+                                label="Soft Costs"
+                                data={columns}
+                                dk="pSoft"
+                                total={totals.pSoft}
+                                isTripleIndent={true}
+                                hasDoubleConnector={true}
+                                isSubtractor={true}
+                                tooltip="Design, licenses, engineering fees and soft dev costs"
+                              />
+                              <TableRow
+                                label="Development G&A"
+                                data={columns}
+                                dk="pDevGa"
+                                total={totals.pDevGa}
+                                isTripleIndent={true}
+                                hasDoubleConnector={true}
+                                isSubtractor={true}
+                                tooltip="PropCo's Development-phase General & Administrative expense"
+                              />
+                              <TableRow
+                                label="Contractor's All Risk (CAR) Insurance"
+                                data={columns}
+                                dk="pDevCar"
+                                total={totals.pDevCar}
+                                isTripleIndent={true}
+                                hasDoubleConnector={true}
+                                isSubtractor={true}
+                                tooltip="Contractor's All Risk construction-phase insurance"
+                              />
+                              <TableRow
+                                label="Capitalized Construction Interest (IDC)"
+                                data={columns}
+                                dk="pConInt"
+                                total={totals.pConInt}
+                                isTripleIndent={true}
+                                hasDoubleConnector={true}
+                                isSubtractor={true}
+                                tooltip="Interest During Construction (IDC) capitalized under PSAK 26 (if enabled)"
+                              />
+                            </>
+                          )}
+
+                          {/* OpCo Subgroup */}
+                          <TableRow
+                            label="OpCo: Pre-Operating Setups (49% Share)"
+                            data={columns}
+                            dk="ltOpCoCapex"
+                            total={totals.ltOpCoCapex}
+                            isDoubleIndent={true}
+                            hasConnector={true}
+                            isSubtractor={true}
+                            highlight={true}
+                            isExpandable={true}
+                            isExpanded={expandedOpCoLt}
+                            onExpand={() => setExpandedOpCoLt(!expandedOpCoLt)}
+                            tooltip="Subtotal of OpCo's pre-operating setup outlays (pro-rated to HoldCo's 49% share). Click to toggle breakdown."
+                          />
+                          {expandedOpCoLt && (
+                            <TableRow
+                              label="Pre-Operating Setup Outlay"
+                              data={columns}
+                              dk="ltOpCoCapex"
+                              total={totals.ltOpCoCapex}
+                              isTripleIndent={true}
+                              hasDoubleConnector={true}
+                              isSubtractor={true}
+                              tooltip="OpCo's Pre-Operating setups/pre-operating capital expenditures pro-rated to HoldCo's 49% share"
+                            />
+                          )}
+                        </>
+                      )}
                       <TableRow
                         label="Look-Through Capital Disposal / Exit Proceeds"
                         data={columns}
