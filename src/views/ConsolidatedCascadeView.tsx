@@ -76,6 +76,8 @@ export const ConsolidatedCascadeView = memo(
     const [expandedPropCoLt, setExpandedPropCoLt] = useState(false);
     const [expandedOpCoLt, setExpandedOpCoLt] = useState(false);
     const [expandedLtExit, setExpandedLtExit] = useState(false);
+    const [expandedHoldCo, setExpandedHoldCo] = useState(false);
+    const [expandedCashAvailable, setExpandedCashAvailable] = useState(false);
 
     // Enrich columns on the fly with true look-through accounting values
     const columns = useMemo(() => {
@@ -249,6 +251,101 @@ export const ConsolidatedCascadeView = memo(
         const adjOpCoNonCash = -sharePct * (oEbitda - oTax - oNetIncomeProxy);
         const adjOpCoDebt = -oCffPay;
 
+        const propCoFlowVal = isMonth
+          ? data.annualData[yrIdx]?.monthly?.propCoFlow?.[mIdx] || 0
+          : data.annualData[yrIdx]?.propCoFlow || 0;
+        const opCoFlowVal = isMonth
+          ? data.annualData[yrIdx]?.monthly?.opCoFlow?.[mIdx] || 0
+          : data.annualData[yrIdx]?.opCoFlow || 0;
+
+        let holdCoDistToPropCo = 0;
+        let holdCoDistToOpCo = 0;
+        let netIncomeFromPropCo = 0;
+        let netIncomeFromOpCo = 0;
+
+        if (isMonth) {
+          holdCoDistToPropCo = propCoFlowVal < 0 ? Math.abs(propCoFlowVal) : 0;
+          holdCoDistToOpCo = opCoFlowVal < 0 ? Math.abs(opCoFlowVal) : 0;
+          netIncomeFromPropCo = propCoFlowVal > 0 ? propCoFlowVal : 0;
+          netIncomeFromOpCo = opCoFlowVal > 0 ? opCoFlowVal : 0;
+        } else {
+          const monthlyProp = data.annualData[yrIdx]?.monthly?.propCoFlow;
+          const monthlyOp = data.annualData[yrIdx]?.monthly?.opCoFlow;
+          if (monthlyProp) {
+            monthlyProp.forEach((val) => {
+              if (val < 0) holdCoDistToPropCo += Math.abs(val);
+              else netIncomeFromPropCo += val;
+            });
+          } else {
+            holdCoDistToPropCo = propCoFlowVal < 0 ? Math.abs(propCoFlowVal) : 0;
+            netIncomeFromPropCo = propCoFlowVal > 0 ? propCoFlowVal : 0;
+          }
+
+          if (monthlyOp) {
+            monthlyOp.forEach((val) => {
+              if (val < 0) holdCoDistToOpCo += Math.abs(val);
+              else netIncomeFromOpCo += val;
+            });
+          } else {
+            holdCoDistToOpCo = opCoFlowVal < 0 ? Math.abs(opCoFlowVal) : 0;
+            netIncomeFromOpCo = opCoFlowVal > 0 ? opCoFlowVal : 0;
+          }
+        }
+
+        let holdCoAllocToPropCo = 0;
+        let holdCoAllocToOpCo = 0;
+
+        if (isMonth) {
+          if (hDebtDraw > 0) {
+            const propCoOutlay = Math.max(0, -propCoFlowVal);
+            const opCoOutlay = Math.max(0, -opCoFlowVal);
+            const totalOutlay = propCoOutlay + opCoOutlay;
+            if (totalOutlay > 0) {
+              holdCoAllocToPropCo = hDebtDraw * (propCoOutlay / totalOutlay);
+              holdCoAllocToOpCo = hDebtDraw * (opCoOutlay / totalOutlay);
+            } else {
+              holdCoAllocToPropCo = hDebtDraw * 0.5;
+              holdCoAllocToOpCo = hDebtDraw * 0.5;
+            }
+          }
+        } else {
+          const monthlyDraws = data.annualData[yrIdx]?.monthly?.holdCoDebtDraw;
+          const monthlyProp = data.annualData[yrIdx]?.monthly?.propCoFlow;
+          const monthlyOp = data.annualData[yrIdx]?.monthly?.opCoFlow;
+          if (monthlyDraws && monthlyProp && monthlyOp) {
+            for (let m = 0; m < 12; m++) {
+              const mDraw = monthlyDraws[m] || 0;
+              if (mDraw > 0) {
+                const propVal = monthlyProp[m] || 0;
+                const opVal = monthlyOp[m] || 0;
+                const propCoOutlay = Math.max(0, -propVal);
+                const opCoOutlay = Math.max(0, -opVal);
+                const totalOutlay = propCoOutlay + opCoOutlay;
+                if (totalOutlay > 0) {
+                  holdCoAllocToPropCo += mDraw * (propCoOutlay / totalOutlay);
+                  holdCoAllocToOpCo += mDraw * (opCoOutlay / totalOutlay);
+                } else {
+                  holdCoAllocToPropCo += mDraw * 0.5;
+                  holdCoAllocToOpCo += mDraw * 0.5;
+                }
+              }
+            }
+          } else {
+            if (hDebtDraw > 0) {
+              const propCoOutlay = Math.max(0, -propCoFlowVal);
+              const opCoOutlay = Math.max(0, -opCoFlowVal);
+              const totalOutlay = propCoOutlay + opCoOutlay;
+              if (totalOutlay > 0) {
+                holdCoAllocToPropCo = hDebtDraw * (propCoOutlay / totalOutlay);
+                holdCoAllocToOpCo = hDebtDraw * (opCoOutlay / totalOutlay);
+              } else {
+                holdCoAllocToPropCo = hDebtDraw * 0.5;
+                holdCoAllocToOpCo = hDebtDraw * 0.5;
+              }
+            }
+          }
+        }
+
         return {
           ...col,
           pRevenue,
@@ -307,6 +404,12 @@ export const ConsolidatedCascadeView = memo(
           adjOpCoNetIncomeShare,
           adjOpCoNonCash,
           adjOpCoDebt,
+          holdCoDistToPropCo,
+          holdCoDistToOpCo,
+          holdCoAllocToPropCo,
+          holdCoAllocToOpCo,
+          netIncomeFromPropCo,
+          netIncomeFromOpCo,
         };
       });
     }, [rawColumns, opcoData, propcoData, data.annualData]);
@@ -362,6 +465,12 @@ export const ConsolidatedCascadeView = memo(
         PConInt = 0,
         PExit = 0,
         OExit = 0;
+      let HoldCoDistToPropCo = 0,
+        HoldCoDistToOpCo = 0,
+        HoldCoAllocToPropCo = 0,
+        HoldCoAllocToOpCo = 0,
+        NetIncomeFromPropCo = 0,
+        NetIncomeFromOpCo = 0;
 
       columns.forEach((col) => {
         if (col.colType === "year" || (viewResolution === "monthly" && col.colType === "month")) {
@@ -414,6 +523,12 @@ export const ConsolidatedCascadeView = memo(
           PConInt += col.pConInt || 0;
           PExit += col.pExit || 0;
           OExit += col.oExit || 0;
+          HoldCoDistToPropCo += col.holdCoDistToPropCo || 0;
+          HoldCoDistToOpCo += col.holdCoDistToOpCo || 0;
+          HoldCoAllocToPropCo += col.holdCoAllocToPropCo || 0;
+          HoldCoAllocToOpCo += col.holdCoAllocToOpCo || 0;
+          NetIncomeFromPropCo += col.netIncomeFromPropCo || 0;
+          NetIncomeFromOpCo += col.netIncomeFromOpCo || 0;
         }
       });
 
@@ -467,6 +582,12 @@ export const ConsolidatedCascadeView = memo(
         pConInt: PConInt,
         pExit: PExit,
         oExit: OExit,
+        holdCoDistToPropCo: HoldCoDistToPropCo,
+        holdCoDistToOpCo: HoldCoDistToOpCo,
+        holdCoAllocToPropCo: HoldCoAllocToPropCo,
+        holdCoAllocToOpCo: HoldCoAllocToOpCo,
+        netIncomeFromPropCo: NetIncomeFromPropCo,
+        netIncomeFromOpCo: NetIncomeFromOpCo,
       };
     }, [columns]);
 
@@ -1310,9 +1431,54 @@ export const ConsolidatedCascadeView = memo(
                         total={data.totals.netFlow}
                         highlight
                         emerald
+                        isExpandable
+                        isExpanded={expandedCashAvailable}
+                        onExpand={() => setExpandedCashAvailable(!expandedCashAvailable)}
                       />
+                      {expandedCashAvailable && (
+                        <>
+                          <TableRow
+                            label={<span className="italic text-[#1C6048]">↳ Return / Cash Dist. from PropCo (Property)</span>}
+                            data={columns}
+                            dk="netIncomeFromPropCo"
+                            total={totals.netIncomeFromPropCo}
+                            isIndent
+                            hasConnector
+                            tooltip="Operating or exit-level cash flows distributed by PropCo up to HoldCo."
+                          />
+                          <TableRow
+                            label={<span className="italic text-[#1C6048]">↳ Return / Cash Dist. from OpCo (Clinical)</span>}
+                            data={columns}
+                            dk="netIncomeFromOpCo"
+                            total={totals.netIncomeFromOpCo}
+                            isIndent
+                            hasConnector
+                            tooltip="Clinical operations cash distributions paid by OpCo up to HoldCo."
+                          />
+                          <TableRow
+                            label={<span className="italic text-[#9B8B70]">↳ Funding to PropCo (Construction / Land Outlay)</span>}
+                            data={columns}
+                            dk="holdCoDistToPropCo"
+                            total={totals.holdCoDistToPropCo}
+                            isIndent
+                            hasConnector
+                            isSubtractor
+                            tooltip="HoldCo cash funding transferred to PropCo to cover development-phase capital deficits."
+                          />
+                          <TableRow
+                            label={<span className="italic text-[#9B8B70]">↳ Funding to OpCo (Clinical Setup Outlay)</span>}
+                            data={columns}
+                            dk="holdCoDistToOpCo"
+                            total={totals.holdCoDistToOpCo}
+                            isIndent
+                            hasConnector
+                            isSubtractor
+                            tooltip="HoldCo cash funding transferred to OpCo to cover pre-operating phase clinical setup outlays."
+                          />
+                        </>
+                      )}
                       <TableRow
-                        label={<span className="italic text-[#9B8B70]">of which: HoldCo Operating Shortfall Equity</span>}
+                        label={<span className="italic text-[#9B8B70]">of which: Pre-Debt Operating Shortfall Equity</span>}
                         data={columns}
                         dk="netFlowShortfall"
                         total={data.totals.netFlowShortfall}
@@ -1320,19 +1486,39 @@ export const ConsolidatedCascadeView = memo(
                         hasConnector
                         tooltip="Equity injected specifically to cover consolidated operating deficits at the HoldCo level."
                       />
-
+                      
                       {holdCoAssumptions?.includeFinancing && (
                         <>
                           <TableRow
                             label="HoldCo Debt Drawdown"
                             data={columns}
                             dk="holdCoDebtDraw"
-                            total={data.annualData.reduce(
-                              (acc, d) => acc + (d.holdCoDebtDraw || 0),
-                              0,
-                            )}
+                            total={totals.holdCoDebtDraw}
                             isIndent
+                            isExpandable={totals.holdCoDebtDraw > 0}
+                            isExpanded={expandedHoldCo}
+                            onExpand={() => setExpandedHoldCo(!expandedHoldCo)}
                           />
+                          {expandedHoldCo && (
+                            <>
+                              <TableRow
+                                label={<span className="italic text-[#8A8175]">↳ Distributed to OpCo Equity (Clinical)</span>}
+                                data={columns}
+                                dk="holdCoAllocToOpCo"
+                                total={totals.holdCoAllocToOpCo}
+                                isDoubleIndent
+                                hasDoubleConnector
+                              />
+                              <TableRow
+                                label={<span className="italic text-[#8A8175]">↳ Distributed to PropCo Equity (Property)</span>}
+                                data={columns}
+                                dk="holdCoAllocToPropCo"
+                                total={totals.holdCoAllocToPropCo}
+                                isDoubleIndent
+                                hasDoubleConnector
+                              />
+                            </>
+                          )}
                           <TableRow
                             label="HoldCo Interest Expense"
                             data={columns}
@@ -1378,7 +1564,7 @@ export const ConsolidatedCascadeView = memo(
                             highlight
                           />
                           <TableRow
-                            label={<span className="italic text-[#9B8B70]">of which: HoldCo Operating Shortfall Equity</span>}
+                            label={<span className="italic text-[#9B8B70]">of which: Post-Debt Operating Shortfall Equity</span>}
                             data={columns}
                             dk="holdCoCashFlowAfterDebtShortfall"
                             total={data.annualData.reduce(
