@@ -102,7 +102,7 @@ export const calculateNPV = (
 };
 
 export const DEFAULT_HOLDCO_ASSUMPTIONS: HoldCoAssumptions = {
-  includeFinancing: false,
+  includeFinancing: true,
   ltvRatio: 100,
   interestRate: 8.25,
   loanTenor: 15,
@@ -204,7 +204,7 @@ export const DEFAULT_PROPCO_ASSUMPTIONS: PropCoAssumptions = {
   opOverheadMonthly: 0.2,
   opOverheadInc: 4,
   ffeReservePct: 2,
-  includeFinancing: true,
+  includeFinancing: false,
   idcTreatment: "cash_pay",
   includePreOpInLtv: false,
   includeLandInLtv: false,

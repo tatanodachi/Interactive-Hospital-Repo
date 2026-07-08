@@ -290,7 +290,7 @@ export const generateTimelineMonths = (start, end) => {
   return months;
 };
 
-const INITIAL_GROUPS = [
+export const INITIAL_GROUPS = [
   {
     id: "capex",
     name: "0. CAPEX & Setup",
@@ -5901,15 +5901,15 @@ export default function App() {
                 </label>
               </div>
               {/* Toggle Item: HoldCo Bank Debt */}
-              <div className="flex items-center justify-between opacity-40 cursor-not-allowed">
-                <span className="text-[11px] font-medium text-[#4C4A4B]/60 flex items-center gap-1.5 select-none">
-                  <Landmark size={14} className="text-[#9B8B70]/60" /> HoldCo Bank Debt
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5 select-none">
+                  <Landmark size={14} className="text-[#9B8B70]" /> HoldCo Bank Debt
                 </span>
-                <label className="relative inline-flex items-center cursor-not-allowed">
+                <label className="relative inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
                     className="sr-only peer"
-                    disabled={true}
+                    disabled={false}
                     checked={holdCoAssumptions?.includeFinancing || false}
                     onChange={(e) =>
                       handleHoldCoChange("includeFinancing", e.target.checked)

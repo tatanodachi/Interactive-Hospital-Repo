@@ -301,17 +301,17 @@ export const ConsolidatedDashboardView = memo(
                 <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
               </label>
             </div>
-            <div className="flex flex-col gap-2 opacity-40 cursor-not-allowed">
+            <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-[#4C4A4B]/60 flex items-center gap-1.5 select-none">
-                  <Landmark size={14} className="text-[#1E2F31]/60" /> Bank Debt
+                <span className="text-[10px] font-bold text-[#4C4A4B] flex items-center gap-1.5 select-none">
+                  <Landmark size={14} className="text-[#1E2F31]" /> Bank Debt
                   Financing (HoldCo Level)
                 </span>
-                <label className="relative inline-flex items-center cursor-not-allowed">
+                <label className="relative inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
                     className="sr-only peer"
-                    disabled={true}
+                    disabled={false}
                     checked={holdCoAssumptions?.includeFinancing || false}
                     onChange={(e) =>
                       handleHoldCoChange("includeFinancing", e.target.checked)
@@ -323,41 +323,41 @@ export const ConsolidatedDashboardView = memo(
               {holdCoAssumptions?.includeFinancing && (
                 <div className="pl-5 flex flex-col gap-2 mt-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-[#4C4A4B]/60 select-none">LTV Ratio (%)</span>
+                    <span className="text-[10px] text-[#4C4A4B] select-none">LTV Ratio (%)</span>
                     <input
                       type="number"
-                      disabled={true}
-                      className="w-16 bg-gray-100 border border-[#D8D8D8]/50 rounded px-2 py-1 text-[10px] text-right text-[#1E2F31]/60 font-bold cursor-not-allowed"
+                      disabled={false}
+                      className="w-16 bg-white border border-[#D8D8D8] rounded px-2 py-1 text-[10px] text-right text-[#1E2F31] font-bold focus:outline-none focus:border-[#1C6048]"
                       value={holdCoAssumptions?.ltvRatio || 0}
                       onChange={(e) => handleHoldCoChange("ltvRatio", parseFloat(e.target.value))}
                     />
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-[#4C4A4B]/60 select-none">Interest Rate (%)</span>
+                    <span className="text-[10px] text-[#4C4A4B] select-none">Interest Rate (%)</span>
                     <input
                       type="number"
-                      disabled={true}
-                      className="w-16 bg-gray-100 border border-[#D8D8D8]/50 rounded px-2 py-1 text-[10px] text-right text-[#1E2F31]/60 font-bold cursor-not-allowed"
+                      disabled={false}
+                      className="w-16 bg-white border border-[#D8D8D8] rounded px-2 py-1 text-[10px] text-right text-[#1E2F31] font-bold focus:outline-none focus:border-[#1C6048]"
                       value={holdCoAssumptions?.interestRate || 0}
                       onChange={(e) => handleHoldCoChange("interestRate", parseFloat(e.target.value))}
                     />
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-[#4C4A4B]/60 select-none">Loan Tenor (Yrs)</span>
+                    <span className="text-[10px] text-[#4C4A4B] select-none">Loan Tenor (Yrs)</span>
                     <input
                       type="number"
-                      disabled={true}
-                      className="w-16 bg-gray-100 border border-[#D8D8D8]/50 rounded px-2 py-1 text-[10px] text-right text-[#1E2F31]/60 font-bold cursor-not-allowed"
+                      disabled={false}
+                      className="w-16 bg-white border border-[#D8D8D8] rounded px-2 py-1 text-[10px] text-right text-[#1E2F31] font-bold focus:outline-none focus:border-[#1C6048]"
                       value={holdCoAssumptions?.loanTenor || 0}
                       onChange={(e) => handleHoldCoChange("loanTenor", parseFloat(e.target.value))}
                     />
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-[#4C4A4B]/60 select-none">IO Grace Period (Yrs)</span>
+                    <span className="text-[10px] text-[#4C4A4B] select-none">IO Grace Period (Yrs)</span>
                     <input
                       type="number"
-                      disabled={true}
-                      className="w-16 bg-gray-100 border border-[#D8D8D8]/50 rounded px-2 py-1 text-[10px] text-right text-[#1E2F31]/60 font-bold cursor-not-allowed"
+                      disabled={false}
+                      className="w-16 bg-white border border-[#D8D8D8] rounded px-2 py-1 text-[10px] text-right text-[#1E2F31] font-bold focus:outline-none focus:border-[#1C6048]"
                       value={holdCoAssumptions?.ioGracePeriodYears || 0}
                       onChange={(e) => handleHoldCoChange("ioGracePeriodYears", parseFloat(e.target.value))}
                     />
