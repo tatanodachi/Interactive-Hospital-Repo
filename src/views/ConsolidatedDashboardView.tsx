@@ -598,36 +598,38 @@ export const ConsolidatedDashboardView = memo(
               <span className="text-2xl font-black text-gray-900 tracking-tight">{formatCurrency(debtTotals.ltDebtDraw + debtTotals.pCapitalizedInterest)}</span>
               
               <div className="mt-6 pt-3 border-t border-[#D8D8D8]/50 text-[10px] text-[#8A8175] flex flex-col gap-1.5">
-                <div className="flex justify-between items-center">
-                  <span>PropCo Debt (Property)</span>
-                  <span className="font-bold text-gray-800">{formatCurrency(debtTotals.pDebtDraw + debtTotals.pCapitalizedInterest)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span>HoldCo Debt (Consolidated Level)</span>
-                  <span className="font-bold text-gray-800">{formatCurrency(debtTotals.holdCoDebtDraw)}</span>
-                </div>
+                {(debtTotals.pDebtDraw + debtTotals.pCapitalizedInterest) > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span>PropCo Debt (Property)</span>
+                    <span className="font-bold text-gray-800">{formatCurrency(debtTotals.pDebtDraw + debtTotals.pCapitalizedInterest)}</span>
+                  </div>
+                )}
+                {debtTotals.holdCoDebtDraw > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span>HoldCo Debt (Consolidated Level)</span>
+                    <span className="font-bold text-gray-800">{formatCurrency(debtTotals.holdCoDebtDraw)}</span>
+                  </div>
+                )}
                 {debtTotals.holdCoDebtDraw > 0 && (
                   <div className="pl-3 py-1 flex flex-col gap-1 border-l-2 border-[#1C6048]/20 bg-[#F9F8F6]/40 rounded-r text-[9px] text-[#8A8175] my-0.5">
-                    <div className="flex justify-between items-center px-1">
-                      <span>↳ Distributed to PropCo Equity</span>
-                      <span className="font-semibold text-[#1E2F31]">{formatCurrency(debtTotals.holdCoAllocatedToPropCo)}</span>
-                    </div>
                     <div className="flex justify-between items-center px-1">
                       <span>↳ Distributed to OpCo Equity</span>
                       <span className="font-semibold text-[#1E2F31]">{formatCurrency(debtTotals.holdCoAllocatedToOpCo)}</span>
                     </div>
+                    <div className="flex justify-between items-center px-1">
+                      <span>↳ Distributed to PropCo Equity</span>
+                      <span className="font-semibold text-[#1E2F31]">{formatCurrency(debtTotals.holdCoAllocatedToPropCo)}</span>
+                    </div>
                   </div>
                 )}
-                <div className="w-full h-px bg-[#D8D8D8]/30 my-0.5"></div>
-                <div className="flex justify-between items-center">
-                  <span>Base Debt Drawn</span>
-                  <span className="font-medium text-gray-600">{formatCurrency(debtTotals.ltDebtDraw)}</span>
-                </div>
                 {debtTotals.pCapitalizedInterest > 0 && (
-                  <div className="flex justify-between items-center text-[#99B6AA]">
-                    <span>+ Capitalized IDC</span>
-                    <span className="font-medium">{formatCurrency(debtTotals.pCapitalizedInterest)}</span>
-                  </div>
+                  <>
+                    <div className="w-full h-px bg-[#D8D8D8]/30 my-0.5"></div>
+                    <div className="flex justify-between items-center text-[#99B6AA]">
+                      <span>+ Capitalized IDC</span>
+                      <span className="font-medium">{formatCurrency(debtTotals.pCapitalizedInterest)}</span>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
@@ -643,14 +645,18 @@ export const ConsolidatedDashboardView = memo(
               <span className="text-2xl font-black text-gray-900 tracking-tight">{formatCurrency(debtTotals.ltDebtPrincipal)}</span>
               
               <div className="mt-6 pt-3 border-t border-[#D8D8D8]/50 text-[10px] text-[#8A8175] flex flex-col gap-1.5">
-                <div className="flex justify-between items-center">
-                  <span>PropCo Amortization</span>
-                  <span className="font-bold text-gray-800">{formatCurrency(debtTotals.pDebtPrincipal)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span>HoldCo Amortization</span>
-                  <span className="font-bold text-gray-800">{formatCurrency(debtTotals.holdCoPrincipal)}</span>
-                </div>
+                {debtTotals.pDebtPrincipal > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span>PropCo Amortization</span>
+                    <span className="font-bold text-gray-800">{formatCurrency(debtTotals.pDebtPrincipal)}</span>
+                  </div>
+                )}
+                {debtTotals.holdCoPrincipal > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span>HoldCo Amortization</span>
+                    <span className="font-bold text-gray-800">{formatCurrency(debtTotals.holdCoPrincipal)}</span>
+                  </div>
+                )}
                 {debtTotals.pLoanSettledAtExit > 0 && (
                   <div className="flex justify-between items-center">
                     <span>PropCo Settled at Exit</span>
@@ -673,16 +679,20 @@ export const ConsolidatedDashboardView = memo(
               </span>
               
               <div className="mt-6 pt-3 border-t border-[#D8D8D8]/50 text-[10px] text-[#8A8175] flex flex-col gap-1.5">
-                <div className="flex justify-between items-center">
-                  <span>PropCo Interest (Cash)</span>
-                  <span className="font-bold text-gray-800">
-                    {formatCurrency(debtTotals.pDebtInterest - debtTotals.pCapitalizedInterest)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span>HoldCo Interest</span>
-                  <span className="font-bold text-gray-800">{formatCurrency(debtTotals.holdCoInterest)}</span>
-                </div>
+                {(debtTotals.pDebtInterest - debtTotals.pCapitalizedInterest) > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span>PropCo Interest (Cash)</span>
+                    <span className="font-bold text-gray-800">
+                      {formatCurrency(debtTotals.pDebtInterest - debtTotals.pCapitalizedInterest)}
+                    </span>
+                  </div>
+                )}
+                {debtTotals.holdCoInterest > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span>HoldCo Interest</span>
+                    <span className="font-bold text-gray-800">{formatCurrency(debtTotals.holdCoInterest)}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
