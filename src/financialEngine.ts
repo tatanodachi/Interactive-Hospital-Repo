@@ -206,7 +206,7 @@ export const DEFAULT_PROPCO_ASSUMPTIONS: PropCoAssumptions = {
   ffeReservePct: 2,
   includeFinancing: true,
   idcTreatment: "cash_pay",
-  includePreOpInLtv: true,
+  includePreOpInLtv: false,
   includeLandInLtv: false,
   drawdownScenario: "tranches",
   drawdownTranches: [20, 40, 60, 80, 100],
