@@ -78,6 +78,8 @@ export const ConsolidatedDashboardView = memo(
       let pDebtInterest = 0, holdCoInterest = 0, ltDebtInterest = 0;
       let pLoanSettledAtExit = 0;
       let pCapitalizedInterest = 0;
+      let holdCoAllocatedToPropCo = 0;
+      let holdCoAllocatedToOpCo = 0;
 
       data.annualData.forEach((d, i) => {
         const pY = propcoData?.annualData[i] || {};
@@ -109,12 +111,49 @@ export const ConsolidatedDashboardView = memo(
         ltDebtDraw += (pdD + hdD);
         ltDebtPrincipal += (pdP + hdP + pSettled);
         ltDebtInterest += (pdI + hdI);
+
+        // Calculate month-by-month distribution of HoldCo draws
+        if (d.monthly && d.monthly.holdCoDebtDraw) {
+          for (let m = 0; m < 12; m++) {
+            const mDraw = d.monthly.holdCoDebtDraw[m] || 0;
+            if (mDraw > 0) {
+              const mPropFlow = d.monthly.propCoFlow ? d.monthly.propCoFlow[m] || 0 : 0;
+              const mOpFlow = d.monthly.opCoFlow ? d.monthly.opCoFlow[m] || 0 : 0;
+              
+              const propCoOutlay = Math.max(0, -mPropFlow);
+              const opCoOutlay = Math.max(0, -mOpFlow);
+              const totalOutlay = propCoOutlay + opCoOutlay;
+              
+              if (totalOutlay > 0) {
+                holdCoAllocatedToPropCo += mDraw * (propCoOutlay / totalOutlay);
+                holdCoAllocatedToOpCo += mDraw * (opCoOutlay / totalOutlay);
+              } else {
+                holdCoAllocatedToPropCo += mDraw * 0.5;
+                holdCoAllocatedToOpCo += mDraw * 0.5;
+              }
+            }
+          }
+        } else {
+          const yPropFlow = d.propCoFlow || 0;
+          const yOpFlow = d.opCoFlow || 0;
+          const propCoOutlay = Math.max(0, -yPropFlow);
+          const opCoOutlay = Math.max(0, -yOpFlow);
+          const totalOutlay = propCoOutlay + opCoOutlay;
+          if (totalOutlay > 0) {
+            holdCoAllocatedToPropCo += hdD * (propCoOutlay / totalOutlay);
+            holdCoAllocatedToOpCo += hdD * (opCoOutlay / totalOutlay);
+          } else {
+            holdCoAllocatedToPropCo += hdD * 0.5;
+            holdCoAllocatedToOpCo += hdD * 0.5;
+          }
+        }
       });
 
       return {
         pDebtDraw, pDebtPrincipal, pDebtInterest, pLoanSettledAtExit, pCapitalizedInterest,
         holdCoDebtDraw, holdCoPrincipal, holdCoInterest,
-        ltDebtDraw, ltDebtPrincipal, ltDebtInterest
+        ltDebtDraw, ltDebtPrincipal, ltDebtInterest,
+        holdCoAllocatedToPropCo, holdCoAllocatedToOpCo
       };
     }, [data.annualData, propcoData]);
 
@@ -284,23 +323,6 @@ export const ConsolidatedDashboardView = memo(
             </div>
           </div>
           <div className="flex flex-col gap-3 pt-3 mt-1 border-t border-[#D8D8D8]">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-[#4C4A4B] flex items-center gap-1.5">
-                <Landmark size={14} className="text-[#9B8B70]" /> Bank Debt
-                Financing (PropCo Level)
-              </span>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  checked={propCoAssumptions?.includeFinancing || false}
-                  onChange={(e) =>
-                    handlePropCoChange("includeFinancing", e.target.checked)
-                  }
-                />
-                <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
-              </label>
-            </div>
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-[#4C4A4B] flex items-center gap-1.5 select-none">
@@ -364,6 +386,23 @@ export const ConsolidatedDashboardView = memo(
                   </div>
                 </div>
               )}
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-[#4C4A4B] flex items-center gap-1.5">
+                <Landmark size={14} className="text-[#9B8B70]" /> Bank Debt
+                Financing (PropCo Level)
+              </span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={propCoAssumptions?.includeFinancing || false}
+                  onChange={(e) =>
+                    handlePropCoChange("includeFinancing", e.target.checked)
+                  }
+                />
+                <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
+              </label>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold text-[#4C4A4B] flex items-center gap-1.5">
@@ -560,13 +599,34 @@ export const ConsolidatedDashboardView = memo(
               
               <div className="mt-6 pt-3 border-t border-[#D8D8D8]/50 text-[10px] text-[#8A8175] flex flex-col gap-1.5">
                 <div className="flex justify-between items-center">
+                  <span>PropCo Debt (Property)</span>
+                  <span className="font-bold text-gray-800">{formatCurrency(debtTotals.pDebtDraw + debtTotals.pCapitalizedInterest)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>HoldCo Debt (Consolidated Level)</span>
+                  <span className="font-bold text-gray-800">{formatCurrency(debtTotals.holdCoDebtDraw)}</span>
+                </div>
+                {debtTotals.holdCoDebtDraw > 0 && (
+                  <div className="pl-3 py-1 flex flex-col gap-1 border-l-2 border-[#1C6048]/20 bg-[#F9F8F6]/40 rounded-r text-[9px] text-[#8A8175] my-0.5">
+                    <div className="flex justify-between items-center px-1">
+                      <span>↳ Distributed to PropCo Equity</span>
+                      <span className="font-semibold text-[#1E2F31]">{formatCurrency(debtTotals.holdCoAllocatedToPropCo)}</span>
+                    </div>
+                    <div className="flex justify-between items-center px-1">
+                      <span>↳ Distributed to OpCo Equity</span>
+                      <span className="font-semibold text-[#1E2F31]">{formatCurrency(debtTotals.holdCoAllocatedToOpCo)}</span>
+                    </div>
+                  </div>
+                )}
+                <div className="w-full h-px bg-[#D8D8D8]/30 my-0.5"></div>
+                <div className="flex justify-between items-center">
                   <span>Base Debt Drawn</span>
-                  <span className="font-bold text-gray-800">{formatCurrency(debtTotals.ltDebtDraw)}</span>
+                  <span className="font-medium text-gray-600">{formatCurrency(debtTotals.ltDebtDraw)}</span>
                 </div>
                 {debtTotals.pCapitalizedInterest > 0 && (
                   <div className="flex justify-between items-center text-[#99B6AA]">
                     <span>+ Capitalized IDC</span>
-                    <span className="font-bold">{formatCurrency(debtTotals.pCapitalizedInterest)}</span>
+                    <span className="font-medium">{formatCurrency(debtTotals.pCapitalizedInterest)}</span>
                   </div>
                 )}
               </div>

@@ -5866,6 +5866,24 @@ export default function App() {
             {/* Group: Financing */}
             <div className="space-y-3">
               <h5 className="text-[9px] uppercase tracking-widest text-[#9B8B70] font-bold border-b border-[#D8D8D8]/50 pb-1 mb-2">Financing</h5>
+              {/* Toggle Item: HoldCo Bank Debt */}
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5 select-none">
+                  <Landmark size={14} className="text-[#9B8B70]" /> HoldCo Bank Debt
+                </span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    disabled={false}
+                    checked={holdCoAssumptions?.includeFinancing || false}
+                    onChange={(e) =>
+                      handleHoldCoChange("includeFinancing", e.target.checked)
+                    }
+                  />
+                  <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
+                </label>
+              </div>
               {/* Toggle Item: Bank Debt */}
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5">
@@ -5895,24 +5913,6 @@ export default function App() {
                     checked={propCoAssumptions?.includeLandInLtv || false}
                     onChange={(e) =>
                       handlePropCoChange("includeLandInLtv", e.target.checked)
-                    }
-                  />
-                  <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
-                </label>
-              </div>
-              {/* Toggle Item: HoldCo Bank Debt */}
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-medium text-[#4C4A4B] flex items-center gap-1.5 select-none">
-                  <Landmark size={14} className="text-[#9B8B70]" /> HoldCo Bank Debt
-                </span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    disabled={false}
-                    checked={holdCoAssumptions?.includeFinancing || false}
-                    onChange={(e) =>
-                      handleHoldCoChange("includeFinancing", e.target.checked)
                     }
                   />
                   <div className="w-8 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048]"></div>
