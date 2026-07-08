@@ -75,6 +75,7 @@ export const ConsolidatedCascadeView = memo(
     const [expandedLtCapex, setExpandedLtCapex] = useState(false);
     const [expandedPropCoLt, setExpandedPropCoLt] = useState(false);
     const [expandedOpCoLt, setExpandedOpCoLt] = useState(false);
+    const [expandedLtExit, setExpandedLtExit] = useState(false);
 
     // Enrich columns on the fly with true look-through accounting values
     const columns = useMemo(() => {
@@ -358,7 +359,9 @@ export const ConsolidatedCascadeView = memo(
         PSoft = 0,
         PDevGa = 0,
         PDevCar = 0,
-        PConInt = 0;
+        PConInt = 0,
+        PExit = 0,
+        OExit = 0;
 
       columns.forEach((col) => {
         if (col.colType === "year" || (viewResolution === "monthly" && col.colType === "month")) {
@@ -409,6 +412,8 @@ export const ConsolidatedCascadeView = memo(
           PDevGa += col.pDevGa || 0;
           PDevCar += col.pDevCar || 0;
           PConInt += col.pConInt || 0;
+          PExit += col.pExit || 0;
+          OExit += col.oExit || 0;
         }
       });
 
@@ -460,6 +465,8 @@ export const ConsolidatedCascadeView = memo(
         pDevGa: PDevGa,
         pDevCar: PDevCar,
         pConInt: PConInt,
+        pExit: PExit,
+        oExit: OExit,
       };
     }, [columns]);
 
@@ -1023,8 +1030,33 @@ export const ConsolidatedCascadeView = memo(
                         dk="ltExit"
                         total={totals.ltExit}
                         isIndent
-                        tooltip="Proceeds from estate and clinical equity buyback liquidation"
+                        isExpandable={true}
+                        isExpanded={expandedLtExit}
+                        onExpand={() => setExpandedLtExit(!expandedLtExit)}
+                        tooltip="Proceeds from estate and clinical equity buyback liquidation. Click to expand breakdown."
                       />
+                      {expandedLtExit && (
+                        <>
+                          <TableRow
+                            label="PropCo Exit Proceeds"
+                            data={columns}
+                            dk="pExit"
+                            total={totals.pExit}
+                            isDoubleIndent={true}
+                            hasConnector={true}
+                            tooltip="PropCo's property, land, or building exit proceeds (100% share)"
+                          />
+                          <TableRow
+                            label="OpCo Exit Proceeds (49% Share)"
+                            data={columns}
+                            dk="oExit"
+                            total={totals.oExit}
+                            isDoubleIndent={true}
+                            hasConnector={true}
+                            tooltip="OpCo's clinical enterprise value disposal or equity buyback pro-rated to HoldCo's 49% share"
+                          />
+                        </>
+                      )}
                       <TableRow
                         label="Net Cash from Investing Activities (CFI)"
                         data={columns}
