@@ -78,6 +78,11 @@ export const ConsolidatedCascadeView = memo(
     const [expandedLtExit, setExpandedLtExit] = useState(false);
     const [expandedHoldCo, setExpandedHoldCo] = useState(false);
     const [expandedCashAvailable, setExpandedCashAvailable] = useState(false);
+    const [expandedPreDebtShortfall, setExpandedPreDebtShortfall] = useState(false);
+    const [expandedPostDebtShortfall, setExpandedPostDebtShortfall] = useState(false);
+    const [expandedPropCoShortfall, setExpandedPropCoShortfall] = useState(false);
+    const [expandedPropCoFlows, setExpandedPropCoFlows] = useState(true);
+    const [expandedOpCoFlows, setExpandedOpCoFlows] = useState(true);
 
     // Enrich columns on the fly with true look-through accounting values
     const columns = useMemo(() => {
@@ -442,6 +447,8 @@ export const ConsolidatedCascadeView = memo(
           holdCoAllocToOpCo,
           netIncomeFromPropCo,
           netIncomeFromOpCo,
+          netPropCoSubsidiaryFlow: netIncomeFromPropCo - holdCoDistToPropCoDev - holdCoDistToPropCoOps,
+          netOpCoSubsidiaryFlow: netIncomeFromOpCo - holdCoDistToOpCoDev - holdCoDistToOpCoOps,
         };
       });
     }, [rawColumns, opcoData, propcoData, data.annualData]);
@@ -632,6 +639,8 @@ export const ConsolidatedCascadeView = memo(
         holdCoAllocToOpCo: HoldCoAllocToOpCo,
         netIncomeFromPropCo: NetIncomeFromPropCo,
         netIncomeFromOpCo: NetIncomeFromOpCo,
+        netPropCoSubsidiaryFlow: NetIncomeFromPropCo - HoldCoDistToPropCoDev - HoldCoDistToPropCoOps,
+        netOpCoSubsidiaryFlow: NetIncomeFromOpCo - HoldCoDistToOpCoDev - HoldCoDistToOpCoOps,
       };
     }, [columns]);
 
@@ -1506,60 +1515,97 @@ export const ConsolidatedCascadeView = memo(
                         </>
                       )}
 
+                      {/* PropCo Subsidiary Cash Flows Group */}
                       <TableRow
-                        label={<span className="text-[#9B8B70]">HoldCo Funding to PropCo - Development (Y1-Y2)</span>}
+                        label={<span className="font-bold text-[#1E2F31]">PropCo Subsidiary Cash Flows</span>}
                         data={columns}
-                        dk="holdCoDistToPropCoDev"
-                        total={totals.holdCoDistToPropCoDev}
-                        isIndent
-                        isSubtractor
-                        tooltip="HoldCo cash funding transferred to PropCo to cover construction/land development cash deficits in Years 1 & 2."
+                        dk="netPropCoSubsidiaryFlow"
+                        total={totals.netPropCoSubsidiaryFlow}
+                        highlight
+                        isExpandable={true}
+                        isExpanded={expandedPropCoFlows}
+                        onExpand={() => setExpandedPropCoFlows((prev) => !prev)}
+                        tooltip="Net cash flows between HoldCo and PropCo (consisting of developer phase funding, operational phase funding, and cash distributions/returns)."
                       />
-                      <TableRow
-                        label={<span className="text-[#9B8B70]">HoldCo Funding to OpCo - Development (Y1-Y2)</span>}
-                        data={columns}
-                        dk="holdCoDistToOpCoDev"
-                        total={totals.holdCoDistToOpCoDev}
-                        isIndent
-                        isSubtractor
-                        tooltip="HoldCo cash funding transferred to OpCo to cover pre-operating phase clinical setup outlays in Years 1 & 2."
-                      />
+                      {expandedPropCoFlows && (
+                        <>
+                          <TableRow
+                            label={<span className="text-[#9B8B70]">HoldCo Funding to PropCo - Development (Y1-Y2)</span>}
+                            data={columns}
+                            dk="holdCoDistToPropCoDev"
+                            total={totals.holdCoDistToPropCoDev}
+                            isIndent
+                            hasConnector
+                            isSubtractor
+                            tooltip="HoldCo cash funding transferred to PropCo to cover construction/land development cash deficits in Years 1 & 2."
+                          />
+                          <TableRow
+                            label={<span className="text-[#1C6048]">Return / Cash Dist. from PropCo (Property)</span>}
+                            data={columns}
+                            dk="netIncomeFromPropCo"
+                            total={totals.netIncomeFromPropCo}
+                            isIndent
+                            hasConnector
+                            tooltip="Operating or exit-level cash flows distributed by PropCo up to HoldCo."
+                          />
+                          <TableRow
+                            label={<span className="text-[#9B8B70]">HoldCo Funding to PropCo - Operating (Y3+)</span>}
+                            data={columns}
+                            dk="holdCoDistToPropCoOps"
+                            total={totals.holdCoDistToPropCoOps}
+                            isIndent
+                            hasConnector
+                            isSubtractor
+                            tooltip="HoldCo cash funding transferred to PropCo to cover operational or debt service cash deficits in Years 3+."
+                          />
+                        </>
+                      )}
 
+                      {/* OpCo Subsidiary Cash Flows Group */}
                       <TableRow
-                        label={<span className="text-[#1C6048]">Return / Cash Dist. from PropCo (Property)</span>}
+                        label={<span className="font-bold text-[#1C6048]">OpCo Subsidiary Cash Flows</span>}
                         data={columns}
-                        dk="netIncomeFromPropCo"
-                        total={totals.netIncomeFromPropCo}
-                        isIndent
-                        tooltip="Operating or exit-level cash flows distributed by PropCo up to HoldCo."
+                        dk="netOpCoSubsidiaryFlow"
+                        total={totals.netOpCoSubsidiaryFlow}
+                        highlight
+                        isExpandable={true}
+                        isExpanded={expandedOpCoFlows}
+                        onExpand={() => setExpandedOpCoFlows((prev) => !prev)}
+                        tooltip="Net cash flows between HoldCo and OpCo (consisting of developer phase setup funding, clinical operating funding, and clinical dividend returns)."
                       />
-                      <TableRow
-                        label={<span className="text-[#1C6048]">Return / Cash Dist. from OpCo (Clinical)</span>}
-                        data={columns}
-                        dk="netIncomeFromOpCo"
-                        total={totals.netIncomeFromOpCo}
-                        isIndent
-                        tooltip="Clinical operations cash distributions paid by OpCo up to HoldCo."
-                      />
-
-                      <TableRow
-                        label={<span className="text-[#9B8B70]">HoldCo Funding to PropCo - Operating (Y3+)</span>}
-                        data={columns}
-                        dk="holdCoDistToPropCoOps"
-                        total={totals.holdCoDistToPropCoOps}
-                        isIndent
-                        isSubtractor
-                        tooltip="HoldCo cash funding transferred to PropCo to cover operational or debt service cash deficits in Years 3+."
-                      />
-                      <TableRow
-                        label={<span className="text-[#9B8B70]">HoldCo Funding to OpCo - Operating (Y3+)</span>}
-                        data={columns}
-                        dk="holdCoDistToOpCoOps"
-                        total={totals.holdCoDistToOpCoOps}
-                        isIndent
-                        isSubtractor
-                        tooltip="HoldCo cash funding transferred to OpCo to cover clinical operating cash deficits in Years 3+."
-                      />
+                      {expandedOpCoFlows && (
+                        <>
+                          <TableRow
+                            label={<span className="text-[#9B8B70]">HoldCo Funding to OpCo - Development (Y1-Y2)</span>}
+                            data={columns}
+                            dk="holdCoDistToOpCoDev"
+                            total={totals.holdCoDistToOpCoDev}
+                            isIndent
+                            hasConnector
+                            isSubtractor
+                            tooltip="HoldCo cash funding transferred to OpCo to cover pre-operating phase clinical setup outlays in Years 1 & 2."
+                          />
+                          <TableRow
+                            label={<span className="text-[#1C6048]">Return / Cash Dist. from OpCo (Clinical)</span>}
+                            data={columns}
+                            dk="netIncomeFromOpCo"
+                            total={totals.netIncomeFromOpCo}
+                            isIndent
+                            hasConnector
+                            tooltip="Clinical operations cash distributions paid by OpCo up to HoldCo."
+                          />
+                          <TableRow
+                            label={<span className="text-[#9B8B70]">HoldCo Funding to OpCo - Operating (Y3+)</span>}
+                            data={columns}
+                            dk="holdCoDistToOpCoOps"
+                            total={totals.holdCoDistToOpCoOps}
+                            isIndent
+                            hasConnector
+                            isSubtractor
+                            tooltip="HoldCo cash funding transferred to OpCo to cover clinical operating cash deficits in Years 3+."
+                          />
+                        </>
+                      )}
 
                       <TableRow
                         label="HoldCo Cash Available for Outflows"
@@ -1569,17 +1615,23 @@ export const ConsolidatedCascadeView = memo(
                         highlight
                         emerald
                         bold
+                        isExpandable={true}
+                        isExpanded={expandedPreDebtShortfall}
+                        onExpand={() => setExpandedPreDebtShortfall((prev) => !prev)}
                         tooltip="Calculated pre-debt cash available at HoldCo from operating distributions net of capital funding."
                       />
-                      <TableRow
-                        label={<span className="italic text-[#9B8B70]">of which: Pre-Debt Operating Shortfall Equity</span>}
-                        data={columns}
-                        dk="netFlowShortfall"
-                        total={data.totals.netFlowShortfall}
-                        isIndent
-                        hasConnector
-                        tooltip="Equity injected specifically to cover consolidated operating deficits at the HoldCo level."
-                      />
+                      {expandedPreDebtShortfall && (
+                        <TableRow
+                          label="of which: Pre-Debt Operating Shortfall Equity"
+                          data={columns}
+                          dk="netFlowShortfall"
+                          total={data.totals.netFlowShortfall}
+                          isIndent
+                          hasConnector
+                          isMemo
+                          tooltip="[INFO ONLY - already included in HoldCo Cash Available for Outflows] Equity injected specifically to cover consolidated operating deficits at the HoldCo level."
+                        />
+                      )}
                       
                       {holdCoAssumptions?.includeFinancing && (
                         <>
@@ -1633,21 +1685,37 @@ export const ConsolidatedCascadeView = memo(
                         bold
                         highlight
                         emerald
+                        isExpandable={true}
+                        isExpanded={expandedPostDebtShortfall}
+                        onExpand={() => setExpandedPostDebtShortfall((prev) => !prev)}
                         tooltip="Final net cash flow distributed at the HoldCo level after all operating distributions, capital funding, and debt service."
                       />
-                      <TableRow
-                        label={<span className="italic text-[#9B8B70]">of which: Post-Debt Operating Shortfall Equity</span>}
-                        data={columns}
-                        dk="holdCoCashFlowAfterDebtShortfall"
-                        total={data.annualData.reduce(
-                          (acc, d) =>
-                            acc + (d.holdCoCashFlowAfterDebtShortfall || 0),
-                          0,
-                        )}
-                        isIndent
-                        hasConnector
-                        tooltip="Equity injected to cover consolidated cash shortfalls at HoldCo level after taking into account debt service."
-                      />
+                      {expandedPostDebtShortfall && (
+                        <TableRow
+                          label="of which: Post-Debt Operating Shortfall Equity"
+                          data={columns}
+                          dk="holdCoCashFlowAfterDebtShortfall"
+                          total={data.annualData.reduce(
+                            (acc, d) =>
+                              acc + (d.holdCoCashFlowAfterDebtShortfall || 0),
+                            0,
+                          )}
+                          isIndent
+                          hasConnector
+                          isMemo
+                          tooltip="[INFO ONLY - already included in HoldCo Cash Flow (After Debt)] Equity injected to cover consolidated cash shortfalls at HoldCo level after taking into account debt service."
+                        />
+                      )}
+
+                      {/* Spacer Row and Section Header separating HoldCo flows from external Sponsor Cascades */}
+                      <tr className="select-none">
+                        <td className="py-5 pl-4 pr-4 bg-[#F5F2EE] sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] w-[360px] min-w-[360px] max-w-[360px] align-middle">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-[#1C6048]">
+                            Sponsor Distributions Waterfall
+                          </span>
+                        </td>
+                        <td colSpan={columns.length + 1} className="py-5 bg-[#F9F8F6] border-b border-[#D8D8D8]" />
+                      </tr>
 
                       <TableRow
                         label="Sponsor Cascade 1: Real Estate Partner (100% PropCo FCFE)"
@@ -1678,17 +1746,23 @@ export const ConsolidatedCascadeView = memo(
                             total={data.totals.propCoOperatingFlow}
                             isIndent
                             hasConnector
+                            isExpandable={true}
+                            isExpanded={expandedPropCoShortfall}
+                            onExpand={() => setExpandedPropCoShortfall((prev) => !prev)}
                             tooltip={CONSOLIDATED_FORMULAS.propCoOperatingFlow}
                           />
-                          <TableRow
-                            label={<span className="italic text-[#9B8B70]">of which: PropCo Operating Shortfall Equity</span>}
-                            data={columns}
-                            dk="propCoShortfall"
-                            total={data.totals.propCoShortfall}
-                            isDoubleIndent
-                            hasDoubleConnector
-                            tooltip="Equity injected specifically to cover operating deficits in the early years."
-                          />
+                          {expandedPropCoShortfall && (
+                            <TableRow
+                              label="of which: PropCo Operating Shortfall Equity"
+                              data={columns}
+                              dk="propCoShortfall"
+                              isMemo
+                              total={data.totals.propCoShortfall}
+                              isDoubleIndent
+                              hasDoubleConnector
+                              tooltip="[INFO ONLY - already included in PropCo Operating FCFE] Equity injected specifically to cover operating deficits in the early years."
+                            />
+                          )}
                           <TableRow
                             label="PropCo Exit Proceeds"
                             data={columns}

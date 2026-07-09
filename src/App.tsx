@@ -2032,6 +2032,7 @@ export const TableRow = memo(
     hasDoubleConnector,
     hasTripleConnector,
     isSubtractor,
+    isMemo,
   }) => {
     let baseColorClass = "bg-white font-medium text-[#4C4A4B]";
     if (highlight || isHeader) {
@@ -2039,10 +2040,12 @@ export const TableRow = memo(
       else if (emerald)
         baseColorClass = "bg-[#E8EFEA] font-black text-[#1C6048]";
       else baseColorClass = "bg-[#F4F0EC] font-bold text-[#1E2F31]";
+    } else if (isMemo) {
+      baseColorClass = "bg-white font-normal italic text-[#9B8B70]/90";
     }
 
     let firstColClass = `pr-3 py-1.5 sticky left-0 z-[40] border-r border-b border-[#D8D8D8] whitespace-nowrap transition-all shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] w-[360px] min-w-[360px] max-w-[360px] overflow-hidden text-ellipsis ${baseColorClass} ${isTripleIndent ? "pl-3.5 text-[9px]" : isDoubleIndent ? "pl-3.5 text-[9.5px]" : isIndent ? "pl-3.5 text-[10px]" : "pl-1 text-[11px]"} ${!highlight && !isHeader ? "group-hover:bg-[#F9F8F6]" : ""}`;
-    let totalColClass = `px-2 py-1.5 text-right font-bold font-mono border-l border-b border-[#D8D8D8] sticky right-0 z-[40] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] ${baseColorClass} ${!highlight && !isHeader ? "group-hover:bg-[#F9F8F6]" : ""}`;
+    let totalColClass = `px-2 py-1.5 text-right font-mono border-l border-b border-[#D8D8D8] sticky right-0 z-[40] shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] ${baseColorClass} ${isMemo ? "font-medium" : "font-bold"} ${!highlight && !isHeader ? "group-hover:bg-[#F9F8F6]" : ""}`;
 
     return (
       <tr
@@ -2086,8 +2089,14 @@ export const TableRow = memo(
                 </span>
               )}
 
+              {isMemo && (
+                <span className="text-[8px] font-sans tracking-wider uppercase px-1 py-0.5 rounded bg-[#9B8B70]/10 text-[#9B8B70]/90 border border-[#9B8B70]/20 select-none font-bold mr-1 flex-shrink-0">
+                  INFO ONLY
+                </span>
+              )}
+
               <span
-                className={`truncate ${isHeader ? "font-bold text-[#1E2F31]" : highlight ? "font-bold text-[#1E2F31]" : "text-[#4C4A4B]"}`}
+                className={`truncate ${isHeader ? "font-bold text-[#1E2F31]" : highlight ? "font-bold text-[#1E2F31]" : isMemo ? "font-normal italic text-[#9B8B70]/90" : "text-[#4C4A4B]"}`}
               >
                 {label}
               </span>
@@ -2127,7 +2136,7 @@ export const TableRow = memo(
             <td
               key={i}
               title={String(d.defaultLabel)}
-              className={`px-2 py-1.5 text-right border-r border-b border-[#D8D8D8] font-mono transition-all ${cellBg} ${val < 0 ? "text-[#9B8B70]" : highlight ? "text-[#1E2F31] font-bold" : "text-[#4C4A4B]"} ${isCrossover ? "bg-[#9B8B70]/20 ring-1 ring-inset ring-[#9B8B70] text-[#1E2F31] font-bold" : ""} ${hoverBgClass}`}
+              className={`px-2 py-1.5 text-right border-r border-b border-[#D8D8D8] font-mono transition-all ${cellBg} ${isMemo ? "text-[#9B8B70]/90 italic font-normal" : val < 0 ? "text-[#9B8B70]" : highlight ? "text-[#1E2F31] font-bold" : "text-[#4C4A4B]"} ${isCrossover ? "bg-[#9B8B70]/20 ring-1 ring-inset ring-[#9B8B70] text-[#1E2F31] font-bold" : ""} ${hoverBgClass}`}
             >
               {displayVal}
             </td>

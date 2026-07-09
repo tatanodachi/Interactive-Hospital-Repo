@@ -88,6 +88,7 @@ export const PropCoCascadeView = memo(
     const [expandedCff, setExpandedCff] = useState(false);
     const [expandedCffIn, setExpandedCffIn] = useState(false);
     const [expandedCffOut, setExpandedCffOut] = useState(false);
+    const [expandedShortfall, setExpandedShortfall] = useState(false);
 
     const allExpanded =
       expandedCfo &&
@@ -1194,17 +1195,23 @@ export const PropCoCascadeView = memo(
                           dk="opFcfe"
                           total={data.totals.opFcfe}
                           isIndent
+                          isExpandable={true}
+                          isExpanded={expandedShortfall}
+                          onExpand={() => setExpandedShortfall((prev) => !prev)}
                           tooltip={PROPCO_FORMULAS.opFcfe}
                         />
-                        <TableRow
-                          label={<span className="italic text-[#1E2F31] opacity-85">of which: Shortfall Equity</span>}
-                          data={columns}
-                          dk="shortfallEquity"
-                          total={data.totals.shortfallEquity}
-                          isDoubleIndent
-                          hasDoubleConnector
-                          tooltip="Dynamic Operating Shortfall (The Pay As You Go Method). Injected equity to cover negative operating free cash flow to equity."
-                        />
+                        {expandedShortfall && (
+                          <TableRow
+                            label="of which: Shortfall Equity"
+                            data={columns}
+                            dk="shortfallEquity"
+                            total={data.totals.shortfallEquity}
+                            isDoubleIndent
+                            hasDoubleConnector
+                            isMemo
+                            tooltip="[INFO ONLY - already included in PropCo Operating FCFE] Dynamic Operating Shortfall (The Pay As You Go Method). Injected equity to cover negative operating free cash flow to equity."
+                          />
+                        )}
                         <TableRow
                           label="Gross Exit Proceeds"
                           data={columns}
