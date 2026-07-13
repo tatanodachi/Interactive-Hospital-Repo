@@ -127,20 +127,20 @@ export const LifetimePnLTable: React.FC<LifetimePnLTableProps> = ({
 
     // Administrative & Facility Overheads
     const staffCosts = oTotals.staffCost || 0;
-    const otherOpEx = oTotals.otherOpex || 0;
     const preOpening =
       (opCoData.setupDetails?.jvaOpex || 0) +
       (opCoData.setupDetails?.commOpex || 0);
+    const otherOpEx = oTotals.otherOpex || 0;
     const overheadsSubtotal = preOpening + staffCosts + otherOpEx;
 
     // OpCo EBITDAR (GOP)
-    const ebitdar = oTotals.ebitdar || 0;
+    const ebitdar = netClinicalMargin - overheadsSubtotal;
 
     // Fixed Obligations
     const rent = oTotals.rent || 0;
-    const ebitda = oTotals.ebitda || 0;
+    const ebitda = ebitdar - rent;
     const tax = oTotals.tax || 0;
-    const netProfit = oTotals.netIncome || 0;
+    const netProfit = ebitda - (oTotals.interest || 0) - tax;
 
     rows = [
       { label: "Gross Patient Service Revenue", value: revenue, isBold: true },
