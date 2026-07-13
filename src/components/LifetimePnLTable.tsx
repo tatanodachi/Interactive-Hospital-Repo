@@ -24,7 +24,7 @@ export const LifetimePnLTable: React.FC<LifetimePnLTableProps> = ({
   consolidatedData,
 }) => {
   const [activeSegment, setActiveSegment] = useState<
-    "opco" | "propco" | "holdco"
+    "opco" | "opco_vg" | "propco" | "holdco"
   >("holdco");
 
   if (!propCoData?.totals || !opCoData?.totals) return null;
@@ -130,17 +130,17 @@ export const LifetimePnLTable: React.FC<LifetimePnLTableProps> = ({
     const preOpening =
       (opCoData.setupDetails?.jvaOpex || 0) +
       (opCoData.setupDetails?.commOpex || 0);
-    const otherOpEx = oTotals.otherOpex || 0;
+    const otherOpEx = (oTotals.otherOpex || 0) - preOpening;
     const overheadsSubtotal = preOpening + staffCosts + otherOpEx;
 
     // OpCo EBITDAR (GOP)
-    const ebitdar = netClinicalMargin - overheadsSubtotal;
+    const ebitdar = oTotals.ebitdar || 0;
 
     // Fixed Obligations
     const rent = oTotals.rent || 0;
-    const ebitda = ebitdar - rent;
+    const ebitda = oTotals.ebitda || 0;
     const tax = oTotals.tax || 0;
-    const netProfit = ebitda - (oTotals.interest || 0) - tax;
+    const netProfit = oTotals.netIncome || 0;
 
     rows = [
       { label: "Gross Patient Service Revenue", value: revenue, isBold: true },
@@ -203,6 +203,98 @@ export const LifetimePnLTable: React.FC<LifetimePnLTableProps> = ({
     ];
     advisoryText =
       "The Clinical Throughput Waterfall tracks hospital performance from Gross Patient Revenues down to Net Clinical Margins, distinguishing variable clinical costs from fixed facility overheads.";
+  } else if (activeSegment === "opco_vg") {
+    // 49% VG OpCo Revenue
+    revenue = (oTotals.totalRev || 0) * 0.49;
+
+    // Clinical Direct Costs
+    const medSupplies = (oTotals.totalMedSupp || 0) * 0.49;
+    const docFees = (oTotals.totalDocFee || 0) * 0.49;
+    const clinicalDirectCosts = medSupplies + docFees;
+
+    // Net Clinical Margin
+    const netClinicalMargin = revenue - clinicalDirectCosts;
+
+    // Administrative & Facility Overheads
+    const staffCosts = (oTotals.staffCost || 0) * 0.49;
+    const preOpeningFull =
+      (opCoData.setupDetails?.jvaOpex || 0) +
+      (opCoData.setupDetails?.commOpex || 0);
+    const preOpening = preOpeningFull * 0.49;
+    const otherOpExFull = (oTotals.otherOpex || 0) - preOpeningFull;
+    const otherOpEx = otherOpExFull * 0.49;
+    const overheadsSubtotal = preOpening + staffCosts + otherOpEx;
+
+    // OpCo EBITDAR (GOP)
+    const ebitdar = (oTotals.ebitdar || 0) * 0.49;
+
+    // Fixed Obligations
+    const rent = (oTotals.rent || 0) * 0.49;
+    const ebitda = (oTotals.ebitda || 0) * 0.49;
+    const tax = (oTotals.tax || 0) * 0.49;
+    const netProfit = (oTotals.netIncome || 0) * 0.49;
+
+    rows = [
+      { label: "Gross Patient Service Revenue (49%)", value: revenue, isBold: true },
+      {
+        label: "Clinical Direct Costs (COGS)",
+        value: -clinicalDirectCosts,
+        isBold: true,
+        isHeader: true,
+      },
+      {
+        label: "Medical Supplies & Pharmacy",
+        value: -medSupplies,
+        indent: true,
+      },
+      { label: "Physician & Consultation Fees", value: -docFees, indent: true },
+      {
+        label: "Net Clinical Margin",
+        value: netClinicalMargin,
+        isBold: true,
+        bgColor: "bg-[#1C6048]/10 text-[#1C6048]",
+      },
+      {
+        label: "Administrative & Facility Overheads",
+        value: -overheadsSubtotal,
+        isBold: true,
+        isHeader: true,
+      },
+      { label: "Pre-Opening Start-up Costs", value: -preOpening, indent: true },
+      {
+        label: "Personnel Expenses (Clinical & Admin)",
+        value: -staffCosts,
+        indent: true,
+      },
+      {
+        label: "G&A Overheads (Util, Mktg, Ins)",
+        value: -otherOpEx,
+        indent: true,
+      },
+      {
+        label: "EBITDAR (GOP)",
+        value: ebitdar,
+        isBold: true,
+        bgColor: "bg-[#F9F8F6]",
+      },
+      {
+        label: "Fixed Facility Expenses",
+        value: -rent,
+        isBold: true,
+        isHeader: true,
+      },
+      { label: "Property Lease Expense (Rent)", value: -rent, indent: true },
+      { label: "EBITDA", value: ebitda, isBold: true, bgColor: "bg-[#F9F8F6]" },
+      { label: "Provision for Income Tax", value: -tax, indent: true },
+      {
+        label: "Net Operating Income (NOI)",
+        value: netProfit,
+        isBold: true,
+        isFooter: true,
+      },
+    ];
+    advisoryText =
+      "This view represents Vasanta's 49% share of the Clinical Operations Lifecycle, showing proportional revenues, expenses, and net margins.";
   } else if (activeSegment === "holdco") {
     // Look-Through P&L Waterfall
     const ltRevenue = cTotals.lookThroughRevenue || 0;
@@ -291,11 +383,12 @@ export const LifetimePnLTable: React.FC<LifetimePnLTableProps> = ({
           <select
             id="lifetime-segment-select"
             value={activeSegment}
-            onChange={(e) => setActiveSegment(e.target.value as "opco" | "propco" | "holdco")}
+            onChange={(e) => setActiveSegment(e.target.value as "opco" | "opco_vg" | "propco" | "holdco")}
             className="w-full bg-[#EFEBE7] border border-[#D8D8D8] rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-[#1E2F31] focus:outline-none focus:ring-1 focus:ring-[#1C6048] appearance-none pr-8 cursor-pointer shadow-sm"
           >
             <option value="opco">🏥 Clinical OpCo</option>
-            <option value="propco">🏢 Property PropCo</option>
+            <option value="opco_vg">🏥 49% VG OpCo</option>
+            <option value="propco">🏢 PropCo</option>
             <option value="holdco">🏦 HoldCo VG</option>
           </select>
           <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none text-[#8A8175]">
@@ -319,6 +412,17 @@ export const LifetimePnLTable: React.FC<LifetimePnLTableProps> = ({
             Clinical OpCo
           </button>
           <button
+            onClick={() => setActiveSegment("opco_vg")}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-[11px] font-bold transition-all ${
+              activeSegment === "opco_vg"
+                ? "bg-[#1C6048] text-white shadow-sm"
+                : "text-[#8A8175] hover:bg-[#D8D8D8]/50"
+            }`}
+          >
+            <Stethoscope size={14} />
+            49% VG OpCo
+          </button>
+          <button
             onClick={() => setActiveSegment("propco")}
             className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-[11px] font-bold transition-all ${
               activeSegment === "propco"
@@ -327,7 +431,7 @@ export const LifetimePnLTable: React.FC<LifetimePnLTableProps> = ({
             }`}
           >
             <Building2 size={14} />
-            Property PropCo
+            PropCo
           </button>
           <button
             onClick={() => setActiveSegment("holdco")}
@@ -349,9 +453,11 @@ export const LifetimePnLTable: React.FC<LifetimePnLTableProps> = ({
             <th className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider border-r border-white/5">
               {activeSegment === "opco"
                 ? "Clinical Operations Lifecycle"
-                : activeSegment === "propco"
-                  ? "Infrastructure Investment Lifecycle"
-                  : "Consolidated Venture Lifecycle"}
+                : activeSegment === "opco_vg"
+                  ? "49% VG OpCo Lifecycle"
+                  : activeSegment === "propco"
+                    ? "Infrastructure Investment Lifecycle"
+                    : "HoldCo VG Lifecycle"}
             </th>
             <th className="px-4 py-2.5 text-center text-[10px] font-bold uppercase tracking-wider border-r border-white/5 w-[120px] leading-tight">
               Amount<br />(IDR B)
