@@ -353,8 +353,8 @@ export const LifetimePnLTable: React.FC<LifetimePnLTableProps> = ({
                   ? "Infrastructure Investment Lifecycle"
                   : "Consolidated Venture Lifecycle"}
             </th>
-            <th className="px-4 py-2.5 text-center text-[10px] font-bold uppercase tracking-wider border-r border-white/5 w-[120px]">
-              Amount (IDR B)
+            <th className="px-4 py-2.5 text-center text-[10px] font-bold uppercase tracking-wider border-r border-white/5 w-[120px] leading-tight">
+              Amount<br />(IDR B)
             </th>
             <th className="px-4 py-2.5 text-center text-[10px] font-bold uppercase tracking-wider w-[70px]">
               % of Revenue
