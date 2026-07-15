@@ -1097,7 +1097,7 @@ export const ExecutiveSummaryView = memo(
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart
                           data={borChartData}
-                          margin={{ top: 5, right: 8, left: -25, bottom: 0 }}
+                          margin={{ top: 5, right: 22, left: -25, bottom: 0 }}
                         >
                           <CartesianGrid
                             strokeDasharray="3 3"
@@ -1123,7 +1123,7 @@ export const ExecutiveSummaryView = memo(
                             tickFormatter={(val) => val + "%"}
                           />
                           <Tooltip
-                            allowEscapeViewBox={{ x: true, y: true }}
+                            allowEscapeViewBox={{ x: false, y: true }}
                             contentStyle={{
                               fontSize: "9px",
                               borderRadius: "6px",
