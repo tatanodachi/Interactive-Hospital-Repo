@@ -4577,6 +4577,7 @@ export default function App() {
           "repaymentType",
           "stepUpPercentages",
           "idcTreatment",
+          "useFinalTax",
         ].includes(key)
           ? val
           : (val === "" ? 0 : parseFloat(val)) || 0;

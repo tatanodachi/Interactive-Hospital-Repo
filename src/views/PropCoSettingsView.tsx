@@ -1013,13 +1013,40 @@ export const PropCoSettingsView = memo(
               unit="%"
               isLocked={isLocked}
             />
-            <AssumptionRow
-              label="Corporate Tax"
-              val={assumptions.corporateTax}
-              set={(v) => onChange("corporateTax", v)}
-              unit="%"
-              isLocked={isLocked}
-            />
+            <div className="flex justify-between items-center group py-2.5 border-b border-[#D8D8D8] last:border-0 hover:bg-[#EFEBE7] px-1 rounded transition-colors mb-2">
+              <div className="flex flex-col gap-0.5 max-w-[180px]">
+                <span className="text-[10px] text-[#4C4A4B] font-bold">Tax Regime / Method</span>
+                <span className="text-[8px] text-gray-500 font-medium">Choose between Corporate Income Tax (Non-Final) or Final Tax (PPh Final on rental revenue).</span>
+              </div>
+              <select
+                disabled={isLocked}
+                value={assumptions.useFinalTax ? "final" : "corporate"}
+                onChange={(e) => onChange("useFinalTax", e.target.value === "final")}
+                className="p-1.5 bg-[#F9F8F6] border border-[#D8D8D8] rounded text-[9px] font-bold text-[#1E2F31] outline-none cursor-pointer hover:bg-white transition-all disabled:opacity-50"
+              >
+                <option value="corporate">Corporate Tax (Non-Final)</option>
+                <option value="final">Final Tax (PPh Final)</option>
+              </select>
+            </div>
+            {assumptions.useFinalTax ? (
+              <AssumptionRow
+                label="Final Tax Rate"
+                val={assumptions.finalTaxRate ?? 10}
+                set={(v) => onChange("finalTaxRate", v)}
+                unit="%"
+                isLocked={isLocked}
+                tooltip="Final Tax (PPh Final) rate applied on gross rental revenues."
+              />
+            ) : (
+              <AssumptionRow
+                label="Corporate Tax"
+                val={assumptions.corporateTax}
+                set={(v) => onChange("corporateTax", v)}
+                unit="%"
+                isLocked={isLocked}
+                tooltip="Corporate Income Tax (CIT) rate applied on net taxable profit (EBT)."
+              />
+            )}
           </div>
           <div className="space-y-4">
             <SectionTitle

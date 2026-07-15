@@ -134,6 +134,8 @@ export interface PropCoAssumptions {
   exitMultiple?: number;
   sellingCosts?: number;
   corporateTax?: number;
+  useFinalTax?: boolean;
+  finalTaxRate?: number;
   includeFinancing?: boolean;
   includePreOpInLtv?: boolean;
   includeLandInLtv?: boolean;

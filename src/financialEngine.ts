@@ -219,6 +219,8 @@ export const DEFAULT_PROPCO_ASSUMPTIONS: PropCoAssumptions = {
   maintRate: 0,
   propTaxRate: 0,
   corporateTax: 22,
+  useFinalTax: false,
+  finalTaxRate: 10,
   discountRate: 11,
   depLifeBuilding: 20,
   depMethodBuilding: "SL",
@@ -3110,8 +3112,9 @@ export const runPropCoEngine = (
       const m_ebt = m_ebitda - m_interest - m_dep;
 
       ytdEbt += m_ebt;
-      const m_tax =
-        m === 12 && ytdEbt > 0 ? ytdEbt * (assumptions.corporateTax / 100) : 0;
+      const m_tax = assumptions.useFinalTax
+        ? m_revenue * ((assumptions.finalTaxRate ?? 10) / 100)
+        : (m === 12 && ytdEbt > 0 ? ytdEbt * (assumptions.corporateTax / 100) : 0);
       const m_netIncome = m_ebt - m_tax;
 
       let m_exit = 0,
@@ -3223,9 +3226,11 @@ export const runPropCoEngine = (
       const m_unleveredCf =
         m_ebitda -
         m_dep -
-        (m_ebitda - m_dep > 0
-          ? (m_ebitda - m_dep) * (assumptions.corporateTax / 100)
-          : 0) +
+        (assumptions.useFinalTax
+          ? m_revenue * ((assumptions.finalTaxRate ?? 10) / 100)
+          : (m_ebitda - m_dep > 0
+            ? (m_ebitda - m_dep) * (assumptions.corporateTax / 100)
+            : 0)) +
         m_dep +
         m_exitUnlev -
         m_deferredCapex;
@@ -3238,10 +3243,12 @@ export const runPropCoEngine = (
         m_ebitda -
         m_interestExLand -
         m_dep -
-        (m_ebitda - m_interestExLand - m_dep > 0
-          ? (m_ebitda - m_interestExLand - m_dep) *
-            (assumptions.corporateTax / 100)
-          : 0) +
+        (assumptions.useFinalTax
+          ? m_revenue * ((assumptions.finalTaxRate ?? 10) / 100)
+          : (m_ebitda - m_interestExLand - m_dep > 0
+            ? (m_ebitda - m_interestExLand - m_dep) *
+              (assumptions.corporateTax / 100)
+            : 0)) +
         m_dep -
         m_principalExLand +
         m_exitExLand -
@@ -3427,11 +3434,12 @@ export const runPropCoEngine = (
       ebt: year_ebt,
       netExitProceedsExLand: year_exitExLand,
       ebtExLand: year_ebitda - year_interestExLand - year_dep,
-      corpTaxExLand:
-        year_ebitda - year_interestExLand - year_dep > 0
+      corpTaxExLand: assumptions.useFinalTax
+        ? year_revenue * ((assumptions.finalTaxRate ?? 10) / 100)
+        : (year_ebitda - year_interestExLand - year_dep > 0
           ? (year_ebitda - year_interestExLand - year_dep) *
             (assumptions.corporateTax / 100)
-          : 0,
+          : 0),
       monthly,
     });
   }
