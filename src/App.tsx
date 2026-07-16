@@ -4102,11 +4102,11 @@ export default function App() {
   // Compute Presentation Wrapper
   const headerContainerClass = isPresenting
     ? "w-full max-w-full mx-auto px-4"
-    : "w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8";
+    : "w-full max-w-[2400px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12";
 
   const mainContainerClass =
     isPresenting && isStrictRatio
-      ? "aspect-video w-[100%] max-w-[1800px] max-h-[92vh] mx-auto overflow-y-auto bg-white shadow-2xl rounded-xl border border-[#D8D8D8] px-8 py-6 my-4"
+      ? "aspect-video w-[100%] max-w-[2200px] max-h-[92vh] mx-auto overflow-y-auto bg-white shadow-2xl rounded-xl border border-[#D8D8D8] px-8 py-6 my-4"
       : headerContainerClass;
 
   // Navigation Logic

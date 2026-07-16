@@ -153,10 +153,35 @@ export const OpCoDashboardView = memo(
     const { tooltipState: revPabTs, setTooltipState: setRevPabTs } =
       useTooltip(revPabTooltip);
 
+    const npvTooltip = useMemo(() => ({
+      desc: "The net present value of all projected free cash flows discounted back to Year 1 (2026) using the selected hurdle rate.",
+      formula: "NPV = Sum of [FCF_t / (1 + r)^t] across years"
+    }), []);
+    
+    const moicTooltip = useMemo(() => ({
+      desc: "Indicates absolute wealth creation. While IRR measures compounding speed over time, the Cash Multiple (MOIC) shows the absolute magnitude of your cash return. A typical healthcare infrastructure target is 2.5x - 3.0x+.",
+      formula: "Total Project Free Cash Flow ÷ Cumulative Partner Equity Invested"
+    }), []);
+
+    const irrTooltip = useMemo(() => ({
+      desc: "The Internal Rate of Return (IRR) of the project's cumulative free cash flows. Measures the annual compounded rate of return on invested equity.",
+      formula: "IRR is the rate 'r' at which NPV of all cash flows equals zero"
+    }), []);
+
+    const yieldTooltip = useMemo(() => ({
+      desc: "The average annual cash distribution yield. It acts as the steady engine driving the overall Cash Multiple over the asset's lifecycle.",
+      formula: "Average of (Annual Cash Flow ÷ Invested Equity) across operating years"
+    }), []);
+
+    const { tooltipState: npvTs, setTooltipState: setNpvTs } = useTooltip(npvTooltip);
+    const { tooltipState: moicTs, setTooltipState: setMoicTs } = useTooltip(moicTooltip);
+    const { tooltipState: irrTs, setTooltipState: setIrrTs } = useTooltip(irrTooltip);
+    const { tooltipState: yieldTs, setTooltipState: setYieldTs } = useTooltip(yieldTooltip);
+
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in">
-        {/* LEFT PANEL: Executive & Returns (Spans 4 columns) */}
-        <div className="space-y-6 lg:col-span-4 w-full">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start animate-in fade-in w-full max-w-full">
+        {/* COLUMN 1: Executive, Returns tab, and Blended Margins */}
+        <div className="space-y-6 w-full flex flex-col justify-start">
           <div className="flex justify-between items-center bg-white p-3 rounded-2xl shadow-sm border border-[#D8D8D8]">
             <h2 className="text-sm font-bold text-[#1E2F31] ml-2">
               Executive Overview
@@ -185,48 +210,8 @@ export const OpCoDashboardView = memo(
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <KPICard
-              title="Project NPV"
-              value={formatCurrency(data.projectNPV)}
-              icon={<TrendingUp size={18} />}
-              color="blue"
-              subtitle={`@${String(assumptions.discountRate)}% Disc Rate`}
-            />
-            <KPICard
-              title="Cash Multiple"
-              value={`${data.totalEquity > 0 ? (data.totals.fcf / data.totalEquity).toFixed(2) : "0"}x`}
-              icon={<BarChart3 size={18} />}
-              color="emerald"
-              subtitle="Project MOIC"
-              tooltip={{
-                desc: "Indicates absolute wealth creation. While IRR measures compounding speed over time, the Cash Multiple (MOIC) shows the absolute magnitude of your cash return. A typical healthcare infrastructure target is 2.5x - 3.0x+.",
-                formula:
-                  "Total Project Free Cash Flow ÷ Cumulative Partner Equity Invested",
-              }}
-            />
-            <KPICard
-              title="Project IRR"
-              value={`${formatNumber((data.projectIRR || 0) * 100, 2)}%`}
-              icon={<Activity size={18} />}
-              color="blue"
-              subtitle="Compounded Return"
-            />
-            <KPICard
-              title="Avg Div. Yield"
-              value={`${formatNumber(data.partnerA.avgYield, 1)}%`}
-              icon={<Coins size={18} />}
-              color="indigo"
-              subtitle="Mean Operating Yield"
-              tooltip={{
-                desc: "The average annual cash distribution yield. It acts as the steady engine driving the overall Cash Multiple over the asset's lifecycle.",
-                formula:
-                  "Average of (Annual Cash Flow ÷ Invested Equity) across operating years",
-              }}
-            />
-          </div>
-
-          <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8] relative transition-all hover:shadow-md">
+          {/* Returns Tab Selector Card */}
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#D8D8D8] relative transition-all hover:shadow-md">
             {/* Card Title & Stateful Toggle Bar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-[#EFEBE7] pb-4">
               <div>
@@ -304,36 +289,177 @@ export const OpCoDashboardView = memo(
               />
             )}
           </div>
+
+          {/* Consolidated Blended Margins Card */}
+          <div className="bg-white p-5 rounded-2xl border border-[#D8D8D8] shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+            <div className="absolute right-0 bottom-0 translate-x-4 translate-y-4 w-32 h-32 rounded-full bg-[#1C6048]/[0.02] pointer-events-none group-hover:scale-110 transition-transform duration-700" />
+
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-[#EFEBE7] relative z-10">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#1E2F31] flex items-center gap-1.5 font-sans">
+                <Coins size={15} className="text-[#1C6048]" /> Project Margins
+              </h3>
+              <span className="text-[9px] text-[#1C6048] font-mono bg-[#EFEBE7] px-2 py-0.5 rounded font-bold uppercase">
+                Look-Through Metrics
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 relative z-10">
+              {/* EBITDAR */}
+              <div className="flex flex-col">
+                <p className="text-[10px] text-[#1C6048] font-black uppercase tracking-widest mb-1">
+                  EBITDAR Margin
+                </p>
+                <div className="flex flex-col">
+                  <span className="text-2xl font-black text-[#1C6048] leading-none font-sans">
+                    {formatNumber(avgEbitdarMargin, 1)}%
+                  </span>
+                  <span className="text-[8px] lg:text-[9px] text-[#4C4A4B]/60 font-bold uppercase tracking-tight font-mono mt-1">
+                    Active Years Avg
+                  </span>
+                </div>
+              </div>
+
+              {/* Net Profit */}
+              <div className="flex flex-col border-l border-[#D8D8D8]/50 pl-4">
+                <p className="text-[10px] text-[#1E2F31] font-black uppercase tracking-widest mb-1">
+                  Net Profit Margin
+                </p>
+                <div className="flex flex-col">
+                  <span className="text-2xl font-black text-[#1E2F31] leading-none font-sans">
+                    {formatNumber(avgNetMargin, 1)}%
+                  </span>
+                  <span className="text-[8px] lg:text-[9px] text-[#4C4A4B]/60 font-bold uppercase tracking-tight font-mono mt-1">
+                    Active Years Avg
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* RIGHT PANEL: Operations & Trajectory (Spans 8 columns) */}
-        <div className="space-y-6 lg:col-span-8 w-full">
-          {/* Unified Stabilization Scorecard Container (Option 2A) */}
+        {/* COLUMN 2: Performance KPIs & Clinical Scorecards */}
+        <div className="space-y-6 w-full flex flex-col justify-start">
+          {/* Unified Investment Return Cockpit Panel */}
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#D8D8D8] relative overflow-visible transition-all hover:shadow-md">
+            {/* Cockpit Header */}
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-[#EFEBE7]">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#1E2F31] flex items-center gap-1.5 font-sans">
+                <Coins size={15} className="text-[#1C6048]" /> Investment Return Cockpit
+              </h3>
+              <span className="text-[9px] text-[#1C6048] font-mono bg-[#EFEBE7] px-2 py-0.5 rounded font-bold uppercase">
+                Integrated Returns
+              </span>
+            </div>
+
+            {/* 2x2 Grid with Thin Hairline Internal Border Dividers */}
+            <div className="grid grid-cols-2 relative z-10">
+              {/* Quadrant 1: Project IRR */}
+              <div className="flex flex-col pr-4 pb-4 border-r border-b border-[#D8D8D8]/50 relative group">
+                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-[#1C6048]">
+                  <span className="flex items-center gap-1.5">
+                    <Activity size={12} className="text-[#1C6048]" /> Project IRR
+                  </span>
+                  <KPITooltipIcon
+                    tooltip={irrTooltip}
+                    tooltipState={irrTs}
+                    setTooltipState={setIrrTs}
+                  />
+                </div>
+                <span className="text-2xl font-black text-[#1C6048] my-1 font-sans leading-none tracking-tight">
+                  {formatNumber((data.projectIRR || 0) * 100, 2)}%
+                </span>
+                <span className="text-[8px] lg:text-[9px] text-[#4C4A4B]/60 font-bold uppercase tracking-tight">
+                  Compounded Return
+                </span>
+              </div>
+
+              {/* Quadrant 2: Project NPV */}
+              <div className="flex flex-col pl-4 pb-4 border-b border-[#D8D8D8]/50 relative group">
+                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-[#1E2F31]">
+                  <span className="flex items-center gap-1.5">
+                    <TrendingUp size={12} className="text-[#1C6048]" /> Project NPV
+                  </span>
+                  <KPITooltipIcon
+                    tooltip={npvTooltip}
+                    tooltipState={npvTs}
+                    setTooltipState={setNpvTs}
+                  />
+                </div>
+                <span className="text-2xl font-black text-[#1E2F31] my-1 font-sans leading-none tracking-tight">
+                  {formatCurrency(data.projectNPV)}
+                </span>
+                <span className="text-[8px] lg:text-[9px] text-[#4C4A4B]/60 font-bold uppercase tracking-tight">
+                  @{String(assumptions.discountRate)}% Disc Rate
+                </span>
+              </div>
+
+              {/* Quadrant 3: Cash Multiple */}
+              <div className="flex flex-col pr-4 pt-4 border-r border-[#D8D8D8]/50 relative group">
+                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-[#1E2F31]">
+                  <span className="flex items-center gap-1.5">
+                    <BarChart3 size={12} className="text-[#9B8B70]" /> Cash Multiple
+                  </span>
+                  <KPITooltipIcon
+                    tooltip={moicTooltip}
+                    tooltipState={moicTs}
+                    setTooltipState={setMoicTs}
+                  />
+                </div>
+                <span className="text-2xl font-black text-[#1E2F31] my-1 font-sans leading-none tracking-tight">
+                  {data.totalEquity > 0 ? (data.totals.fcf / data.totalEquity).toFixed(2) : "0"}x
+                </span>
+                <span className="text-[8px] lg:text-[9px] text-[#4C4A4B]/60 font-bold uppercase tracking-tight">
+                  Project MOIC
+                </span>
+              </div>
+
+              {/* Quadrant 4: Avg Div. Yield */}
+              <div className="flex flex-col pl-4 pt-4 relative group">
+                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-[#9B8B70]">
+                  <span className="flex items-center gap-1.5">
+                    <Coins size={12} className="text-[#9B8B70]" /> Avg Div. Yield
+                  </span>
+                  <KPITooltipIcon
+                    tooltip={yieldTooltip}
+                    tooltipState={yieldTs}
+                    setTooltipState={setYieldTs}
+                  />
+                </div>
+                <span className="text-2xl font-black text-[#9B8B70] my-1 font-sans leading-none tracking-tight">
+                  {formatNumber(data.partnerA.avgYield, 1)}%
+                </span>
+                <span className="text-[8px] lg:text-[9px] text-[#4C4A4B]/60 font-bold uppercase tracking-tight">
+                  Mean Operating Yield
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Unified Stabilization Scorecard Container - Telemetry Bento Grid */}
           <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#D8D8D8] relative">
             <div className="flex items-center justify-between mb-4 pb-2 border-b border-[#EFEBE7]">
               <h3 className="text-xs font-bold uppercase tracking-wider text-[#1E2F31] flex items-center gap-1.5 font-sans">
-                <Activity size={15} className="text-[#1C6048]" /> Clinical
-                Benchmarks at Stabilization
+                <Activity size={15} className="text-[#1C6048]" /> Clinical Benchmarks at Stabilization
               </h3>
               <span className="text-[9px] text-[#9B8B70] font-mono bg-[#EFEBE7] px-2 py-0.5 rounded font-bold uppercase">
-                Operational Peaks
+                Peak Ops
               </span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 divide-y sm:divide-y-0 sm:divide-x divide-[#D8D8D8]/60">
+            <div className="grid grid-cols-2 gap-3">
               {/* Metric 1 */}
-              <div className="flex flex-col justify-between p-2">
+              <div className="bg-[#F9F8F6] p-3 rounded-xl border border-[#D8D8D8]/50 flex flex-col justify-between">
                 <span className="text-[10px] text-[#4C4A4B] font-bold uppercase tracking-tight">
                   Stabilized Vol.
                 </span>
-                <p className="text-[22px] font-black text-[#1E2F31] my-1 font-sans">
+                <p className="text-xl font-black text-[#1E2F31] my-1 font-sans leading-none">
                   {formatNumber(data.opsMetrics.stabilizedVolume, 0)}
                 </p>
                 <span className="text-[9px] text-[#99B6AA] font-bold uppercase tracking-tight">
-                  Peak Yr Patients
+                  Peak Patients
                 </span>
               </div>
               {/* Metric 2 */}
-              <div className="flex flex-col justify-between p-2 sm:pl-4 pt-4 sm:pt-2">
+              <div className="bg-[#F9F8F6] p-3 rounded-xl border border-[#D8D8D8]/50 flex flex-col justify-between">
                 <div className="flex items-center gap-1">
                   <span className="text-[10px] text-[#4C4A4B] font-bold uppercase tracking-tight">
                     Rev. Per Bed
@@ -345,7 +471,7 @@ export const OpCoDashboardView = memo(
                     align="left"
                   />
                 </div>
-                <p className="text-[22px] font-black text-[#1C6048] my-1 font-sans">
+                <p className="text-xl font-black text-[#1C6048] my-1 font-sans leading-none">
                   {formatNumber(data.opsMetrics.revPab, 1)} B
                 </p>
                 <span className="text-[9px] text-[#99B6AA] font-bold uppercase tracking-tight">
@@ -353,11 +479,11 @@ export const OpCoDashboardView = memo(
                 </span>
               </div>
               {/* Metric 3 */}
-              <div className="flex flex-col justify-between p-2 sm:pl-4 pt-4 sm:pt-2">
+              <div className="bg-[#F9F8F6] p-3 rounded-xl border border-[#D8D8D8]/50 flex flex-col justify-between">
                 <span className="text-[10px] text-[#4C4A4B] font-bold uppercase tracking-tight">
-                  EBITDA Per Bed
+                  EBITDA / Bed
                 </span>
-                <p className="text-[22px] font-black text-[#1E2F31] my-1 font-sans">
+                <p className="text-xl font-black text-[#1E2F31] my-1 font-sans leading-none">
                   {formatNumber(data.opsMetrics.ebitdaPerBed, 1)} B
                 </p>
                 <span className="text-[9px] text-[#99B6AA] font-bold uppercase tracking-tight">
@@ -365,206 +491,161 @@ export const OpCoDashboardView = memo(
                 </span>
               </div>
               {/* Metric 4 */}
-              <div className="flex flex-col justify-between p-2 sm:pl-4 pt-4 sm:pt-2">
+              <div className="bg-[#F9F8F6] p-3 rounded-xl border border-[#D8D8D8]/50 flex flex-col justify-between">
                 <span className="text-[10px] text-[#4C4A4B] font-bold uppercase tracking-tight">
-                  Fixed Cost Ratio
+                  Fixed Cost %
                 </span>
-                <p className="text-[22px] font-black text-[#9B8B70] my-1 font-sans">
+                <p className="text-xl font-black text-[#9B8B70] my-1 font-sans leading-none">
                   {formatNumber(data.opsMetrics.fixedCostPct, 1)}%
                 </p>
                 <span className="text-[9px] text-[#99B6AA] font-bold uppercase tracking-tight">
-                  Fixed vs Var OPEX
+                  Fixed vs Var
                 </span>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Consolidated Blended Margins Card (Option 1B) */}
-          <div className="bg-[#1C6048] p-5 rounded-2xl border border-[#164c39] shadow-md relative overflow-hidden group">
-            {/* Ambient accent element */}
-            <div className="absolute right-0 bottom-0 translate-x-4 translate-y-4 w-32 h-32 rounded-full bg-white/[0.02] pointer-events-none group-hover:scale-110 transition-transform duration-700" />
+        {/* COLUMN 3: Multi-Year Trajectory & Charts */}
+        <div className="space-y-6 w-full flex flex-col justify-start">
+          {/* Chart 1: Cash Flow Trajectory */}
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#D8D8D8]">
+            <h3 className="font-bold text-[#1E2F31] mb-4 flex items-center gap-2 text-xs uppercase tracking-wider">
+              <BarChart3 size={16} className="text-[#1C6048]" /> Operating Trajectory
+            </h3>
+            <div className="h-64">
+              <LazyResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={data?.operatingData || []}>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="#D8D8D8"
+                  />
+                  <XAxis
+                    dataKey="year"
+                    tick={{ fontSize: 10, fill: "#4C4A4B" }}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    yAxisId="left"
+                    tick={{ fontSize: 10, fill: "#4C4A4B" }}
+                    axisLine={false}
+                    tickFormatter={(val) => `${val}B`}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    tick={{ fontSize: 10, fill: "#1E2F31" }}
+                    axisLine={false}
+                    tickFormatter={(val) => `${val}%`}
+                  />
+                  <Tooltip
+                    allowEscapeViewBox={{ x: true, y: true }}
+                    contentStyle={TOOLTIP_STYLE}
+                    formatter={(val, name) =>
+                      formatNumber(val, 1) +
+                      (name === "Occupancy (BOR)" ? "%" : "B")
+                    }
+                  />
+                  <Legend iconType="circle" wrapperStyle={LEGEND_STYLE} />
 
-            <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10 relative z-10">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-1.5 font-sans">
-                <Coins size={15} className="text-[#99B6AA]" /> Project Margins
-              </h3>
-              <span className="text-[9px] bg-white/10 px-2 py-0.5 rounded text-white tracking-normal font-semibold font-mono">
-                Look-Through Metrics
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
-              {/* EBITDAR */}
-              <div className="flex flex-col">
-                <p className="text-[10px] text-[#EFEBE7]/80 font-bold uppercase tracking-wider mb-1 font-mono">
-                  EBITDAR Margin
-                </p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl lg:text-4xl font-black text-white leading-none font-sans">
-                    {formatNumber(avgEbitdarMargin, 1)}%
-                  </span>
-                  <span className="text-[10px] text-[#EFEBE7]/60 font-mono">
-                    Active Years Average
-                  </span>
-                </div>
-              </div>
-
-              {/* Net Profit */}
-              <div className="flex flex-col border-t md:border-t-0 md:border-l border-white/10 pt-4 md:pt-0 md:pl-6">
-                <p className="text-[10px] text-[#EFEBE7]/80 font-bold uppercase tracking-wider mb-1 font-mono">
-                  Net Profit Margin
-                </p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl lg:text-4xl font-black text-white leading-none font-sans">
-                    {formatNumber(avgNetMargin, 1)}%
-                  </span>
-                  <span className="text-[10px] text-[#EFEBE7]/60 font-mono">
-                    Active Years Average
-                  </span>
-                </div>
-              </div>
+                  <Bar
+                    yAxisId="left"
+                    dataKey="totalRev"
+                    name="Net Revenue"
+                    fill="#1C6048"
+                    radius={[4, 4, 0, 0]}
+                    barSize={14}
+                  />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="ebitda"
+                    name="EBITDA"
+                    stroke="#1E2F31"
+                    strokeWidth={2}
+                    dot={{
+                      r: 3,
+                      fill: "#1E2F31",
+                      strokeWidth: 1.5,
+                      stroke: "#fff",
+                    }}
+                  />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="netIncome"
+                    name="Net Income"
+                    stroke="#9B8B70"
+                    strokeWidth={2}
+                    dot={{
+                      r: 3,
+                      fill: "#9B8B70",
+                      strokeWidth: 1.5,
+                      stroke: "#fff",
+                    }}
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="bor"
+                    name="Occupancy (BOR)"
+                    stroke="#99B6AA"
+                    strokeWidth={1.5}
+                    strokeDasharray="5 5"
+                    dot={false}
+                  />
+                </ComposedChart>
+              </LazyResponsiveContainer>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8]">
-              <h3 className="font-bold text-[#1E2F31] mb-6 flex items-center gap-2">
-                <BarChart3 size={18} className="text-[#1C6048]" /> Operating
-                Cash Flow Trajectory
-              </h3>
-              <div className="h-72">
-                <LazyResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={data?.operatingData || []}>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      vertical={false}
-                      stroke="#D8D8D8"
-                    />
-                    <XAxis
-                      dataKey="year"
-                      tick={{ fontSize: 10, fill: "#4C4A4B" }}
-                      axisLine={false}
-                    />
-                    <YAxis
-                      yAxisId="left"
-                      tick={{ fontSize: 10, fill: "#4C4A4B" }}
-                      axisLine={false}
-                      tickFormatter={(val) => `${val}B`}
-                    />
-                    <YAxis
-                      yAxisId="right"
-                      orientation="right"
-                      tick={{ fontSize: 10, fill: "#1E2F31" }}
-                      axisLine={false}
-                      tickFormatter={(val) => `${val}%`}
-                    />
-                    <Tooltip
-                      allowEscapeViewBox={{ x: true, y: true }}
-                      contentStyle={TOOLTIP_STYLE}
-                      formatter={(val, name) =>
-                        formatNumber(val, 1) +
-                        (name === "Occupancy (BOR)" ? "%" : "B")
-                      }
-                    />
-                    <Legend iconType="circle" wrapperStyle={LEGEND_STYLE} />
-
-                    <Bar
-                      yAxisId="left"
-                      dataKey="totalRev"
-                      name="Net Revenue"
-                      fill="#1C6048"
-                      radius={[4, 4, 0, 0]}
-                      barSize={18}
-                    />
-                    <Line
-                      yAxisId="left"
-                      type="monotone"
-                      dataKey="ebitda"
-                      name="EBITDA"
-                      stroke="#1E2F31"
-                      strokeWidth={3}
-                      dot={{
-                        r: 4,
-                        fill: "#1E2F31",
-                        strokeWidth: 2,
-                        stroke: "#fff",
-                      }}
-                    />
-                    <Line
-                      yAxisId="left"
-                      type="monotone"
-                      dataKey="netIncome"
-                      name="Net Income"
-                      stroke="#9B8B70"
-                      strokeWidth={3}
-                      dot={{
-                        r: 4,
-                        fill: "#9B8B70",
-                        strokeWidth: 2,
-                        stroke: "#fff",
-                      }}
-                    />
-                    <Line
-                      yAxisId="right"
-                      type="monotone"
-                      dataKey="bor"
-                      name="Occupancy (BOR)"
-                      stroke="#99B6AA"
-                      strokeWidth={2}
-                      strokeDasharray="5 5"
-                      dot={false}
-                    />
-                  </ComposedChart>
-                </LazyResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-[#D8D8D8]">
-              <h3 className="font-bold text-[#1E2F31] mb-6 flex items-center gap-2">
-                <Target size={18} className="text-[#99B6AA]" /> Breakeven Audit
-              </h3>
-              <div className="h-72">
-                <LazyResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={data?.operatingData || []}>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      vertical={false}
-                      stroke="#D8D8D8"
-                    />
-                    <XAxis
-                      dataKey="year"
-                      tick={{ fontSize: 10, fill: "#4C4A4B" }}
-                      axisLine={false}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 10, fill: "#4C4A4B" }}
-                      axisLine={false}
-                      tickFormatter={(val) => `${val}%`}
-                    />
-                    <Tooltip
-                      allowEscapeViewBox={{ x: true, y: true }}
-                      contentStyle={TOOLTIP_STYLE}
-                      formatter={(val) => formatNumber(val, 1) + "%"}
-                    />
-                    <Legend iconType="circle" wrapperStyle={LEGEND_STYLE} />
-                    <Bar
-                      dataKey="breakEvenBor"
-                      name="Breakeven BOR required"
-                      fill="#D8D8D8"
-                      radius={[4, 4, 0, 0]}
-                      barSize={18}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="bor"
-                      name="Actual Projected BOR"
-                      stroke="#1E2F31"
-                      strokeWidth={3}
-                      dot={{ r: 3, strokeWidth: 2 }}
-                    />
-                  </ComposedChart>
-                </LazyResponsiveContainer>
-              </div>
+          {/* Chart 2: Breakeven Audit */}
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#D8D8D8]">
+            <h3 className="font-bold text-[#1E2F31] mb-4 flex items-center gap-2 text-xs uppercase tracking-wider">
+              <Target size={16} className="text-[#99B6AA]" /> Breakeven Audit
+            </h3>
+            <div className="h-64">
+              <LazyResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={data?.operatingData || []}>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="#D8D8D8"
+                  />
+                  <XAxis
+                    dataKey="year"
+                    tick={{ fontSize: 10, fill: "#4C4A4B" }}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 10, fill: "#4C4A4B" }}
+                    axisLine={false}
+                    tickFormatter={(val) => `${val}%`}
+                  />
+                  <Tooltip
+                    allowEscapeViewBox={{ x: true, y: true }}
+                    contentStyle={TOOLTIP_STYLE}
+                    formatter={(val) => formatNumber(val, 1) + "%"}
+                  />
+                  <Legend iconType="circle" wrapperStyle={LEGEND_STYLE} />
+                  <Bar
+                    dataKey="breakEvenBor"
+                    name="Breakeven BOR"
+                    fill="#D8D8D8"
+                    radius={[4, 4, 0, 0]}
+                    barSize={14}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="bor"
+                    name="Projected BOR"
+                    stroke="#1E2F31"
+                    strokeWidth={2.5}
+                    dot={{ r: 2.5, strokeWidth: 1.5 }}
+                  />
+                </ComposedChart>
+              </LazyResponsiveContainer>
             </div>
           </div>
         </div>

@@ -158,14 +158,9 @@ export const ConsolidatedDashboardView = memo(
     }, [data.annualData, propcoData]);
 
     return (
-      <div
-        className={
-          isPresenting
-            ? "grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in"
-            : "space-y-6 animate-in fade-in"
-        }
-      >
-        <div className={`space-y-6 ${isPresenting ? "lg:col-span-4" : ""}`}>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start animate-in fade-in">
+        {/* Left Column: Master Exit Strategy & Group Position */}
+        <div className="space-y-6 xl:col-span-1">
 
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-[#D8D8D8] flex flex-col gap-3">
           <div>
@@ -556,7 +551,8 @@ export const ConsolidatedDashboardView = memo(
         </div>
       </div>
 
-      <div className={`space-y-6 ${isPresenting ? "lg:col-span-8" : ""}`}>
+      {/* Right Column: Key Metrics, Charts & Ledger */}
+      <div className="md:col-span-2 xl:col-span-2 space-y-6">
         {/* Capital Structure Summary Block - Ledger Strip Layout */}
         <div className="bg-white rounded-xl shadow-sm border border-[#D8D8D8] overflow-hidden flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-[#D8D8D8]/50 shrink-0">
           

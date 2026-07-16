@@ -76,7 +76,7 @@ export const PropCoCascadeView = memo(
     }, [data.totals]);
 
     const scrollRef = useRef(null);
-    const [showDevBudget, setShowDevBudget] = useState(false);
+    const [showDevBudget, setShowDevBudget] = useState(true);
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [viewMode, setViewMode] = useState("all"); // 'all' | 'pl' | 'cf'
     const [expandedCfo, setExpandedCfo] = useState(false);
