@@ -1740,14 +1740,14 @@ export const AssumptionRow = memo(
             align="left"
           />
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-shrink-0">
           <FormattedInput
             disabled={isLocked}
             val={val}
             set={set}
-            className="w-16 p-1 text-right text-[10px] border border-[#D8D8D8] rounded focus:ring-2 focus:ring-[#1C6048] outline-none font-black text-[#1E2F31] bg-white"
+            className="w-16 p-1 text-right text-[10px] border border-[#D8D8D8] rounded focus:ring-2 focus:ring-[#1C6048] outline-none font-black text-[#1E2F31] bg-white flex-shrink-0"
           />
-          <span className="text-[8px] text-[#4C4A4B] font-black uppercase w-12">
+          <span className="text-[8px] text-[#4C4A4B] font-black uppercase w-10 text-left pl-1 flex-shrink-0 truncate">
             {unit}
           </span>
         </div>
@@ -1777,14 +1777,14 @@ export const AssumptionDepreciationGroup = memo(
             DDB
           </button>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-shrink-0">
           <FormattedInput
             disabled={isLocked}
             val={lifeVal}
             set={setLife}
-            className="w-12 p-1 text-right text-[10px] border border-[#D8D8D8] rounded font-black text-[#1E2F31] bg-white"
+            className="w-12 p-1 text-right text-[10px] border border-[#D8D8D8] rounded font-black text-[#1E2F31] bg-white flex-shrink-0"
           />
-          <span className="text-[8px] text-[#4C4A4B] font-black uppercase w-4">
+          <span className="text-[8px] text-[#4C4A4B] font-black uppercase w-10 text-left pl-1 flex-shrink-0 truncate">
             Yrs
           </span>
         </div>
@@ -1826,14 +1826,14 @@ export const AssumptionRowCalculated = memo(
         <span className="text-[10px] text-[#1C6048] font-bold w-12 text-right">
           {formatNumber(calculatedVal, 2)} B
         </span>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-shrink-0">
           <FormattedInput
             disabled={isLocked}
             val={pctVal}
             set={setPct}
-            className="w-12 p-1 text-right text-[10px] border border-[#D8D8D8] rounded font-black text-[#1E2F31] bg-white"
+            className="w-12 p-1 text-right text-[10px] border border-[#D8D8D8] rounded font-black text-[#1E2F31] bg-white flex-shrink-0"
           />
-          <span className="text-[8px] text-[#4C4A4B] font-black uppercase w-4">
+          <span className="text-[8px] text-[#4C4A4B] font-black uppercase w-10 text-left pl-1 flex-shrink-0 truncate">
             %
           </span>
         </div>
@@ -1867,10 +1867,10 @@ export const AssumptionRowQtyPrice = memo(
           disabled={isLocked}
           val={priceVal}
           set={setPrice}
-          className="w-16 p-1 text-right text-[10px] border border-[#D8D8D8] rounded font-black text-[#1E2F31] bg-white"
+          className="w-16 p-1 text-right text-[10px] border border-[#D8D8D8] rounded font-black text-[#1E2F31] bg-white flex-shrink-0"
           placeholder="Price"
         />
-        <span className="text-[8px] text-[#4C4A4B] font-black uppercase w-8">
+        <span className="text-[8px] text-[#4C4A4B] font-black uppercase w-10 text-left pl-1 flex-shrink-0 truncate">
           M / ea
         </span>
       </div>
@@ -1934,10 +1934,10 @@ export const AssumptionRowQtyPriceWithToggle = memo(
           disabled={isLocked || !checked}
           val={priceVal}
           set={setPrice}
-          className="w-16 p-1 text-right text-[10px] border border-[#D8D8D8] rounded font-black text-[#1E2F31] bg-white disabled:bg-[#D8D8D8]/30"
+          className="w-16 p-1 text-right text-[10px] border border-[#D8D8D8] rounded font-black text-[#1E2F31] bg-white disabled:bg-[#D8D8D8]/30 flex-shrink-0"
           placeholder="Price"
         />
-        <span className="text-[8px] text-[#4C4A4B] font-black uppercase w-8">
+        <span className="text-[8px] text-[#4C4A4B] font-black uppercase w-10 text-left pl-1 flex-shrink-0 truncate">
           M / ea
         </span>
       </div>
