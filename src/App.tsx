@@ -3033,6 +3033,7 @@ export const useMonthlyColumns = (annualData, viewResolution = "annual") => {
           };
           const isRate = [
             "bor",
+            "revPab",
             "ebitdaMargin",
             "ebitdarMargin",
             "netMargin",
@@ -4950,7 +4951,7 @@ export default function App() {
 
             {/* PILLAR 2: CENTERED DYNAMIC NAVIGATION (Financials or Study Sub-Nav) */}
             {activeGroup === "financials" ? (
-              <div className="order-3 md:order-2 col-span-2 flex justify-start md:justify-center min-w-0 w-full md:w-auto md:flex-1 mt-1 md:mt-0">
+              <div className="order-3 md:order-2 col-span-2 flex justify-start md:justify-center min-w-0 w-full md:w-auto md:flex-initial md:shrink-0 mt-1 md:mt-0">
                 <div className="flex p-1 bg-[#EFEBE7]/50 rounded-xl gap-0.5 border border-[#D8D8D8] overflow-x-auto w-full md:w-auto max-w-full items-center custom-scrollbar">
                   <button
                     onClick={() => setActiveTab("dashboard")}
@@ -4987,7 +4988,7 @@ export default function App() {
                 </div>
               </div>
             ) : activeTab === "study" ? (
-              <div className="order-3 md:order-2 col-span-2 flex justify-start md:justify-center min-w-0 w-full md:w-auto md:flex-1 mt-1 md:mt-0">
+              <div className="order-3 md:order-2 col-span-2 flex justify-start md:justify-center min-w-0 w-full md:w-auto md:flex-initial md:shrink-0 mt-1 md:mt-0">
                 <div className="flex p-1 bg-[#EFEBE7]/50 rounded-xl gap-0.5 border border-[#D8D8D8] overflow-x-auto w-full md:w-auto max-w-full items-center custom-scrollbar">
                   <button
                     onClick={() => setActiveMiniTab("marketAnalysis")}

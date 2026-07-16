@@ -378,6 +378,12 @@ export const OpCoCascadeView = memo(
                           dk="opVisits"
                           tooltip={OPCO_FORMULAS.opVisits}
                         />
+                        <TableRow
+                          label="Revenue per Bed (IDR Bio)"
+                          data={columns}
+                          dk="revPab"
+                          tooltip="Annualized clinical revenue per physical hospital bed (IDR Bio/bed/year)."
+                        />
 
                         <TableSection
                           title="Revenue"

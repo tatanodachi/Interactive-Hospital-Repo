@@ -239,6 +239,20 @@ export const OpCoSettingsView = memo(
             isLocked={isLocked}
           />
           <AssumptionRow
+            label="Marketing Rate"
+            val={assumptions.mktgExpRate}
+            set={(v) => onChange("mktgExpRate", v)}
+            unit="%"
+            isLocked={isLocked}
+          />
+          <AssumptionRow
+            label="Utilities Rate"
+            val={assumptions.utilExpRate}
+            set={(v) => onChange("utilExpRate", v)}
+            unit="%"
+            isLocked={isLocked}
+          />
+          <AssumptionRow
             label="Hospital Operator Fee"
             val={assumptions.operatorFeeRate}
             set={(v) => onChange("operatorFeeRate", v)}

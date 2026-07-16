@@ -453,6 +453,7 @@ export const runOpCoEngine = (
       ebitdar: [],
       rent: [],
       ebitda: [],
+      revPab: [],
       tax: [],
       netIncome: [],
       cumNI: [],
@@ -523,6 +524,7 @@ export const runOpCoEngine = (
       monthly.ebitda.push(m_ebitda);
       monthly.tax.push(0);
       monthly.netIncome.push(m_netInc);
+      monthly.revPab.push(0);
 
       monthly.otherOpex.push(m_recOpex);
       monthly.adminOpex.push(0);
@@ -657,6 +659,7 @@ export const runOpCoEngine = (
       staffCost: 0,
       recurringOpex: -p.net,
       otherOpex: -p.net,
+      revPab: 0,
       adminOpex: 0,
       utilOpex: 0,
       mktgOpex: 0,
@@ -864,6 +867,9 @@ export const runOpCoEngine = (
       mo.ebitda[m - 1] = m_ebitda;
       mo.tax[m - 1] = m_tax;
       mo.netIncome[m - 1] = m_netIncome;
+      let m_revPab = assumptions.beds > 0 ? (m_totalRev * 12) / assumptions.beds : 0;
+      if (!mo.revPab) mo.revPab = [];
+      mo.revPab[m - 1] = m_revPab;
       mo.cumNI[m - 1] = cumulativeNetIncome;
       mo.distributableProfit[m - 1] = m_distributableProfit;
       mo.retainedThisYear[m - 1] = m_retainedThisYear;
@@ -910,6 +916,7 @@ export const runOpCoEngine = (
       tYear.pB_Net += m_shareB;
       tYear.fcf += m_netIncome;
     }
+    tYear.revPab = assumptions.beds > 0 ? tYear.totalRev / assumptions.beds : 0;
   }
 
   const initialOperatingDebt = outstandingDebt;
@@ -1010,6 +1017,7 @@ export const runOpCoEngine = (
       ipRev: [],
       opRev: [],
       totalRev: [],
+      revPab: [],
       totalMedSupp: [],
       totalDocFee: [],
       grossProfit: [],
@@ -1266,6 +1274,8 @@ export const runOpCoEngine = (
       monthly.pB_Outlay.push(0);
       monthly.fcf.push(m_fcf);
       monthly.bor.push(bor * 100);
+      let m_revPab = assumptions.beds > 0 ? (m_totalRev * 12) / assumptions.beds : 0;
+      monthly.revPab.push(m_revPab);
 
       monthly.debtDraw.push(m_debtDraw);
       monthly.interest.push(m_interest);
@@ -1395,6 +1405,7 @@ export const runOpCoEngine = (
       bor: bor * 100,
       ipCases,
       opVisits,
+      revPab: assumptions.beds > 0 ? year_totalRev / assumptions.beds : 0,
       fixedCosts: fixedTotal,
       varCosts: grossProfit - ebitdar,
       monthly,
