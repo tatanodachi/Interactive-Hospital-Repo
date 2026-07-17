@@ -446,14 +446,14 @@ export const PropCoDashboardView = memo(
             </div>
           </div>
 
-          {/* COLUMN 2: Underwriting Return Cockpit */}
+          {/* COLUMN 2: Underwriting Return Dashboard */}
           <div className="space-y-6 w-full flex flex-col justify-start md:col-span-1 xl:col-span-3">
-            {/* Unified Underwriting Return Cockpit */}
+            {/* Unified Underwriting Return Dashboard */}
             <div className="bg-white p-4 rounded-2xl shadow-sm border border-[#D8D8D8] relative overflow-visible transition-all hover:shadow-md">
-              {/* Cockpit Header */}
+              {/* Dashboard Header */}
               <div className="flex items-center justify-between mb-4 pb-1.5 border-b border-[#EFEBE7]">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-[#1E2F31] flex items-center gap-1.5 font-sans">
-                  <Coins size={14} className="text-[#1C6048]" /> Return Cockpit
+                  <Coins size={14} className="text-[#1C6048]" /> Return Executive Dashboard
                 </h3>
                 <span className="text-[9px] text-[#1C6048] font-mono bg-[#EFEBE7] px-2 py-0.5 rounded font-bold uppercase">
                   PropCo IRR & NPV
@@ -648,7 +648,7 @@ export const PropCoDashboardView = memo(
                 </h3>
               </div>
               
-              {/* Mini KPIs Cockpit Grid */}
+              {/* Mini KPIs Dashboard Grid */}
               <div className="grid grid-cols-2 gap-2.5">
                 <MiniKPICard
                   title="Equity Payback"

@@ -339,12 +339,12 @@ export const OpCoDashboardView = memo(
 
         {/* COLUMN 2: Performance KPIs & Clinical Scorecards */}
         <div className="space-y-6 w-full flex flex-col justify-start">
-          {/* Unified Investment Return Cockpit Panel */}
+          {/* Unified Investment Return Dashboard Panel */}
           <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#D8D8D8] relative overflow-visible transition-all hover:shadow-md">
-            {/* Cockpit Header */}
+            {/* Dashboard Header */}
             <div className="flex items-center justify-between mb-4 pb-2 border-b border-[#EFEBE7]">
               <h3 className="text-xs font-bold uppercase tracking-wider text-[#1E2F31] flex items-center gap-1.5 font-sans">
-                <Coins size={15} className="text-[#1C6048]" /> Investment Return Cockpit
+                <Coins size={15} className="text-[#1C6048]" /> Investment Executive Dashboard
               </h3>
               <span className="text-[9px] text-[#1C6048] font-mono bg-[#EFEBE7] px-2 py-0.5 rounded font-bold uppercase">
                 Integrated Returns
