@@ -4589,9 +4589,9 @@ export default function App() {
         if (key === "isLandLeased") {
           if (val === true) {
             next["exitMethod"] = "dcf";
-            next["exitYear"] = 15;
-          } else if (next["exitMethod"] === "dcf") {
-            next["exitMethod"] = "capRate";
+            next["exitYear"] = 10;
+          } else {
+            next["exitMethod"] = "multiple";
             next["exitYear"] = 10;
           }
         }

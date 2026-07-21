@@ -233,7 +233,7 @@ export const DEFAULT_PROPCO_ASSUMPTIONS: PropCoAssumptions = {
   depLifeSoftCost: 20,
   depMethodSoftCost: "SL",
   includeTerminalValue: true,
-  exitYear: 15,
+  exitYear: 10,
   exitMethod: "dcf",
   exitCapRate: 8.5,
   exitMultiple: 15,

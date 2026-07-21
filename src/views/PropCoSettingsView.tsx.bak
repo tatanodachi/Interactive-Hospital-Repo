@@ -24,7 +24,6 @@ import {
   Trash2,
   DollarSign,
   Map,
-  Building2,
 } from "lucide-react";
 import {
   ComposedChart,
@@ -135,23 +134,16 @@ export const PropCoSettingsView = memo(
           isCloudSync={isCloudSync}
         />
 
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6 grid-flow-dense">
-          
-          {/* CARD 1: ASSET CORE & LAND */}
-          <div className="bg-[#F9F8F6] p-5 rounded-2xl border border-[#D8D8D8] shadow-sm flex flex-col space-y-4">
-            <div className="text-[11px] font-black text-[#1E2F31] uppercase tracking-wider border-b border-[#D8D8D8] pb-2.5 flex items-center gap-2">
-              <Map size={16} className="text-[#9B8B70]" />
-              <span>Asset Core & Land</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <div className="space-y-2">
-                <div className="text-[9px] font-black uppercase text-[#9B8B70] tracking-widest mb-1.5 pb-1 border-b border-[#D8D8D8]/50 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#9B8B70]"></span>
-                  Asset Linking
-                </div>
-                <div className="space-y-1">
-                  <ToggleRow
+        <div
+          className={`grid grid-cols-1 md:grid-cols-2 gap-x-8 lg:gap-x-12 gap-y-10 ${isPresenting ? "lg:grid-cols-4 2xl:grid-cols-5" : "lg:grid-cols-3"}`}
+        >
+          <div className="space-y-4">
+            <SectionTitle
+              title="Asset Linking"
+              icon={<Link2 size={16} />}
+              color="indigo"
+            />
+            <ToggleRow
               label="Link Rent to OpCo"
               desc="Use OpCo building rent expense."
               checked={assumptions.linkToOpCo}
@@ -176,15 +168,14 @@ export const PropCoSettingsView = memo(
                 />
               </>
             )}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="text-[9px] font-black uppercase text-[#9B8B70] tracking-widest mb-1.5 pb-1 border-b border-[#D8D8D8]/50 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#9B8B70]"></span>
-                  Land & Construction
-                </div>
-                <div className="space-y-1">
-                  <ToggleRow
+          </div>
+          <div className="space-y-4">
+            <SectionTitle
+              title="Land & Construction"
+              icon={<Map size={16} />}
+              color="emerald"
+            />
+            <ToggleRow
               label="Include Land Cost"
               desc="Calculate Land Acquisition."
               checked={
@@ -284,25 +275,14 @@ export const PropCoSettingsView = memo(
               unit="%"
               isLocked={isLocked || resolvedDevDuration <= 12}
             />
-                </div>
-              </div>
-            </div>
           </div>
-
-          {/* CARD 2: HARD CAPEX & DEVELOPMENT */}
-          <div className="bg-[#F9F8F6] p-5 rounded-2xl border border-[#D8D8D8] shadow-sm flex flex-col space-y-4 md:col-span-2">
-            <div className="text-[11px] font-black text-[#1E2F31] uppercase tracking-wider border-b border-[#D8D8D8] pb-2.5 flex items-center gap-2">
-              <Building2 size={16} className="text-[#9B8B70]" />
-              <span>Hard Capex & Development</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <div className="space-y-2">
-                <div className="text-[9px] font-black uppercase text-[#9B8B70] tracking-widest mb-1.5 pb-1 border-b border-[#D8D8D8]/50 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#9B8B70]"></span>
-                  Other Capex & VAT
-                </div>
-                <div className="space-y-1">
-                  <AssumptionRowCalculated
+          <div className="space-y-4">
+            <SectionTitle
+              title="Other Capex & VAT"
+              icon={<Calculator size={16} />}
+              color="rose"
+            />
+            <AssumptionRowCalculated
               label="Consultant"
               pctVal={assumptions.capexConsultantPct}
               setPct={(v) => onChange("capexConsultantPct", v)}
@@ -463,168 +443,14 @@ export const PropCoSettingsView = memo(
               calculatedVal={contingencyCostUi}
               isLocked={isLocked}
             />
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <div className="text-[9px] font-black uppercase text-[#9B8B70] tracking-widest mb-1.5 pb-1 border-b border-[#D8D8D8]/50 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#9B8B70]"></span>
-                    Depreciation (D&A)
-                  </div>
-                  <div className="space-y-1">
-                    <AssumptionDepreciationGroup
-              label="Building"
-              methodVal={assumptions.depMethodBuilding}
-              lifeVal={assumptions.depLifeBuilding}
-              setMethod={(v) => onChange("depMethodBuilding", v)}
-              setLife={(v) => onChange("depLifeBuilding", v)}
-              isLocked={isLocked}
-            />
-            <AssumptionDepreciationGroup
-              label="Infrastructure"
-              methodVal={assumptions.depMethodInfra}
-              lifeVal={assumptions.depLifeInfra}
-              setMethod={(v) => onChange("depMethodInfra", v)}
-              setLife={(v) => onChange("depLifeInfra", v)}
-              isLocked={isLocked}
-            />
-            <AssumptionDepreciationGroup
-              label="Med. Equip."
-              methodVal={assumptions.depMethodMedEq}
-              lifeVal={assumptions.depLifeMedEq}
-              setMethod={(v) => onChange("depMethodMedEq", v)}
-              setLife={(v) => onChange("depLifeMedEq", v)}
-              isLocked={isLocked}
-            />
-            <AssumptionDepreciationGroup
-              label="FF&E"
-              methodVal={assumptions.depMethodFFE}
-              lifeVal={assumptions.depLifeFFE}
-              setMethod={(v) => onChange("depMethodFFE", v)}
-              setLife={(v) => onChange("depLifeFFE", v)}
-              isLocked={isLocked}
-            />
-            <AssumptionDepreciationGroup
-              label="Soft Cost Amort."
-              methodVal={assumptions.depMethodSoftCost}
-              lifeVal={assumptions.depLifeSoftCost}
-              setMethod={(v) => onChange("depMethodSoftCost", v)}
-              setLife={(v) => onChange("depLifeSoftCost", v)}
-              isLocked={isLocked}
-            />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="text-[9px] font-black uppercase text-[#9B8B70] tracking-widest mb-1.5 pb-1 border-b border-[#D8D8D8]/50 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#9B8B70]"></span>
-                    Operating Expenses
-                  </div>
-                  <div className="space-y-1">
-                    <AssumptionRow
-              label="Maintenance Rate"
-              val={assumptions.maintRate}
-              set={(v) => onChange("maintRate", v)}
-              unit="%"
-              isLocked={isLocked}
-            />
-            <AssumptionRow
-              label="Property Tax Rate"
-              val={assumptions.propTaxRate}
-              set={(v) => onChange("propTaxRate", v)}
-              unit="%"
-              isLocked={isLocked}
-            />
-            <AssumptionRow
-              label="Dev. G&A (monthly)"
-              val={assumptions.devGaMonthly}
-              set={(v) => onChange("devGaMonthly", v)}
-              unit="B/Mo"
-              isLocked={isLocked}
-            />
-            <AssumptionRow
-              label="Dev. CAR (% of build)"
-              val={assumptions.devCarPct}
-              set={(v) => onChange("devCarPct", v)}
-              unit="% Total"
-              isLocked={isLocked}
-            />
-            <AssumptionRow
-              label="Op. Overhead"
-              val={assumptions.opOverheadMonthly}
-              set={(v) => onChange("opOverheadMonthly", v)}
-              unit="B/Mo"
-              isLocked={isLocked}
-            />
-            <AssumptionRow
-              label="Overhead Incr."
-              val={assumptions.opOverheadInc}
-              set={(v) => onChange("opOverheadInc", v)}
-              unit="%"
-              isLocked={isLocked}
-            />
-            <AssumptionRow
-              label="FF&E Reserve"
-              val={assumptions.ffeReservePct}
-              set={(v) => onChange("ffeReservePct", v)}
-              unit="%"
-              isLocked={isLocked}
-            />
-            <div className="flex justify-between items-center group py-2.5 border-b border-[#D8D8D8] last:border-0 hover:bg-[#EFEBE7] px-1 rounded transition-colors mb-2">
-              <div className="flex flex-col gap-0.5 max-w-[180px]">
-                <span className="text-[10px] text-[#4C4A4B] font-bold">Tax Regime / Method</span>
-                <span className="text-[8px] text-gray-500 font-medium">Choose between Corporate Income Tax (Non-Final) or Final Tax (PPh Final on rental revenue).</span>
-              </div>
-              <select
-                disabled={isLocked}
-                value={assumptions.useFinalTax ? "final" : "corporate"}
-                onChange={(e) => onChange("useFinalTax", e.target.value === "final")}
-                className="p-1.5 bg-[#F9F8F6] border border-[#D8D8D8] rounded text-[9px] font-bold text-[#1E2F31] outline-none cursor-pointer hover:bg-white transition-all disabled:opacity-50"
-              >
-                <option value="corporate">Corporate Tax (Non-Final)</option>
-                <option value="final">Final Tax (PPh Final)</option>
-              </select>
-            </div>
-            {assumptions.useFinalTax ? (
-              <AssumptionRow
-                label="Final Tax Rate"
-                val={assumptions.finalTaxRate ?? 10}
-                set={(v) => onChange("finalTaxRate", v)}
-                unit="%"
-                isLocked={isLocked}
-                tooltip="Final Tax (PPh Final) rate applied on gross rental revenues."
-              />
-            ) : (
-              <AssumptionRow
-                label="Corporate Tax"
-                val={assumptions.corporateTax}
-                set={(v) => onChange("corporateTax", v)}
-                unit="%"
-                isLocked={isLocked}
-                tooltip="Corporate Income Tax (CIT) rate applied on net taxable profit (EBT)."
-              />
-            )}
-                  </div>
-                </div>
-              </div>
-
-            </div>
           </div>
-
-          {/* CARD 3: FINANCING & EXIT STRATEGIES */}
-          <div className="bg-[#F9F8F6] p-5 rounded-2xl border border-[#D8D8D8] shadow-sm flex flex-col space-y-4 lg:col-span-3">
-            <div className="text-[11px] font-black text-[#1E2F31] uppercase tracking-wider border-b border-[#D8D8D8] pb-2.5 flex items-center gap-2">
-              <Landmark size={16} className="text-[#9B8B70]" />
-              <span>Financing & Exit Strategies</span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              <div className="space-y-2">
-                <div className="text-[9px] font-black uppercase text-[#9B8B70] tracking-widest mb-1.5 pb-1 border-b border-[#D8D8D8]/50 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#9B8B70]"></span>
-                  Financing Structure
-                </div>
-                <div className="space-y-1">
-                  <ToggleRow
+          <div className="space-y-4">
+            <SectionTitle
+              title="Financing Structure"
+              icon={<Landmark size={16} />}
+              color="blue"
+            />
+            <ToggleRow
               label="Include Debt Financing"
               desc="Use bank loan for construction."
               checked={assumptions?.includeFinancing || false}
@@ -1084,15 +910,151 @@ export const PropCoSettingsView = memo(
               unit="%"
               isLocked={isLocked}
             />
-                </div>
+          </div>
+          <div className="space-y-4">
+            <SectionTitle
+              title="Depreciation (D&A)"
+              icon={<Calculator size={16} />}
+              color="teal"
+            />
+            <AssumptionDepreciationGroup
+              label="Building"
+              methodVal={assumptions.depMethodBuilding}
+              lifeVal={assumptions.depLifeBuilding}
+              setMethod={(v) => onChange("depMethodBuilding", v)}
+              setLife={(v) => onChange("depLifeBuilding", v)}
+              isLocked={isLocked}
+            />
+            <AssumptionDepreciationGroup
+              label="Infrastructure"
+              methodVal={assumptions.depMethodInfra}
+              lifeVal={assumptions.depLifeInfra}
+              setMethod={(v) => onChange("depMethodInfra", v)}
+              setLife={(v) => onChange("depLifeInfra", v)}
+              isLocked={isLocked}
+            />
+            <AssumptionDepreciationGroup
+              label="Med. Equip."
+              methodVal={assumptions.depMethodMedEq}
+              lifeVal={assumptions.depLifeMedEq}
+              setMethod={(v) => onChange("depMethodMedEq", v)}
+              setLife={(v) => onChange("depLifeMedEq", v)}
+              isLocked={isLocked}
+            />
+            <AssumptionDepreciationGroup
+              label="FF&E"
+              methodVal={assumptions.depMethodFFE}
+              lifeVal={assumptions.depLifeFFE}
+              setMethod={(v) => onChange("depMethodFFE", v)}
+              setLife={(v) => onChange("depLifeFFE", v)}
+              isLocked={isLocked}
+            />
+            <AssumptionDepreciationGroup
+              label="Soft Cost Amort."
+              methodVal={assumptions.depMethodSoftCost}
+              lifeVal={assumptions.depLifeSoftCost}
+              setMethod={(v) => onChange("depMethodSoftCost", v)}
+              setLife={(v) => onChange("depLifeSoftCost", v)}
+              isLocked={isLocked}
+            />
+          </div>
+          <div className="space-y-4">
+            <SectionTitle
+              title="Operating Expenses"
+              icon={<Briefcase size={16} />}
+              color="rose"
+            />
+            <AssumptionRow
+              label="Maintenance Rate"
+              val={assumptions.maintRate}
+              set={(v) => onChange("maintRate", v)}
+              unit="%"
+              isLocked={isLocked}
+            />
+            <AssumptionRow
+              label="Property Tax Rate"
+              val={assumptions.propTaxRate}
+              set={(v) => onChange("propTaxRate", v)}
+              unit="%"
+              isLocked={isLocked}
+            />
+            <AssumptionRow
+              label="Dev. G&A (monthly)"
+              val={assumptions.devGaMonthly}
+              set={(v) => onChange("devGaMonthly", v)}
+              unit="B/Mo"
+              isLocked={isLocked}
+            />
+            <AssumptionRow
+              label="Dev. CAR (% of build)"
+              val={assumptions.devCarPct}
+              set={(v) => onChange("devCarPct", v)}
+              unit="% Total"
+              isLocked={isLocked}
+            />
+            <AssumptionRow
+              label="Op. Overhead"
+              val={assumptions.opOverheadMonthly}
+              set={(v) => onChange("opOverheadMonthly", v)}
+              unit="B/Mo"
+              isLocked={isLocked}
+            />
+            <AssumptionRow
+              label="Overhead Incr."
+              val={assumptions.opOverheadInc}
+              set={(v) => onChange("opOverheadInc", v)}
+              unit="%"
+              isLocked={isLocked}
+            />
+            <AssumptionRow
+              label="FF&E Reserve"
+              val={assumptions.ffeReservePct}
+              set={(v) => onChange("ffeReservePct", v)}
+              unit="%"
+              isLocked={isLocked}
+            />
+            <div className="flex justify-between items-center group py-2.5 border-b border-[#D8D8D8] last:border-0 hover:bg-[#EFEBE7] px-1 rounded transition-colors mb-2">
+              <div className="flex flex-col gap-0.5 max-w-[180px]">
+                <span className="text-[10px] text-[#4C4A4B] font-bold">Tax Regime / Method</span>
+                <span className="text-[8px] text-gray-500 font-medium">Choose between Corporate Income Tax (Non-Final) or Final Tax (PPh Final on rental revenue).</span>
               </div>
-              <div className="space-y-2">
-                <div className="text-[9px] font-black uppercase text-[#9B8B70] tracking-widest mb-1.5 pb-1 border-b border-[#D8D8D8]/50 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#9B8B70]"></span>
-                  Terminal Value (Exit)
-                </div>
-                <div className="space-y-1">
-                  <ToggleRow
+              <select
+                disabled={isLocked}
+                value={assumptions.useFinalTax ? "final" : "corporate"}
+                onChange={(e) => onChange("useFinalTax", e.target.value === "final")}
+                className="p-1.5 bg-[#F9F8F6] border border-[#D8D8D8] rounded text-[9px] font-bold text-[#1E2F31] outline-none cursor-pointer hover:bg-white transition-all disabled:opacity-50"
+              >
+                <option value="corporate">Corporate Tax (Non-Final)</option>
+                <option value="final">Final Tax (PPh Final)</option>
+              </select>
+            </div>
+            {assumptions.useFinalTax ? (
+              <AssumptionRow
+                label="Final Tax Rate"
+                val={assumptions.finalTaxRate ?? 10}
+                set={(v) => onChange("finalTaxRate", v)}
+                unit="%"
+                isLocked={isLocked}
+                tooltip="Final Tax (PPh Final) rate applied on gross rental revenues."
+              />
+            ) : (
+              <AssumptionRow
+                label="Corporate Tax"
+                val={assumptions.corporateTax}
+                set={(v) => onChange("corporateTax", v)}
+                unit="%"
+                isLocked={isLocked}
+                tooltip="Corporate Income Tax (CIT) rate applied on net taxable profit (EBT)."
+              />
+            )}
+          </div>
+          <div className="space-y-4">
+            <SectionTitle
+              title="Terminal Value (Exit)"
+              icon={<DollarSign size={16} />}
+              color="amber"
+            />
+            <ToggleRow
               label="Include Exit in Yr 10"
               desc="Calculate Terminal Value."
               checked={assumptions.includeTerminalValue}
@@ -1170,19 +1132,13 @@ export const PropCoSettingsView = memo(
           </div>
 
           {/* NEW EQUIPMENT LIST TABLE COLUMN */}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* CARD 4: MEDICAL EQUIPMENT BREAKDOWN */}
-          <div className="bg-[#F9F8F6] p-5 rounded-2xl border border-[#D8D8D8] shadow-sm flex flex-col space-y-4 md:col-span-2 lg:col-span-3">
-            <div className="text-[11px] font-black text-[#1E2F31] uppercase tracking-wider border-b border-[#D8D8D8] pb-2.5 flex items-center gap-2">
-              <Activity size={16} className="text-[#9B8B70]" />
-              <span>Medical Equipment Breakdown</span>
-            </div>
-            <div className="overflow-x-auto w-full">
-              <div className="bg-[#F9F8F6] border border-[#D8D8D8] rounded-xl overflow-hidden shadow-sm">
+          <div className="space-y-4 lg:col-span-2">
+            <SectionTitle
+              title="Medical Equipment Breakdown"
+              icon={<Activity size={16} />}
+              color="indigo"
+            />
+            <div className="bg-[#F9F8F6] border border-[#D8D8D8] rounded-xl overflow-hidden shadow-sm">
               <table className="w-full text-left text-[10px]">
                 <thead className="bg-[#EFEBE7] border-b border-[#D8D8D8]">
                   <tr>
@@ -1371,8 +1327,8 @@ export const PropCoSettingsView = memo(
                 </tbody>
               </table>
             </div>
-            </div>
           </div>
+        </div>
       </div>
     );
   },
