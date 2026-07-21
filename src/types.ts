@@ -78,6 +78,8 @@ export interface OpCoAssumptions {
   amortizationYears?: number;
   loanTenor?: number;
   ioGracePeriodYears?: number;
+  isLandLeased?: boolean;
+  landLeaseTermYears?: number;
   [key: string]: any;
 }
 

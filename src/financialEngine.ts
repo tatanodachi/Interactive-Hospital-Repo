@@ -1206,7 +1206,15 @@ export const runOpCoEngine = (
         m_pB_Exit = 0;
       if (exitYear !== null && i === exitYear && m === 12) {
         let annualEbitda = ebitdar - annualRent;
-        m_ev = annualEbitda * (assumptions.exitMultiple || 30);
+        
+        // Option A: OpCo has 0 terminal value if exiting at the end of the land lease term
+        // because the business cannot operate without the physical property.
+        let multiple = assumptions.exitMultiple || 30;
+        if (assumptions.isLandLeased && exitYear >= (assumptions.landLeaseTermYears || 15)) {
+          multiple = 0;
+        }
+        
+        m_ev = annualEbitda * multiple;
         if (assumptions.sellingCosts) {
           m_ev = m_ev * (1 - assumptions.sellingCosts / 100);
         }
