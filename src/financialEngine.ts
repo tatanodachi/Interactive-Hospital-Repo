@@ -2653,6 +2653,7 @@ export const runPropCoEngine = (
       overheadOpex: [],
       ffeReserve: [],
       medEqLeaseOpex: [],
+      landLeaseOpex: [],
       gop: [],
       ebitda: [],
       ebit: [],
@@ -2701,6 +2702,7 @@ export const runPropCoEngine = (
       year_overhead = 0,
       year_reserve = 0,
       year_medEqLease = 0,
+      year_landLease = 0,
       year_gop = 0,
       year_ebitda = 0,
       year_ebit = 0,
@@ -3282,6 +3284,7 @@ export const runPropCoEngine = (
       monthly.overheadOpex.push(m_overhead);
       monthly.ffeReserve.push(m_reserve);
       monthly.medEqLeaseOpex.push(m_medEqLeaseOpex);
+      monthly.landLeaseOpex.push(m_landLeaseOpex);
       monthly.gop.push(m_gop);
       monthly.ebitda.push(m_ebitda);
       const m_ebit = m_ebitda - m_dep;
@@ -3342,6 +3345,7 @@ export const runPropCoEngine = (
       year_overhead += m_overhead;
       year_reserve += m_reserve;
       year_medEqLease += m_medEqLeaseOpex;
+      year_landLease += m_landLeaseOpex;
       year_gop += m_gop;
       year_ebitda += m_ebitda;
       year_ebit += m_ebit;
@@ -3393,6 +3397,7 @@ export const runPropCoEngine = (
       overheadOpex: year_overhead,
       ffeReserve: year_reserve,
       medEqLeaseOpex: year_medEqLease,
+      landLeaseOpex: year_landLease,
       gop: year_gop,
       ebitda: year_ebitda,
       ebit: year_ebit,
@@ -3642,6 +3647,10 @@ export const runPropCoEngine = (
       ffeReserve: annualData.reduce((acc, d) => acc + (d.ffeReserve || 0), 0),
       medEqLeaseOpex: annualData.reduce(
         (acc, d) => acc + (d.medEqLeaseOpex || 0),
+        0,
+      ),
+      landLeaseOpex: annualData.reduce(
+        (acc, d) => acc + (d.landLeaseOpex || 0),
         0,
       ),
       gop: annualData.reduce((acc, d) => acc + (d.gop || 0), 0),

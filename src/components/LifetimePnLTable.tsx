@@ -51,9 +51,10 @@ export const LifetimePnLTable: React.FC<LifetimePnLTableProps> = ({
     const taxOpex = pTotals.taxOpex || 0;
     const overheadOpex = pTotals.overheadOpex || 0;
     const medEqLeaseOpex = pTotals.medEqLeaseOpex || 0;
+    const landLeaseOpex = pTotals.landLeaseOpex || 0;
 
     const opExSubtotal =
-      preOpening + maintOpex + taxOpex + overheadOpex + medEqLeaseOpex;
+      preOpening + maintOpex + taxOpex + overheadOpex + medEqLeaseOpex + landLeaseOpex;
     const gop = revenue - opExSubtotal;
     const ffeReserves = pTotals.ffeReserve || 0;
     const ebitda = pTotals.ebitda || 0;
@@ -81,6 +82,7 @@ export const LifetimePnLTable: React.FC<LifetimePnLTableProps> = ({
         indent: true,
       },
       { label: "Equipment Lease OPEX", value: -medEqLeaseOpex, indent: true },
+      { label: "Land Lease OPEX", value: -landLeaseOpex, indent: true },
       {
         label: "Gross Operating Profit (GOP)",
         value: gop,

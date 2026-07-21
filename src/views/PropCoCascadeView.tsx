@@ -58,7 +58,8 @@ export const PropCoCascadeView = memo(
         const tax = col.taxOpex || 0;
         const overhead = col.overheadOpex || 0;
         const lease = col.medEqLeaseOpex || 0;
-        const opex = preOpening + maint + tax + overhead + lease;
+        const landLease = col.landLeaseOpex || 0;
+        const opex = preOpening + maint + tax + overhead + lease + landLease;
         return {
           ...col,
           opex,
@@ -72,7 +73,8 @@ export const PropCoCascadeView = memo(
       const tTax = data.totals.taxOpex || 0;
       const tOverhead = data.totals.overheadOpex || 0;
       const tLease = data.totals.medEqLeaseOpex || 0;
-      return tPreOpening + tMaint + tTax + tOverhead + tLease;
+      const tLandLease = data.totals.landLeaseOpex || 0;
+      return tPreOpening + tMaint + tTax + tOverhead + tLease + tLandLease;
     }, [data.totals]);
 
     const scrollRef = useRef(null);
@@ -522,6 +524,15 @@ export const PropCoCascadeView = memo(
                           tooltip={PROPCO_FORMULAS.medEqLeaseOpex}
                           isSubtractor
                         />
+                        <TableRow
+                          label="Land Lease OPEX"
+                          data={columns}
+                          dk="landLeaseOpex"
+                          total={data.totals.landLeaseOpex}
+                          isIndent
+                          tooltip="Monthly lease payments for the land site during the operating phase."
+                          isSubtractor
+                        />
 
                         <TableRow
                           label="Gross Operating Profit (GOP)"
@@ -831,6 +842,16 @@ export const PropCoCascadeView = memo(
                                   hasDoubleConnector
                                   isSubtractor
                                   tooltip="Clinical equipment leasing and maintenance obligations."
+                                />
+                                <TableRow
+                                  label="Land Lease OPEX"
+                                  data={columns}
+                                  dk="landLeaseOpex"
+                                  total={data.totals.landLeaseOpex}
+                                  isDoubleIndent
+                                  hasDoubleConnector
+                                  isSubtractor
+                                  tooltip="Monthly lease payments for the land site during the operating phase."
                                 />
                               </>
                             )}

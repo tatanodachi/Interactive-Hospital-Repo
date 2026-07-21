@@ -1319,12 +1319,19 @@ export const exportToExcel = async (
       isSubtractor: true,
     },
     {
+      label: "Land Lease OPEX",
+      key: "landLeaseOpex",
+      type: "currency" as const,
+      indent: 1,
+      isSubtractor: true,
+    },
+    {
       label: "Gross Operating Profit (GOP)",
       key: "gop",
       type: "formula" as const,
       highlight: true,
       formulaCreator: (col: string, rows: Record<string, number>) =>
-        `${col}${rows.leaserevenuepropcolease} + ${col}${rows.preopeningdevexpenses} + ${col}${rows.facilitymaintenanceopex} + ${col}${rows.propertytax} + ${col}${rows.managementoverheadopex} + ${col}${rows.equipmentleaseopex}`,
+        `${col}${rows.leaserevenuepropcolease} + ${col}${rows.preopeningdevexpenses} + ${col}${rows.facilitymaintenanceopex} + ${col}${rows.propertytax} + ${col}${rows.managementoverheadopex} + ${col}${rows.equipmentleaseopex} + ${col}${rows.landleaseopex}`,
     },
     {
       label: "FF&E Reserve Allocation",
@@ -1526,6 +1533,13 @@ export const exportToExcel = async (
     {
       label: "  └─ Equipment Lease OPEX",
       key: "medEqLeaseOpex",
+      type: "currency" as const,
+      indent: 2,
+      isSubtractor: true,
+    },
+    {
+      label: "  └─ Land Lease OPEX",
+      key: "landLeaseOpex",
       type: "currency" as const,
       indent: 2,
       isSubtractor: true,
