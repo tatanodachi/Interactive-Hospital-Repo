@@ -289,6 +289,7 @@ export const ExecutiveSummaryView = memo(
 
     const stabilizedRevPab = opCoData?.opsMetrics?.revPab;
     const startingRevPab = opCoData?.opsMetrics?.startingRevPab;
+    const stabilizedYearIndex = opCoData?.opsMetrics?.stabilizedYearIndex ?? 5;
 
     // Efficiency Benchmark Metrics
     const buildArea = propCoData?.assumptions?.buildArea || 13000;
@@ -1450,7 +1451,7 @@ export const ExecutiveSummaryView = memo(
                     {/* Row 1, Col 2: Stabilized RevPAB */}
                     <div className="flex flex-col pb-1 border-b border-[#D8D8D8]/40 hover:bg-[#F9F8F6] px-1 rounded transition-colors">
                       <span className="text-[9px] uppercase font-bold text-[#8A8175] tracking-wide">
-                        Stabilized RevPAB
+                        Stabilized RevPAB (Y{stabilizedYearIndex})
                       </span>
                       <span className="text-xs font-bold text-[#1C6048] mt-0.5">
                         {stabilizedRevPab !== undefined

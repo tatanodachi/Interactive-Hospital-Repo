@@ -1608,6 +1608,8 @@ export const runOpCoEngine = (
         assumptions.beds > 0 && operatingData.length > 0
           ? (operatingData[0]?.totalRev || 0) / assumptions.beds
           : 0,
+      stabilizedYearIndex:
+        stabilizedYear ? operatingData.indexOf(stabilizedYear) + 1 : 5,
       averageRevPab:
         assumptions.beds > 0 && operatingData.length > 0
           ? operatingData.reduce((acc, y) => acc + (y.totalRev || 0), 0) /
