@@ -107,6 +107,8 @@ export const DEFAULT_HOLDCO_ASSUMPTIONS: HoldCoAssumptions = {
   interestRate: 8.25,
   loanTenor: 15,
   ioGracePeriodYears: 2,
+  repaymentType: "step_up",
+  stepUpPercentages: [2, 2, 3, 3, 6, 6, 8, 8, 10, 10, 14, 14, 14],
 };
 
 export const DEFAULT_OPCO_ASSUMPTIONS: OpCoAssumptions = {
@@ -3856,9 +3858,23 @@ export const runConsolidatedEngine = (
   const totalOpCoEq = opCoAssumptions.partnerBEquity; // 49% HoldCo Share
 
   let holdCoOutstandingDebt = 0;
+  let holdCoInitialDebtAtStartOfOperations = 0;
   let holdCoPmt = 0;
   let hasStartedHoldCoAmortization = false;
   let operatingMonthCounter = 0;
+
+  const repaymentType = holdCoAssumptions?.repaymentType || "step_up";
+  let stepUpPercentages = ensureArray(holdCoAssumptions?.stepUpPercentages);
+  if (repaymentType === "step_up" && stepUpPercentages.length === 0) {
+    const amortYears = Math.max(
+      1,
+      (holdCoAssumptions?.loanTenor || 15) - (holdCoAssumptions?.ioGracePeriodYears || 2),
+    );
+    stepUpPercentages = getInitialStepUpPercentages(
+      amortYears,
+      "tangerang_stepup",
+    );
+  }
 
   let cumNetFlowOp = 0;
   let minCumNetFlowOp = 0;
@@ -3959,6 +3975,7 @@ export const runConsolidatedEngine = (
 
         if (pData.isOperating) {
           if (!hasStartedHoldCoAmortization) {
+            holdCoInitialDebtAtStartOfOperations = holdCoOutstandingDebt;
             const ioMonths = (holdCoAssumptions?.ioGracePeriodYears || 0) * 12;
             const tenorMonths = (holdCoAssumptions?.loanTenor || 15) * 12;
             const amortMonths = Math.max(1, tenorMonths - ioMonths);
@@ -3981,6 +3998,15 @@ export const runConsolidatedEngine = (
 
           if (elapsedProjectMonth <= ioMonths) {
             m_holdCoPrincipal = 0;
+          } else if (repaymentType === "step_up") {
+            const amortYearIdx = Math.floor((elapsedProjectMonth - 1 - ioMonths) / 12);
+            if (elapsedProjectMonth >= tenorMonths) {
+              m_holdCoPrincipal = holdCoOutstandingDebt;
+            } else {
+              const yearPct = stepUpPercentages[amortYearIdx] || 0;
+              const annualPrincipal = holdCoInitialDebtAtStartOfOperations * (yearPct / 100);
+              m_holdCoPrincipal = Math.min(holdCoOutstandingDebt, annualPrincipal / 12);
+            }
           } else if (elapsedProjectMonth <= tenorMonths) {
             m_holdCoPrincipal = Math.min(
               holdCoOutstandingDebt,

@@ -204,6 +204,8 @@ export interface HoldCoAssumptions {
   interestRate: number;
   loanTenor: number;
   ioGracePeriodYears: number;
+  repaymentType?: "standard" | "step_up";
+  stepUpPercentages?: number[];
 }
 
 export interface ConsolidatedModelData {
