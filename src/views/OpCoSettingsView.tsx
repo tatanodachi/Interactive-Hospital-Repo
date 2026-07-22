@@ -503,6 +503,13 @@ export const OpCoSettingsView = memo(
                       unit="x"
                       isLocked={isLocked}
                     />
+                    <ToggleRow
+                      label="Assume Lease Renewal / Relocation at Exit"
+                      desc="If true, terminal value is not set to 0 when exiting after land lease expires."
+                      checked={!!assumptions.assumeLeaseRenewal}
+                      onChange={(v) => onChange("assumeLeaseRenewal", v)}
+                      isLocked={isLocked}
+                    />
                     <AssumptionRow
                       label="Selling Costs"
                       val={assumptions.sellingCosts}

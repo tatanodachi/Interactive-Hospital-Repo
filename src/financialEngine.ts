@@ -153,6 +153,7 @@ export const DEFAULT_OPCO_ASSUMPTIONS: OpCoAssumptions = {
   holdCoDiscountRate: 11,
   includeTerminalValue: true,
   exitMultiple: 15,
+  assumeLeaseRenewal: false,
   sellingCosts: 0,
   dividendPayoutRatio: 80,
   includeFinancing: false,
@@ -1208,9 +1209,9 @@ export const runOpCoEngine = (
         let annualEbitda = ebitdar - annualRent;
         
         // Option A: OpCo has 0 terminal value if exiting at the end of the land lease term
-        // because the business cannot operate without the physical property.
+        // because the business cannot operate without the physical property, unless lease renewal is assumed.
         let multiple = assumptions.exitMultiple || 30;
-        if (assumptions.isLandLeased && exitYear >= (assumptions.landLeaseTermYears || 10)) {
+        if (!assumptions.assumeLeaseRenewal && assumptions.isLandLeased && exitYear >= (assumptions.landLeaseTermYears || 10)) {
           multiple = 0;
         }
         

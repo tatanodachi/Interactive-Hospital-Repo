@@ -69,6 +69,7 @@ export interface OpCoAssumptions {
   includeTerminalValue: boolean;
   exitYear?: number;
   exitMultiple: number;
+  assumeLeaseRenewal?: boolean;
   sellingCosts: number;
   dividendPayoutRatio: number;
   devDurationMonths?: number;
