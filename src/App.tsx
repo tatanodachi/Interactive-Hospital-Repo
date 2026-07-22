@@ -4544,7 +4544,7 @@ export default function App() {
     (k, v) =>
       setOpCoAssumptions((p) => ({
         ...p,
-        [k]: ["includeTerminalValue", "rentStructureType", "includeFinancing"].includes(k)
+        [k]: ["includeTerminalValue", "assumeLeaseRenewal", "rentStructureType", "includeFinancing"].includes(k)
           ? v
           : (v === "" ? 0 : parseFloat(v)) || 0,
       })),
