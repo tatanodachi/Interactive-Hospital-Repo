@@ -170,7 +170,7 @@ import {
   isPlaceholder,
 } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, addDoc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp, collection, getDocs, addDoc, onSnapshot, deleteDoc } from "firebase/firestore";
 
 export const LazyResponsiveContainer = memo(({ children, ...props }) => {
   const [isMounted, setIsMounted] = useState(false);
@@ -4295,6 +4295,20 @@ export default function App() {
     setIsProjectManagerOpen(false);
   };
 
+  const handleDeleteProject = async (projectId) => {
+    if (!user || !db) return;
+    if (!window.confirm("Are you sure you want to delete this project? This action cannot be undone.")) return;
+    try {
+      await deleteDoc(doc(db, "users", user.uid, "projects", projectId));
+      fetchProjects();
+      if (currentProjectId === projectId) {
+        setCurrentProjectId(null); // Or something? Actually it's fine just to fetch projects.
+      }
+    } catch (err) {
+      console.error("Failed to delete project", err);
+    }
+  };
+
   const saveDefaultsToCloud = useCallback(
     async (type) => {
       const setStatus =
@@ -5816,12 +5830,20 @@ export default function App() {
                                 <CheckCircle2 size={14} /> Active
                               </span>
                             ) : (
-                              <button
-                                onClick={() => handleLoadProject(proj.id)}
-                                className="px-3 py-1.5 bg-[#EFEBE7] text-[#1E2F31] text-xs font-bold rounded-lg hover:bg-[#D8D8D8] transition-colors shadow-sm"
-                              >
-                                Load Workspace
-                              </button>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => handleLoadProject(proj.id)}
+                                  className="px-3 py-1.5 bg-[#EFEBE7] text-[#1E2F31] text-xs font-bold rounded-lg hover:bg-[#D8D8D8] transition-colors shadow-sm"
+                                >
+                                  Load Workspace
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteProject(proj.id)}
+                                  className="px-3 py-1.5 bg-red-50 text-red-600 text-xs font-bold rounded-lg hover:bg-red-100 transition-colors shadow-sm"
+                                >
+                                  Delete
+                                </button>
+                              </div>
                             )}
                           </div>
                         </div>
