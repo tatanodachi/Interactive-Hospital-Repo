@@ -170,7 +170,7 @@ export const DEFAULT_PROPCO_ASSUMPTIONS: PropCoAssumptions = {
   includeLand: false,
   isLandLeased: true,
   monthlyLandLeaseRateSqm: 45000,
-  landLeaseTermYears: 15,
+  landLeaseTermYears: 10,
   landLeaseIncrementPct: 5,
   landLeaseIncrementYears: 5,
   landArea: 12643,
@@ -1210,7 +1210,7 @@ export const runOpCoEngine = (
         // Option A: OpCo has 0 terminal value if exiting at the end of the land lease term
         // because the business cannot operate without the physical property.
         let multiple = assumptions.exitMultiple || 30;
-        if (assumptions.isLandLeased && exitYear >= (assumptions.landLeaseTermYears || 15)) {
+        if (assumptions.isLandLeased && exitYear >= (assumptions.landLeaseTermYears || 10)) {
           multiple = 0;
         }
         
@@ -2837,7 +2837,7 @@ export const runPropCoEngine = (
       let m_landLeaseOpex = 0;
       if (
         assumptions.isLandLeased &&
-        i <= (assumptions.landLeaseTermYears || 15)
+        i <= (assumptions.landLeaseTermYears || 10)
       ) {
         // Convert from IDR/sqm/month to Billions/month
         // Starting base rate (e.g., 45000) and increment by custom % every custom years
@@ -3163,7 +3163,7 @@ export const runPropCoEngine = (
         let landLease_year = 0;
         if (
           assumptions.isLandLeased &&
-          i <= (assumptions.landLeaseTermYears || 15)
+          i <= (assumptions.landLeaseTermYears || 10)
         ) {
           // Starting base rate (e.g., 45000) and increment by custom % every custom years
           const baseRate = assumptions.monthlyLandLeaseRateSqm || 45000;
@@ -3187,7 +3187,7 @@ export const runPropCoEngine = (
         let tv = 0;
         if (assumptions.exitMethod === "dcf") {
           const remainingYears =
-            (assumptions.landLeaseTermYears || 15) - exitYear;
+            (assumptions.landLeaseTermYears || 10) - exitYear;
           if (remainingYears > 0) {
             const r = (assumptions.discountRate || 10) / 100;
             // Project cash flows for the remaining lease term

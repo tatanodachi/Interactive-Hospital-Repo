@@ -250,7 +250,7 @@ export const PropCoSettingsView = memo(
                   />
                   <AssumptionRow
                     label="Lease Term"
-                    val={assumptions.landLeaseTermYears || 15}
+                    val={assumptions.landLeaseTermYears || 10}
                     set={(v) => onChange("landLeaseTermYears", v)}
                     unit="Yrs"
                     isLocked={isLocked}
