@@ -243,6 +243,7 @@ export const DEFAULT_PROPCO_ASSUMPTIONS: PropCoAssumptions = {
   exitMethod: "dcf",
   exitCapRate: 8.5,
   exitMultiple: 15,
+  assumeLeaseRenewal: false,
   sellingCosts: 0,
 };
 
@@ -3210,9 +3211,14 @@ export const runPropCoEngine = (
           landLease_year;
 
         let tv = 0;
-        if (assumptions.exitMethod === "dcf") {
-          const remainingYears =
-            (assumptions.landLeaseTermYears || 10) - exitYear;
+        const isLeaseExpired = assumptions.isLandLeased && exitYear >= (assumptions.landLeaseTermYears || 10);
+        
+        if (isLeaseExpired && !assumptions.assumeLeaseRenewal) {
+          tv = 0; // PropCo terminal value is 0 if the land lease is expired and no renewal is assumed
+        } else if (assumptions.exitMethod === "dcf") {
+          const remainingYears = (isLeaseExpired && assumptions.assumeLeaseRenewal) 
+            ? 20 // Default 20-year renewal projection
+            : (assumptions.landLeaseTermYears || 10) - exitYear;
           if (remainingYears > 0) {
             const r = (assumptions.discountRate || 10) / 100;
             // Project cash flows for the remaining lease term

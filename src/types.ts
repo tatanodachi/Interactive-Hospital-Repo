@@ -136,6 +136,7 @@ export interface PropCoAssumptions {
   includeTerminalValue?: boolean;
   exitYear?: number;
   exitMethod?: string;
+  assumeLeaseRenewal?: boolean;
   exitCapRate?: number;
   exitMultiple?: number;
   sellingCosts?: number;

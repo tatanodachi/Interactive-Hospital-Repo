@@ -255,6 +255,13 @@ export const PropCoSettingsView = memo(
                     unit="Yrs"
                     isLocked={isLocked}
                   />
+                  <ToggleRow
+                    label="Assume Lease Renewal / Relocation at Exit"
+                    desc="If true, terminal value is not set to 0 when exiting after land lease expires."
+                    checked={!!assumptions.assumeLeaseRenewal}
+                    onChange={(v) => onChange("assumeLeaseRenewal", v)}
+                    isLocked={isLocked}
+                  />
                 </>
               )}
             </div>

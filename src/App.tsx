@@ -3639,7 +3639,7 @@ export default function App() {
     if (holdCoScenario === "debt_free") {
       const p1 = { exitYear: -1, projYears: 30 };
       const op1 = runOpCoEngine(
-        { ...opCoAssumptions, devDurationMonths: resolvedDevDuration, isLandLeased: propCoAssumptions.isLandLeased, landLeaseTermYears: propCoAssumptions.landLeaseTermYears },
+        { ...opCoAssumptions, devDurationMonths: resolvedDevDuration, isLandLeased: propCoAssumptions.isLandLeased, landLeaseTermYears: propCoAssumptions.landLeaseTermYears, assumeLeaseRenewal: propCoAssumptions.assumeLeaseRenewal },
         p1,
       );
       const pr1 = runPropCoEngine(
@@ -3672,7 +3672,7 @@ export default function App() {
     if (holdCoScenario === "breakeven") {
       const p1 = { exitYear: -1, projYears: 30 }; // -1 forces the engine to ignore individual settings and test pure operations
       const op1 = runOpCoEngine(
-        { ...opCoAssumptions, devDurationMonths: resolvedDevDuration, isLandLeased: propCoAssumptions.isLandLeased, landLeaseTermYears: propCoAssumptions.landLeaseTermYears },
+        { ...opCoAssumptions, devDurationMonths: resolvedDevDuration, isLandLeased: propCoAssumptions.isLandLeased, landLeaseTermYears: propCoAssumptions.landLeaseTermYears, assumeLeaseRenewal: propCoAssumptions.assumeLeaseRenewal },
         p1,
       );
       const pr1 = runPropCoEngine(
@@ -3730,7 +3730,7 @@ export default function App() {
     if (propCoScenario === "debt_free") {
       const p1 = { exitYear: -1, projYears: 30 };
       const op1 = runOpCoEngine(
-        { ...opCoAssumptions, devDurationMonths: resolvedDevDuration, isLandLeased: propCoAssumptions.isLandLeased, landLeaseTermYears: propCoAssumptions.landLeaseTermYears },
+        { ...opCoAssumptions, devDurationMonths: resolvedDevDuration, isLandLeased: propCoAssumptions.isLandLeased, landLeaseTermYears: propCoAssumptions.landLeaseTermYears, assumeLeaseRenewal: propCoAssumptions.assumeLeaseRenewal },
         p1,
       );
       const pr1 = runPropCoEngine(
@@ -3757,7 +3757,7 @@ export default function App() {
     if (propCoScenario === "breakeven") {
       const p1 = { exitYear: -1, projYears: 30 };
       const op1 = runOpCoEngine(
-        { ...opCoAssumptions, devDurationMonths: resolvedDevDuration, isLandLeased: propCoAssumptions.isLandLeased, landLeaseTermYears: propCoAssumptions.landLeaseTermYears },
+        { ...opCoAssumptions, devDurationMonths: resolvedDevDuration, isLandLeased: propCoAssumptions.isLandLeased, landLeaseTermYears: propCoAssumptions.landLeaseTermYears, assumeLeaseRenewal: propCoAssumptions.assumeLeaseRenewal },
         p1,
       );
       const pr1 = runPropCoEngine(
@@ -3796,7 +3796,7 @@ export default function App() {
   const standalonePropCoOpCoData = useMemo(
     () =>
       runOpCoEngine(
-        { ...opCoAssumptions, devDurationMonths: resolvedDevDuration, isLandLeased: propCoAssumptions.isLandLeased, landLeaseTermYears: propCoAssumptions.landLeaseTermYears },
+        { ...opCoAssumptions, devDurationMonths: resolvedDevDuration, isLandLeased: propCoAssumptions.isLandLeased, landLeaseTermYears: propCoAssumptions.landLeaseTermYears, assumeLeaseRenewal: propCoAssumptions.assumeLeaseRenewal },
         propCoProjConfig,
       ),
     [opCoAssumptions, propCoProjConfig, resolvedDevDuration],
@@ -3822,7 +3822,7 @@ export default function App() {
   const opCoModelData = useMemo(
     () =>
       runOpCoEngine(
-        { ...opCoAssumptions, devDurationMonths: resolvedDevDuration, isLandLeased: propCoAssumptions.isLandLeased, landLeaseTermYears: propCoAssumptions.landLeaseTermYears },
+        { ...opCoAssumptions, devDurationMonths: resolvedDevDuration, isLandLeased: propCoAssumptions.isLandLeased, landLeaseTermYears: propCoAssumptions.landLeaseTermYears, assumeLeaseRenewal: propCoAssumptions.assumeLeaseRenewal },
         projConfig,
       ),
     [opCoAssumptions, projConfig, resolvedDevDuration],
@@ -4583,6 +4583,7 @@ export default function App() {
           "depMethodFFE",
           "depMethodSoftCost",
           "includeTerminalValue",
+          "assumeLeaseRenewal",
           "exitMethod",
           "includeFinancing",
           "includePreOpInLtv",
