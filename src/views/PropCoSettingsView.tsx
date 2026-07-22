@@ -329,8 +329,8 @@ export const PropCoSettingsView = memo(
 
             {assumptions.includeMedEq && (
               <div className="pl-3 pr-1 py-2 bg-[#F9F8F6] border-b border-[#D8D8D8] space-y-2 rounded-lg ml-2 border-l-2 border-l-[#1C6048]">
-                <div className="flex justify-between items-center group">
-                  <label className="text-[10px] text-[#4C4A4B] font-bold">
+                <div className="flex items-center justify-between group gap-3">
+                  <label className="text-[10px] text-[#4C4A4B] font-bold flex-1 min-w-0">
                     Strategy
                   </label>
                   <div className="flex items-center gap-0.5 bg-[#D8D8D8] rounded p-0.5">
@@ -380,7 +380,7 @@ export const PropCoSettingsView = memo(
                           unit="Yr"
                           isLocked={isLocked}
                         />
-                        <div className="flex justify-between items-center bg-[#EFEBE7] p-2 rounded">
+                        <div className="flex items-center justify-between gap-3 bg-[#EFEBE7] p-2 rounded">
                           <span className="text-[10px] uppercase font-bold text-[#8A8175] mr-2">
                             Purchase Amount
                           </span>
@@ -570,8 +570,8 @@ export const PropCoSettingsView = memo(
               unit="%"
               isLocked={isLocked}
             />
-            <div className="flex justify-between items-center group py-2.5 border-b border-[#D8D8D8] last:border-0 hover:bg-[#EFEBE7] px-1 rounded transition-colors mb-2">
-              <div className="flex flex-col gap-0.5 max-w-[180px]">
+            <div className="flex items-center justify-between group gap-3 py-2.5 border-b border-[#D8D8D8] last:border-0 hover:bg-[#EFEBE7] px-1 rounded transition-colors mb-2">
+              <div className="flex flex-col gap-0.5 flex-1 min-w-0">
                 <span className="text-[10px] text-[#4C4A4B] font-bold">Tax Regime / Method</span>
                 <span className="text-[8px] text-gray-500 font-medium">Choose between Corporate Income Tax (Non-Final) or Final Tax (PPh Final on rental revenue).</span>
               </div>
@@ -634,8 +634,8 @@ export const PropCoSettingsView = memo(
             {assumptions?.includeFinancing && (
               <>
                 <div id="propco-idc-treatment-selector" className="bg-[#F9F8F6] p-4 border border-[#D8D8D8] rounded-[16px] mb-4 space-y-3 shadow-sm">
-                  <div className="flex justify-between items-center">
-                    <div>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex-1 min-w-0">
                       <span className="text-[10px] font-black uppercase text-[#1C6048] tracking-wider block">
                         IDC Treatment (Construction Interest)
                       </span>
@@ -683,8 +683,8 @@ export const PropCoSettingsView = memo(
                   onChange={(v) => onChange("includeLandInLtv", v)}
                   isLocked={isLocked}
                 />
-                <div className="flex justify-between items-center bg-[#EFEBE7] p-2 rounded mb-2">
-                  <div>
+                <div className="flex items-center justify-between gap-3 bg-[#EFEBE7] p-2 rounded mb-2">
+                  <div className="flex-1 min-w-0">
                     <span className="text-[10px] uppercase font-bold text-[#8A8175] mr-2">
                       Debt Calculation Basis
                     </span>
@@ -703,8 +703,8 @@ export const PropCoSettingsView = memo(
                     </span>
                   </div>
                 </div>
-                <div className="flex justify-between items-center bg-white p-2 border border-[#D8D8D8] rounded mb-2 shadow-sm">
-                  <label className="text-[10px] font-bold uppercase text-[#4C4A4B]">
+                <div className="flex items-center justify-between gap-3 bg-white p-2 border border-[#D8D8D8] rounded mb-2 shadow-sm">
+                  <label className="text-[10px] font-bold uppercase text-[#4C4A4B] flex-1 min-w-0">
                     Drawdown Scenario
                   </label>
                   <div className="flex items-center gap-0.5 bg-[#D8D8D8] rounded p-0.5">
@@ -728,8 +728,8 @@ export const PropCoSettingsView = memo(
                 {(assumptions.drawdownScenario || "tranches") ===
                   "tranches" && (
                   <div className="bg-white p-2 border border-[#D8D8D8] rounded mb-2 shadow-sm space-y-1">
-                    <div className="flex justify-between items-center mb-1">
-                      <label className="text-[10px] font-bold uppercase text-[#4C4A4B]">
+                    <div className="flex items-center justify-between gap-3 mb-1">
+                      <label className="text-[10px] font-bold uppercase text-[#4C4A4B] flex-1 min-w-0">
                         Drawdown Tranches (%)
                       </label>
                       <button
@@ -771,9 +771,9 @@ export const PropCoSettingsView = memo(
                               newT[idx] = parseFloat(e.target.value) || 0;
                               onChange("drawdownTranches", newT);
                             }}
-                            className="flex-1 px-1.5 py-0.5 text-[10px] border border-[#D8D8D8] rounded font-mono font-medium outline-none focus:border-[#1C6048] disabled:opacity-50"
+                            className="w-16 p-1 text-right text-[10px] border border-[#D8D8D8] rounded font-black text-[#1E2F31] bg-white font-medium outline-none focus:border-[#1C6048] disabled:opacity-50"
                           />
-                          <span className="text-[9px] font-bold text-[#8A8175]">
+                          <span className="text-[9px] font-bold text-[#8A8175] w-10 text-right flex-shrink-0">
                             %
                           </span>
                           <button
@@ -837,8 +837,8 @@ export const PropCoSettingsView = memo(
                     id="propco-amortization-scheme"
                     className="bg-[#F9F8F6] p-4 border border-[#D8D8D8] rounded-[16px] mt-4 space-y-4"
                   >
-                    <div className="flex justify-between items-center">
-                      <div>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] font-black uppercase text-[#1C6048] tracking-wider block">
                             Amortization Scheme
@@ -891,7 +891,7 @@ export const PropCoSettingsView = memo(
                       <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-150">
                         {/* Presets and Status Block */}
                         <div className="p-3 bg-white border border-[#D8D8D8] rounded-2xl flex flex-col gap-2 shadow-sm">
-                          <div className="flex justify-between items-center text-[10px] font-bold text-[#4C4A4B]">
+                          <div className="flex items-center justify-between gap-3 text-[10px] font-bold text-[#4C4A4B]">
                             <span>SCHEDULING PRESETS</span>
                             <div className="flex gap-1.5">
                               <button
@@ -925,7 +925,7 @@ export const PropCoSettingsView = memo(
                             </div>
                           </div>
 
-                          <div className="flex justify-between items-center pt-1 border-t border-[#D8D8D8] mt-1 text-[9px] font-bold text-[#4C4A4B]">
+                          <div className="flex items-center justify-between gap-3 pt-1 border-t border-[#D8D8D8] mt-1 text-[9px] font-bold text-[#4C4A4B]">
                             <span>ALLOCATED PRINCIPAL SUM</span>
                             {(() => {
                               const resolvedP = ensureArray(
@@ -1012,7 +1012,7 @@ export const PropCoSettingsView = memo(
                                   key={idx}
                                   className="flex flex-col gap-1.5 p-2 hover:bg-[#F9F8F6]/40 rounded-xl border border-transparent hover:border-[#D8D8D8] transition-all"
                                 >
-                                  <div className="flex justify-between items-center text-[10px] font-bold text-[#1E2F31]">
+                                  <div className="flex items-center justify-between gap-3 text-[10px] font-bold text-[#1E2F31]">
                                     <span className="flex items-center gap-1.5 font-mono">
                                       <span className="w-1.5 h-1.5 rounded-full bg-[#1C6048]"></span>
                                       Amortization Year {idx + 1}
@@ -1043,9 +1043,9 @@ export const PropCoSettingsView = memo(
                                           );
                                           onChange("stepUpPercentages", nextP);
                                         }}
-                                        className="w-12 px-1 py-0.5 text-right font-mono text-[10px] border border-[#D8D8D8] rounded focus:border-[#1C6048] outline-none disabled:bg-[#F9F8F6] disabled:text-[#8A8175] disabled:cursor-not-allowed"
+                                        className="w-16 p-1 text-right text-[10px] border border-[#D8D8D8] rounded focus:border-[#1C6048] outline-none disabled:bg-[#F9F8F6] disabled:text-[#8A8175] disabled:cursor-not-allowed"
                                       />
-                                      <span className="text-[9px] font-bold text-[#8A8175]">
+                                      <span className="text-[9px] font-bold text-[#8A8175] w-10 text-right flex-shrink-0">
                                         %
                                       </span>
                                     </div>
@@ -1109,8 +1109,8 @@ export const PropCoSettingsView = memo(
                   min={1}
                   max={30}
                 />
-                <div className="flex justify-between items-center group py-1 border-b border-[#D8D8D8] last:border-0 hover:bg-[#EFEBE7] px-1 rounded transition-colors">
-                  <label className="text-[10px] text-[#4C4A4B] font-bold">
+                <div className="flex items-center justify-between group gap-3 py-1 border-b border-[#D8D8D8] last:border-0 hover:bg-[#EFEBE7] px-1 rounded transition-colors">
+                  <label className="text-[10px] text-[#4C4A4B] font-bold flex-1 min-w-0">
                     Valuation Method
                   </label>
                   <div className="flex items-center bg-[#D8D8D8] rounded p-0.5">

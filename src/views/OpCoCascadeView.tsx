@@ -406,6 +406,14 @@ export const OpCoCascadeView = memo(
                           tooltip={OPCO_FORMULAS.opRev}
                         />
                         <TableRow
+                          label="Cross-Border Revenue"
+                          data={columns}
+                          dk="crossBorderRev"
+                          total={data.totals.crossBorderRev}
+                          isIndent
+                          tooltip="Revenue from cross-border referrals."
+                        />
+                        <TableRow
                           label="NET REVENUE"
                           data={columns}
                           dk="totalRev"

@@ -33,6 +33,9 @@ export interface OpCoAssumptions {
   borIncrement: number;
   ipRevenue: number;
   opRevenue: number;
+  crossBorderVolume: number;
+  crossBorderRevenuePerPatient: number;
+  crossBorderFeePct: number;
   priceIncYears1_6: number;
   priceIncYears7_plus: number;
   monthlyStaffCost: number;

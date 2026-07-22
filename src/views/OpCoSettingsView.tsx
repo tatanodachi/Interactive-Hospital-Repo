@@ -187,6 +187,27 @@ export const OpCoSettingsView = memo(
                   isLocked={isLocked}
                 />
                 <AssumptionRow
+                  label="Cross Border Vol."
+                  val={assumptions.crossBorderVolume}
+                  set={(v) => onChange("crossBorderVolume", v)}
+                  unit="p.a."
+                  isLocked={isLocked}
+                />
+                <AssumptionRow
+                  label="Net Qual. Rev"
+                  val={assumptions.crossBorderRevenuePerPatient}
+                  set={(v) => onChange("crossBorderRevenuePerPatient", v)}
+                  unit="M"
+                  isLocked={isLocked}
+                />
+                <AssumptionRow
+                  label="Referral Fee Pct"
+                  val={assumptions.crossBorderFeePct}
+                  set={(v) => onChange("crossBorderFeePct", v)}
+                  unit="%"
+                  isLocked={isLocked}
+                />
+                <AssumptionRow
                   label="Y1-6 Price Incr."
                   val={assumptions.priceIncYears1_6}
                   set={(v) => onChange("priceIncYears1_6", v)}

@@ -1728,9 +1728,9 @@ export const AssumptionRow = memo(
   ({ label, val, set, unit, isLocked, tooltip }) => {
     const { tooltipState, setTooltipState } = useTooltip(tooltip);
     return (
-      <div className="flex justify-between items-center group py-1 border-b border-[#D8D8D8] last:border-0 hover:bg-[#EFEBE7] px-1 rounded transition-colors relative">
-        <div className="flex items-center gap-1.5">
-          <label className="text-[10px] text-[#4C4A4B] font-bold">
+      <div className="flex items-center justify-between group py-1 border-b border-[#D8D8D8] last:border-0 hover:bg-[#EFEBE7] px-1 rounded transition-colors gap-3">
+        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+          <label className="text-[10px] text-[#4C4A4B] font-bold flex-1 min-w-0">
             {label}
           </label>
           <KPITooltipIcon
@@ -1740,14 +1740,14 @@ export const AssumptionRow = memo(
             align="left"
           />
         </div>
-        <div className="flex items-center gap-1 flex-shrink-0 pr-1.5">
+        <div className="flex items-center gap-1.5 flex-shrink-0 ">
           <FormattedInput
             disabled={isLocked}
             val={val}
             set={set}
             className="w-16 p-1 text-right text-[10px] border border-[#D8D8D8] rounded focus:ring-2 focus:ring-[#1C6048] outline-none font-black text-[#1E2F31] bg-white flex-shrink-0"
           />
-          <span className="text-[8px] text-[#4C4A4B] font-black uppercase w-12 text-left pl-1 flex-shrink-0 truncate">
+          <span className="text-[8px] text-[#4C4A4B] font-black uppercase w-10 text-right flex-shrink-0">
             {unit}
           </span>
         </div>
@@ -1758,33 +1758,33 @@ export const AssumptionRow = memo(
 
 export const AssumptionDepreciationGroup = memo(
   ({ label, methodVal, lifeVal, setMethod, setLife, isLocked }) => (
-    <div className="flex justify-between items-center group py-1 border-b border-[#D8D8D8] last:border-0 hover:bg-[#EFEBE7] px-1 rounded">
-      <label className="text-[10px] text-[#4C4A4B] font-bold">{label}</label>
-      <div className="flex items-center gap-2">
+    <div className="flex items-center justify-between group py-1 border-b border-[#D8D8D8] last:border-0 hover:bg-[#EFEBE7] px-1 rounded gap-3">
+      <label className="text-[10px] text-[#4C4A4B] font-bold flex-1 min-w-0">{label}</label>
+      <div className="flex items-center gap-2 flex-shrink-0">
         <div className="flex items-center bg-[#D8D8D8] rounded p-0.5">
           <button
             disabled={isLocked}
             onClick={() => setMethod("SL")}
-            className={`px-2 py-0.5 text-[9px] font-bold rounded disabled:opacity-50 disabled:cursor-not-allowed ${methodVal === "SL" ? "bg-white text-[#1E2F31] shadow-sm border border-[#D8D8D8]" : "text-[#4C4A4B]"}`}
+            className={`px-1.5 py-0.5 text-[9px] font-bold rounded disabled:opacity-50 disabled:cursor-not-allowed ${methodVal === "SL" ? "bg-white text-[#1E2F31] shadow-sm border border-[#D8D8D8]" : "text-[#4C4A4B]"}`}
           >
             SL
           </button>
           <button
             disabled={isLocked}
             onClick={() => setMethod("DDB")}
-            className={`px-2 py-0.5 text-[9px] font-bold rounded disabled:opacity-50 disabled:cursor-not-allowed ${methodVal === "DDB" ? "bg-white text-[#1E2F31] shadow-sm border border-[#D8D8D8]" : "text-[#4C4A4B]"}`}
+            className={`px-1.5 py-0.5 text-[9px] font-bold rounded disabled:opacity-50 disabled:cursor-not-allowed ${methodVal === "DDB" ? "bg-white text-[#1E2F31] shadow-sm border border-[#D8D8D8]" : "text-[#4C4A4B]"}`}
           >
             DDB
           </button>
         </div>
-        <div className="flex items-center gap-1 flex-shrink-0 pr-1.5">
+        <div className="flex items-center gap-1.5 flex-shrink-0 ">
           <FormattedInput
             disabled={isLocked}
             val={lifeVal}
             set={setLife}
-            className="w-12 p-1 text-right text-[10px] border border-[#D8D8D8] rounded font-black text-[#1E2F31] bg-white flex-shrink-0"
+            className="w-16 p-1 text-right text-[10px] border border-[#D8D8D8] rounded font-black text-[#1E2F31] bg-white flex-shrink-0"
           />
-          <span className="text-[8px] text-[#4C4A4B] font-black uppercase w-12 text-left pl-1 flex-shrink-0 truncate">
+          <span className="text-[8px] text-[#4C4A4B] font-black uppercase w-10 text-right flex-shrink-0">
             Yrs
           </span>
         </div>
@@ -1820,20 +1820,20 @@ export const ToggleRow = memo(
 
 export const AssumptionRowCalculated = memo(
   ({ label, pctVal, setPct, calculatedVal, isLocked }) => (
-    <div className="flex justify-between items-center group py-1 border-b border-[#D8D8D8] last:border-0 hover:bg-[#EFEBE7] px-1 rounded">
-      <label className="text-[10px] text-[#4C4A4B] font-bold">{label}</label>
-      <div className="flex items-center gap-2">
+    <div className="flex items-center justify-between group py-1 border-b border-[#D8D8D8] last:border-0 hover:bg-[#EFEBE7] px-1 rounded gap-3">
+      <label className="text-[10px] text-[#4C4A4B] font-bold flex-1 min-w-0">{label}</label>
+      <div className="flex items-center gap-2 flex-shrink-0">
         <span className="text-[10px] text-[#1C6048] font-bold w-12 text-right">
           {formatNumber(calculatedVal, 2)} B
         </span>
-        <div className="flex items-center gap-1 flex-shrink-0 pr-1.5">
+        <div className="flex items-center gap-1.5 flex-shrink-0 ">
           <FormattedInput
             disabled={isLocked}
             val={pctVal}
             set={setPct}
-            className="w-12 p-1 text-right text-[10px] border border-[#D8D8D8] rounded font-black text-[#1E2F31] bg-white flex-shrink-0"
+            className="w-16 p-1 text-right text-[10px] border border-[#D8D8D8] rounded font-black text-[#1E2F31] bg-white flex-shrink-0"
           />
-          <span className="text-[8px] text-[#4C4A4B] font-black uppercase w-12 text-left pl-1 flex-shrink-0 truncate">
+          <span className="text-[8px] text-[#4C4A4B] font-black uppercase w-10 text-right flex-shrink-0">
             %
           </span>
         </div>
@@ -1844,25 +1844,25 @@ export const AssumptionRowCalculated = memo(
 
 export const AssumptionRowQtyPrice = memo(
   ({ label, qtyVal, priceVal, setQty, setPrice, isLocked }) => (
-    <div className="flex flex-col group py-1.5 border-b border-[#D8D8D8] last:border-0 hover:bg-[#EFEBE7] px-1 rounded gap-1">
-      <div className="flex justify-between items-center">
-        <label className="text-[10px] text-[#4C4A4B] font-bold">{label}</label>
-        <span className="text-[10px] text-[#1C6048] font-bold pr-1">
+    <div className="flex flex-col group py-1.5 border-b border-[#D8D8D8] last:border-0 hover:bg-[#EFEBE7] px-1 rounded gap-1.5">
+      <div className="flex items-center justify-between gap-3">
+        <label className="text-[10px] text-[#4C4A4B] font-bold flex-1 min-w-0">{label}</label>
+        <span className="text-[10px] text-[#1C6048] font-bold  flex-shrink-0">
           {formatNumber(((qtyVal || 0) * (priceVal || 0)) / 1000, 2)} B
         </span>
       </div>
-      <div className="flex justify-end items-center gap-1 pr-1.5">
+      <div className="flex justify-end items-center gap-1.5 ">
         <FormattedInput
           disabled={isLocked}
           val={qtyVal}
           set={setQty}
-          className="w-12 p-1 text-right text-[10px] border border-[#D8D8D8] rounded font-black text-[#1E2F31] bg-white"
+          className="w-14 p-1 text-right text-[10px] border border-[#D8D8D8] rounded font-black text-[#1E2F31] bg-white flex-shrink-0"
           placeholder="Qty"
         />
-        <span className="text-[8px] text-[#4C4A4B] font-black uppercase w-10 text-left pl-1 flex-shrink-0 truncate">
+        <span className="text-[8px] text-[#4C4A4B] font-black uppercase w-6 text-right flex-shrink-0">
           Qty
         </span>
-        <span className="text-[8px] text-[#D8D8D8] font-black mx-1">×</span>
+        <span className="text-[8px] text-[#D8D8D8] font-black">×</span>
         <FormattedInput
           disabled={isLocked}
           val={priceVal}
@@ -1870,7 +1870,7 @@ export const AssumptionRowQtyPrice = memo(
           className="w-16 p-1 text-right text-[10px] border border-[#D8D8D8] rounded font-black text-[#1E2F31] bg-white flex-shrink-0"
           placeholder="Price"
         />
-        <span className="text-[8px] text-[#4C4A4B] font-black uppercase w-12 text-left pl-1 flex-shrink-0 truncate">
+        <span className="text-[8px] text-[#4C4A4B] font-black uppercase w-10 text-right flex-shrink-0">
           M / ea
         </span>
       </div>
@@ -1890,12 +1890,12 @@ export const AssumptionRowQtyPriceWithToggle = memo(
     isLocked,
   }) => (
     <div
-      className={`flex flex-col group py-1.5 border-b border-[#D8D8D8] last:border-0 px-1 rounded gap-1 ${!checked ? "opacity-60 bg-[#EFEBE7]/50" : "hover:bg-[#EFEBE7]"}`}
+      className={`flex flex-col group py-1.5 border-b border-[#D8D8D8] last:border-0 px-1 rounded gap-1.5 ${!checked ? "opacity-60 bg-[#EFEBE7]/50" : "hover:bg-[#EFEBE7]"}`}
     >
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
           <label
-            className={`relative inline-flex items-center ${isLocked ? "cursor-not-allowed" : "cursor-pointer"}`}
+            className={`relative inline-flex items-center flex-shrink-0 ${isLocked ? "cursor-not-allowed" : "cursor-pointer"}`}
           >
             <input
               disabled={isLocked}
@@ -1906,11 +1906,11 @@ export const AssumptionRowQtyPriceWithToggle = memo(
             />
             <div className="w-7 h-4 bg-[#D8D8D8] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#D8D8D8] after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#1C6048] peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
           </label>
-          <label className="text-[10px] text-[#4C4A4B] font-bold">
+          <label className="text-[10px] text-[#4C4A4B] font-bold flex-1 min-w-0">
             {label}
           </label>
         </div>
-        <span className="text-[10px] text-[#1C6048] font-bold pr-1">
+        <span className="text-[10px] text-[#1C6048] font-bold  flex-shrink-0">
           {formatNumber(
             checked ? ((qtyVal || 0) * (priceVal || 0)) / 1000 : 0,
             2,
@@ -1918,18 +1918,18 @@ export const AssumptionRowQtyPriceWithToggle = memo(
           B
         </span>
       </div>
-      <div className="flex justify-end items-center gap-1 pr-1.5">
+      <div className="flex justify-end items-center gap-1.5 ">
         <FormattedInput
           disabled={isLocked || !checked}
           val={qtyVal}
           set={setQty}
-          className="w-12 p-1 text-right text-[10px] border border-[#D8D8D8] rounded font-black text-[#1E2F31] bg-white disabled:bg-[#D8D8D8]/30"
+          className="w-14 p-1 text-right text-[10px] border border-[#D8D8D8] rounded font-black text-[#1E2F31] bg-white disabled:bg-[#D8D8D8]/30 flex-shrink-0"
           placeholder="Qty"
         />
-        <span className="text-[8px] text-[#4C4A4B] font-black uppercase w-10 text-left pl-1 flex-shrink-0 truncate">
+        <span className="text-[8px] text-[#4C4A4B] font-black uppercase w-6 text-right flex-shrink-0">
           Qty
         </span>
-        <span className="text-[8px] text-[#D8D8D8] font-black mx-1">×</span>
+        <span className="text-[8px] text-[#D8D8D8] font-black">×</span>
         <FormattedInput
           disabled={isLocked || !checked}
           val={priceVal}
@@ -1937,7 +1937,7 @@ export const AssumptionRowQtyPriceWithToggle = memo(
           className="w-16 p-1 text-right text-[10px] border border-[#D8D8D8] rounded font-black text-[#1E2F31] bg-white disabled:bg-[#D8D8D8]/30 flex-shrink-0"
           placeholder="Price"
         />
-        <span className="text-[8px] text-[#4C4A4B] font-black uppercase w-12 text-left pl-1 flex-shrink-0 truncate">
+        <span className="text-[8px] text-[#4C4A4B] font-black uppercase w-10 text-right flex-shrink-0">
           M / ea
         </span>
       </div>
@@ -2358,7 +2358,7 @@ export const PartnerReturnCard = ({
           {(share || 0).toFixed(0)}%
         </p>
       </div>
-      <div className="mb-4 pr-16">
+      <div className="mb-4 6">
         <h3
           className={`text-lg font-bold text-[#1E2F31] flex items-start gap-2 mb-1`}
         >
@@ -4889,7 +4889,7 @@ export default function App() {
               onClick={() => handleGroupChange("summary")}
               className={`pb-2 px-2 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeGroup === "summary" ? "text-[#1C6048]" : "text-[#4C4A4B] opacity-50 hover:opacity-100"}`}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
                 <Briefcase size={14} /> Executive Summary
               </div>
               {activeGroup === "summary" && (
@@ -4900,7 +4900,7 @@ export default function App() {
               onClick={() => handleGroupChange("context")}
               className={`pb-2 px-2 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeGroup === "context" ? "text-[#9B8B70]" : "text-[#4C4A4B] opacity-50 hover:opacity-100"}`}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
                 <FolderTree size={14} /> Strategic Foundation
               </div>
               {activeGroup === "context" && (
@@ -4911,7 +4911,7 @@ export default function App() {
               onClick={() => handleGroupChange("financials")}
               className={`pb-2 px-2 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeGroup === "financials" ? "text-[#1E2F31]" : "text-[#4C4A4B] opacity-50 hover:opacity-100"}`}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
                 <BarChartHorizontal size={14} /> Financial Engine
               </div>
               {activeGroup === "financials" && (
@@ -4925,7 +4925,7 @@ export default function App() {
           >
             {/* PILLAR 1: BRANDED TITLE */}
             <div className={`order-1 md:order-1 ${activeGroup === "summary" ? "col-span-2" : "col-span-1"} flex justify-start min-w-0 md:flex-1`}>
-              <h1 className="text-xl font-bold flex items-center gap-2 text-[#1E2F31] truncate">
+              <h1 className="text-xl font-bold flex items-center gap-2 text-[#1E2F31]">
                 {activeTab === "executive" ? (
                   <Briefcase className="text-[#9B8B70]" />
                 ) : activeTab === "overview" ? (
@@ -5754,7 +5754,7 @@ export default function App() {
                   <p className="text-[#9B8B70] text-xs font-mono">{user?.email}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
                 <button
                   onClick={async () => {
                     await logoutUser();
@@ -5830,7 +5830,7 @@ export default function App() {
                                 <CheckCircle2 size={14} /> Active
                               </span>
                             ) : (
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
                                 <button
                                   onClick={() => handleLoadProject(proj.id)}
                                   className="px-3 py-1.5 bg-[#EFEBE7] text-[#1E2F31] text-xs font-bold rounded-lg hover:bg-[#D8D8D8] transition-colors shadow-sm"

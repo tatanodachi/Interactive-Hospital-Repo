@@ -118,6 +118,9 @@ export const DEFAULT_OPCO_ASSUMPTIONS: OpCoAssumptions = {
   borIncrement: 5,
   ipRevenue: 25,
   opRevenue: 0.5,
+  crossBorderVolume: 200,
+  crossBorderRevenuePerPatient: 200,
+  crossBorderFeePct: 15,
   priceIncYears1_6: 6,
   priceIncYears7_plus: 5,
   monthlyStaffCost: 3.8,
@@ -444,6 +447,7 @@ export const runOpCoEngine = (
 
     let monthly: { [key: string]: any } = {
       ipRev: [],
+      crossBorderRev: [],
       opRev: [],
       totalRev: [],
       totalMedSupp: [],
@@ -495,6 +499,7 @@ export const runOpCoEngine = (
 
     for (let m = 0; m < 12; m++) {
       monthly.ipRev.push(0);
+      monthly.crossBorderRev.push(0);
       monthly.opRev.push(0);
       monthly.totalRev.push(0);
       monthly.totalMedSupp.push(0);
@@ -652,6 +657,7 @@ export const runOpCoEngine = (
       year: p.y,
       isOperating: false,
       ipRev: 0,
+      crossBorderRev: 0,
       opRev: 0,
       totalRev: 0,
       totalMedSupp: 0,
@@ -726,7 +732,11 @@ export const runOpCoEngine = (
 
     let ipRev = (ipCases * (assumptions.ipRevenue * priceMultiplier)) / 1000;
     let opRev = (opVisits * (assumptions.opRevenue * priceMultiplier)) / 1000;
-    let totalRev = ipRev + opRev;
+    let cbCases = (assumptions.crossBorderVolume || 0);
+    let cbPrice = (assumptions.crossBorderRevenuePerPatient || 0);
+    let cbFeePct = (assumptions.crossBorderFeePct || 0);
+    let crossBorderRev = (cbCases * (cbPrice * priceMultiplier) * (cbFeePct / 100)) / 1000;
+    let totalRev = ipRev + opRev + crossBorderRev;
 
     let costMultiplier = 1;
     let totalMedSupp =
@@ -785,6 +795,7 @@ export const runOpCoEngine = (
       let m_ipCases = ipCases * (days / daysInYear);
       let m_opVisits = opVisits * (days / daysInYear);
       let m_ipRev = ipRev * (days / daysInYear);
+      let m_crossBorderRev = crossBorderRev * (days / daysInYear);
       let m_opRev = opRev * (days / daysInYear);
       let m_totalRev = totalRev * (days / daysInYear);
       let m_totalMedSupp = totalMedSupp * (days / daysInYear);
@@ -957,7 +968,11 @@ export const runOpCoEngine = (
 
     let ipRev = (ipCases * (assumptions.ipRevenue * priceMultiplier)) / 1000;
     let opRev = (opVisits * (assumptions.opRevenue * priceMultiplier)) / 1000;
-    let totalRev = ipRev + opRev;
+    let cbCases = (assumptions.crossBorderVolume || 0);
+    let cbPrice = (assumptions.crossBorderRevenuePerPatient || 0);
+    let cbFeePct = (assumptions.crossBorderFeePct || 0);
+    let crossBorderRev = (cbCases * (cbPrice * priceMultiplier) * (cbFeePct / 100)) / 1000;
+    let totalRev = ipRev + opRev + crossBorderRev;
 
     let costMultiplier = Math.pow(1 + assumptions.medSupplyInf / 100, i - 1);
     let totalMedSupp =
@@ -1016,6 +1031,7 @@ export const runOpCoEngine = (
     // Run 12 months for Operating Year i
     let monthly = {
       ipRev: [],
+      crossBorderRev: [],
       opRev: [],
       totalRev: [],
       revPab: [],
@@ -1066,6 +1082,7 @@ export const runOpCoEngine = (
     };
 
     let year_ipRev = 0,
+      year_crossBorderRev = 0,
       year_opRev = 0,
       year_totalRev = 0,
       year_totalMedSupp = 0,
@@ -1106,6 +1123,7 @@ export const runOpCoEngine = (
       let m_opVisits = opVisits * (days / daysInYear);
 
       let m_ipRev = ipRev * (days / daysInYear);
+      let m_crossBorderRev = crossBorderRev * (days / daysInYear);
       let m_opRev = opRev * (days / daysInYear);
       let m_totalRev = totalRev * (days / daysInYear);
       let m_totalMedSupp = totalMedSupp * (days / daysInYear);
@@ -1245,6 +1263,7 @@ export const runOpCoEngine = (
       monthly.ipCases.push(m_ipCases);
       monthly.opVisits.push(m_opVisits);
       monthly.ipRev.push(m_ipRev);
+      monthly.crossBorderRev.push(m_crossBorderRev);
       monthly.opRev.push(m_opRev);
       monthly.totalRev.push(m_totalRev);
       monthly.totalMedSupp.push(m_totalMedSupp);
@@ -1304,6 +1323,7 @@ export const runOpCoEngine = (
 
       // Accumulate monthly aggregates for Annual Spreadsheets
       year_ipRev += m_ipRev;
+      year_crossBorderRev += m_crossBorderRev;
       year_opRev += m_opRev;
       year_totalRev += m_totalRev;
       year_totalMedSupp += m_totalMedSupp;
@@ -1353,6 +1373,7 @@ export const runOpCoEngine = (
       year: `Year ${i + devYearsCount}`,
       isOperating: true,
       ipRev: year_ipRev,
+      crossBorderRev: year_crossBorderRev,
       opRev: year_opRev,
       totalRev: year_totalRev,
       totalMedSupp: year_totalMedSupp,
@@ -1530,6 +1551,7 @@ export const runOpCoEngine = (
     totals: {
       totalRev: annualData.reduce((acc, d) => acc + (d.totalRev || 0), 0),
       ipRev: annualData.reduce((acc, d) => acc + (d.ipRev || 0), 0),
+      crossBorderRev: annualData.reduce((acc, d) => acc + (d.crossBorderRev || 0), 0),
       opRev: annualData.reduce((acc, d) => acc + (d.opRev || 0), 0),
       totalMedSupp: annualData.reduce(
         (acc, d) => acc + (d.totalMedSupp || 0),
