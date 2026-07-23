@@ -431,6 +431,7 @@ const mapLocations = [
     lat: -6.1543,
     lon: 106.7398,
     color: "#1E3A8A",
+    beds: 120,
     radii: [5000, 10000],
   },
 
@@ -445,6 +446,7 @@ const mapLocations = [
     lat: -6.1681,
     lon: 106.7651,
     color: "#A95C3E",
+    beds: 200,
   },
   {
     id: "v_hermina_dm",
@@ -456,6 +458,7 @@ const mapLocations = [
     lat: -6.1554,
     lon: 106.7082,
     color: "#A95C3E",
+    beds: 100,
   },
   {
     id: "v_rspi_puri",
@@ -467,6 +470,7 @@ const mapLocations = [
     lat: -6.1866,
     lon: 106.7358,
     color: "#A95C3E",
+    beds: 200,
   },
   {
     id: "v_pik",
@@ -478,6 +482,7 @@ const mapLocations = [
     lat: -6.1112,
     lon: 106.7404,
     color: "#A95C3E",
+    beds: 250,
   },
   {
     id: "v_ciputra",
@@ -489,6 +494,7 @@ const mapLocations = [
     lat: -6.1265,
     lon: 106.7055,
     color: "#A95C3E",
+    beds: 150,
   },
   {
     id: "v_siloam_kj",
@@ -500,6 +506,7 @@ const mapLocations = [
     lat: -6.1912,
     lon: 106.7621,
     color: "#A95C3E",
+    beds: 220,
   },
   {
     id: "v_rsud_cengkareng",
@@ -511,6 +518,7 @@ const mapLocations = [
     lat: -6.1362,
     lon: 106.7298,
     color: "#A95C3E",
+    beds: 330,
   },
 
   // Vasanta: 5-10km Radius (Class A)
@@ -524,6 +532,7 @@ const mapLocations = [
     lat: -6.1732,
     lon: 106.809,
     color: "#1E2F31",
+    beds: 500,
   },
   {
     id: "v_dharmais",
@@ -535,6 +544,7 @@ const mapLocations = [
     lat: -6.1953,
     lon: 106.799,
     color: "#1E2F31",
+    beds: 350,
   },
   {
     id: "v_rsab",
@@ -546,6 +556,7 @@ const mapLocations = [
     lat: -6.1955,
     lon: 106.7981,
     color: "#1E2F31",
+    beds: 300,
   },
   {
     id: "v_rsjpn",
@@ -557,6 +568,7 @@ const mapLocations = [
     lat: -6.1942,
     lon: 106.7985,
     color: "#1E2F31",
+    beds: 350,
   },
   {
     id: "v_rsj_soeharto",
@@ -568,6 +580,7 @@ const mapLocations = [
     lat: -6.1625,
     lon: 106.786,
     color: "#1E2F31",
+    beds: 250,
   },
   {
     id: "v_fkg_trisakti",
@@ -579,6 +592,7 @@ const mapLocations = [
     lat: -6.1685,
     lon: 106.7885,
     color: "#1E2F31",
+    beds: 50,
   },
 
   // Vasanta: 5-10km Radius (Class B)
@@ -592,6 +606,7 @@ const mapLocations = [
     lat: -6.1985,
     lon: 106.7045,
     color: "#A95C3E",
+    beds: 250,
   },
   {
     id: "v_tzuchi",
@@ -603,6 +618,7 @@ const mapLocations = [
     lat: -6.106,
     lon: 106.7392,
     color: "#A95C3E",
+    beds: 500,
   },
 
   {
@@ -615,6 +631,7 @@ const mapLocations = [
     lat: -6.1415,
     lon: 106.8251,
     color: "#A95C3E",
+    beds: 300,
   },
   {
     id: "v_ladokgi",
@@ -626,6 +643,7 @@ const mapLocations = [
     lat: -6.2111,
     lon: 106.8075,
     color: "#A95C3E",
+    beds: 40,
   },
   {
     id: "v_mintohardjo",
@@ -637,6 +655,7 @@ const mapLocations = [
     lat: -6.2085,
     lon: 106.8078,
     color: "#A95C3E",
+    beds: 300,
   },
   {
     id: "v_atma_jaya",
@@ -648,6 +667,7 @@ const mapLocations = [
     lat: -6.1135,
     lon: 106.7885,
     color: "#A95C3E",
+    beds: 180,
   },
   {
     id: "v_pluit",
@@ -659,6 +679,7 @@ const mapLocations = [
     lat: -6.1182,
     lon: 106.7931,
     color: "#A95C3E",
+    beds: 200,
   },
   {
     id: "v_pelni",
@@ -670,6 +691,7 @@ const mapLocations = [
     lat: -6.1925,
     lon: 106.8001,
     color: "#A95C3E",
+    beds: 300,
   },
 
   {
@@ -682,6 +704,7 @@ const mapLocations = [
     lat: -6.1652,
     lon: 106.7971,
     color: "#A95C3E",
+    beds: 180,
   },
   {
     id: "v_royal_taruma",
@@ -693,6 +716,7 @@ const mapLocations = [
     lat: -6.1645,
     lon: 106.7871,
     color: "#A95C3E",
+    beds: 180,
   },
 
   // --- CANCER HOSPITALS (Static/Standalone Group) ---
@@ -706,6 +730,7 @@ const mapLocations = [
     lat: -6.1953,
     lon: 106.799,
     color: "#99B6AA",
+    beds: 350,
   },
   {
     id: "mrccc",
@@ -716,6 +741,7 @@ const mapLocations = [
     lat: -6.2201,
     lon: 106.8155,
     color: "#99B6AA",
+    beds: 220,
   },
   {
     id: "rscm",
@@ -726,6 +752,7 @@ const mapLocations = [
     lat: -6.1976,
     lon: 106.847,
     color: "#99B6AA",
+    beds: 1000,
   },
 
   // Class B
@@ -738,6 +765,7 @@ const mapLocations = [
     lat: -6.106,
     lon: 106.7392,
     color: "#99B6AA",
+    beds: 500,
   },
   {
     id: "mandaya",
@@ -748,6 +776,7 @@ const mapLocations = [
     lat: -6.1985,
     lon: 106.7045,
     color: "#99B6AA",
+    beds: 250,
   },
   {
     id: "rsgk",
@@ -758,6 +787,7 @@ const mapLocations = [
     lat: -6.1681,
     lon: 106.7651,
     color: "#99B6AA",
+    beds: 200,
   },
 
   // --- ORTHOPEDIC HOSPITALS (Static/Standalone Group) ---
@@ -771,6 +801,7 @@ const mapLocations = [
     lat: -6.2201,
     lon: 106.8155,
     color: "#5E4B8B",
+    beds: 220,
   },
   // Class B
   {
@@ -782,6 +813,7 @@ const mapLocations = [
     lat: -6.1736,
     lon: 106.8715,
     color: "#5E4B8B",
+    beds: 280,
   },
   {
     id: "mayapada_south_jakarta",
@@ -792,6 +824,7 @@ const mapLocations = [
     lat: -6.2915,
     lon: 106.7815,
     color: "#5E4B8B",
+    beds: 220,
   },
   {
     id: "medistra",
@@ -802,6 +835,7 @@ const mapLocations = [
     lat: -6.2410,
     lon: 106.8340,
     color: "#5E4B8B",
+    beds: 190,
   },
   {
     id: "royal_progress",
@@ -812,6 +846,7 @@ const mapLocations = [
     lat: -6.1364,
     lon: 106.8582,
     color: "#5E4B8B",
+    beds: 150,
   },
   {
     id: "mayapada_tangerang",
@@ -822,6 +857,7 @@ const mapLocations = [
     lat: -6.2045,
     lon: 106.6493,
     color: "#5E4B8B",
+    beds: 200,
   },
   {
     id: "emc_alam_sutera",
@@ -832,6 +868,7 @@ const mapLocations = [
     lat: -6.2411,
     lon: 106.6620,
     color: "#5E4B8B",
+    beds: 200,
   },
   {
     id: "premier_bintaro",
@@ -842,6 +879,7 @@ const mapLocations = [
     lat: -6.2842,
     lon: 106.7275,
     color: "#5E4B8B",
+    beds: 200,
   },
 
   // --- CARDIOLOGY HOSPITALS ---
@@ -855,6 +893,7 @@ const mapLocations = [
     lat: -6.1972,
     lon: 106.7993,
     color: "#A22A38",
+    beds: 350,
   },
   // Class B
   {
@@ -866,6 +905,7 @@ const mapLocations = [
     lat: -6.106,
     lon: 106.7392,
     color: "#A22A38",
+    beds: 500,
   },
   {
     id: "mayapada_south_jakarta_cardio",
@@ -876,6 +916,7 @@ const mapLocations = [
     lat: -6.2915,
     lon: 106.7815,
     color: "#A22A38",
+    beds: 220,
   },
   {
     id: "medistra_cardio",
@@ -886,6 +927,7 @@ const mapLocations = [
     lat: -6.2410,
     lon: 106.8340,
     color: "#A22A38",
+    beds: 190,
   },
   // Class C
   {
@@ -897,6 +939,7 @@ const mapLocations = [
     lat: -6.2231,
     lon: 106.7845,
     color: "#A22A38",
+    beds: 80,
   },
   {
     id: "brawijaya_saharjo_cardio",
@@ -907,6 +950,7 @@ const mapLocations = [
     lat: -6.2163,
     lon: 106.8436,
     color: "#A22A38",
+    beds: 100,
   },
 
   // --- MOTHER AND CHILDREN ---
@@ -920,6 +964,7 @@ const mapLocations = [
     lat: -6.1950,
     lon: 106.8379,
     color: "#DE829B",
+    beds: 100,
   },
   {
     id: "m_kemang_medical",
@@ -930,6 +975,7 @@ const mapLocations = [
     lat: -6.2811,
     lon: 106.8223,
     color: "#DE829B",
+    beds: 60,
   },
   {
     id: "m_brawijaya_antasari",
@@ -940,6 +986,7 @@ const mapLocations = [
     lat: -6.2572,
     lon: 106.8083,
     color: "#DE829B",
+    beds: 80,
   },
   // Class C
   {
@@ -951,6 +998,7 @@ const mapLocations = [
     lat: -6.2163,
     lon: 106.7118,
     color: "#DE829B",
+    beds: 50,
   },
   {
     id: "m_pku_muhammadiyah",
@@ -961,6 +1009,7 @@ const mapLocations = [
     lat: -6.1925,
     lon: 106.6660,
     color: "#DE829B",
+    beds: 50,
   },
   {
     id: "m_makiyah",
@@ -971,6 +1020,7 @@ const mapLocations = [
     lat: -6.2114,
     lon: 106.6805,
     color: "#DE829B",
+    beds: 40,
   },
   {
     id: "m_gebang_medika",
@@ -981,6 +1031,7 @@ const mapLocations = [
     lat: -6.1717,
     lon: 106.5954,
     color: "#DE829B",
+    beds: 50,
   },
   {
     id: "m_karunia_bunda",
@@ -991,6 +1042,7 @@ const mapLocations = [
     lat: -6.1990,
     lon: 106.5880,
     color: "#DE829B",
+    beds: 50,
   },
   {
     id: "m_metro_kebon_jeruk",
@@ -1001,6 +1053,7 @@ const mapLocations = [
     lat: -6.1834,
     lon: 106.7630,
     color: "#DE829B",
+    beds: 60,
   },
   {
     id: "m_jwcc_asih",
@@ -1011,6 +1064,7 @@ const mapLocations = [
     lat: -6.2443,
     lon: 106.7983,
     color: "#DE829B",
+    beds: 30,
   },
   {
     id: "m_sammarie_wijaya",
@@ -1021,6 +1075,7 @@ const mapLocations = [
     lat: -6.2427,
     lon: 106.8125,
     color: "#DE829B",
+    beds: 40,
   },
   {
     id: "m_brawijaya_duren_tiga",
@@ -1031,6 +1086,7 @@ const mapLocations = [
     lat: -6.2515,
     lon: 106.8344,
     color: "#DE829B",
+    beds: 50,
   },
   {
     id: "m_santo_yusuf",
@@ -1041,6 +1097,7 @@ const mapLocations = [
     lat: -6.2338,
     lon: 106.6139,
     color: "#DE829B",
+    beds: 40,
   },
   {
     id: "m_eka_pluit",
@@ -1051,6 +1108,7 @@ const mapLocations = [
     lat: -6.1158,
     lon: 106.7891,
     color: "#DE829B",
+    beds: 50,
   },
   {
     id: "m_eka_pik_grand_family",
@@ -1061,6 +1119,7 @@ const mapLocations = [
     lat: -6.1105,
     lon: 106.7378,
     color: "#DE829B",
+    beds: 80,
   },
   {
     id: "m_tambak",
@@ -1071,6 +1130,7 @@ const mapLocations = [
     lat: -6.2081,
     lon: 106.8489,
     color: "#DE829B",
+    beds: 40,
   },
   {
     id: "m_assyifa",
@@ -1081,6 +1141,7 @@ const mapLocations = [
     lat: -6.1956,
     lon: 106.6115,
     color: "#DE829B",
+    beds: 40,
   },
 
   // --- GENERAL NODES ---
@@ -1263,6 +1324,26 @@ const InteractiveDemographicMap = memo(() => {
   const [showRegionLabels, setShowRegionLabels] = useState(false);
   const [showNodeTooltips, setShowNodeTooltips] = useState(false);
   const [showTollRoads, setShowTollRoads] = useState(true);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (mapRef.current) {
+        mapRef.current.invalidateSize();
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [isFullScreen]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isFullScreen) {
+        setIsFullScreen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isFullScreen]);
   const [activePOIs, setActivePOIs] = useState(() => {
     return mapLocations
       .filter((loc) => {
@@ -1277,6 +1358,20 @@ const InteractiveDemographicMap = memo(() => {
       })
       .map((l) => l.id);
   });
+
+  const totalActiveBeds = useMemo(() => {
+    return mapLocations
+      .filter((loc) => activePOIs.includes(loc.id))
+      .reduce((sum, loc) => sum + (loc.beds || 0), 0);
+  }, [activePOIs]);
+
+  const getPoiTooltipHtml = (loc) => {
+    let html = `<b>${loc.name}</b><br><span style="font-size:11px;color:#777;">${loc.desc || loc.population || ""}</span>`;
+    if (loc.beds) {
+      html += `<br><span style="font-size:10px;font-weight:800;color:#1C6048;display:inline-flex;align-items:center;gap:3px;margin-top:3px;">🛏️ ${loc.beds} Total Beds</span>`;
+    }
+    return html;
+  };
   const [loadingStatus, setLoadingStatus] = useState({
     active: true,
     text: "Initializing...",
@@ -1905,10 +2000,7 @@ const InteractiveDemographicMap = memo(() => {
         }).addTo(singlePoiGroup);
       }
 
-      marker.bindTooltip(
-        `<b>${loc.name}</b><br><span style="font-size:11px;color:#777;">${loc.desc || loc.population || ""}</span>`,
-        { direction: "top", offset: [0, -10], className: "custom-tooltip" },
-      );
+      marker.bindTooltip(getPoiTooltipHtml(loc), { direction: "top", offset: [0, -10], className: "custom-tooltip" });
 
       poiLayersRef.current[loc.id] = singlePoiGroup;
       poiMarkersRef.current[loc.id] = marker;
@@ -1971,31 +2063,14 @@ const InteractiveDemographicMap = memo(() => {
       } catch (e) {}
 
       if (showNodeTooltips) {
-        marker.bindTooltip(
-          `<b>${loc.name}</b><br><span style="font-size:11px;color:#777;">${loc.desc || loc.population || ""}</span>`,
-          {
-            direction: "top",
-            offset: [0, -10],
-            className: "custom-tooltip",
-            permanent: true,
-            interactive: false,
-          }
-        );
+        marker.bindTooltip(getPoiTooltipHtml(loc), { direction: "top", offset: [0, -10], className: "custom-tooltip", permanent: true, interactive: false });
         if (activePOIs.includes(loc.id)) {
           try {
             marker.openTooltip();
           } catch (e) {}
         }
       } else {
-        marker.bindTooltip(
-          `<b>${loc.name}</b><br><span style="font-size:11px;color:#777;">${loc.desc || loc.population || ""}</span>`,
-          {
-            direction: "top",
-            offset: [0, -10],
-            className: "custom-tooltip",
-            permanent: false,
-          }
-        );
+        marker.bindTooltip(getPoiTooltipHtml(loc), { direction: "top", offset: [0, -10], className: "custom-tooltip", permanent: false });
       }
     });
   }, [showNodeTooltips, activePOIs, isMapReady]);
@@ -2351,7 +2426,13 @@ const InteractiveDemographicMap = memo(() => {
   const legendInfo = getLegendData();
 
   return (
-    <div className="w-full h-[600px] rounded-2xl overflow-hidden relative z-10 font-sans border border-[#D8D8D8] shadow-sm">
+    <div
+      className={
+        isFullScreen
+          ? "fixed inset-0 z-[2000] w-screen h-screen bg-[#F9F8F6] p-2 sm:p-4 overflow-hidden flex flex-col font-sans border-0 shadow-2xl"
+          : "w-full h-[600px] rounded-2xl overflow-hidden relative z-10 font-sans border border-[#D8D8D8] shadow-sm"
+      }
+    >
       <style>{`
                 /* --- 1. NEW STATIC REGION LABELS --- */
                 .static-region-tooltip { 
@@ -2475,20 +2556,42 @@ const InteractiveDemographicMap = memo(() => {
       <div className="vignette"></div>
       <div id="demographics-map" className="w-full h-full z-[1]"></div>
 
-      {/* Dynamic Dual Map Legend */}
-      {legendInfo && !isLegendOpen && (
-        <div
-          onClick={() => setIsLegendOpen(true)}
-          className={`absolute top-4 right-4 z-[950] bg-white/90 backdrop-blur-md px-2.5 py-2 sm:p-2.5 rounded-xl shadow-md border border-[#D8D8D8] cursor-pointer hover:bg-white text-[#1E2F31] font-bold text-[10px] sm:text-xs uppercase flex items-center gap-1.5 sm:gap-2 transition-all duration-300 flex`}
+      {/* Dynamic Dual Map Legend & Expand Cluster */}
+      <div className="absolute top-4 right-4 z-[950] flex items-center gap-2 pointer-events-auto">
+        <button
+          onClick={() => setIsFullScreen(!isFullScreen)}
+          className="bg-white/95 backdrop-blur-md px-2.5 py-2 sm:px-3 sm:py-2 rounded-xl shadow-md border border-[#D8D8D8] cursor-pointer hover:bg-white text-[#1E2F31] font-extrabold text-[10px] sm:text-xs uppercase flex items-center gap-1.5 transition-all duration-200 hover:scale-[1.03] active:scale-95"
+          title={isFullScreen ? "Exit Fullscreen (Esc)" : "Expand Map Fullscreen"}
         >
-          <span className="hidden sm:inline">Legend</span>
-          <span className="sm:hidden">Legend</span>
-          <ChevronRight
-            size={14}
-            className="text-[#1E2F31] shrink-0 rotate-180"
-          />
-        </div>
-      )}
+          {isFullScreen ? (
+            <>
+              <Minimize2 size={14} className="text-[#1C6048] shrink-0" />
+              <span className="hidden sm:inline">Exit Fullscreen</span>
+              <span className="sm:hidden">Exit</span>
+            </>
+          ) : (
+            <>
+              <Maximize2 size={14} className="text-[#1C6048] shrink-0" />
+              <span className="hidden sm:inline">Expand Map</span>
+              <span className="sm:hidden">Expand</span>
+            </>
+          )}
+        </button>
+
+        {legendInfo && !isLegendOpen && (
+          <div
+            onClick={() => setIsLegendOpen(true)}
+            className="bg-white/95 backdrop-blur-md px-2.5 py-2 sm:px-3 sm:py-2 rounded-xl shadow-md border border-[#D8D8D8] cursor-pointer hover:bg-white text-[#1E2F31] font-extrabold text-[10px] sm:text-xs uppercase flex items-center gap-1.5 transition-all duration-200 hover:scale-[1.03] active:scale-95"
+          >
+            <span className="hidden sm:inline">Legend</span>
+            <span className="sm:hidden">Legend</span>
+            <ChevronRight
+              size={14}
+              className="text-[#1E2F31] shrink-0 rotate-180"
+            />
+          </div>
+        )}
+      </div>
 
       {legendInfo && (
         <div
@@ -2599,12 +2702,26 @@ const InteractiveDemographicMap = memo(() => {
               <Map size={16} className="text-[#1C6048]" />{" "}
               <span>Overview Map</span>
             </div>
-            <button
-              onClick={() => setIsPanelOpen(false)}
-              className="text-[#9B8B70] hover:text-[#1E2F31]"
-            >
-              <X size={16} />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setIsFullScreen(!isFullScreen)}
+                className="text-[#9B8B70] hover:text-[#1E2F31] p-1 rounded hover:bg-[#EFEBE7] transition-colors"
+                title={isFullScreen ? "Exit Fullscreen (Esc)" : "Expand Map Fullscreen"}
+              >
+                {isFullScreen ? (
+                  <Minimize2 size={15} className="text-[#1C6048]" />
+                ) : (
+                  <Maximize2 size={15} />
+                )}
+              </button>
+              <button
+                onClick={() => setIsPanelOpen(false)}
+                className="text-[#9B8B70] hover:text-[#1E2F31] p-1 rounded hover:bg-[#EFEBE7] transition-colors"
+                title="Close Panel"
+              >
+                <X size={16} />
+              </button>
+            </div>
           </div>
 
           <div className="flex bg-[#F9F8F6] p-1 rounded-lg">
@@ -2811,6 +2928,27 @@ const InteractiveDemographicMap = memo(() => {
               })()}
               {poiSectionExpanded && (
                 <div className="flex flex-col">
+                  {/* Active Hospital Bed Capacity Summary Card */}
+                  <div className="bg-[#1E2F31] text-white rounded-lg p-2.5 my-2 shadow-sm border border-[#1E2F31]/80 flex items-center justify-between">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="p-1.5 bg-[#1C6048] text-white rounded-md shrink-0">
+                        <Building2 size={14} />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-[8px] font-bold text-[#9B8B70] uppercase tracking-wider truncate">
+                          Active Bed Capacity
+                        </div>
+                        <div className="text-xs font-black text-white font-mono truncate">
+                          {totalActiveBeds.toLocaleString()} Total Beds
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-[9px] font-mono font-bold bg-[#1C6048]/40 text-[#99B6AA] px-2 py-0.5 rounded border border-[#1C6048]/50">
+                        {mapLocations.filter((l) => activePOIs.includes(l.id) && l.beds).length} Hospitals
+                      </span>
+                    </div>
+                  </div>
                   {[
                     "Vasanta",
                     "Cancer Hospitals",
@@ -2932,17 +3070,19 @@ const InteractiveDemographicMap = memo(() => {
                                     handlePoiHover?.(loc.id, false)
                                   }
                                 >
-                                  <div className="truncate flex-1 min-w-0 pr-3">
-                                    <span className="text-[#9B8B70] mr-1.5 font-bold">
+                                  <div className="truncate flex-1 min-w-0 pr-2 flex items-center gap-1.5">
+                                    <span className="text-[#9B8B70] font-bold shrink-0">
                                       {index + 1}.
                                     </span>
-                                    <span className="font-bold text-[#1E2F31]">
+                                    <span className="font-bold text-[#1E2F31] truncate">
                                       {loc.name}
                                     </span>
-                                    <span className="hidden text-[9px] text-[#9B8B70] ml-1.5">
-                                      — {loc.desc}
-                                    </span>
                                   </div>
+                                  {loc.beds ? (
+                                    <span className="shrink-0 text-[8px] font-mono font-bold text-[#1C6048] bg-[#1C6048]/10 px-1.5 py-0.5 rounded border border-[#1C6048]/20 mr-1.5">
+                                      {loc.beds} Beds
+                                    </span>
+                                  ) : null}
                                   <label
                                     className="switch item"
                                     onClick={(e) => e.stopPropagation()}
@@ -3460,17 +3600,19 @@ const InteractiveDemographicMap = memo(() => {
                                       handlePoiHover?.(loc.id, false)
                                     }
                                   >
-                                    <div className="truncate flex-1 min-w-0 pr-3">
-                                      <span className="text-[#9B8B70] mr-1.5 font-bold">
+                                    <div className="truncate flex-1 min-w-0 pr-2 flex items-center gap-1.5">
+                                      <span className="text-[#9B8B70] font-bold shrink-0">
                                         {index + 2}.
                                       </span>
-                                      <span className="font-bold text-[#1E2F31]">
+                                      <span className="font-bold text-[#1E2F31] truncate">
                                         {loc.name}
                                       </span>
-                                      <span className="hidden text-[9px] text-[#9B8B70] ml-1.5">
-                                        — {loc.desc}
-                                      </span>
                                     </div>
+                                    {loc.beds ? (
+                                      <span className="shrink-0 text-[8px] font-mono font-bold text-[#1C6048] bg-[#1C6048]/10 px-1.5 py-0.5 rounded border border-[#1C6048]/20 mr-1.5">
+                                        {loc.beds} Beds
+                                      </span>
+                                    ) : null}
                                     <label
                                       className="switch item"
                                       onClick={(e) => e.stopPropagation()}
@@ -3639,8 +3781,26 @@ const InteractiveDemographicMap = memo(() => {
           <span className="sm:hidden">Data</span>
         </div>
       )}
-      {/* Combined Toolbar (Target & Ruler) matching Leaflet native style */}
+      {/* Combined Toolbar (Expand, Target & Ruler) matching Leaflet native style */}
       <div className="leaflet-bar absolute bottom-4 left-[60px] z-[1000] cursor-pointer">
+        <a
+          onClick={(e) => {
+            e.preventDefault();
+            setIsFullScreen(!isFullScreen);
+          }}
+          title={isFullScreen ? "Minimize / Exit Fullscreen (Esc)" : "Expand Map Fullscreen"}
+          className={
+            isFullScreen
+              ? "!bg-[#1C6048] !text-white"
+              : "hover:!text-[#1C6048]"
+          }
+        >
+          {isFullScreen ? (
+            <Minimize2 size={16} strokeWidth={2.5} />
+          ) : (
+            <Maximize2 size={16} strokeWidth={2.5} />
+          )}
+        </a>
         <a
           onClick={(e) => {
             e.preventDefault();
